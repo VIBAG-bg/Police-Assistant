@@ -12,7 +12,7 @@ end
 for _,demo in ipairs({false,true})do
     local s,f=setup(demo)
     s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
-    click(s,'Нет##На саспекте маска?##wanted-maskno')
+    click(s,'Нет##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskno')
     click(s,'Да##Вы видели паспорт этого человека?##wanted-passport_seenyes')
     click(s,'Далее · причина розыска##wanted-next');eq(f.stage,'basis');eq(f.ic_name,'Player Name');eq(f.passport_number,'37')
     s.edits={['##Поиск · можно оставить пустым##wanted-search']='неподчинение'};s.render();s.edits={}
@@ -28,6 +28,22 @@ for _,demo in ipairs({false,true})do
     if demo then eq(#s.sent,0)else eq(s.sent[#s.sent].line,'/su 37 8 1')end
     check(not s.frames[1].condition());onScriptTerminate(s.script)
 end
+-- The actual detached window exposes the tracking evidence editor; a general
+-- OOC acknowledgement cannot bypass a missing IC telephone.
+local tracking,tf=setup(false)
+tracking.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';tracking.render()
+click(tracking,'OOC · системная механика##Ветка розыска##wanted-modeooc')
+if tracking.windows['Police Assistant · Розыск##pa26-wanted'].height<650 then click(tracking,'Далее · уточнение сведений##wanted-identity-details')end
+tracking.toggle='Телефон включён; RP-пеленгация; звёзды сниму сразу##wanted-ooc-ack';tracking.render()
+click(tracking,'Далее · причина розыска##wanted-next');eq(tf.stage,'identity')
+click(tracking,'ОК##warning-ok');tracking.render()
+click(tracking,'Телефон для RP-пеленгации##wanted-phone-edit')
+click(tracking,'Да##Номер телефона известен вашему персонажу по RP?##wanted-phone_knownyes')
+tracking.edits={['##IC-номер телефона##wanted-phone_number']='555123',['##Откуда известен номер по RP##wanted-phone_source']='Назван по RP'};tracking.render();tracking.edits={}
+click(tracking,'Готово · к условиям##wanted-phone-edit-back')
+click(tracking,'Далее · причина розыска##wanted-next');eq(tf.stage,'basis')
+eq(tf.phone_number,'555123');eq(tf.ooc_reason,'tracking');eq(#tracking.sent,0)
+onScriptTerminate(tracking.script)
 local s,f=setup(false)
 s.events.onPlayerQuit(37,1);s.targetConnected=false;s.step();s.render();eq(#s.sent,0)
 check(not s.hasLog('Ошибка интерфейса'));onScriptTerminate(s.script)

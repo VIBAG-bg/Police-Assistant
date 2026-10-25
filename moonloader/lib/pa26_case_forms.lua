@@ -40,9 +40,14 @@ function Forms:begin(kind,explicitWanted)
         ic_name=r and r.ic_name or '',passport_number=r and r.passport_number or '',appearance=r and r.appearance or '',
         phone_known=r and r.phone_known or 'unknown',phone_number=r and r.phone_number or '',phone_source=r and r.phone_source or '',
         identity_nonce=r and r.nonce,identity_version=r and r.version,passport_source=r and r.passport_source,article='',part='',basis='',amount='',ooc_ack=false,
-        reason_id='',reason_group='01',facts='',ooc_reason='pt',life_ack=false,inVehicle=self.state.inVehicle}
+        reason_id='',reason_group='01',facts='',ooc_reason='tracking',life_ack=false,inVehicle=self.state.inVehicle}
     if kind=='wanted_list'then f.stage='preview'end
-    if kind=='wanted'then self:fillWanted(f)end
+    if kind=='wanted'then
+        -- A previous identity note cannot certify uninterrupted sight in this
+        -- particular wanted procedure. Ask again under the current mask rule.
+        if f.mask=='yes'then f.face_before='unknown'end
+        self:fillWanted(f)
+    end
     return f
 end
 function Forms:validForm(f,committed)
@@ -95,7 +100,13 @@ function Forms:branch(f)
     if f.mode=='ooc'then
         if f.kind=='fine'or not cfg.allow_ooc then return nil,'OOC-ветка отключена.'end
         if f.ooc_ack~=true then return nil,'Подтвердите выбор отдельной OOC-процедуры. Она не устанавливает IC-личность или источник данных.'end
-        if f.kind=='wanted'and not prefs.oocNotes[f.ooc_reason]then return nil,'Выберите допустимую цель OOC-звёзд по регламенту.'end
+        if f.kind=='wanted'or f.kind=='mark'then
+            if f.kind=='wanted'and f.ooc_reason~='tracking'then return nil,'По действующей редакции OOC-звёзды разрешены только для RP-пеленгации через /setmark; /pt и Alcatraz исключены.'end
+            if f.phone_known~='yes'or not shared.text(f.phone_number,120)or f.phone_number:match('^%s*$')or
+                not shared.text(f.phone_source,120)or f.phone_source:match('^%s*$')then
+                return nil,'Для OOC-пеленгации укажите известный по RP номер телефона и источник; ID игрока не является телефоном.'
+            end
+        end
         return 'ooc'
     end
     if f.mode~='ic'then return nil,'Выберите IC или OOC.'end
@@ -110,7 +121,10 @@ function Forms:branch(f)
     if f.kind=='fine'and cfg.fine_unmasked and f.mask~='no'then
         return nil,f.mask=='yes'and 'В выбранной политике штрафа нужно открытое лицо. Сначала установите личность / снимите маску по правилам.'or 'Уточните, открыто ли лицо человека.'
     end
-    if f.kind=='wanted'and f.mask~='yes'and f.mask~='no'then return nil,'Уточните, есть ли на саспекте маска.'end
+    if f.kind=='wanted'then
+        if f.mask~='yes'and f.mask~='no'then return nil,'Уточните, есть ли RP-маска: одновременно /mask и визуально скрытое лицо.'end
+        if f.mask=='yes'and f.face_before~='yes'then return nil,'Для IC-розыска в RP-маске подтвердите, что личность установлена до маски и человек не пропадал из вида. Один прежний паспорт этого не подтверждает.'end
+    end
     if f.passport_seen=='unknown'then return nil,'Сначала ответьте, видели ли вы паспорт.'end
     if f.passport_seen=='yes'then
         if not shared.text(f.ic_name,120)or f.ic_name:match('^%s*$')then return nil,'Укажите IC-имя из документа.'end
@@ -162,7 +176,7 @@ function Forms:values(f)
         values.amount=tostring(row.stars);values.game_stars=values.amount;values.game_reason=row.title;values.game_group=row.group_title
         values.game_category=tostring(tonumber(row.group));values.game_item=tostring(tonumber(row.id:sub(4)))
         values.basis=row.id..' · '..row.group_title..' / '..row.title
-        for _,key in ipairs({'ic_name','passport_number','appearance','facts'})do
+        for _,key in ipairs({'ic_name','passport_number','appearance','facts','phone_number','phone_source'})do
             local raw=f[key]or ''
             if key=='appearance'or key=='facts'then raw=type(raw)=='string'and raw:gsub('%s+',' '):match('^%s*(.-)%s*$')or raw end
             values[key]=shared.text(raw,key=='appearance'and 768 or key=='facts'and 900 or 120)

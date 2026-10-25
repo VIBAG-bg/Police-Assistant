@@ -36,7 +36,7 @@ eq(saved.procedures.wanted_traits_rp,'/todo Приметы: {appearance}*док�
 check(saved.procedures.wanted_allow_remote);check(saved.procedures.wanted_autofill_passport);eq(#s.sent,0);onScriptTerminate(s.script)
 local function identity(s,passport)
     s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
-    click(s,'Нет##На саспекте маска?##wanted-maskno')
+    click(s,'Нет##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskno')
     click(s,(passport and 'Да'or 'Нет')..'##Вы видели паспорт этого человека?##wanted-passport_seen'..(passport and 'yes'or 'no'))
     click(s,'Далее · причина розыска##wanted-next')
 end
@@ -83,7 +83,7 @@ for _,detailed in ipairs({false,true})do
 end
 -- Missing identity offers OOC from the answers and requires an explicit decision.
 local s,f=setup();s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
-click(s,'Да##На саспекте маска?##wanted-maskyes');click(s,'Нет##Вы видели паспорт этого человека?##wanted-passport_seenno')
+click(s,'Да##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskyes');click(s,'Нет##Вы видели паспорт этого человека?##wanted-passport_seenno')
 check(s.caseForms:oocSuggested(f));eq(f.mode,'ic');click(s,'Перейти к OOC-звёздам##wanted-use-ooc');eq(f.mode,'ooc');check(not f.ooc_ack)
 eq(#s.sent,0);check(not s.caseForms:next(f),'OOC still needs explicit mechanism acknowledgement');onScriptTerminate(s.script)
 -- Disconnect and ID reuse between RP and final YES never send /su.

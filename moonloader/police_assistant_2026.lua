@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.38.0')
+script_version('0.38.1')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -65,9 +65,9 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.38.0' then
+if #missing > 0 or not core or core.VERSION ~= '0.38.1' then
     function main()
-        print('[PA26] Install all v0.38.0 project files and mimgui / encoding. Missing: ' .. table.concat(missing, ', '))
+        print('[PA26] Install all v0.38.1 project files and mimgui / encoding. Missing: ' .. table.concat(missing, ', '))
     end
     return
 end
@@ -2750,11 +2750,11 @@ function main()
             not context().blocked then recoverUi(false)end
         recovery:healthy(now,cfg.recovery)
         if not started then
-            pushLog('v0.38.0: игровой цикл запущен.')
+            pushLog('v0.38.1: игровой цикл запущен.')
             started = true
         end
         if uiRendered and not drawReported then
-            pushLog('v0.38.0: окно отрисовано.')
+            pushLog('v0.38.1: окно отрисовано.')
             drawReported = true
         end
     end

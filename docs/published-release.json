@@ -1,19 +1,7 @@
 {
-  "release": "0.38.0",
+  "release": "0.38.1",
+  "status": "awaiting_publication_check",
+  "note": "Build-time snapshot; live validation is recorded in main after publication.",
   "repository": "VIBAG-bg/Police-Assistant",
-  "tag": "v0.38.0",
-  "release_url": "https://github.com/VIBAG-bg/Police-Assistant/releases/tag/v0.38.0",
-  "status": "passed",
-  "real_github_metadata": true,
-  "worker_detected_stable": true,
-  "downloaded_and_validated_files": 90,
-  "update_sha256": "900e9055132e26cb28c6947a1229488aee2e5e4159017512d308ed6c95e0474e",
-  "installer_sha256": "7b94f3c52f68c0c089bf328156ae7c26a55730be2c0c69ba9b7897cd6b702b92",
-  "user_data_unchanged": true,
-  "real_game_written": false,
-  "actions_status": "completed",
-  "actions_conclusion": "success",
-  "checked_utc": "2026-10-25T18:55:44.1814044Z",
-  "actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40223431581",
-  "release_commit": "5f4f9d927888d6a40698dfaa773507fc4b54d753"
+  "real_game_written": false
 }

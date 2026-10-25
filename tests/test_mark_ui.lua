@@ -46,6 +46,12 @@ click(s,'OOC · отдельная процедура##Ветка пеленга
 click(s,'Далее · основание##case-next');eq(s.workspace.studio.caseForm.stage,'identity')
 click(s,'ОК##warning-ok');s.render()
 s.toggle='Понимаю, что выбираю отдельную OOC-механику##case-ooc-ack';s.render();click(s,'Далее · основание##case-next')
+eq(s.workspace.studio.caseForm.stage,'identity','OOC acknowledgement does not invent an IC phone')
+click(s,'ОК##warning-ok');s.render()
+click(s,'Да##Номер известен вашему персонажу?##case-phone_knownyes')
+edit(s,{['##Известный IC-номер телефона##case-phone_number']='555-0100',
+    ['##Откуда персонажу известен номер##case-phone_source']='Сообщён по RP'})
+click(s,'Далее · основание##case-next')
 edit(s,{['##Основание и условия пеленгации##case-basis']='Отдельное OOC-основание'});click(s,'Проверить полный текст##case-preview')
 check(s.caseForms:preview(s.workspace.studio.caseForm).ready);eq(#s.sent,0)
 -- GUI editing, previews, help, and persistence for both RP branches and contract.

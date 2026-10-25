@@ -1,0 +1,65 @@
+{
+  "checked_on": "2026-10-25",
+  "public_pages_read": 189,
+  "password_boundaries": [
+    {
+      "url": "https://forum.exsellentrp.com/threads/fbi-vnutrennii-reglament-fcisd.358/",
+      "status": "password_protected"
+    },
+    {
+      "url": "https://forum.exsellentrp.com/threads/fbi-polozheniye-o-fcisd.355/",
+      "status": "password_protected"
+    },
+    {
+      "url": "https://forum.exsellentrp.com/forums/fcisd.217/",
+      "status": "password_protected"
+    },
+    {
+      "url": "https://forum.exsellentrp.com/forums/baza-dannykh-fbi.219/",
+      "status": "password_protected"
+    }
+  ],
+  "public_threads": 153,
+  "public_forum_pages": 35,
+  "source_count": 93,
+  "rule_cards": 111,
+  "article_count": 987,
+  "changed_previously_known_topics": 15,
+  "new_normative_or_reference_sources": 25,
+  "personal_cases_imported": false,
+  "full_text_republished": false,
+  "game_updated": false,
+  "curated_source_ids": [
+    "1020",
+    "1021",
+    "1028",
+    "1034",
+    "1036",
+    "582",
+    "584",
+    "691",
+    "690",
+    "593",
+    "776",
+    "973",
+    "968",
+    "969",
+    "971",
+    "742",
+    "746",
+    "679",
+    "609",
+    "1061",
+    "999",
+    "1000",
+    "820",
+    "698",
+    "1043"
+  ],
+  "previous_catalog": "erp-20261023-wanted-observed",
+  "image_only_order": {
+    "source_id": "1025",
+    "status": "full_attachment_requires_login; unreadable_public_thumbnail",
+    "content_verified": false
+  }
+}

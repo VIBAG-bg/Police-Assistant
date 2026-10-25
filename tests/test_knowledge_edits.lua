@@ -74,7 +74,7 @@ for _,g in ipairs({'rules','offenses','commands','articles','radio','drafts','sc
     result=save(nil,g,v);check(result.ok,result.error);ids[g]=result.key
     eq(knowledge.status(k.byKey[result.key]),'Моя карточка');eq(k.baseByKey[result.key],nil)
 end
-eq(#k.records,1326) -- 1318 catalog rows (including 31 observed reasons and /wanted) + eight personal cards
+eq(#k.records,1378) -- 1370 catalog rows after forum refresh + eight personal cards
 local composed,err=k:compose(k.byKey[ids.offenses],{kind='fine',identity='passport',ic_name='Alex Smith',part='',reason='',fine='100',command='/fine {select_id} {param1} {param2}'},500,codec)
 check(composed,err);eq(composed.knowledge.personal_origin,'custom');check(composed.knowledge.personal_updated_at)
 local withoutReference=model.copy(k.byKey[ids.offenses]);withoutReference.item.reference=''
@@ -97,7 +97,7 @@ result=action({kind='preview_import'});check(not result.ok);eq(files['kb_edits.j
 files['kb_edits_import.json']=files['kb_edits_export.json'];result=action({kind='preview_import'});check(result.ok)
 result=action({kind='import'});check(result.ok);check(k.edits.state.entries[key]);eq(files.bundle,TEST_KNOWLEDGE_JSON)
 files['kb_edits.json']='{damaged';files['kb_edits.json.bak']=nil;files['kb_edits.json.rollback']=nil
-local damaged=knowledge.new(options);check(damaged:load());check(damaged.edits.blocked);eq(#damaged.records,1318)
+local damaged=knowledge.new(options);check(damaged:load());check(damaged.edits.blocked);eq(#damaged.records,1370)
 damaged.editAction={kind='save',group='radio',item={title='Нельзя затереть файл',meaning='Тест'}};damaged:tick()
 check(not damaged.editResult.ok);eq(files['kb_edits.json'],'{damaged')
 damaged.editCandidate=edits.defaults();damaged.editAction={kind='import'};damaged:tick();check(damaged.editResult.ok)
@@ -105,7 +105,7 @@ check(not damaged.edits.blocked);eq(files['kb_edits.json.rejected'],'{damaged')
 local invalid=edits.defaults();invalid.next_id=2
 invalid.entries['commands:local-000001']={kind='custom',group='commands',id='local-000001',updated_at='now',item={id='local-000001',title='Команда без названия',rp_required=true}}
 damaged.editCandidate=invalid;damaged.editAction={kind='import'};damaged:tick();check(damaged.editResult.ok)
-eq(#damaged.detachedEdits,1);eq(damaged.detachedEdits[1].status,'invalid');eq(#damaged.records,1318)
+eq(#damaged.detachedEdits,1);eq(damaged.detachedEdits[1].status,'invalid');eq(#damaged.records,1370)
 local v=model.copy(damaged.byKey['drafts:rights'].item);v.steps={{type='speech',text='Моя реплика, а не цитата.'}}
 damaged.editAction={kind='save',key='drafts:rights',group='drafts',item=v,expected=damaged:editSnapshot('drafts:rights','drafts')};damaged:tick()
 check(damaged.editResult.ok)

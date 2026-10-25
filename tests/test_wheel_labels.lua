@@ -14,4 +14,36 @@ s.paused=true;s.step();check(not s.runtime.wheel);s.paused=false;s.down[0x58]=fa
 s.commands.pa26();s.step();s.page('settings');s.click='Доступ##settings-tab-options';s.render()
 s.edits={['##Категория 1##wheel-name-citizen']='Свои обращения'};s.render();s.edits={};s.step(650)
 eq(s.workspace.library.settings.wheel_names.citizen,'Свои обращения');eq(wheel.build(s.workspace.library,1).byCategory.citizen.name,'Свои обращения')
+-- The editor and the category's More/search heading share saved custom names.
+-- IDs and compact-profile folding remain stable when captions are renamed.
+local names=s.workspace.library.settings.wheel_names
+names.service='Радиосвязь';names.documents='Документы отдела';names.frisk='Проверки';names.custom='Мои действия'
+local choices=wheel.categoryChoices(names)
+eq(choices[1][1],'auto');eq(choices[1][2],'По категории бинда')
+eq(#choices,9)
+for i,id in ipairs(wheel.profiles.full)do eq(choices[i+1][1],id);eq(choices[i+1][2],wheel.categoryName(id,names))end
+eq(wheel.categoryName('citizen',names),'Свои обращения')
+eq(wheel.categoryName('documents',names),'Документы отдела')
+eq(wheel.categoryName('service',{service=''}),'Служба')
+eq(wheel.categoryName('service',{service='   '}),'Служба')
+names.citizen='Одинаково';names.service='Одинаково'
+choices=wheel.categoryChoices(names);eq(choices[2][1],'citizen');eq(choices[7][1],'service');eq(choices[2][2],choices[7][2])
+names.citizen='Свои обращения';names.service='Радиосвязь'
+s.page('binds');local studio=s.workspace.studio;studio:select(1);studio.editorTab='general'
+local rendered;local originalChoice=studio.choice
+studio.choice=function(self,label,value,items,ui)
+    if label=='Категория колеса##bind-wheel-group'then rendered=items end
+    return originalChoice(self,label,value,items,ui)
+end
+s.render();check(rendered);eq(rendered[2][2],'Свои обращения');eq(rendered[7][2],'Радиосвязь')
+s.combo='##Категория колеса##bind-wheel-group'
+s.click='Радиосвязь##Категория колеса##bind-wheel-groupservice';s.render();s.combo=nil
+eq(s.click,nil);eq(studio.draft.wheel_group,'service')
+-- A settings save/reload changes captions without touching the binding draft.
+local reloaded=model.copy(s.workspace.library);reloaded.settings.wheel_names.service='Связь экипажа'
+s.workspace.library=reloaded;studio:setLibrary(reloaded);s.render();eq(rendered[7][2],'Связь экипажа');eq(studio.draft.wheel_group,'service')
+onScriptTerminate(s.script)
+s=fixture({demo=false,library=reloaded});s.step();s.commands.pa26quick();s.step()
+studio=s.workspace.studio;studio.quickWheelCategory='service';s.drawnText={};s.render()
+check(table.concat(s.drawnText,'\n'):find('Колесо → Связь экипажа',1,true),table.concat(s.drawnText,' | '))
 check(not s.hasLog('Ошибка интерфейса'));onScriptTerminate(s.script)

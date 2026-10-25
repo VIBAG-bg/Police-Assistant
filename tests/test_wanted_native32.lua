@@ -40,7 +40,7 @@ local cb={caseBegin=function(k)return c:begin(k)end,caseBranch=function(f)return
     caseTemplatePreview=function(t,f)return c:templatePreview(t,f)end,casePreview=function(f)return c:preview(f)end}
 setmetatable(cb,{__index=function()return function()error('Native QA must not execute actions')end end})
 local data={caseForms={reminders={{token='native-reminder',player_id=37,player_name=target.name,session='native-test',
-    reason='01.01 · Нападение / Нападение на гражданина',context=prefs.oocNotes.pt,stars=1,status='check'}}}}
+    reason='01.01 · Нападение / Нападение на гражданина',context=prefs.oocNotes.tracking,stars=1,status='check'}}}}
 local detachedNow=false
 local widthNow,pageNow,frameNow;local seen={};local modalCount=0
 for _,name in ipairs({'InputInt','InputText','InputTextMultiline','Button'})do
@@ -75,8 +75,8 @@ local function form(page)
     local f=assert(c:begin(page=='list'and'wanted_list'or'wanted'))
     f.life_ack=true;f.passport_seen='no';f.mask='no';f.appearance='синяя куртка, известные приметы';f.reason_id='08.01';f.facts='Законное требование в текущей ситуации.'
     if page=='passport'then f.passport_seen='yes';f.ic_name='John Smith';f.passport_number='12345'
-    elseif page=='mask'then f.mask='yes';f.face_before='yes'
-    elseif page=='ooc'then f.mode='ooc';f.ooc_ack=true;f.ooc_reason='pt'
+    elseif page=='mask'or page=='mask_passport'then f.mask='yes';f.face_before='yes';if page=='mask_passport'then f.passport_seen='yes';f.ic_name='John Smith'end
+    elseif page=='ooc'or page=='phone'then f.mode='ooc';f.ooc_ack=true;f.ooc_reason='tracking';f.phone_known='yes';f.phone_number='555123';f.phone_source='Владелец сообщил по RP.'
     elseif page=='basis'then f.stage='basis'
     elseif page=='appearance_choice'or page=='appearance_input'then f.stage=page
     elseif page=='preview'or page=='final'then f.stage='preview';f.inVehicle=true;state.inVehicle=true;c:tick(state,1000)end
@@ -139,10 +139,13 @@ local detached=require 'pa26_wanted_window';local geometry=require 'pa26_menu'
 detachedNow=true
 for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
     guiIo.DisplaySize=im.ImVec2(display[1],display[2]);local rect=geometry.windowRect(display[1],display[2],'wanted')
-    for _,page in ipairs({'identity','passport','mask','ooc','basis','preview','details','passport_edit'})do
+    for _,page in ipairs({'identity','passport','mask','mask_passport','mask_details','mask_passport_details','ooc','ooc_details','phone','basis','preview','details','passport_edit'})do
         pageNow='detached-'..page;widthNow=rect.width;state.inVehicle=false;c:tick(state,1000)
-        editor.caseForm=form(page=='details'and'basis'or page=='passport_edit'and'passport'or page);editor.caseKind='wanted'
+        local formPage=({details='basis',passport_edit='passport',mask_details='mask',mask_passport_details='mask_passport',ooc_details='ooc'})[page]or page
+        editor.caseForm=form(formPage);editor.caseKind='wanted'
         editor.caseConfirm=nil;editor.wantedAppearance=nil;editor.wantedIdentityPage=nil;editor.wantedPreviewPage=1
+        if page=='phone'then editor.wantedIdentityPage='phone'end
+        if page=='mask_details'or page=='mask_passport_details'or page=='ooc_details'then editor.wantedIdentityPage='details'end
         editor.wantedBasisDetails=page=='details';editor.wantedPassportEditor=page=='passport_edit'
         for frame=1,5 do
             frameNow=frame;im.NewFrame();im.PushStyleVarVec2(im.StyleVar.WindowPadding,im.ImVec2(18,18))

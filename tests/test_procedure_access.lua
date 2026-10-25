@@ -40,7 +40,7 @@ end
 local s=setup();route(s,'wanted');local st=s.workspace.studio
 check(st.caseForm);eq(st.caseForm.kind,'wanted');eq(st.caseForm.target.id,37);check(not s.workspace.executor.queue)
 click(s,'Нет##Вы видели паспорт этого человека?##wanted-passport_seenno')
-click(s,'Нет##На саспекте маска?##wanted-maskno')
+click(s,'Нет##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskno')
 s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
 click(s,'Далее · причина розыска##wanted-next');s.render();click(s,'С приметами##wanted-appearance-second');s.render()
 s.edits={['##Приметы##wanted-appearance-modal']='Сохраняемые приметы'};s.render();s.edits={}

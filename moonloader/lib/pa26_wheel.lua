@@ -26,7 +26,15 @@ function M.groupFor(binding,profile)
     if profile=='compact' and (group=='leadership' or group=='custom') then group='service' end
     return definitions[group] and group or 'service'
 end
-function M.categoryName(id) return definitions[id] and definitions[id].name or 'Категория' end
+function M.categoryName(id,names)
+    local name=type(names)=='table'and names[id]
+    return type(name)=='string'and name:find('%S')and name or definitions[id]and definitions[id].name or 'Категория'
+end
+function M.categoryChoices(names)
+    local out={{'auto','По категории бинда'}}
+    for _,id in ipairs(M.profiles.full)do out[#out+1]={id,M.categoryName(id,names)}end
+    return out
+end
 function M.procedureItems(lib)
     local cfg=lib.procedures;local out={}
     if not cfg then return out end
@@ -46,7 +54,8 @@ function M.build(lib,revision,includeAlerts,serviceState)
     local out={profile=profile,revision=revision or 0,categories={},byId={},byCategory={},bySystem={}}
     for _,id in ipairs(ids) do
         local d=definitions[id];local custom=lib.settings.wheel_names and lib.settings.wheel_names[id]
-        local cat={id=id,name=custom or d.name,label=custom or d.label or d.name,items={}}
+        local name=M.categoryName(id,lib.settings.wheel_names)
+        local cat={id=id,name=name,label=custom and custom:find('%S')and name or d.label or name,items={}}
         out.categories[#out.categories+1]=cat; out.byCategory[id]=cat
     end
     if includeAlerts and lib.alerts and lib.alerts.enabled and lib.alerts.on_duty then

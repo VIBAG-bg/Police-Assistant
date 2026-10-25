@@ -80,8 +80,8 @@ eq(notes[1].text,'Моё отдельное пояснение EPD');eq(notes[2]
 eq(#s.sent,0);check(not s.hasLog('Ошибка интерфейса'));eq(#s.scopes,0)
 -- An ordinary detail outside the new department is cleared, without sending.
 s=fixture();s.step();s.page('knowledge')
-s.edits={['##kb-search']='Академия FBI и допуск к оперативной работе'};s.render();s.edits={};s.render()
 local academy=k.byKey['rules:fbi_academy']
+s.edits={['##kb-search']=academy.title};s.render();s.edits={};s.render()
 s.click=academy.title..'\n'..knowledge.status(academy)..'##kb-row-'..academy.key;s.render();s.render();eq(s.click,nil)
 s.drawnText={};s.click='EPD##kb-choice-ВедомствоEPD';s.render();eq(s.click,nil)
 local visible=table.concat(s.drawnText,'\n');check(visible:find('Выберите запись слева',1,true));check(not visible:find('Пункт 8.4',1,true))

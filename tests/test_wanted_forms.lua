@@ -43,7 +43,8 @@ for gi,items in ipairs(expected)do for item,stars in ipairs(items)do
 end end
 local c,s=fixture();local f=s.form();f.life_ack=false;check(not c:preview(f));f.life_ack=true
 f.mask='unknown';f.passport_seen='yes';f.ic_name='John Smith';check(not c:branch(f),'Mask question remains explicit')
-f.mask='yes';eq(c:branch(f),'passport');f.passport_seen='no';f.face_before='no';check(not c:branch(f));f.face_before='yes';eq(c:branch(f),'appearance')
+f.mask='yes';check(not c:branch(f),'A previous passport is insufficient after losing sight behind an RP mask')
+f.face_before='yes';eq(c:branch(f),'passport');f.passport_seen='no';f.face_before='no';check(not c:branch(f));f.face_before='yes';eq(c:branch(f),'appearance')
 f.reason_id='1.1';check(not c:preview(f));f.reason_id='04.03';check(c:preview(f).gameReason.mapping_status:find('не найдено',1,true))
 f.appearance='синяя\nкуртка';eq(c:preview(f).values.appearance,'синяя куртка')
 for _,change in ipairs({'stamp','target','ped','session','inVehicle','demo','alive','cfg','identity'})do
@@ -62,7 +63,18 @@ c,s=fixture();s.cfg.wanted_send_mode='menu';f=s.form();p=s.prepare(f);eq(s.finis
 c,s=fixture();s.target=nil;f=s.form('wanted_list');p=s.prepare(f);eq(s.finish(p).lines[1],'/wanted');eq(#c.reminders,0)
 c,s=fixture();s.state.inVehicle=nil;s.tick();check(not c:begin('wanted'),'Do not guess unavailable device context')
 c,s=fixture();s.state.inVehicle=true;s.tick();f=s.form();p=c:preview(f);check(p.lines[1]:find('бортовому',1,true));check(not table.concat(p.lines):find('КПК',1,true))
-c,s=fixture();f=s.form();f.mode='ooc';check(not c:preview(f));f.ooc_ack=true;f.ooc_reason='invalid';check(not c:preview(f));f.ooc_reason='pt'
+c,s=fixture();f=s.form();f.mode='ooc';check(not c:preview(f));f.ooc_ack=true
+for _,retired in ipairs({'invalid','pt','arrest','dm'})do f.ooc_reason=retired;check(not c:preview(f),'Retired OOC purpose must be blocked: '..retired)end
+f.ooc_reason='tracking';check(not c:preview(f),'IC phone/source required even after explicit acknowledgement')
+f.phone_known='yes';f.phone_number='555123';f.phone_source='Паспорт и разговор в текущей ситуации.'
+for _,key in ipairs({'phone_number','phone_source'})do
+    local saved=f[key]
+    for _,bad in ipairs({'','   ','bad\n/r spam'})do f[key]=bad;check(not c:preview(f),'Invalid tracking evidence must be blocked')end
+    f[key]=saved
+end
+local phonePreview=assert(c:preview(f));eq(phonePreview.values.phone_number,'555123')
+eq(phonePreview.values.phone_source,'Паспорт и разговор в текущей ситуации.')
+check(table.concat(phonePreview.lines,'\n'):find('555123',1,true),'Editable tracking RP receives the IC phone variable')
 p=s.prepare(f);eq(#c.reminders,0);s.finish(p);eq(#c.reminders,1);eq(c.reminders[1].status,'check','Sending does not prove stars were issued')
 c:flush();eq(#s.saved,1);check(prefs.validateReminders(s.saved));local token=c.reminders[1].token
 check(c:changeReminder(token,'issued'));s.saveError=true;c:flush();check(c.remindersDirty);s.saveError=false;s.tick(10001);c:flush();eq(s.saved[1].status,'issued')
@@ -70,7 +82,7 @@ s.tick(s.cfg.wanted_reminder_delay_ms);local candidates=c:candidates();eq(#candi
 c:shownReminder(token);check(c:decideReminder(token,false));eq(#c:candidates(),0);s.tick(s.cfg.wanted_reminder_snooze_ms);eq(#c:candidates(),1)
 c:shownReminder(token);s.tick(251);check(not c:decideReminder(token,true),'No stale clicks');c:shownReminder(token);check(c:decideReminder(token,true));check(c.reviewReminders)
 check(c:changeReminder(token,'resolved'));c:flush();eq(#s.saved,0);eq(#s.plans,2,'Reminder actions never send commands')
-c,s=fixture();s.state.demo=true;s.tick();f=s.form();f.mode='ooc';f.ooc_ack=true;p=s.prepare(f);s.finish(p);eq(#c.reminders,0,'Demo does not create real obligations')
+c,s=fixture();s.state.demo=true;s.tick();f=s.form();f.mode='ooc';f.ooc_ack=true;f.phone_known='yes';f.phone_number='555123';f.phone_source='Назван владельцем по RP.';p=s.prepare(f);s.finish(p);eq(#c.reminders,0,'Demo does not create real obligations')
 local cfg=prefs.defaults();cfg.wanted_direct_command='/su {id} {amount} {basis}';check(not prefs.validate(cfg))
 cfg=prefs.defaults();cfg.wanted_command='/su {id} {amount} {basis}';cfg.wanted_verified=true;cfg.wanted_source='Legacy personal syntax';check(prefs.validate(cfg),'Preserve a legacy field without using it')
 local lib=model.defaults(require('pa26_core').defaults());lib.wanted_reminders=s.saved;check(model.validate(lib));lib.wanted_reminders={{token='bad'}};check(not model.validate(lib))

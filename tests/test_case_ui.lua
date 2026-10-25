@@ -10,7 +10,7 @@ local function setup(demo)
 end
 local function appearance(s)
     click(s,'Новая форма##case-new');s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
-    click(s,'Нет##На саспекте маска?##wanted-maskno')
+    click(s,'Нет##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskno')
     click(s,'Нет##Вы видели паспорт этого человека?##wanted-passport_seenno')
     click(s,'Далее · причина розыска##wanted-next')
     s.render();click(s,'С приметами##wanted-appearance-second');s.render()

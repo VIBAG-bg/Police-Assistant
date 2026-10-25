@@ -25,6 +25,15 @@ function M.draw(s,ui,data,cb)
     local narrow=im.GetWindowSize().y<650
     if f.stage~='identity'then s.wantedIdentityPage=nil;s.wantedPassportEditor=nil end
     if f.stage=='identity'then
+        if s.wantedIdentityPage=='phone'then
+            ui.text('Телефон для RP-пеленгации /setmark')
+            question(s,f,ui,'Номер телефона известен вашему персонажу по RP?','phone_known')
+            f.phone_number=s:field('IC-номер телефона##wanted-phone_number','wanted-form:'..f.id..':phone_number',f.phone_number,512)
+            f.phone_source=s:field('Откуда известен номер по RP##wanted-phone_source','wanted-form:'..f.id..':phone_source',f.phone_source,512)
+            ui.text('Ник, ID и приметы не заменяют известный IC-телефон.')
+            if s:button('Готово · к условиям##wanted-phone-edit-back',ui)then s.wantedIdentityPage=narrow and 'details'or nil end
+            return
+        end
         if s.wantedPassportEditor then
             ui.text('Уточнение подтверждённых паспортных данных')
             f.ic_name=s:field('Имя и фамилия##wanted-ic_name','wanted-form:'..f.id..':ic_name',f.ic_name,512)
@@ -37,7 +46,7 @@ function M.draw(s,ui,data,cb)
             if cfg.wanted_require_life_ack then f.life_ack=s:check('Основание из текущей ситуации после последней смерти##wanted-life-ack',f.life_ack)end
             if cfg.allow_ooc then f.mode=s:choice('Ветка розыска##wanted-mode',f.mode,{{'ic','IC · данные или приметы'},{'ooc','OOC · системная механика'}},ui)end
             if f.mode=='ic'then
-                question(s,f,ui,'На саспекте маска?','mask')
+                question(s,f,ui,'На саспекте RP-маска: /mask и скрытое лицо?','mask')
                 question(s,f,ui,'Вы видели паспорт этого человека?','passport_seen')
                 if cb.caseFillWanted then cb.caseFillWanted(f)end
             end
@@ -46,15 +55,18 @@ function M.draw(s,ui,data,cb)
             if f.mode=='ooc'then
                 f.ooc_reason=s:choice('Для какой механики нужны звёзды##wanted-ooc-purpose',f.ooc_reason,prefs.oocReasons,ui)
                 ui.text(prefs.oocNotes[f.ooc_reason]or '')
-                f.ooc_ack=s:check('Проверил условия выбранной OOC-ситуации##wanted-ooc-ack',f.ooc_ack)
-            elseif f.passport_seen=='yes'then
-                ui.text('Паспорт подтверждён: '..f.ic_name..' · № '..f.passport_number)
-                if s:button('Уточнить имя или номер##wanted-passport-edit',ui)then s.wantedPassportEditor=true end
-            elseif f.passport_seen=='no'and f.mask=='yes'then
-                question(s,f,ui,'Вы видели лицо до маски в этой RP-ситуации?','face_before')
+                ui.text(f.phone_known=='yes'and f.phone_number~=''and ('IC-телефон: '..f.phone_number)or 'IC-телефон пока не указан.')
+                if s:button('Телефон для RP-пеленгации##wanted-phone-edit',ui)then s.wantedIdentityPage='phone'end
+                f.ooc_ack=s:check('Телефон включён; RP-пеленгация; звёзды сниму сразу##wanted-ooc-ack',f.ooc_ack)
+            else
+                if f.mask=='yes'then question(s,f,ui,'Личность установлена до RP-маски и с тех пор не теряли человека из виду?','face_before')end
+                if f.passport_seen=='yes'then
+                    ui.text('Паспорт подтверждён: '..f.ic_name..' · № '..f.passport_number)
+                    if s:button('Уточнить имя или номер##wanted-passport-edit',ui)then s.wantedPassportEditor=true end
+                end
             end
             if f.mode=='ic'and cb.caseSuggestOoc and cb.caseSuggestOoc(f)then
-                ui.text('Личность не установлена. Можно выбрать допустимую OOC-механику с напоминанием о снятии звёзд.')
+                ui.text('IC-личность не установлена. OOC доступен только для RP-пеленгации /setmark.')
                 if s:button('Перейти к OOC-звёздам##wanted-use-ooc',ui)then local ok,why=cb.caseChooseOoc(f);if not ok then notify(s,why)end end
             end
         end
@@ -62,10 +74,10 @@ function M.draw(s,ui,data,cb)
             ui.text('Паспорт: '..f.ic_name..' · № '..f.passport_number)
             if s:button('Уточнить имя или номер##wanted-passport-edit',ui)then s.wantedPassportEditor=true end
         end
-        if narrow and not details and(f.mode=='ooc'or f.mask=='yes'and f.passport_seen=='no')then
+        if narrow and not details and(f.mode=='ooc'or f.mask=='yes')then
             if s:button('Далее · уточнение сведений##wanted-identity-details',ui)then s.wantedIdentityPage='details'end
         else
-            local _,why=cb.caseBranch(f);if why then ui.text(why)end
+            local _,why=cb.caseBranch(f);if why and not narrow then ui.text(why)end
             if s:button('Далее · причина розыска##wanted-next',ui)then nextIdentity(s,f,cb)end
             if details and s:button('Назад · вопросы##wanted-identity-back',ui)then s.wantedIdentityPage=nil end
         end

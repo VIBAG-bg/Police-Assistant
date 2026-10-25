@@ -12,7 +12,7 @@ local now=0
 files.bundle=TEST_KNOWLEDGE_JSON;files.policy=TEST_KNOWLEDGE_POLICY_JSON
 local options={json={encode=function(v)return TEST_JSON_ENCODE(v)end,decode=function(v)return TEST_JSON_DECODE(v)end},fs=fs,path='active',bundle='bundle',
     policyPath='policy',personalPath='kb_personal.json',now=function()return now end}
-local k=M.new(options);check(k:load());eq(#k.records,1318)
+local k=M.new(options);check(k:load());eq(#k.records,1370)
 for _,r in ipairs(k.records)do
     check(type(r.key)=='string');check(type(M.status(r))=='string')
     for _,l in ipairs(k:detail(r))do check(type(l.text)=='string');check(type(l.label)=='string')end

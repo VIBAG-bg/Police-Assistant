@@ -275,7 +275,7 @@ function View:drawMaintenance(ui)
     im.Separator()
     local department,changed=self:choice(ui,'Приоритет ведомства',k.personal.department,{{'EPD','EPD'},{'FBI','FBI'},{'Alcatraz','Alcatraz'}})
     if changed then k:department(department)end
-    self:muted(ui,'База обновляется отдельно от кода PA. Онлайн-канал GitHub ещё не настроен.')
+    self:muted(ui,'Свежая база поставляется в пакете обновления PA из GitHub. Существующая активная база сохраняется до вашего отдельного подтверждения ниже.')
     if self:button(ui,'Посмотреть базу из обновления PA##kb-bundle')then k.action='preview_bundle'end
     self:muted(ui,'Сначала покажем версию базы, входящей в установленную сборку PA. Применение требует отдельного ДА; личные карточки, заметки и значения сохраняются.')
     self:muted(ui,'Для импорта положите готовый JSON в config/police_assistant_2026_knowledge_import.json.')

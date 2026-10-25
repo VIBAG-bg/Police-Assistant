@@ -7,7 +7,19 @@ local function joined(lines)
     local values={};for _,line in ipairs(lines)do values[#values+1]=line.label..' '..line.text end
     return table.concat(values,'\n')
 end
-eq(#raw.sources,68);eq(#raw.articles,987)
+eq(#raw.sources,93);eq(#raw.articles,987)
+eq(#raw.rules,111);eq(raw.catalog_version,'erp-20261025-epd-fbi-reviewed')
+eq(raw.forum_update.public_pages_read,189);eq(raw.forum_update.password_boundaries,4)
+for _,sid in ipairs({'355','358'})do eq(k.sources[sid].verification_status,'needs_review');eq(k.sources[sid].interpretation_status,'previous_snapshot_only')end
+local ooc=k.byKey['rules:wanted_ooc'].item
+check(ooc.text:find('исключительно для /setmark',1,true));check(ooc.text:find('сразу после',1,true))
+local mask=k.byKey['rules:rp_mask'].item
+check(mask.text:find('одновременно',1,true));check(mask.text:find('без потери человека из виду',1,true))
+for _,note in ipairs(k.byKey['rules:wanted_ic'].item.department_notes)do check(note.text:find('непрерывной видимости',1,true))end
+check(k.byKey['rules:epd_rank_current'].item.text:find('с 4 ранга',1,true))
+check(k.byKey['rules:epd_roles'].item.text:find('SWAT',1,true))
+check(k.byKey['rules:fbi_academy'].item.text:find('24 IC-месяца',1,true))
+check(k.byKey['rules:fbi_academy'].item.verification_status=='conflict_pending')
 local archived,current=0,0
 for _,row in ipairs(k.records)do if row.group=='articles'then
     if k:isArchived(row)then archived=archived+1 else current=current+1 end

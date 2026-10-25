@@ -114,10 +114,14 @@ function M.form(s,ui,data,cb,cfg)
         if f.mode=='ooc'then
             f.ooc_reason=s:choice('Для какой механики нужны звёзды##wanted-ooc-purpose',f.ooc_reason,prefs.oocReasons,ui)
             ui.text(prefs.oocNotes[f.ooc_reason]or '')
-            ui.text('Это не IC-обвинение и не способ узнать личность по нику. После своей смерти и для личных целей выдача запрещена.')
-            f.ooc_ack=s:check('Проверил условия выбранной OOC-ситуации##wanted-ooc-ack',f.ooc_ack)
+            ui.text('Это не IC-обвинение. Маска сама по себе не разрешает OOC-звёзды. Для /pt и Alcatraz они запрещены. После смерти в той же ситуации и для личных целей выдача запрещена.')
+            question(s,f,ui,'Номер телефона известен вашему персонажу по RP?','phone_known')
+            if f.phone_known=='yes'then field(s,f,'IC-номер телефона','phone_number',512);field(s,f,'Откуда известен номер по RP','phone_source',512)end
+            f.ooc_ack=s:check('Проверил RP-пеленгацию, телефон включён, сниму звёзды сразу после неё##wanted-ooc-ack',f.ooc_ack)
         else
-            question(s,f,ui,'На саспекте маска?','mask')
+            question(s,f,ui,'На саспекте RP-маска: /mask и скрытое лицо?','mask')
+            ui.text('RP-маска требует обоих условий. Только серый цвет /mask или только аксессуар — NonRP-маска, не мешающая фотороботу (14.1–14.3). Ник и TAB не устанавливают IC-личность.')
+            if f.mask=='yes'then question(s,f,ui,'Личность установлена до RP-маски и с тех пор не теряли человека из виду?','face_before')end
             question(s,f,ui,'Вы видели паспорт этого человека?','passport_seen')
             if cb.caseFillWanted then cb.caseFillWanted(f)end
             if f.passport_seen=='yes'then
@@ -128,10 +132,9 @@ function M.form(s,ui,data,cb,cfg)
                     field(s,f,'Номер паспорта · если известен','passport_number',512)
                 end
             elseif f.passport_seen=='no'then
-                if f.mask=='yes'then question(s,f,ui,'Вы видели лицо до маски в этой RP-ситуации?','face_before')end
                 ui.text('На следующем шаге выберите «Общая» или «С приметами». Во втором случае откроется отдельное окно ввода; ранее записанные в PA приметы будут подставлены.')
                 if cb.caseSuggestOoc and cb.caseSuggestOoc(f)then
-                    ui.text('Маска есть, паспорт не видели, лицо до маски не подтверждено. Можно выбрать допустимые OOC-звёзды для нужной механики с напоминанием о снятии.')
+                    ui.text('RP-маска мешает IC-идентификации. OOC-ветка возможна только для /setmark при известном IC-номере и RP-пеленгации, а не для /pt или ареста. На следующем шаге нужно подтвердить эти условия.')
                     if s:button('Перейти к OOC-звёздам##wanted-use-ooc',ui)then local ok,why=cb.caseChooseOoc(f);if not ok then error(s,why)end end
                 end
             end

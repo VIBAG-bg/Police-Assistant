@@ -654,8 +654,7 @@ function Studio:drawEditorBody(ui,data,callbacks)
         if f[1]=='no_accent'then self:tooltip(ui,'Подставлять пустое значение вместо {accent} в этом сценарии. Для предупреждения об оружии такая же настройка есть рядом с его текстом.')end
     end
     b.wheel_group,changed=self:choice('Категория колеса##bind-wheel-group',b.wheel_group or 'auto',
-        {{'auto','По категории бинда'},{'citizen','Гражданин'},{'documents','Документы'},{'detention','Задержание'},
-        {'frisk','Досмотр'},{'wanted','Розыск и штрафы'},{'service','Служба'},{'leadership','Руководство'},{'custom','Свои бинды'}},ui)
+        wheelModel.categoryChoices(self.lib.settings.wheel_names),ui)
     if changed then self.dirty=true; self.plan=nil end
     ui.text('Клавиша: '..model.shortcutName(b.shortcut))
     if im.Button('Записать сочетание##bindkey') then callbacks.capture({kind='binding',id=b.id}) end
@@ -888,7 +887,7 @@ function Studio:drawQuick(ui,data,callbacks)
         return
     end
     if self.quickWheelCategory then
-        ui.text('Колесо → '..wheelModel.categoryName(self.quickWheelCategory))
+        ui.text('Колесо → '..wheelModel.categoryName(self.quickWheelCategory,self.lib.settings.wheel_names))
         if self:button('Все бинды быстрого меню##quick-wheel-clear',ui) then self.quickWheelCategory=nil; self.quickSelected=nil end
     end
     local query=self:field('Найти сценарий##quick','quickSearch',self.quickQuery,256); self.quickQuery=query

@@ -34,7 +34,8 @@ f.phone_known='unknown';check(not c:branch(f));f.phone_known='no';check(not c:br
 f.phone_source='';check(not c:branch(f));f.phone_source='Разговор';f.phone_number='';check(not c:branch(f))
 f.phone_number='555-0100';f.passport_seen='no';f.mask='yes';f.face_before='no';eq(c:branch(f),'ic','Phone provenance is separate from passport and face')
 f.mode='ooc';check(not c:branch(f));f.ooc_ack=true;eq(c:branch(f),'ooc')
-f.phone_known='no';f.phone_number='';f.phone_source='';p=assert(c:preview(f));check(not table.concat(p.lines,'\n'):find('Player_Name',1,true))
+f.phone_known='no';f.phone_number='';f.phone_source='';check(not c:preview(f),'OOC never bypasses RP phone provenance')
+f.phone_known='yes';f.phone_number='555-0100';f.phone_source='Разговор';p=assert(c:preview(f));check(not table.concat(p.lines,'\n'):find('Player_Name',1,true))
 s.cfg.allow_ooc=false;check(not c:preview(f))
 -- Phone as RP evidence and the technical command target are separate variables.
 for _,cmd in ipairs({'/setmark {id}','/setmark {phone_number}','/setmark'})do

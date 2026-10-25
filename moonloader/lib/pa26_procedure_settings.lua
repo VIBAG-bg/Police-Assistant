@@ -5,12 +5,8 @@ local M={}
 M.variables={id=true,amount=true,basis=true,article=true,part=true,ic_name=true,passport_number=true,appearance=true,phone_number=true,phone_source=true,
     device=true,game_reason=true,game_group=true,game_stars=true,game_category=true,game_item=true,ooc_purpose=true,facts=true}
 M.names={wanted='Розыск',wanted_list='Список преступников',fine='Штраф',mark='Пеленгация'}
-M.oocReasons={{'arrest','Для /arrest · пункт 6.9'},{'dm','DM-перестрелка против EPD/FBI · 6.10'},
-    {'pt','RP-погоня и /pt · пункт 6.11'},{'tracking','Отыгранная RP-пеленгация · 6.12, 6.15'}}
-M.oocNotes={arrest='Для механики /arrest с конкретным IC-основанием. Проверьте результат и порядок завершения процедуры.',
-    dm='При описанной регламентом DM-перестрелке. Если преступник скрылся, OOC-звёзды нужно снять.',
-    pt='Для /pt в RP-ситуации. После завершения ситуации OOC-звёзды обязательно снять.',
-    tracking='При отыгранной пеленгации по SIM-карте. Требуется последующее снятие OOC-звёзд.'}
+M.oocReasons={{'tracking','Только RP-пеленгация через /setmark · 6.9–6.17'}}
+M.oocNotes={tracking='Только для /setmark: известный по RP номер, включённый телефон и отыгранная пеленгация. Снять OOC-звёзды сразу после завершения. Для /pt, Alcatraz и других механик OOC-звёзды запрещены (6.9–6.17, редакция 21.10.2026).'}
 M.rpFields={{'wanted_passport_rp','Розыск · установленное имя из паспорта'},{'wanted_appearance_rp','Розыск · известные приметы'},
     {'wanted_passport_number_rp','Розыск · дополнение с номером паспорта'},
     {'wanted_generic_appearance_rp','Розыск · общая отыгровка по приметам без ручного описания'},
@@ -33,7 +29,7 @@ function M.defaults()
         wanted_source='',fine_source='',mark_source='',
         wanted_passport_rp='/me сверил паспортные данные на имя {ic_name} и подготовил карточку ориентировки.\n/do В запросе диспетчеру указан повод: {game_reason}.',
         wanted_appearance_rp='/me зажал кнопку тангенты рации и передал диспетчеру известные приметы подозреваемого: {appearance}.',
-        wanted_ooc_rp='/me открыл служебный терминал и подготовил служебную запись по текущей ситуации.',
+        wanted_ooc_rp='/me ввёл известный номер {phone_number} в служебный терминал и запросил пеленгацию.\n/do В терминале отображается запрос на определение местоположения по сигналу телефона.',
         wanted_car_intro_rp='/me повернувшись к бортовому компьютеру, авторизовался в служебной базе и открыл карточку ориентировки.',
         wanted_foot_intro_rp='/me достал служебный КПК, активировал защищённый терминал и открыл карточку ориентировки.',
         wanted_list_rp='/me открыв {device}, просмотрел список разыскиваемых.',

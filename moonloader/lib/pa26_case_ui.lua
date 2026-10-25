@@ -86,10 +86,10 @@ function M.draw(studio,ui,data,callbacks)
                         {{'ic','IC · по RP-данным'},{'ooc',f.kind=='mark'and 'OOC · отдельная процедура'or 'OOC · функциональные звёзды'}},ui)
                 end
                 if f.mode=='ooc'then
-                    ui.text('Этот режим сам по себе не устанавливает личность персонажа и не объясняет, откуда известен номер телефона. Используйте его только в ситуации, разрешённой правилами сервера.')
+                    ui.text('OOC-звёзды разрешены только для RP-пеленгации /setmark: нужен известный по RP номер и включённый телефон. Снимите звёзды сразу после пеленгации. Ник, ID и приметы не заменяют номер (6.9–6.17).')
                     f.ooc_ack=studio:check('Понимаю, что выбираю отдельную OOC-механику##case-ooc-ack',f.ooc_ack)
-                    if f.kind=='mark'then field('Номер для команды · только если нужен её синтаксису','phone_number',512,false)end
-                elseif f.kind=='mark'then
+                end
+                if f.kind=='mark'then
                     question('Номер известен вашему персонажу?', 'phone_known')
                     field('Известный IC-номер телефона','phone_number',512,false)
                     field('Откуда персонажу известен номер','phone_source',512,false)
