@@ -1,0 +1,54 @@
+# Разработка и выпуск
+
+[← На главную](../README.md) · [Проверки](VALIDATION.md)
+
+## Структура
+
+```text
+moonloader/
+  police_assistant_2026.lua   — точка входа
+  pa26_guard.lua              — контроль восстановления
+  lib/pa26_*.lua              — модели, контроллеры, UI, хранение
+  resource/pa26/              — ресурсы, правила, каталог, update worker
+  config/                    — только стартовый INI в репозитории
+cef/assets/hud/               — собственные CEF-адаптеры PA
+docs/                         — руководство и иллюстрации
+tests/                        — воспроизводимые изолированные проверки
+tools/                        — проверка и сборка дистрибутива
+```
+
+## Проверки
+
+В отдельном Python-окружении:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python tests/run_tests.py --report tests/RESULTS.json
+node tests/test_cef_chat.js
+powershell -NoProfile -File tests/test_updater.ps1
+python tools/verify-package.py
+```
+
+Lua-тесты используют LuaJIT 2.1 через lupa и настоящую CP1251-конверсию, но подменяют игровой мир и API MoonLoader. Нативные тесты `*_native32.lua` требуют установленного клиента и запускаются отдельно через 32-битный PowerShell / `tests/support/run_game_lua32.ps1`. Они не запускают GTA. Серверная проверка является отдельной приёмкой.
+
+## Собрать архивы
+
+```powershell
+python tools/verify-package.py
+powershell -NoProfile -File tools/build-update.ps1
+python tools/build-distribution.py
+```
+
+`INSTALL_MANIFEST.json` фиксирует точные SHA-256 программных файлов. Его обновляют при осознанном изменении исходников, затем повторяют проверки; несовпадение нельзя просто игнорировать. Дистрибутив не берёт содержимое произвольного локального config и резервных копий.
+
+## Выпустить следующую версию
+
+1. Согласованно измени версию в главном Lua, `pa26_core.lua` и INSTALL_MANIFEST. Обнови CHANGELOG и контрольные суммы.
+2. Прогони проверки, собери установочный ZIP, `pa26-update.zip` и `SHA256SUMS.txt`. Проверь отсутствие личных файлов.
+3. Зафиксируй исходники в `main`. Создай тег `v<версия>` на проверенном коммите.
+4. В GitHub Releases приложи оба ZIP и SHA256SUMS. Стабильный канал требует версии без `-dev`/`-rc` и выпуска без отметки prerelease.
+5. Проверь опубликованные asset, GitHub digest и чтение релиза самим worker в изолированной папке.
+
+Обновляемый код не может менять неподвижный загрузчик `pa26_update_platform.lua` при протоколе 1. Смена формата хранения требует отдельной совместимой миграции. Существующие пользовательские значения всегда приоритетны.
+
+Не публикуй тестовые копии config, журналы, пути профиля Windows, DEPLOYED.json, резервные копии и содержимое Downloads. В коммитах используй публичный GitHub-идентификатор, а не личный email из профиля.

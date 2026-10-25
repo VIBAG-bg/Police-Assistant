@@ -1,0 +1,5 @@
+# Runtime SHA-256 is byte exact across Windows and GitHub checkouts.
+* -text
+*.png binary
+*.jpg binary
+*.zip binary

@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "department_priority": "EPD",
+  "origin": "user_decisions",
+  "decisions": [
+    {
+      "id": "taser_copy",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Предупреждение перед Taser нужно. Снимки EPD и FBI от 17.10.2026 совпадают и содержат это условие в пункте 5.2; прежнее расхождение устранено в источниках.",
+      "source_checked_on": "2026-10-17"
+    },
+    {
+      "id": "vehicle_fire",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Снимки обеих копий от 17.10.2026 указывают колёса и предварительное предупреждение. Остальные основания применения силы проверяются отдельно.",
+      "source_checked_on": "2026-10-17"
+    },
+    {
+      "id": "camera_360",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Выбранный принцип отыгрыша PA: обзор реальной нагрудной камеры, а не всевидящие 360°. Точный угол и модель устройства не установлены; это не новая норма сервера."
+    },
+    {
+      "id": "speed_edges",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Пока сохраняем опубликованные интервалы. В пограничной точке квалификацию игрок выбирает вручную; округление не решает пересечение условий."
+    },
+    {
+      "id": "rank_sergeant",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "В текущей теме указан срок Sergeant I → II в 2 дня. Это не автоматическое повышение: нужны действующие условия и решение руководства.",
+      "source_checked_on": "2026-10-17"
+    },
+    {
+      "id": "military_rank",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Уточнение принято к сведению. Соответствие требует источника и проверяется отдельно."
+    },
+    {
+      "id": "numbering",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Повторяющиеся номера сохраняем вместе с темой и разделом источника."
+    },
+    {
+      "id": "ten_force",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "10-66 сам по себе не разрешает силу. Нужны отдельные обстоятельства и условия регламента EPD."
+    },
+    {
+      "id": "pm_value",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Стоимость ПМ пока не установлена. Автоматического перевода в сумму штрафа нет."
+    },
+    {
+      "id": "game_arguments",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Аргументы, ранг, дальность и ответы команд проверяются в игре. Ручной шаблон не становится подтверждённым контрактом."
+    },
+    {
+      "id": "raid_clock",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Предположение о МСК не подтверждено. В 4.3 указано 14:00–22:00, а повтор 10.9 содержит другое окно. Время и применяемую редакцию проверяют вручную.",
+      "source_checked_on": "2026-10-17"
+    },
+    {
+      "id": "sentence_conversion",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Игровые минуты и звёзды будут добавлены после проверки. IC срок не переводится автоматически."
+    },
+    {
+      "id": "patrol_grid",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Официальные сектора найдём отдельно. Сейчас их координаты не выдумываем."
+    },
+    {
+      "id": "future_history",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Сведения о директорах не используются для принятия игровых решений."
+    },
+    {
+      "id": "report_interval",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Обязательный интервал источником не установлен. Игрок настраивает свой интервал PA."
+    },
+    {
+      "id": "ptd_cadence_unpublished",
+      "date": "2026-10-15",
+      "origin": "user_preference_or_acknowledgment",
+      "note": "Фиксированный интервал патрульных докладов не установлен; темы Patrol Division пока не содержат опубликованной процедуры."
+    }
+  ]
+}

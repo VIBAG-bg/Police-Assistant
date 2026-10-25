@@ -1,0 +1,41 @@
+{
+  "version": "0.38.0",
+  "checked_utc": "2026-10-25T18:49:13.441696+00:00",
+  "lua": {
+    "groups": 143,
+    "syntax_files": 236,
+    "checks": 8185259,
+    "status": "passed"
+  },
+  "cef_browser": {
+    "checks": 476,
+    "status": "passed"
+  },
+  "update_worker": {
+    "checks": 135,
+    "status": "passed"
+  },
+  "native_x86": {
+    "checks": 13,
+    "hidden_helper": true,
+    "unicode_paths": true,
+    "status": "passed"
+  },
+  "installer": {
+    "native": true,
+    "cef": true,
+    "repeat": true,
+    "rollback_after": [
+      1,
+      37,
+      89,
+      91
+    ],
+    "personal_files_preserved": true,
+    "status": "passed"
+  },
+  "bootstrap_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
+  "source_repository": "VIBAG-bg/Police-Assistant",
+  "game_launched": false,
+  "in_game_acceptance": "separate verification required"
+}

@@ -1,0 +1,27 @@
+local fixture=require 'support.fixture'
+local s=fixture();s.step();s.page('settings')
+s.click='Профиль##settings-tab-profile';s.render()
+s.edits={['RP-имя##profile']='Notice Officer'};s.render();s.step(650);s.render()
+local studio=s.workspace.studio
+check(not studio:hasWarning(),'background autosave stays silent')
+eq(s.savedLibrary().profile.name,'Notice Officer')
+local footer={};studio:drawNotice({text=function(v)footer[#footer+1]=v end});eq(#footer,0)
+s.page('binds');s.click='Файлы обмена##bind-files';s.render()
+check(studio:hasWarning());eq(studio:modalIntent({}).title,'Уведомление')
+local token=studio.feedback:peek().token;s.step(10000);eq(studio.feedback:peek().token,token)
+s.page('hints');check(studio:hasWarning(),'navigation cannot lose an unread result')
+s.ackInfo();check(not studio:hasWarning())
+-- Identical status values do not re-open every frame. They use a separate
+-- nonmodal window, not a line at the end of the currently open page.
+studio:observeStatus('patrol','Ожидает отправки.','patrol')
+local status=studio.statusInfo;check(status);check(not studio:hasModal())
+studio:observeStatus('patrol','Ожидает отправки.','patrol');eq(studio.statusInfo,status)
+s.render();check(s.windows['Состояние PA##pa26-status-info'])
+s.click='ОК##status-info-ok';s.render();check(not studio.statusInfo)
+studio:observeStatus('patrol','Ожидает отправки.','patrol');check(not studio.statusInfo)
+studio:observeStatus('patrol','Готово.','patrol');check(studio.statusInfo)
+studio:notify('Не удалось записать файл.','binds');s.render();check(studio:hasWarning())
+eq(studio:modalIntent({}).title,'Предупреждение')
+s.click='ОК##warning-ok';s.render();check(not studio:hasWarning())
+eq(#s.sent,0);eq(#s.scopes,0);check(not s.hasLog('Ошибка интерфейса'))
+onScriptTerminate(s.script)

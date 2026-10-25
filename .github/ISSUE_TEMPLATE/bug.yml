@@ -1,0 +1,23 @@
+name: Ошибка в PA
+description: Описать воспроизводимую проблему без личных данных
+title: "[Ошибка] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Версия PA
+      placeholder: "0.38.0"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги повторения
+      description: Что сделали, что ожидали и что произошло. Не прикладывайте приватные конфиги и полные журналы.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Условия и текст ошибки
+      description: Интерьер/улица, обычный или CEF-чат, деморежим, изменённые сочетания. Удалите личные сведения.

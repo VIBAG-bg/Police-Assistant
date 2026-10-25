@@ -1,0 +1,246 @@
+-- Streamed, visible vehicle only. Vehicle identity is independent of a player ID.
+local core=require 'pa26_core'
+local mapGrid=require 'pa26_map_grid'
+local model=require 'pa26_bindings'
+local settings=require 'pa26_vehicle_settings'
+local radio=require 'pa26_radio_text'
+local M={};local Vehicle={};Vehicle.__index=Vehicle
+local function same(a,b)return a and b and a.id==b.id and a.handle==b.handle and a.model_id==b.model_id and a.generation==b.generation end
+local function sceneSafe(s)return s and s.session and s.alive and s.focused and not s.paused and not s.blocked end
+local function safe(s)return sceneSafe(s)and s.onDuty and s.radioEnabled end
+local function megaphone(action)return action=='megaphone'or tostring(action):match('^megaphone_%d+$')~=nil end
+function M.needsTarget(action,cfg)
+    local slot=tonumber(tostring(action):match('^megaphone_(%d+)$'))
+    return not(slot and cfg.phrases[slot]and cfg.phrases[slot].target=='none')
+end
+local function allowed(action,cfg,s)
+    if not megaphone(action)then return cfg.enabled and safe(s)end
+    return cfg.megaphone_enabled and sceneSafe(s)and(not cfg.megaphone_require_duty or s.onDuty)and(not cfg.megaphone_require_radio or s.radioEnabled)
+end
+local function needsPatrol(action,cfg)return megaphone(action)and cfg.megaphone_require_patrol or not megaphone(action)and cfg.require_patrol end
+function M.compass(dx,dy,names)
+    if not core.finite(dx)or not core.finite(dy)or dx==0 and dy==0 then return end
+    local angle=math.deg(math.atan2(dx,dy))%360
+    return names[(math.floor((angle+22.5)/45)%8)+1]
+end
+function M.colors(c,cfg)
+    local palette=require 'pa26_vehicle_palette'
+    local function color(id)return cfg.color_aliases[tostring(id)]or palette[tostring(id)]or cfg.unknown_color end
+    local a,b=color(c.color1),color(c.color2)
+    return a==b and a or a..cfg.color_separator..b,a,b
+end
+function M.describe(c,cfg)
+    local name=cfg.model_aliases[tostring(c.model_id)]or c.model_name or cfg.unknown_model
+    local color,a,b=M.colors(c,cfg)
+    local values={model=name,model_id=tostring(c.model_id),vehicle_id=tostring(c.id),vehicle_color=color,color_one=a,color_two=b}
+    local missing
+    local description=cfg.description_template:gsub('{([a-z_]+)}',function(k)if not values[k]then missing=k;return ''end;return values[k]end)
+    if missing then return nil,'Описание машины: используйте {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}.'end
+    values.vehicle_description=description;return values
+end
+function M.new(env)return setmetatable({env=env,life=1,targetLife=1,serial=0,candidates={},generations={}},Vehicle)end
+function Vehicle:cancel(reason)
+    local p=self.queued;self.queued=nil;self.intent=nil
+    if p and self.env.cancel then self.env.cancel(p.token,reason)end
+    self.message=reason
+end
+function Vehicle:reset(reason)
+    self:cancel(reason);self.life=self.life+1;self.selected=nil;self.candidates={};self.phase=nil;self.motion=nil;self.own=nil;self.scanAt=nil
+end
+function Vehicle:clearTarget(reason)
+    self.targetLife=self.targetLife+1
+    local p=self.queued or self.intent
+    if p and p.target then self:cancel(reason)end
+    self.selected=nil;self.candidates={};self.phase=nil;self.scanAt=nil
+    if not p or p.target then self.message=reason end
+end
+function Vehicle:invalidate(id)
+    if not core.finite(id)then return end
+    self.generations[id]=(self.generations[id]or 0)+1
+    if self.selected and self.selected.id==id then self:clearTarget('Выбранная машина выгружена или её ID выдан заново.')end
+    self.scanAt=nil
+end
+function Vehicle:decorate(c)
+    if not c or not core.finite(c.id)or not core.finite(c.handle)or not core.finite(c.model_id)then return end
+    c=model.copy(c);c.generation=self.generations[c.id]or 0;return c
+end
+function Vehicle:direction(s,now,cfg)
+    local car=self.env.ownCar and self.env.ownCar()
+    self.own=car;self.directionValue=cfg.stationary
+    if not cfg.direction_enabled or not car then self.motion=nil;return end
+    local old=self.motion;local age=old and core.elapsed(now,old.at)
+    if old and old.handle==car.handle and age and age>=cfg.motion_ms and age<=5000 then
+        local dx,dy=car.x-old.x,car.y-old.y;local distance=math.sqrt(dx*dx+dy*dy)
+        if distance>=cfg.stationary_distance and distance<=cfg.max_motion_distance then
+            self.directionValue=M.compass(dx,dy,cfg.directions)or cfg.stationary
+        end
+    elseif old and old.handle==car.handle and age and age<cfg.motion_ms then
+        self.directionValue=old.direction or cfg.stationary;return
+    end
+    self.motion={handle=car.handle,x=car.x,y=car.y,at=now,direction=self.directionValue}
+end
+function Vehicle:values(state,c)
+    local out=model.copy(state or self.state or {});local cfg=self.env.settings()
+    c=c or self.selected
+    for k,v in pairs(self.env.service and self.env.service()or {})do if out[k]==nil or out[k]==''then out[k]=v end end
+    out.direction=cfg.direction_enabled and(self.directionValue or cfg.stationary)or cfg.manual_direction
+    if c then local values,err=M.describe(c,cfg);if not values then return nil,err end;for k,v in pairs(values)do out[k]=v end end
+    return out
+end
+function Vehicle:periodic(base)
+    local cfg=self.env.settings();if not cfg.enabled or not self.phase then return base end
+    local out=model.copy(base)
+    out.session_key=(base.session_key or '')..':vehicle:'..self.phase..':'..tostring(self.selected and self.selected.id or '')
+    if self.phase=='10-55'then if cfg.pause_patrol_reports then out.enabled=false end;return out end
+    if self.phase=='Преследование'then
+        out.enabled=base.enabled and cfg.pursuit_periodic and self.selected~=nil
+        out.confirmation=cfg.pursuit_confirmation
+        for _,kind in ipairs({'police','prison'})do
+            out[kind..'_template']=cfg.pursuit_periodic_template;out[kind..'_channel']=cfg.channel;out[kind..'_interval_ms']=cfg.pursuit_interval_ms
+        end
+    end
+    return out
+end
+function M.preview(action,cfg,values,codec,split)
+    local slot=tonumber(tostring(action):match('^megaphone_(%d+)$'))
+    local phrase=slot and cfg.phrases and cfg.phrases[slot]
+    if slot and(not phrase or not phrase.enabled)then return nil,'Требование выключено или удалено.'end
+    local body=phrase and phrase.template or cfg[action..'_template'];if not body then return nil,'Неизвестное действие транспорта.'end
+    values=mapGrid.reportValues(values,body,not megaphone(action)and action~='approach'and action~='window')
+    local missing;body=body:gsub('{([a-z_]+)}',function(k)
+        local v=values[k];local tag=k=='local_tag'or k=='global_tag'or k=='prison_tag'
+        if v==nil and not tag or v==''and not tag then missing=k;return ''end
+        return tag and v and v~=''and tostring(v)..' 'or tostring(v or '')
+    end)
+    if missing then return nil,'Заполните поле: '..missing end
+    local channel=phrase and phrase.channel or action=='megaphone'and cfg.megaphone_channel or action=='approach'and '/me'or action=='window'and '/do'or cfg.channel
+    return radio.prepare(channel,body,codec,split,values.rpText,values.my_nick)
+end
+function Vehicle:phraseAllowed(action,cfg)
+    local slot=tonumber(tostring(action):match('^megaphone_(%d+)$'))
+    if not slot then return true end
+    local p=cfg.phrases and cfg.phrases[slot]
+    if not p or not p.enabled then return false end
+    return p.condition=='any'or p.condition=='vehicle'and self.own~=nil or p.condition=='foot'and self.own==nil or
+        p.condition=='stop'and self.phase=='10-55'or p.condition=='pursuit'and self.phase=='Преследование'
+end
+function Vehicle:proposalValid(p)
+    local cfg=self.env.settings();local s=self.state;local age=p and core.elapsed(self.now,p.at)
+    if not p or not allowed(p.action,cfg,s)or p.life~=self.life or p.session~=s.session or p.ped~=s.ped or p.demo~=s.demo or
+        not age or age>cfg.confirmation_ms or not self.env.equal(cfg,p.cfg)then return false end
+    local a=self.env.patrol and self.env.patrol()
+    if needsPatrol(p.action,cfg)and(not a or a.status~='active'or a.id~=p.patrol_id)then return false end
+    if not self:phraseAllowed(p.action,cfg)then return false end
+    if not p.started then
+        local values=self:values(s,p.target);if not values then return false end
+        local fresh=M.preview(p.action,cfg,values,self.env.codec,s.radioText)
+        if not fresh or radio.key(fresh)~=radio.key(p.prepared)then return false end
+    end
+    if not M.needsTarget(p.action,cfg)then return p.target==nil end
+    if p.targetLife~=self.targetLife or not same(self.selected,p.target)then return false end
+    if self.selected.color1~=p.target.color1 or self.selected.color2~=p.target.color2 then return false end
+    if(p.action=='approach'or p.action=='window')and(self.own or self.selected.distance>cfg.approach_distance)then return false end
+    return self.selected.distance<=cfg.retain_distance
+end
+function Vehicle:selectNearest()
+    local c=self.candidates[1]
+    if not c then return nil,'Рядом нет видимой машины. Повернитесь к нужному автомобилю или измените дальность выбора.'end
+    if not same(self.selected,c)then self:clearTarget('Выбрана другая машина.')end
+    self.selected=model.copy(c);return true
+end
+function Vehicle:selectCandidate(id)
+    local cfg=self.env.settings()
+    if not(cfg.enabled or cfg.megaphone_enabled)or not sceneSafe(self.state)then return nil,'Включите транспорт или мегафон; игра должна быть доступна.'end
+    for _,c in ipairs(self.candidates)do if c.id==id then
+        if not same(self.selected,c)then self:clearTarget('Выбрана другая машина.')end
+        self.selected=model.copy(c);return true
+    end end
+    return nil,'Машина больше не входит в список рядом.'
+end
+function Vehicle:propose(action,nearest)
+    local cfg=self.env.settings();local s=self.state
+    if not allowed(action,cfg,s)then
+        if megaphone(action)then return nil,'Мегафон недоступен. Включите его в «Помощники → Мегафон» и проверьте выбранные условия службы и рации.'end
+        return nil,'Включите транспорт, служебный режим и рацию.'
+    end
+    local a=self.env.patrol and self.env.patrol()
+    if needsPatrol(action,cfg)and(not a or a.status~='active')then return nil,'Сначала начните патруль или измените условие доступа в настройках этой функции.'end
+    if self.intent or self.queued then return nil,'Дождитесь текущего действия или отмените его.'end
+    if not self:phraseAllowed(action,cfg)then return nil,'Требование выключено или его условие сейчас не выполнено.'end
+    local targeted=M.needsTarget(action,cfg)
+    if nearest and targeted then local ok,err=self:selectNearest();if not ok then return nil,err end end
+    local c=targeted and self.selected or nil;if targeted and not c then return nil,'Сначала выберите машину или используйте общее объявление.'end
+    if(action=='approach'or action=='window')and(self.own or c.distance>cfg.approach_distance)then return nil,'Для этого действия выйдите из машины и подойдите к выбранному автомобилю.'end
+    local values,err=self:values(s,c);if not values then return nil,err end
+    if not targeted then for key in pairs(settings.vehicleFields)do values[key]=nil end end
+    local prepared;prepared,err=M.preview(action,cfg,values,self.env.codec,s.radioText)
+    if not prepared then return nil,err end
+    self.serial=self.serial+1
+    local p={token='vehicle:'..self.life..':'..self.serial,action=action,life=self.life,session=s.session,ped=s.ped,demo=s.demo,
+        at=self.now,target=c and model.copy(c)or nil,targetLife=targeted and self.targetLife or nil,cfg=model.copy(cfg),patrol_id=a and a.id or 0,prepared=prepared,description=values.vehicle_description}
+    local slot=tonumber(tostring(action):match('^megaphone_(%d+)$'));if slot then p.label=cfg.phrases[slot].name end
+    return p
+end
+function Vehicle:accept(p)
+    if self.intent or self.queued then return nil,'Действие транспорта уже ожидает отправки.'end
+    if not self:proposalValid(p)then return nil,'Условия, настройки или игровая сцена изменились. Подготовьте подтверждение заново.'end
+    self.intent=model.copy(p);return true
+end
+function Vehicle:validPlan(plan)
+    local p=self.queued
+    return p and plan.vehicleAction and plan.vehicleAction.token==p.token and self:proposalValid(p)and
+        not self.state.typing and not self.state.modal and radio.key(plan)==table.concat(p.prepared.wires,'\0')or false
+end
+function Vehicle:onExecution(kind,q)
+    local p=self.queued;if not p or not q.plan.vehicleAction or q.plan.vehicleAction.token~=p.token then return end
+    if kind=='sent_line'or kind=='preview_line'then p.started=true end
+    if kind=='completed'then
+        self.queued=nil
+        if p.action=='finish'then self.phase=nil elseif p.action=='traffic_stop'then self.phase='10-55'elseif p.action=='pursuit'then self.phase='Преследование'end
+        self.message=q.demo and 'Демо завершено · отправок нет.'or 'Все строки переданы клиенту. Ответ сервера определяет результат.'
+    elseif kind=='cancelled'then self.queued=nil;self.message='Действие прервано; оставшиеся строки отменены без повтора.'end
+end
+function Vehicle:tick(state,now)
+    local previous=self.state;local age=self.now and core.elapsed(now,self.now)
+    if previous and(not age or previous.session~=state.session or previous.ped~=state.ped or previous.alive~=state.alive or previous.demo~=state.demo)then self:reset('Игровая сцена изменилась.')end
+    self.state=model.copy(state);self.now=now;local cfg=self.env.settings()
+    if not state.session or not state.alive or not state.focused or state.paused or state.blocked then
+        self:cancel('Игра или ввод недоступны. Действие транспорта отменено.');self.motion=nil;self.directionValue=cfg.stationary;return
+    end
+    self:direction(state,now,cfg)
+    if not cfg.enabled and not cfg.megaphone_enabled then if self.selected or self.intent or self.queued then self:reset('Транспорт и мегафон отключены.')end;return end
+    local scanAge=self.scanAt and core.elapsed(now,self.scanAt)
+    if not scanAge or scanAge>=cfg.scan_ms then
+        self.scanAt=now;self.candidates={}
+        for _,c in ipairs(self.env.scan(cfg)or {})do local v=self:decorate(c);if v then self.candidates[#self.candidates+1]=v end end
+        table.sort(self.candidates,function(a,b)
+            if cfg.selection_ranking=='direction'and(a.angle or 181)~=(b.angle or 181)then return(a.angle or 181)<(b.angle or 181)end
+            if a.distance==b.distance then return a.id<b.id end;return a.distance<b.distance
+        end)
+        if self.selected then
+            local current=self:decorate(self.env.resolve(self.selected,cfg))
+            if not same(current,self.selected)or current.distance>cfg.retain_distance then self:clearTarget('Выбранная машина недоступна или слишком далеко.')
+            else self.selected=current end
+        end
+    end
+    local p=self.intent
+    if p then
+        if not self:proposalValid(p)then self:cancel('Подтверждение транспорта устарело.')
+        elseif not state.busy and not state.modal and not state.typing and not state.recording and not state.wheel and not state.alertPending then
+            self.intent=nil
+            local b=model.newBinding(999999993);b.name=(megaphone(p.action)and'Мегафон · 'or'Транспорт · ')..(p.label or p.action);b.category='Патруль';b.script=p.prepared.line
+            local plan={binding=b,requirements={target=false,closest=false},session=p.session,createdAt=now,demo=p.demo,has_command=true,
+                steps=model.copy(p.prepared.steps),lines=model.copy(p.prepared.lines),wire=model.copy(p.prepared.wires),rpSignature=p.prepared.rpSignature,textSignature=p.prepared.textSignature,
+                automatic={kind='vehicle_action'},vehicleAction={token=p.token}}
+            self.queued=p;local ok,err=self.env.start(plan)
+            if not ok then self.queued=nil;self.message='Не запущено: '..tostring(err)end
+        end
+    end
+end
+function Vehicle:view()
+    local candidates={};for i=1,math.min(8,#self.candidates)do candidates[i]=model.copy(self.candidates[i])end
+    return {selected=model.copy(self.selected),nearest=model.copy(self.candidates[1]),candidates=candidates,phase=self.phase,direction=self.directionValue,
+        selection_status=self.env.selectionStatus and self.env.selectionStatus()or nil,message=self.message,pending=self.intent~=nil or self.queued~=nil}
+end
+M.same=same
+return M

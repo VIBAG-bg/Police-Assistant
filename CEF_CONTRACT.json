@@ -1,0 +1,21 @@
+{
+  "observed_date": "2026-10-24",
+  "hud_main_sha256": "c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410",
+  "cef_client_sha256": "1c5053dc19369ee4c672ef1631e9d84bfc3cde9aecfbb415a064098508392994",
+  "outgoing_event": "HandleHudSendMessage",
+  "incoming_event": "chat:messages",
+  "input_id": "chatInputField",
+  "panel_id": "chatInput",
+  "local_asset_origin": "sampcef://assets",
+  "proprietary_assets_redistributed": false,
+  "primary_reference": "https://github.com/ZOTTCE/samp-cef/blob/master/client/src/browser/client.rs",
+  "keyboard_source": "Windows foreground game thread; GetKeyboardLayout + GetLocaleInfoW",
+  "keyboard_reference": "https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getkeyboardlayout",
+  "previous_cef_client_sha256": "9cf99622cdb8503a861f91a70249e2b4a3caf36d8ee194ca6337f113117091d6",
+  "large_asset_reader_limit": 1048576,
+  "bootstrap": "top-level PA initialization before first SA:MP wait",
+  "observed_client_update": "24.10 launcher main.js changed; outgoing HandleHudSendMessage, incoming chat:messages and DOM IDs reviewed. Actual send function plus real x86 LuaSocket loopback: 68 checks passed. Official assets unchanged.",
+  "manual_radio_prefix": "/r only; policy from Lua; explicit profile toggle; no accent or implicit bind rewriting",
+  "pa_text_splitting": "Prepared PA speech; 90 CP1251 body characters including accent, spaces and continuation markers. Native manual entry keeps its existing route.",
+  "previous_hud_main_sha256": "c6c6e2dfe9fd66e66c37ac6cbe4989166e87cbd6bbd38cd951e357b10003fc77"
+}

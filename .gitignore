@@ -1,0 +1,21 @@
+# Personal data never belongs in Git.
+moonloader/config/*
+!moonloader/config/police_assistant_2026.ini
+**/police_assistant_2026_*.json
+installation-backups/
+tests/install-sandbox/
+tests/update-sandbox/
+tests/*.json
+tests/.pa26-*
+*.log
+*.bak
+*.rollback
+*.pending
+*.pa26-*
+*.zip
+UPDATE_PACKAGE.json
+dist/
+.venv/
+__pycache__/
+.env
+.env.*

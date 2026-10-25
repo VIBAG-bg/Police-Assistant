@@ -1,0 +1,11 @@
+name: Предложить улучшение
+description: Описать полезный рабочий сценарий
+title: "[Идея] "
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Что хотите делать удобнее?
+      description: Опишите ситуацию, желаемое поведение и какие настройки понадобятся.
+    validations:
+      required: true

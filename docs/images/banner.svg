@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-label="Police Assistant — твой рабочий стол полицейского">
+<defs><linearGradient id="bg"><stop stop-color="#091420"/><stop offset="1" stop-color="#14384e"/></linearGradient><linearGradient id="accent"><stop stop-color="#31c5e9"/><stop offset="1" stop-color="#4c85fa"/></linearGradient><pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#6dd4ed" stroke-opacity=".055"/></pattern></defs>
+<rect width="1280" height="400" rx="24" fill="url(#bg)"/><rect width="1280" height="400" rx="24" fill="url(#grid)"/>
+<path d="M1100-50 1500 350 1260 590 860 190Z" fill="#46bae0" fill-opacity=".06"/>
+<g transform="translate(76 75)"><path d="M80 0 150 26V98c0 56-70 96-70 96S10 154 10 98V26Z" fill="#16445b" stroke="url(#accent)" stroke-width="5"/><path d="m80 47 12 27 30 3-23 20 7 29-26-16-26 16 7-29-23-20 30-3Z" fill="#72daf2"/></g>
+<text x="282" y="105" fill="#6dd7ee" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="600" letter-spacing="4">BY VIBAG · VICTOR AUDITORE</text>
+<text x="280" y="183" fill="#f0f7fc" font-family="Segoe UI,Arial,sans-serif" font-size="65" font-weight="700">Police Assistant</text>
+<text x="284" y="229" fill="#b5cbdc" font-family="Segoe UI,Arial,sans-serif" font-size="24">Твой рабочий стол полицейского</text>
+<path d="M284 264H1158" stroke="#8ad3f0" stroke-opacity=".18"/>
+<text x="284" y="309" fill="#9ac3d8" font-family="Segoe UI,Arial,sans-serif" font-size="18">RP-СЦЕНАРИИ</text><circle cx="459" cy="303" r="3" fill="#46c2e8"/>
+<text x="479" y="309" fill="#9ac3d8" font-family="Segoe UI,Arial,sans-serif" font-size="18">РОЗЫСК</text><circle cx="582" cy="303" r="3" fill="#46c2e8"/>
+<text x="602" y="309" fill="#9ac3d8" font-family="Segoe UI,Arial,sans-serif" font-size="18">ПАТРУЛЬ</text><circle cx="719" cy="303" r="3" fill="#46c2e8"/>
+<text x="739" y="309" fill="#9ac3d8" font-family="Segoe UI,Arial,sans-serif" font-size="18">ЗНАНИЯ</text>
+</svg>
