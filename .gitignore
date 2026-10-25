@@ -14,6 +14,9 @@ tests/.pa26-*
 *.pa26-*
 *.zip
 UPDATE_PACKAGE.json
+DEPLOYED.json
+INSTALLATION_REPORT.json
+PUBLICATION.json
 dist/
 .venv/
 __pycache__/
