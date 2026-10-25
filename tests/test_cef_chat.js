@@ -88,6 +88,11 @@ async function page(delayed=false) {
   const count=p.requests.length;p.api.endpoint('http://example.com/a');p.api.endpoint('http://127.0.0.1:65536/'+'b'.repeat(48)+'/exchange');await flush();eq(p.requests.length,count);
   p.type('/pa26demo');const sentBefore=p.sent.length;await p.enter();await p.exchange();eq(p.sent.length,sentBefore,'local PA command must never reach the game server');
   eq(p.observed.some(e=>e.kind==='local'&&e.text==='/pa26demo'),true);
+  for(const alias of ['add','cuff','ADD']) {
+    await p.config({localCommands:['pa26demo','add','cuff']});p.type('/'+alias+' 37');const beforeAlias=p.sent.length;
+    await p.enter();await p.exchange();eq(p.sent.length,beforeAlias,'configured short names are held locally on first submit');
+    eq(p.observed.some(e=>e.kind==='local'&&e.text==='/'+alias+' 37'),true);
+  }
   p.type('/tazer');await p.enter();await p.exchange();eq(p.sent.at(-1),['HandleHudSendMessage','/tazer']);eq(p.observed.some(e=>e.kind==='command'&&e.text==='/tazer'),true);
   // Another script's direct CEF emit has no manual-submit ticket and stays unchanged.
   p.root.cef.emit('HandleHudSendMessage','Автоматическая реплика.');eq(p.sent.at(-1)[1],'Автоматическая реплика.');

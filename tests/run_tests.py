@@ -121,6 +121,7 @@ test_names.extend(['test_manual_chat.lua','test_window_persistence.lua','test_wa
 test_names.extend(['test_editor0370.lua','test_manual_channels.lua'])
 test_names.extend(['test_interior_selection.lua','test_timing0372.lua'])
 test_names.append('test_updater.lua')
+test_names.extend(['test_manual_actions.lua','test_wheel_custom.lua'])
 parser.add_argument('--report')
 parser.add_argument('--only', nargs='+', choices=test_names)
 parser.add_argument('--keep-going', action='store_true', help='Collect failures from every test group; still exit with failure.')

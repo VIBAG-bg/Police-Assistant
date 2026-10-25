@@ -1,14 +1,14 @@
 {
-  "version": "0.38.1",
-  "checked_utc": "2026-10-25T20:05:30.080080+00:00",
+  "version": "0.39.0",
+  "checked_utc": "2026-10-25T22:51:45.286867+00:00",
   "lua": {
-    "groups": 143,
-    "syntax_files": 236,
-    "checks": 8215667,
+    "groups": 145,
+    "syntax_files": 239,
+    "checks": 8388118,
     "status": "passed"
   },
   "cef_browser": {
-    "checks": 476,
+    "checks": 482,
     "status": "passed"
   },
   "update_worker": {
@@ -17,11 +17,11 @@
   },
   "native_wanted_x86": {
     "status": "passed",
-    "checks": 13337,
-    "frames": 1225,
+    "checks": 13745,
+    "frames": 1273,
     "resolutions": 4,
     "min_window_width": 300,
-    "modal_frames": 144,
+    "modal_frames": 192,
     "gta_started": false,
     "game_files_written": false,
     "server_contacted": false,
@@ -35,7 +35,8 @@
       1,
       37,
       89,
-      91
+      91,
+      92
     ],
     "personal_files_preserved": true,
     "status": "passed"
@@ -44,5 +45,5 @@
   "source_repository": "VIBAG-bg/Police-Assistant",
   "game_launched": false,
   "real_game_written": false,
-  "in_game_acceptance": "User will test the update button; no local installation authorized in this release task"
+  "in_game_acceptance": "User requested testing the update button personally; no local installation authorized"
 }

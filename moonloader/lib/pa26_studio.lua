@@ -894,10 +894,11 @@ function Studio:drawQuick(ui,data,callbacks)
     self.quickFavorites=self:check('Только избранные##quick',self.quickFavorites or false)
     ui.text(data.demo and 'ДЕМО · отправки в игру нет' or 'Реальный режим · команды проверяет сервер')
     local search=model.casefold(query); local count=0
-    if self.quickWheelCategory=='service'then
+    if self.quickWheelCategory then
         local state=model.copy(data.radioState or {});state.patrolSession=data.patrolSession
         local catalog=wheelModel.build(self.lib,0,true,state)
-        for _,item in ipairs(catalog and catalog.byCategory.service.items or {})do
+        local category=catalog and catalog.byCategory[self.quickWheelCategory]
+        for _,item in ipairs(category and category.items or {})do
             if item.kind=='alert'or item.kind=='patrol'or item.kind=='assist'then
                 local name=item.name:gsub('\n',' ')
                 if search==''or model.casefold(name):find(search,1,true)then
@@ -1524,6 +1525,18 @@ function Studio:drawOptions(ui,data,callbacks)
             if edited then d.wheel_names[id]=name~=''and name or nil end
         end
         ui.text('Названия скрытых категорий сохраняются. Верните 6 или 8 секций — поля появятся с вашими названиями.')
+        local customCount,changed=self:check('Своё число действий второго кольца##wheel-child-custom',(d.wheel_child_limit or 0)>0)
+        if changed then d.wheel_child_limit=customCount and 10 or 0 end
+        if customCount then local v=im.new.int(d.wheel_child_limit);if im.SliderInt('Действий перед кнопкой поиска##wheel-child-limit',v,1,16)then d.wheel_child_limit=v[0]end end
+        ui.text('Авто сохраняет прежний размер. При своём числе, например 10, показываются до 10 действий, а при переполнении — дополнительная кнопка «Ещё и поиск».')
+        self:settingsHeading(ui,'Куда поместить встроенные действия')
+        d.wheel_system_groups=d.wheel_system_groups or{}
+        local choices=wheelModel.categoryChoices(d.wheel_names);choices[1]={'auto','Стандартная секция'}
+        for _,row in ipairs(wheelModel.systemRows)do
+            local value,edited=self:choice(row[2]..'##wheel-system-'..row[1],d.wheel_system_groups[row[1]]or'auto',choices,ui)
+            if edited then d.wheel_system_groups[row[1]]=value~='auto'and value or nil end
+        end
+        ui.text('В профиле с 4/6 секциями скрытые категории объединяются, как у биндов. При возврате к 8 назначения сохраняются.')
     else
         ui.text('Места прямого меню')
         local choices={{0,'Пусто'}};for _,binding in ipairs(copy.bindings)do choices[#choices+1]={binding.id,binding.name}end
@@ -1569,7 +1582,7 @@ function Studio:drawExtras(ui,data,callbacks)
     self:drawNotice(ui)
 end
 function Studio:hasModal()
-    return self:hasWarning()or self.wantedAppearance~=nil or self.rpPresetConfirm~=nil or self.assistConfirm~=nil or self.vehicleConfirm~=nil or self.operationConfirm~=nil or self.caseConfirm~=nil or self.patrolEventConfirm~=nil or self.patrolConfirm~=nil or self.remove~=nil or self.reset~=nil or self.importPreview~=nil or self.confirmPlan~=nil or self.confirmResult~=nil or
+    return self:hasWarning()or self.manualAction~=nil or self.wantedAppearance~=nil or self.rpPresetConfirm~=nil or self.assistConfirm~=nil or self.vehicleConfirm~=nil or self.operationConfirm~=nil or self.caseConfirm~=nil or self.patrolEventConfirm~=nil or self.patrolConfirm~=nil or self.remove~=nil or self.reset~=nil or self.importPreview~=nil or self.confirmPlan~=nil or self.confirmResult~=nil or
         self.pendingSelection~=nil or self.pendingNavigation~=nil or self.keyCapture~=nil or self.customRemove~=nil
 end
 function Studio:cancelModal()
@@ -1578,6 +1591,7 @@ function Studio:cancelModal()
     self.feedback:clear()
     if self.wantedAppearance then self.wantedAppearance.form.stage='identity' end
     self.wantedAppearance=nil
+    self.manualAction=nil
     self.rpPresetConfirm=nil
     self.assistConfirm=nil;self.operationConfirm=nil
     self.vehicleConfirm=nil;self.caseConfirm=nil;self.patrolEventConfirm=nil;self.patrolConfirm=nil; self.remove=nil; self.reset=nil; self.importPreview=nil; self.confirmPlan=nil; self.confirmResult=nil
@@ -1642,6 +1656,7 @@ function Studio:modalIntent(data)
         if warning.skipped then lines[#lines+1]='Несколько повторных предупреждений объединены. Проверьте журнал PA при необходимости.'end
         return{kind='warning',token=warning.token,title=warning.kind=='info'and 'Уведомление'or 'Предупреждение',lines=lines}
     end
+    if self.manualAction then return{kind='manual_action',token='manual-command:'..self.manualAction.token,title='Отыграть действие перед командой?',lines=self.manualAction.lines}end
     if self.pendingNavigation then
         local _,lines=self:unsavedChanges()
         lines[#lines+1]='После сохранения: '..self.pendingNavigation.label..'.'
@@ -2018,7 +2033,9 @@ function Studio:drawModal(ui,data,callbacks)
                 local width=math.max(1,(im.GetContentRegionAvail().x-10)/2)
                 local yes=green('ДА##confirm-yes',width); im.SameLine(0,10)
                 local no=red('НЕТ##confirm-no',width)
-                if no then close() elseif yes then execute(function() return self:acceptModal(data,callbacks) end) end
+                if intent.kind=='manual_action'then
+                    if no or yes then execute(function()return callbacks.manualActionDecide(self.manualAction.token,yes==true)end)end
+                elseif no then close() elseif yes then execute(function() return self:acceptModal(data,callbacks) end) end
             end
         end
         ui.finish()

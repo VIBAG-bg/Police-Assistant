@@ -86,10 +86,12 @@ for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
     guiIo.DisplaySize=im.ImVec2(display[1],display[2])
     for _,width in ipairs({300,500,math.min(display[1]-32,1100)})do
         widthNow=width
-        for _,page in ipairs({'settings','identity','passport','mask','ooc','appearance_choice','appearance_input','basis','preview','list','review','final'})do
+        for _,page in ipairs({'settings','identity','passport','mask','ooc','appearance_choice','appearance_input','basis','preview','list','review','final','manual_action'})do
             pageNow=page;state.inVehicle=false;c:tick(state,1000)
             editor.caseForm=form(page);editor.caseKind=page=='list'and'wanted_list'or'wanted'
             editor.caseConfirm=nil;editor.wantedAppearance=nil;editor.modalToken=nil;editor.modalVisible=false
+            editor.manualAction=nil
+            if page=='manual_action'then editor.manualAction={token='native-manual',lines={'/cuff 37','ДА — RP и команда. НЕТ — только команда. Esc — отменить.','/me снял наручники с пояса.','/do Фиксация проверена.'}}end
             if page=='final'then
                 local p=assert(c:preview(editor.caseForm));p.phase='command';p.token='native-final';p.lines={p.lines[#p.lines]};editor.caseConfirm=p
             end
@@ -102,7 +104,7 @@ for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
                 editor.currentUi=ui
                 if page=='settings'then wanted.settings(editor,ui,cfg,cb)
                 elseif page=='review'then wanted.review(editor,ui,data,cb)
-                elseif page=='final'then editor:drawModal(ui,data,cb)
+                elseif page=='final'or page=='manual_action'then editor:drawModal(ui,data,cb)
                 elseif page=='appearance_choice'or page=='appearance_input'then wanted.form(editor,ui,data,cb,cfg);editor:drawModal(ui,data,cb)
                 else wanted.form(editor,ui,data,cb,cfg)end
                 check(#stack==0,'Unbalanced scopes: '..page)
@@ -114,6 +116,7 @@ for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
         end
     end
 end
+editor.manualAction=nil
 for _,label in ipairs({'##wanted-time-delay_ms','##Текст напоминания##wanted-reminder-text','##Приметы##wanted-appearance-modal',
     'Общая##wanted-appearance-first','С приметами##wanted-appearance-second','Далее##wanted-appearance-first','Назад##wanted-appearance-second',
     'Проверить отыгровку и команду##wanted-preview','Отправить отыгровку · затем ДА/НЕТ##wanted-prepare','ДА##confirm-yes','НЕТ##confirm-no'})do

@@ -1,7 +1,6 @@
 {
-  "release": "0.38.1",
+  "release": "0.39.0",
   "status": "awaiting_publication_check",
-  "note": "Build-time snapshot; live validation is recorded in main after publication.",
-  "repository": "VIBAG-bg/Police-Assistant",
+  "note": "Build-time snapshot. Live check recorded in main after publishing.",
   "real_game_written": false
 }

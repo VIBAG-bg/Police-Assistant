@@ -14,6 +14,10 @@ local definitions={
 M.profiles={compact={'citizen','detention','wanted','service'},
     extended={'citizen','detention','wanted','service','leadership','custom'},
     full={'citizen','documents','detention','frisk','wanted','service','leadership','custom'}}
+M.systemRows={{'sos','SOS'},{'shots','Shots fired'},{'code0','CODE 0'},{'assist-megaphone','Мегафон'},
+    {'patrol-open','Патруль · открыть'},{'patrol-pause','Патруль · пауза'},{'patrol-resume','Патруль · продолжить'},
+    {'patrol-finish','Патруль · завершить'},{'procedure-wanted','Помощник розыска'},{'procedure-wanted_list','Список преступников'},
+    {'procedure-fine','Штраф'},{'procedure-mark','Пеленгация'}}
 local aliases={['гражданин']='citizen',['общение']='citizen',['документы']='documents',
     ['задержание']='detention',['наручники']='detention',['миранда']='detention',['арест']='detention',
     ['досмотр']='frisk',['обыск']='frisk',['проверки']='wanted',['розыск']='wanted',['штрафы']='wanted',['розыск и штрафы']='wanted',
@@ -35,15 +39,19 @@ function M.categoryChoices(names)
     for _,id in ipairs(M.profiles.full)do out[#out+1]={id,M.categoryName(id,names)}end
     return out
 end
+function M.systemGroup(lib,id,fallback)
+    local groups=lib.settings.wheel_system_groups or{}
+    return M.groupFor({wheel_group=groups[id]or fallback,category=''},lib.settings.wheel_profile or'compact')
+end
 function M.procedureItems(lib)
     local cfg=lib.procedures;local out={}
     if not cfg then return out end
     for _,kind in ipairs({'wanted','fine','mark'})do if require('pa26_case_forms').enabled(cfg,kind)then
-        out[#out+1]={kind='procedure',id='procedure-'..kind,procedure=kind,category='wanted',name=cfg[kind..'_label'],
+        out[#out+1]={kind='procedure',id='procedure-'..kind,procedure=kind,category=M.systemGroup(lib,'procedure-'..kind,'wanted'),name=cfg[kind..'_label'],
             wheel_visible=cfg[kind..'_wheel'],quick=cfg[kind..'_quick'],needsTarget=false}
     end end
     if cfg.wanted_assistant_enabled and cfg.wanted_enabled then
-        out[#out+1]={kind='procedure',id='procedure-wanted_list',procedure='wanted_list',category='wanted',name='Список преступников',wheel_visible=cfg.wanted_wheel,quick=cfg.wanted_quick,needsTarget=false}
+        out[#out+1]={kind='procedure',id='procedure-wanted_list',procedure='wanted_list',category=M.systemGroup(lib,'procedure-wanted_list','wanted'),name='Список преступников',wheel_visible=cfg.wanted_wheel,quick=cfg.wanted_quick,needsTarget=false}
     end
     return out
 end
@@ -55,8 +63,12 @@ function M.build(lib,revision,includeAlerts,serviceState)
     for _,id in ipairs(ids) do
         local d=definitions[id];local custom=lib.settings.wheel_names and lib.settings.wheel_names[id]
         local name=M.categoryName(id,lib.settings.wheel_names)
-        local cat={id=id,name=name,label=custom and custom:find('%S')and name or d.label or name,items={}}
+        local cat={id=id,name=name,label=custom and custom:find('%S')and name or d.label or name,items={},child_limit=lib.settings.wheel_child_limit}
         out.categories[#out.categories+1]=cat; out.byCategory[id]=cat
+    end
+    local function place(item)
+        item.category=M.systemGroup(lib,item.id,item.category)
+        out.bySystem[item.id]=item;out.byCategory[item.category].items[#out.byCategory[item.category].items+1]=item
     end
     if includeAlerts and lib.alerts and lib.alerts.enabled and lib.alerts.on_duty then
         for _,spec in ipairs({{'sos','SOS\nподдержка'},{'shots','Доклад о\nстрельбе'},{'code0','CODE 0\nранение'}}) do
@@ -66,13 +78,13 @@ function M.build(lib,revision,includeAlerts,serviceState)
                 item.disabled=not (serviceState and core.finite(serviceState.health) and serviceState.health>0 and serviceState.health<=lib.alerts.code0_health)
                 item.reason='CODE 0: нужен живой офицер с HP ≤ '..lib.alerts.code0_health..'.'
             end
-            out.bySystem[item.id]=item;out.byCategory.service.items[#out.byCategory.service.items+1]=item
+            place(item)
             end
         end
     end
     if includeAlerts and lib.vehicle and lib.vehicle.megaphone_wheel then
         local item={kind='assist',id='assist-megaphone',category='service',name='Мегафон',needsTarget=false}
-        out.bySystem[item.id]=item;out.byCategory.service.items[#out.byCategory.service.items+1]=item
+        place(item)
     end
     if includeAlerts and lib.patrol_session and lib.patrol_session.enabled then
         local view=serviceState and serviceState.patrolSession or {};local a=view.active
@@ -80,11 +92,11 @@ function M.build(lib,revision,includeAlerts,serviceState)
         if a then rows[#rows+1]={a.status=='paused'and 'patrol-resume'or 'patrol-pause',a.status=='paused'and 'Продолжить\nпатруль'or 'Пауза\nпатруля'};rows[#rows+1]={'patrol-finish','Завершить\nпатруль'}end
         for _,row in ipairs(rows)do
             local item={kind='patrol',id=row[1],category='service',name=row[2],needsTarget=false}
-            out.bySystem[item.id]=item;out.byCategory.service.items[#out.byCategory.service.items+1]=item
+            place(item)
         end
     end
     if includeAlerts then for _,item in ipairs(M.procedureItems(lib))do if item.wheel_visible then
-        out.bySystem[item.id]=item;out.byCategory.wanted.items[#out.byCategory.wanted.items+1]=item
+        place(item)
     end end end
     for _,b in ipairs(lib.bindings) do if b.wheel_visible then
         local req=binder.requirements(b)
@@ -96,15 +108,16 @@ function M.build(lib,revision,includeAlerts,serviceState)
 end
 function M.entries(cat)
     if #cat.items==0 then return {{kind='settings',category=cat.id,name='Добавить\nдействия'}} end
-    local out={}; local limit=#cat.items<=6 and #cat.items or 5
+    local custom=core.finite(cat.child_limit)and cat.child_limit>0 and math.floor(cat.child_limit)or nil
+    local out={}; local limit=custom and math.min(#cat.items,custom)or(#cat.items<=6 and #cat.items or 5)
     for i=1,limit do local e=cat.items[i]; out[i]={kind=e.kind or 'binding',id=e.id,category=cat.id,name=e.name} end
-    if #cat.items>6 then out[#out+1]={kind='more',category=cat.id,name='Ещё '..(#cat.items-5)..'\nи поиск'} end
+    if #cat.items>limit then out[#out+1]={kind='more',category=cat.id,name='Ещё '..(#cat.items-limit)..'\nи поиск'} end
     return out
 end
 function M.available(catalog,route,demo,target)
     if not route then return false end
     local cat=catalog.byCategory[route.category]
-    if route.kind=='more' then return cat~=nil and #cat.items>6 end
+    if route.kind=='more' then local entries=cat and M.entries(cat);return entries~=nil and entries[#entries].kind=='more'end
     if route.kind=='settings' then return cat~=nil and #cat.items==0 end
     if route.kind=='alert'or route.kind=='patrol'or route.kind=='procedure'or route.kind=='assist'then
         local item=catalog.bySystem and catalog.bySystem[route.id]
@@ -142,7 +155,7 @@ function M.rootAt(layout,dx,dy)
 end
 function M.arc(layout,index,count)
     local center=-math.pi/2+(index-.5)*layout.step
-    local span=math.min(144,math.max(48,count*24))*math.pi/180
+    local span=math.min(288,math.max(48,count*24))*math.pi/180
     return {center=center,first=center-span/2,last=center+span/2,span=span,step=span/count}
 end
 function M.hover(nav,catalog,layout,dx,dy,now,blocked,demo,target)

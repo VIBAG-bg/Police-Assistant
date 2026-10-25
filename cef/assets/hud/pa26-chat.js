@@ -297,7 +297,7 @@
           state.manualPending={key:page+':'+(state.next-1),raw:ticket.manual,session:ticket.session,at:clock()};exchange();return;
         }
         const name = /^\/([a-zA-Z][a-zA-Z0-9_]*)\b/u.exec(text);
-        if (name && /^pa26/iu.test(name[1])) {
+        if (name && (/^pa26/iu.test(name[1]) || c && Array.isArray(c.localCommands) && c.localCommands.includes(name[1].toLowerCase()))) {
           if (!c || !c.enabled) notice('PA не отвечает или поддержка чата лаунчера отключена. Повторите команду после восстановления связи.');
           else if (!Array.isArray(c.localCommands) || !c.localCommands.includes(name[1].toLowerCase())) notice('В PA нет такой команды. Проверьте её название.');
           else {

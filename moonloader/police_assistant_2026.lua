@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.38.1')
+script_version('0.39.0')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -50,6 +50,7 @@ local sceneServices={rp=dependency('pa26_rp_text'),rpUi=dependency('pa26_rp_ui')
 sceneServices.mapGrid=dependency('pa26_map_grid')
 sceneServices.mapAdapterModule=dependency('pa26_map_adapter')
 sceneServices.chatModule=dependency('pa26_chat_bridge')
+sceneServices.manualActionModule=dependency('pa26_manual_actions')
 sceneServices.layoutModule=dependency('pa26_keyboard_layout')
 sceneServices.targetModule=dependency('pa26_target')
 sceneServices.localCommands={}
@@ -65,9 +66,9 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.38.1' then
+if #missing > 0 or not core or core.VERSION ~= '0.39.0' then
     function main()
-        print('[PA26] Install all v0.38.1 project files and mimgui / encoding. Missing: ' .. table.concat(missing, ', '))
+        print('[PA26] Install all v0.39.0 project files and mimgui / encoding. Missing: ' .. table.concat(missing, ', '))
     end
     return
 end
@@ -550,6 +551,7 @@ workspace = workspaceModule.new({
     end,
     send=env.send,lastSent=function() return runtime.lastSentAt end,markSent=function(now) runtime.lastSentAt=now end,
     planValid=function(plan)
+        if plan.manualCommand then return sceneServices.manualActions and sceneServices.manualActions:validPlan(plan)or false end
         if plan.rpSignature and plan.rpSignature~=sceneServices.rp.signature(workspace.library.rp_text,hud.data.nickname)then return false end
         if plan.textSignature and plan.textSignature~=sceneServices.rp.signature(workspace.library.rp_text)then return false end
         if plan.evidenceAction then return sceneServices.evidence and sceneServices.evidence:validPlan(plan)or false end
@@ -846,6 +848,7 @@ local function studioData()
         localNickname=hud.data.nickname,rpSettings=workspace.library.rp_text,evidence=sceneServices.evidence:view(),vehicle=sceneServices.vehicle:view(),operations=workspace.operations:view(),radioState=alerts.state,patrol=patrol:view(),patrolSession=patrolSession:view(patrol:view()),patrolEvents=patrolEvents:view(),identity=identity:view(),caseForms=caseForms:view(),taser=taser:view(),codec=codec,autoReport=radioGuard:view()}
 end
 local function cancelManualActions(reason)
+    if sceneServices.manualActions then sceneServices.manualActions:cancel()end
     sceneServices.evidence:cancel(reason)
     sceneServices.vehicle:cancel(reason)
     workspace.operations:cancelReview()
@@ -948,6 +951,7 @@ local studioCallbacks={
     clearTarget=function() workspace:clearTarget('manual') end,
     openQuick=function() sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;studio.quickWheelCategory=nil; showWindow[0],showTips[0]=false,false; showQuick[0]=true; uiTyping=false; uiInputReset=true; imgui.DisableInput=false end,
     closeQuick=hideWorkspaceUi,
+    manualActionDecide=function(token,value)return sceneServices.manualActions:decide(token,value)end,
     openTips=function() sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;showWindow[0],showQuick[0]=false,false; showTips[0]=true; uiTyping=false; uiInputReset=true; imgui.DisableInput=false end,
     capture=function(request)
         request.noticeScope=request.kind=='feature' and request.group or request.kind=='setting' and 'options' or 'binds'
@@ -1871,6 +1875,47 @@ sceneServices.manual=require('pa26_manual_chat').new({codec=codec,context=contex
         if not ok or ownedSendCancelled then return false end
         metrics.sent=metrics.sent+1;return true
     end})
+sceneServices.manualActions=sceneServices.manualActionModule.new({codec=codec,now=function()return studioClock end,
+    epoch=function()return sceneServices.chatEpoch end,revision=function()return workspace.libraryRevision end,
+    library=function()return workspace.library end,
+    state=function()local s=context();s.demo=runtime.demo;s.ped=PLAYER_PED;s.localId=hud.data.id;s.nick=hud.data.nickname;return s end,
+    busy=function()return workspace.pending~=nil or workspace.executor.queue~=nil or runtime.queue~=nil or sceneServices.manual.queue~=nil end,
+    account=function(head,args)
+        if not sceneServices.manualActionModule.targetHeads[head]then return nil end
+        local id=tonumber((args or''):match('^(%d+)%s'))or tonumber((args or''):match('^(%d+)$'))
+        if not id then return nil end
+        return{id=id,name=optionalRead('sampGetPlayerNickname',id),generation=sceneServices.nearby.generations[id]or 0}
+    end,
+    accountValid=function(a)return not a or optionalRead('sampIsPlayerConnected',a.id)==true and type(a.name)=='string'and
+        optionalRead('sampGetPlayerNickname',a.id)==a.name and(sceneServices.nearby.generations[a.id]or 0)==a.generation end,
+    notice=function(message)studio:notify(message,'commands',false)end,
+    showing=function(token)return studio.manualAction and studio.manualAction.token==token end,
+    close=function(token)if studio.manualAction and studio.manualAction.token==token then studio.manualAction=nil end end,
+    show=function(p)showWindow[0],showTips[0]=false,false;showQuick[0]=true;studio.manualAction=p;uiInputReset=true;imgui.DisableInput=false end,
+    start=function(plan)return workspace:request({kind='startPlan',plan=plan,returnTo='quick'})end,
+    prepare=function(p)
+        local model=bindingModel;local binder=require('pa26_binder');local cfg=workspace.library.settings.manual_actions
+        local ctx=context();local wire=core.encodeWire(p.raw,codec)
+        local noPlan={binding={id=1,name='Ручная /'..p.head,stat='none'},steps={{kind='message',text=p.raw,wire=wire}},lines={p.raw},
+            requirements={target=false,closest=false},session=ctx.session,createdAt=studioClock,demo=runtime.demo,has_command=true}
+        if p.passThrough then return nil,nil,noPlan end
+        local args,why=model.parseArguments(p.args or'');if not args then return nil,why,noPlan end
+        local source=cfg.rules[p.head].prefer_bind and sceneServices.manualActionModule.source(workspace.library,p.head)
+        local target
+        if p.account then
+            local loaded,ped=optionalRead('sampGetCharHandleBySampPlayerId',p.account.id)
+            if loaded and ped then target=env.validate({id=p.account.id,ped=ped,name=p.account.name},workspace.cfg.main.max_distance)end
+        end
+        local function compile(b)
+            local req=binder.requirements(b)
+            if req.target and not target then return nil,'Игрок из команды сейчас недоступен для персональной отыгровки.'end
+            local snapshot,err=workspace:snapshot(b,{target=target});if not snapshot then return nil,err end
+            return sceneServices.manualActionModule.plan(workspace.library,p.head,p.raw,model.copy(args),snapshot,b,codec,workspace.library.rp_text)
+        end
+        local plan,err;if source then plan,err=compile(source)end
+        if not plan then local fallback=model.newBinding(1);fallback.name='Ручная /'..p.head;fallback.script=cfg.rules[p.head].rp;plan,err=compile(fallback)end
+        return plan,err,noPlan
+    end})
 sceneServices.manualText=function(raw,input,owned)
     if type(raw)~='string'then return nil,'Поле чата недоступно.'end
     if owned and raw:sub(1,#owned)==owned then raw=raw:sub(#owned+1)end
@@ -2102,10 +2147,17 @@ local function syncBindingCommands()
             workspace:request({kind='prepare',id=id,args=args,start=true,returnTo='quick'})
         end
         local ok,result=pcall(sampRegisterChatCommand,name,handler)
-        if ok and result==true then customRegistered[name]=true;sceneServices.localCommands[name]=handler
+        if ok and result~=false then customRegistered[name]=true;sceneServices.localCommands[name]=handler
         else local message='Команда /'..name..' занята. Выберите другое имя в редакторе; бинд доступен из меню и по клавише.';pushLog(message);studio:passiveWarning('alias:'..name,message,'binds')end
       end end
     end end
+    for name,handler in pairs(sceneServices.manualLocalCommands or{})do if sceneServices.localCommands[name]==handler then sceneServices.localCommands[name]=nil end end
+    sceneServices.manualLocalCommands={}
+    local manualCfg=workspace.library.settings.manual_actions or sceneServices.manualActionModule.defaults()
+    if manualCfg.enabled then for name,row in pairs(manualCfg.rules)do if row.enabled and not sceneServices.localCommands[name]then
+        local head=name;local handler=function(args,raw)sceneServices.manualActions:offer(raw or('/'..head..(args~=''and(' '..args)or'')),true)end
+        sceneServices.localCommands[name]=handler;sceneServices.manualLocalCommands[name]=handler
+    end end end
 end
 -- Both chat backends use the same evidence, confirmation and filtering rules.
 sceneServices.observeMessage=function(text,source,now)
@@ -2204,6 +2256,9 @@ local function connectChatFilters()
         if ownedChatSendDepth==0 then
             local actual=type(previous)=='table'and previous[1]or raw
             if type(actual)=='string'then
+                local aliasHead,aliasArgs=actual:match('^/([A-Za-z][A-Za-z0-9_]*)%s*(.-)%s*$')
+                aliasHead=aliasHead and aliasHead:lower()
+                if aliasHead and customRegistered[aliasHead]and sceneServices.localCommands[aliasHead]then sceneServices.localCommands[aliasHead](aliasArgs);return false end
                 local ticket=sceneServices.nativeRadioSubmit
                 local age=ticket and core.elapsed(studioClock,ticket.at)
                 local manual=ticket and age and age<=1000 and ticket.epoch==sceneServices.chatEpoch and ticket.session==connectionKey()and
@@ -2228,6 +2283,11 @@ local function connectChatFilters()
                 end
                 manual=manual and focused and not shutdown and optionalRead('isGamePaused')==false
                 if manual then
+                    local decoded,line=pcall(codec.decode,actual)
+                    local head,args;if decoded then head,args=line:match('^/([A-Za-z][A-Za-z0-9_]*)%s*(.-)%s*$')end
+                    head=head and head:lower()
+                    if head and customRegistered[head]and sceneServices.localCommands[head]then sceneServices.localCommands[head](args);return false end
+                    if decoded and sceneServices.manualActions:offer(line)then return false end
                     local plan,why,text=sceneServices.checkNativeManual(actual,false)
                     if not plan then report(why);return false end
                     if plan.eligible and #plan.lines>1 then sceneServices.offerNativeManual(text);return false end
@@ -2638,6 +2698,7 @@ local function updateGame()
     end
     runtime:step()
     sceneServices.manual:tick()
+    sceneServices.manualActions:tick()
     workspace:tick()
     syncBindingCommands()
     workspaceFrame.HideCursor=not (showQuick[0] or showTips[0] or sceneServices.showAssist[0]or sceneServices.showWanted[0]or studio:hasWarning())
@@ -2716,7 +2777,7 @@ function main()
     }
     for _, item in ipairs(commands) do
         local ok, result = pcall(sampRegisterChatCommand, item[1], item[2])
-        if ok and result == true then registered[#registered + 1] = item[1];sceneServices.localCommands[item[1]]=item[2]
+        if ok and result ~= false then registered[#registered + 1] = item[1];sceneServices.localCommands[item[1]]=item[2]
         else pushLog('Не зарегистрирована команда /' .. item[1] .. '; используйте клавиши.') end
     end
     connectChatFilters(); syncBindingCommands()
@@ -2750,11 +2811,11 @@ function main()
             not context().blocked then recoverUi(false)end
         recovery:healthy(now,cfg.recovery)
         if not started then
-            pushLog('v0.38.1: игровой цикл запущен.')
+            pushLog('v0.39.0: игровой цикл запущен.')
             started = true
         end
         if uiRendered and not drawReported then
-            pushLog('v0.38.1: окно отрисовано.')
+            pushLog('v0.39.0: окно отрисовано.')
             drawReported = true
         end
     end

@@ -77,6 +77,7 @@ function M.draw(s,ui,data,callbacks)
     end
     s:settingsHeading(ui,'Точный список из справки')
     for _,row in ipairs(M.commands)do ui.text(row[1]..' — '..row[2])end
+    require('pa26_manual_actions').draw(s,ui)
     s:drawNotice(ui)
 end
 return M

@@ -148,7 +148,7 @@ function Bridge:exchange(raw,now)
                 else
                     local name,args=event.text:match('^/([A-Za-z][A-Za-z0-9_]*)%s*(.-)%s*$')
                     local handler=name and self.commands[name:lower()]
-                    if handler then self.pending=self.pending or{};if #self.pending<64 then self.pending[#self.pending+1]={handler=handler,args=args,at=now,
+                    if handler then self.pending=self.pending or{};if #self.pending<64 then self.pending[#self.pending+1]={handler=handler,args=args,raw=event.text,at=now,
                         session=self.env.session and self.env.session()or nil}end end
                 end
             end
@@ -259,7 +259,7 @@ function Bridge:dispatch(now)
     for _,item in ipairs(pending or{})do
         local age=core.elapsed(now,item.at)
         if age and age<=3000 and self.env.settings().enabled and(not self.env.session or item.session==self.env.session())then
-            local ok=pcall(item.handler,item.args)
+            local ok=pcall(item.handler,item.args,item.raw)
             if not ok and self.env.log then self.env.log('Команда из чата лаунчера не выполнена: ошибка обработчика.')end
         elseif self.env.log then self.env.log('Команда из чата лаунчера отменена: слишком долго было открыто другое окно.')end
     end

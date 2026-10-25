@@ -15,6 +15,7 @@ local nearbyModel=require 'pa26_nearby'
 local windowLayout=require 'pa26_window_layout'
 local manualChat=require 'pa26_manual_chat'
 local updateSettings=require 'pa26_updater'
+local manualActions=require 'pa26_manual_actions'
 local M = {SCHEMA = 1, MAX_BINDS = 128, MAX_NOTES = 128, MAX_PARTNERS = 64, MAX_STEPS = 64}
 M.stats = {{'none', 'Без служебного счётчика'}, {'arrest', 'Задержания'}, {'documents', 'Проверки документов'},
     {'frisk', 'Досмотры'}, {'cuff', 'Наручники'}, {'uncuff', 'Снятие наручников'},
@@ -278,6 +279,7 @@ function M.defaults(cfg)
         retain_distance=40,retain_grace_ms=1500,keep_target_on_interior_change=true,aim_select_enabled=true,aim_select_control='mouse',aim_select_delay_ms=150,wheel_mode='categories',wheel_profile='compact',wheel_enabled=true,interaction_notices=true,accent_live_input=true,accent_skip_brackets=true,chat_dot_commands=true,manual_radio_prefix=true,cef_chat_support=true,cef_chat_diagnostics=true,cef_layout_indicator=true,wheel_names={}},
     filters={},recruitment={min_age=18,min_level=3,min_lawfulness=0,land=true,water=false,air=false,weapon=true,medical=true}}
     local categories={introduce='Общение',documents='Документы',wanted='Проверки',frisk='Досмотр',cuff='Задержание',release='Задержание'}
+    lib.settings.manual_actions=manualActions.defaults();lib.settings.wheel_child_limit=0;lib.settings.wheel_system_groups={}
     local female={introduce='остановившись рядом, достала служебное удостоверение и раскрыла его перед собеседником.',
         documents='оглянувшись по сторонам, обратилась к собеседнику с просьбой предъявить паспорт.',
         wanted='сверив известные сведения, внесла данные в служебный терминал и открыла форму поиска.',
@@ -450,6 +452,20 @@ function M.validate(raw, cfg)
     local mode=raw.settings.wheel_mode or 'categories'; local profile=raw.settings.wheel_profile or 'compact'
     if not modes[mode] or not profiles[profile] then return nil,'Неверный режим или профиль радиального меню.' end
     out.settings.wheel_mode=mode; out.settings.wheel_profile=profile
+    local childLimit=raw.settings.wheel_child_limit or 0
+    if not core.finite(childLimit)or childLimit%1~=0 or childLimit<0 or childLimit>16 then return nil,'Второе кольцо: авто либо от 1 до 16 действий.'end
+    out.settings.wheel_child_limit=childLimit
+    out.settings.wheel_system_groups={}
+    local systemGroups=raw.settings.wheel_system_groups or{}
+    if type(systemGroups)~='table'then return nil,'Неверные секции встроенных действий.'end
+    local validSystems={};for _,r in ipairs(require('pa26_wheel').systemRows)do validSystems[r[1]]=true end
+    local validGroups={citizen=true,documents=true,detention=true,frisk=true,wanted=true,service=true,leadership=true,custom=true}
+    for id,group in pairs(systemGroups)do
+        if not validSystems[id]or not validGroups[group]then return nil,'Неизвестное действие или секция колеса.'end
+        out.settings.wheel_system_groups[id]=group
+    end
+    out.settings.manual_actions,alertError=manualActions.validate(raw.settings.manual_actions)
+    if not out.settings.manual_actions then return nil,alertError end
     local aimControl=raw.settings.aim_select_control
     if aimControl==nil then aimControl='mouse'end
     if aimControl~='mouse'and aimControl~='game'then return nil,'Выберите управление выбором человека: ПКМ или прицеливание GTA.'end
