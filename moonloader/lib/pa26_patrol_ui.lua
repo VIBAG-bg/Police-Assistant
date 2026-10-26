@@ -82,7 +82,7 @@ function M.draw(studio,ui,data,callbacks)
         if studio:button('Убрать удалённый контакт##session-orphan-'..row.contact_id,ui)then table.remove(draft.crew,i)end
     end end
     studio:settingsHeading(ui,'Реплики и предпросмотр')
-    ui.text('Без /r, /f или /d: канал добавляется отдельно. Переменные: {officer}, {callsign}, {crew}, {crew_count}, {crew_roles}, {crew_callsigns}, {unit}, {station}, {vehicle}, {sector}, {post}, {area}, {location}, {map_square}, {direction}, {duration}, {patrol_id}; также теги и поля профиля. Длинный итог может не поместиться в лимит чата — предпросмотр это проверяет.')
+    ui.text('Грамматический род: {gender:передал|передала}. Без /r, /f или /d: канал добавляется отдельно. Переменные: {officer}, {callsign}, {crew}, {crew_count}, {crew_roles}, {crew_callsigns}, {unit}, {station}, {vehicle}, {sector}, {post}, {area}, {location}, {map_square}, {direction}, {duration}, {patrol_id}; также теги и поля профиля. Длинный итог может не поместиться в лимит чата — предпросмотр это проверяет.')
     if studio:button('Вставить пример докладов SFPS##patrol-sfps-preset',ui)then
         draft.start_template='{local_tag}{unit}, начинаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}. Далее доступны.'
         draft.resume_template='{local_tag}{unit}, продолжаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}. Направление: {direction}.'

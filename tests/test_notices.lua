@@ -1,6 +1,6 @@
 local fixture=require 'support.fixture'
 local s=fixture();s.step();s.page('settings')
-s.click='Профиль##settings-tab-profile';s.render()
+s.click='1. Профиль##settings-tab-profile';s.render()
 s.edits={['RP-имя##profile']='Notice Officer'};s.render();s.step(650);s.render()
 local studio=s.workspace.studio
 check(not studio:hasWarning(),'background autosave stays silent')

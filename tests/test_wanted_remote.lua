@@ -35,8 +35,8 @@ local saved=s.savedLibrary();check(saved.procedures.wanted_each_trait)
 eq(saved.procedures.wanted_traits_rp,'/todo Приметы: {appearance}*докладывая диспетчеру.')
 check(saved.procedures.wanted_allow_remote);check(saved.procedures.wanted_autofill_passport);eq(#s.sent,0);onScriptTerminate(s.script)
 local function identity(s,passport)
-    s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
-    click(s,'Нет##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskno')
+    s.toggle='Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';s.render()
+    click(s,'Нет##На подозреваемом полная RP-маска (/mask + аксессуар на лице)?##wanted-maskno')
     click(s,(passport and 'Да'or 'Нет')..'##Вы видели паспорт этого человека?##wanted-passport_seen'..(passport and 'yes'or 'no'))
     click(s,'Далее · причина розыска##wanted-next')
 end
@@ -48,7 +48,7 @@ local function reason(s)
     click(s,'Проверить отыгровку и команду##wanted-preview')
 end
 local function prepare(s)
-    click(s,'Отправить отыгровку · затем ДА/НЕТ##wanted-prepare')
+    click(s,'Отыграть ориентировку в чат (затем ДА/НЕТ на выдачу)##wanted-prepare')
     for _=1,28 do s.step(1600);if s.workspace.studio.caseConfirm then break end end
     check(s.workspace.studio.caseConfirm,'RP did not reach the final separate confirmation')
     for _,r in ipairs(s.sent)do check(not r.line:match('^/su '));check(#codec.encode(r.line)<=127)end
@@ -60,30 +60,30 @@ for _,vehicle in ipairs({false,true})do
     reason(s);local p=assert(s.caseForms:preview(f));check(table.concat(p.lines,'\n'):find('Player Name',1,true))
     check(table.concat(p.lines,'\n'):find('номер паспорта: 37',1,true))
     check(p.lines[1]:find(vehicle and 'бортовому компьютеру'or 'КПК',1,true))
-    prepare(s);local count=#s.sent;click(s,'ДА##confirm-yes');eq(#s.sent,count)
+    prepare(s);local count=#s.sent;click(s,'ДА — выдать розыск##confirm-yes');eq(#s.sent,count)
     s.step();s.step(1600);eq(s.sent[#s.sent].line,'/su 37 8 1');eq(#s.sent,count+1)
     onScriptTerminate(s.script)
 end
 -- Separate windows: general and detailed. Short comma-separated traits stay in a single /todo report by default.
 for _,detailed in ipairs({false,true})do
     local s,f=setup();identity(s,false);s.render();eq(f.stage,'appearance_choice');check(s.workspace.studio.wantedAppearance)
-    click(s,(detailed and 'С приметами##wanted-appearance-second'or 'Общая##wanted-appearance-first'))
+    click(s,(detailed and 'С приметами##wanted-appearance-second'or 'Общая (без ввода)##wanted-appearance-first'))
     if detailed then
         s.render();eq(f.stage,'appearance_input');check(s.workspace.studio.wantedAppearance)
         s.edits={['##Приметы##wanted-appearance-modal']='высокий, на вид 25 лет'};s.render();s.edits={}
-        click(s,'Далее##wanted-appearance-first')
+        click(s,'Далее · к выбору статьи##wanted-appearance-first')
     end
     eq(f.stage,'basis');reason(s)
     local p=assert(s.caseForms:preview(f));local todos=0
     for _,line in ipairs(p.lines)do if line:match('^/todo ')then
-        todos=todos+1;check(line:find('*обращаясь по рации к диспетчеру.',1,true));check(#codec.encode(line)<=127)
+        todos=todos+1;check(line:find('*зажав кнопку тангенты рации.',1,true));check(#codec.encode(line)<=127)
     end end
     eq(todos,detailed and 1 or 0);check(not table.concat(p.lines):find('Player Name',1,true),'No passport name in appearance RP')
-    prepare(s);local count=#s.sent;click(s,'НЕТ##confirm-no');s.step(3000);eq(#s.sent,count);onScriptTerminate(s.script)
+    prepare(s);local count=#s.sent;click(s,'НЕТ — не выдавать розыск##confirm-no');s.step(3000);eq(#s.sent,count);onScriptTerminate(s.script)
 end
 -- Missing identity offers OOC from the answers and requires an explicit decision.
-local s,f=setup();s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
-click(s,'Да##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskyes');click(s,'Нет##Вы видели паспорт этого человека?##wanted-passport_seenno')
+local s,f=setup();s.toggle='Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';s.render()
+click(s,'Да##На подозреваемом полная RP-маска (/mask + аксессуар на лице)?##wanted-maskyes');click(s,'Нет##Вы видели паспорт этого человека?##wanted-passport_seenno')
 check(s.caseForms:oocSuggested(f));eq(f.mode,'ic');click(s,'Перейти к OOC-звёздам##wanted-use-ooc');eq(f.mode,'ooc');check(not f.ooc_ack)
 eq(#s.sent,0);check(not s.caseForms:next(f),'OOC still needs explicit mechanism acknowledgement');onScriptTerminate(s.script)
 -- Disconnect and ID reuse between RP and final YES never send /su.
@@ -92,6 +92,6 @@ for _,change in ipairs({'disconnect','rename','rejoin'})do
     if change=='disconnect'then s.targetConnected=false
     elseif change=='rename'then s.name='Other_Player'
     else s.events.onPlayerQuit(37,1);s.events.onPlayerJoin(37,-1,false,'Player_Name')end
-    s.step();if s.workspace.studio.caseConfirm then click(s,'ДА##confirm-yes')end
+    s.step();if s.workspace.studio.caseConfirm then click(s,'ДА — выдать розыск##confirm-yes')end
     s.step(3000);eq(#s.sent,count,change);onScriptTerminate(s.script)
 end

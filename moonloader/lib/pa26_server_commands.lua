@@ -58,7 +58,7 @@ function M.audit(lib)
     end
     return out
 end
-function M.draw(s,ui,data,callbacks)
+function M.draw(s,ui,data,callbacks,referenceOnly)
     s.currentNoticeScope='commands';s:settingsHeading(ui,'Команды сервера · сверка')
     ui.text(M.source)
     ui.text('Для /su подтверждены ID, раздел и подпункт; /su ID открывает меню, /wanted без ID — общий список. Аргументы остальных команд, ограничения ранга и дальности проверяются отдельно. Отправок из этой страницы нет.')
@@ -77,7 +77,7 @@ function M.draw(s,ui,data,callbacks)
     end
     s:settingsHeading(ui,'Точный список из справки')
     for _,row in ipairs(M.commands)do ui.text(row[1]..' — '..row[2])end
-    require('pa26_manual_actions').draw(s,ui)
+    if not referenceOnly then require('pa26_manual_actions').draw(s,ui)end
     s:drawNotice(ui)
 end
 return M

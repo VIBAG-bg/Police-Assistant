@@ -12,7 +12,7 @@ local function setup(verified)
     if verified then lib.procedures.mark_command='/setmark {id}';lib.procedures.mark_verified=true;lib.procedures.mark_source='LOCAL TEST CONTRACT'end
     local s=fixture({demo=false,library=lib});s.step()
     check(s.workspace:selectTarget({id=s.id,ped=s.mappedPed,name=s.name}));s.step()
-    s.page('addons');click(s,'Процедуры##toolprocedures');click(s,'Пеленгация##Действие##case-kindmark');return s
+    s.page('addons');click(s,'Розыск, штрафы, /setmark##toolprocedures');click(s,'Пеленгация##Действие##case-kindmark');return s
 end
 local function form(s)
     click(s,'Новая форма##case-new');click(s,'Далее · основание##case-next')

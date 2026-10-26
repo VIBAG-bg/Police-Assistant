@@ -45,7 +45,7 @@ function M.settings(s,ui,cfg,cb)
     cfg.wanted_reminder_text=s:field('Текст напоминания##wanted-reminder-text','wanted:reminder:text',cfg.wanted_reminder_text,4096,true,90)
     ui.text('Предпросмотр: '..cfg.wanted_reminder_title..' — '..cfg.wanted_reminder_text)
     s:settingsHeading(ui,'Отыгровки розыска')
-    ui.text('Наши редактируемые фразы. Переменные: {device}, {ic_name}, {passport_number}, {appearance}, {game_group}, {game_reason}, {game_stars}, {game_category}, {game_item}, {facts}, {ooc_purpose}, {id}. Имя/номер используются после подтверждения паспорта. Дополнение с номером идёт после основной паспортной отыгровки; общий RP по приметам применяется, если своё описание не введено. Длинные реплики переносятся общей системой PA.')
+    ui.text('Наши редактируемые фразы. Переменные: {device}, {ic_name}, {passport_number}, {appearance}, {game_group}, {game_reason}, {game_stars}, {game_category}, {game_item}, {facts}, {ooc_purpose}, {id}. Имя/номер используются после подтверждения паспорта. Дополнение с номером идёт после основной паспортной отыгровки; общий RP по приметам применяется, если своё описание не введено. Грамматический род: {gender:передал|передала}, выбирается в Профиле. Длинные реплики переносятся общей системой PA.')
     for _,r in ipairs(prefs.rpFields)do if r[1]:match('^wanted_')then
         cfg[r[1]]=s:field(r[2]..'##wanted-rp-'..r[1],'wanted-rp:'..r[1],cfg[r[1]],8192,true,90)
         ui.text('Предпросмотр: '..cb.caseTemplatePreview(cfg[r[1]],s.caseForm))
@@ -106,11 +106,11 @@ function M.form(s,ui,data,cb,cfg)
         ui.text(s.caseKind=='wanted_list'and 'Общий список не требует выбранного человека. ID в /wanted не добавляется.'or 'Введите /su ID подключённого игрока в любой точке карты либо выберите человека рядом и откройте новую форму.')
         return
     end
-    im.Separator();ui.text(f.target and('Саспект: '..f.target.name..' ['..f.target.id..'] · технический выбор')or 'Общий список преступников')
-    ui.text('Устройство: '..(f.inVehicle and 'бортовой компьютер'or 'КПК')..'. Игрок может быть в другом городе; проверяются подключение, ник и повторное использование ID. Смена вашей машины или игровой сцены отменяет старую подготовку.')
+    im.Separator();ui.text(f.target and('Подозреваемый: '..f.target.name..' [ID: '..f.target.id..']')or 'Общий список преступников')
+    ui.text('Отыгровка через: '..(f.inVehicle and 'бортовой компьютер крузера'or 'служебный КПК')..'. Стоять рядом не нужно: /su ID работает на любом расстоянии. PA проверяет, чтобы под этим ID не зашёл другой игрок. После смены машины или игровой сцены подготовьте действие заново.')
     if f.stage=='identity'then
-        if cfg.wanted_require_life_ack then f.life_ack=s:check('Основание из текущей ситуации после последней смерти##wanted-life-ack',f.life_ack)end
-        if cfg.allow_ooc then f.mode=s:choice('Ветка розыска##wanted-mode',f.mode,{{'ic','IC · известные данные или приметы'},{'ooc','OOC · системная механика'}},ui)end
+        if cfg.wanted_require_life_ack then f.life_ack=s:check('Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack',f.life_ack)end
+        if cfg.allow_ooc then f.mode=s:choice('Ветка розыска##wanted-mode',f.mode,{{'ic','IC · по паспорту или приметам'},{'ooc','OOC · только для пеленгации /setmark'}},ui)end
         if f.mode=='ooc'then
             f.ooc_reason=s:choice('Для какой механики нужны звёзды##wanted-ooc-purpose',f.ooc_reason,prefs.oocReasons,ui)
             ui.text(prefs.oocNotes[f.ooc_reason]or '')
@@ -119,13 +119,13 @@ function M.form(s,ui,data,cb,cfg)
             if f.phone_known=='yes'then field(s,f,'IC-номер телефона','phone_number',512);field(s,f,'Откуда известен номер по RP','phone_source',512)end
             f.ooc_ack=s:check('Проверил RP-пеленгацию, телефон включён, сниму звёзды сразу после неё##wanted-ooc-ack',f.ooc_ack)
         else
-            question(s,f,ui,'На саспекте RP-маска: /mask и скрытое лицо?','mask')
-            ui.text('RP-маска требует обоих условий. Только серый цвет /mask или только аксессуар — NonRP-маска, не мешающая фотороботу (14.1–14.3). Ник и TAB не устанавливают IC-личность.')
-            if f.mask=='yes'then question(s,f,ui,'Личность установлена до RP-маски и с тех пор не теряли человека из виду?','face_before')end
+            question(s,f,ui,'На подозреваемом полная RP-маска (/mask + аксессуар на лице)?','mask')
+            ui.text('По п. 14.1–14.3 RP-маска — одновременно серый цвет /mask и аксессуар, закрывающий лицо. Только одно условие — NonRP-маска: выберите «Нет», затем проверьте основание розыска по приметам. Ник и TAB не устанавливают личность по RP.')
+            if f.mask=='yes'then question(s,f,ui,'Вы установили личность по лицу или паспорту ДО маски и НЕ теряли человека из виду?','face_before')end
             question(s,f,ui,'Вы видели паспорт этого человека?','passport_seen')
             if cb.caseFillWanted then cb.caseFillWanted(f)end
             if f.passport_seen=='yes'then
-                ui.text((f.passport_source=='server'and 'Показ паспорта вам распознан в чате. 'or 'Паспорт подтверждён вашим ответом. ')..'IC-имя: '..f.ic_name..' · номер паспорта: '..(f.passport_number~=''and f.passport_number or 'не указан'))
+                ui.text((f.passport_source=='server'and 'Показ паспорта вам распознан из чата. 'or 'Вы отметили, что видели паспорт. ')..'В отыгровку подставится имя: '..f.ic_name..' · № паспорта: '..(f.passport_number~=''and f.passport_number or 'не указан')..' (по настройкам PA: имя из ника, номер из ID; ручное уточнение сохраняется).')
                 f.edit_passport=s:check('Уточнить имя или номер вручную##wanted-edit-passport',f.edit_passport==true)
                 if f.edit_passport or not cfg.wanted_autofill_passport then
                     field(s,f,'Имя и фамилия из показанного паспорта','ic_name',512)
@@ -163,7 +163,7 @@ function M.form(s,ui,data,cb,cfg)
             if f.kind=='wanted_list'then ui.text('Общий серверный список: дело, имя, уровень. Номер дела не считается ID игрока; автоматического поиска по ID здесь нет.')end
             for i,line in ipairs(p.lines)do ui.text(i..'. '..line)end
             ui.text('Кнопка ниже отправит только показанные отыгровки. После них появится отдельное ДА/НЕТ перед самой командой. End / Esc отменит остаток; НЕТ не повторяет уже отправленные RP-строки.')
-            if s:button('Отправить отыгровку · затем ДА/НЕТ##wanted-prepare',ui)then
+            if s:button('Отыграть ориентировку в чат (затем ДА/НЕТ на выдачу)##wanted-prepare',ui)then
                 local offer,why=cb.caseOffer(f)
                 if offer then local ok;ok,why=cb.caseAccept(offer);if not ok then error(s,why)end else error(s,why)end
             end

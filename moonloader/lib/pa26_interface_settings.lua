@@ -1,7 +1,9 @@
 local model=require 'pa26_bindings'
 local M={}
-function M.draw(s,ui,data,cb,menu)
+function M.draw(s,ui,data,cb,menu,part)
+    part=part or 'all'
     local im=s.imgui;s.currentUi=ui;s.preferenceContext=true
+    if part~='chat'then
     local layout=model.copy((s.autosaves and s.autosaves.window_layout and s.autosaves.window_layout.value)or s.lib.settings.window_layout)
     s:settingsHeading(ui,'Размер и положение окон')
     layout.remember=s:check('Сохранять выставленный размер и положение после перезахода##window-remember',layout.remember)
@@ -17,6 +19,9 @@ function M.draw(s,ui,data,cb,menu)
         layout.windows={};menu.windows={};menu:resetWindowPositions()
     end
     s:autoSettings('window_layout',{'settings','window_layout'},layout)
+    s:autosaveHint(ui,'window_layout')
+    end
+    if part~='windows'then
     s:settingsHeading(ui,'Перенос ручного чата')
     local cfg=model.copy((s.autosaves and s.autosaves.manual_chat and s.autosaves.manual_chat.value)or s.lib.settings.manual_chat)
     cfg.enabled=s:check('Переносить длинный текст после Enter##manual-chat-enabled',cfg.enabled)
@@ -27,12 +32,13 @@ function M.draw(s,ui,data,cb,menu)
         if im.SliderInt('##manual-chat-'..row[1],n,row[3],row[4])then cfg[row[1]]=n[0]end;ui.finish()
     end
     ui.text('Если текст не помещается, отправки не будет и ввод сохранится. Enter разрешает реальную отправку ручного текста. При разрыве связи или остановке остаток возвращается в черновик; уже отправленные части повторно не отправляются.')
-    if s:button('Изменить порог и маркер продолжения##manual-chat-rp-settings',ui)then cb.openAssist('roleplay')end
+    if s:button('Изменить порог и маркер продолжения##manual-chat-rp-settings',ui)then if cb.openSettings then cb.openSettings('chat','split')else cb.openAssist('roleplay')end end
     if data.manualChatDraft and data.manualChatDraft~=''then
         if s.manualDraftShown~=data.manualChatDraft then s.cache['manual:recovery']=nil;s.manualDraftShown=data.manualChatDraft end
         s:field('Сохранённый остаток · можно выделить и скопировать##manual-recovery','manual:recovery',data.manualChatDraft,8192,true,90)
     end
     s:autoSettings('manual_chat',{'settings','manual_chat'},cfg)
-    s:autosaveHint(ui,'window_layout');s:autosaveHint(ui,'manual_chat')
+    s:autosaveHint(ui,'manual_chat')
+    end
 end
 return M

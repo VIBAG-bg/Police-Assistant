@@ -85,7 +85,7 @@ for _,size in ipairs({{640,480},{1280,720},{2560,1440}})do
     onScriptTerminate(s.script)
 end
 -- Actual settings form, persisted custom reports, deletion popup and feature capture.
-s=setup();s.commands.pa26();s.step();s.page('settings');s.click='Связь##settings-tab-radio';s.render()
+s=setup();s.commands.pa26();s.step();s.page('settings');s.click='4. Рация и тревоги##settings-tab-radio';s.render()
 local studio=s.workspace.studio;studio.radioPage='automatic';s.render();s.click='+ Новый автодоклад##guard-new';s.render()
 check(studio.radioGuardDraft);s.edits={['##Название##guard-name']='Мой пользовательский доклад'};s.render();s.edits={}
 studio.radioGuardDraft.custom[1].interval_ms=60000;s.toggle='Включить расписание##guard-enabled';s.render()
@@ -94,7 +94,7 @@ local path='moonloader\\config\\police_assistant_2026_library.json';local saved=
 s.click='Удалить##guard-delete';s.render();check(studio.customRemove);s.click='НЕТ##confirm-no';s.render();eq(#s.savedLibrary().radio_guard.custom,1)
 s.click='Удалить##guard-delete';s.render();s.click='ДА##confirm-yes';s.render();eq(#s.savedLibrary().radio_guard.custom,0)
 s.click='+ Новый автодоклад##guard-new';s.render();eq(studio.radioGuardDraft.custom[1].id,2,'internal IDs do not reuse stale callbacks')
-s.click='Оружие##settings-tab-weapons';s.render();studio.weaponPage='warning';s.render()
+s.click='5. Оружие и тайзер##settings-tab-weapons';s.render();studio.weaponPage='warning';s.render()
 s.edits={['##Предупреждение: Тайзер##warning-taser_template']='Предупреждение: будет применён тайзер.'};s.render();s.edits={}
 s.click='Назначить сочетание предупреждения##warning-key';s.render();check(studio.keyCapture)
 s.guiDown={[0x11]=true,[0x12]=true,[0x48]=true};s.step();s.guiDown={};s.step();check(studio.keyCapture.valid)

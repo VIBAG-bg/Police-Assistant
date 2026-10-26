@@ -104,7 +104,7 @@ s.ackInfo();s.click='Общее##editor-tab';s.render();s.toggle='В радиа�
 check(not library(s).bindings[1].wheel_visible);check(library(s).bindings[1].quick);onScriptTerminate(s.script)
 
 -- Native controls persist profile/mode and keep old direct slots available.
-s=fixture({categoryWheel=true});s.step();s.page('settings');s.click='Доступ##settings-tab-options';s.render()
+s=fixture({categoryWheel=true});s.step();s.page('settings');s.click='3. Управление и колесо##settings-tab-options';s.render()
 local originalSlots=model.copy(library(s).wheel)
 s.combo='##Количество категорий##wheel-profile';s.click='6##Количество категорий##wheel-profileextended';s.render();s.combo=nil
 s.step()

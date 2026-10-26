@@ -6,21 +6,22 @@ local M = {}
 local Menu = {}
 Menu.__index = Menu
 M.sections = {
-    {key = 'home', label = 'Главная', short = 'Главная'},
-    {key = 'settings', label = 'Настройки', short = 'Настройки'},
-    {key = 'stats', label = 'Статистика', short = 'Статистика'},
-    {key = 'binds', label = 'Библиотека биндов', short = 'Бинды'},
-    {key = 'hints', label = 'Памятки и подсказки', short = 'Памятки'},
-    {key = 'partners', label = 'Напарники', short = 'Напарники'},
-    {key = 'addons', label = 'Инструменты', short = 'Инструменты'},
-    {key = 'knowledge', label = 'База знаний', short = 'База знаний'},
+    {key='home',label='Главная',short='Главная'},
+    {key='binds',label='Библиотека биндов',short='Бинды'},
+    {key='addons',label='Помощники службы',short='Помощники'},
+    {key='partners',label='Напарники',short='Напарники'},
+    {key='hints',label='Памятки и справка',short='Памятки'},
+    {key='knowledge',label='База знаний',short='База знаний'},
+    {key='stats',label='Журнал и статистика',short='Журнал'},
+    {key='settings',label='Настройки',short='Настройки'},
 }
+
 M.credit = 'by VIBAG ( Victor Auditore )'
 M.contacts={'Telegram: victor_bg','Discord: victor_bag','GitHub: VIBAG-bg'}
 M.contactText=table.concat(M.contacts,' · ')
 
 function M.new()
-    return setmetatable({section = 'home', guide = 'commands', tool = 'actions', assets = {}, windows = {}}, Menu)
+    return setmetatable({section = 'home', guide = 'commands', tool = 'patrol', assets = {}, windows = {}}, Menu)
 end
 function Menu:navigate(section,guide,tool)
     local title=section;for _,row in ipairs(M.sections)do if row.key==section then title=row.label end end
@@ -33,7 +34,7 @@ local function clamp(value,low,high) return math.max(low,math.min(high,value)) e
 function M.windowBounds(width,height,key,percent)
     if not core.finite(width) or not core.finite(height) or width<220 or height<220 then return nil end
     percent=percent or 70
-    local defaults=({main={width*percent/100,height*percent/100,760,480},wanted={width*.7,math.max(720,height*.86),420,400},quick={780,700,360,320},tips={960,760,420,360},assist={1000,800,440,420}})[key]
+    local defaults=({main={width*percent/100,height*percent/100,760,480},wanted={width*.7,math.max(720,height*.86),420,400},quick={780,700,360,320},tips={960,760,420,360},assist={680,560,420,380}})[key]
     if not defaults then return nil end
     local maxW,maxH=width-32,height-32
     local minW,minH=math.min(defaults[3],maxW),math.min(defaults[4],maxH)
@@ -245,7 +246,8 @@ function M.confirmationLayout(im,spec)
         local cols=spec.columns or 2;local buttonWidth=math.max(1,(inner-(cols-1)*10)/cols)
         footer=42
         for _,label in ipairs(spec.buttons or{})do footer=math.max(footer,M.labelLayout(buttonFont,buttonSize,math.max(1,buttonWidth-28),label).height+16)end
-        footer=footer+(spec.extraFooter or 0)
+        local rows=math.max(1,math.ceil(#(spec.buttons or{})/cols))
+        footer=footer*rows+(rows-1)*10+(spec.extraFooter or 0)
         if spec.checkboxLabel then
             footer=footer+math.max(bodySize+8,M.labelLayout(bodyFont,bodySize,math.max(1,inner-32),spec.checkboxLabel).height)+10
         end
@@ -637,7 +639,7 @@ function M.starButton(im,ui,id,selected,size)
     end
     return clicked
 end
-local function selectorRow(imgui, items, active, prefix, onSelect)
+local function selectorRow(imgui, items, active, prefix, onSelect,ui)
     local available, used = imgui.GetContentRegionAvail().x, 0
     for _, entry in ipairs(items) do
         local label = entry[2]
@@ -652,7 +654,10 @@ local function selectorRow(imgui, items, active, prefix, onSelect)
             imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(.18,.50,.70,1))
             imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(.12,.37,.56,1))
         end
-        if imgui.Button(label..'##'..prefix..entry[1],imgui.ImVec2(width,44))then onSelect(entry[1])end
+        local clicked
+        if ui then clicked=M.fittedButton(imgui,ui,label..'##'..prefix..entry[1],imgui.ImVec2(width,44))
+        else clicked=imgui.Button(label..'##'..prefix..entry[1],imgui.ImVec2(width,44))end
+        if clicked then onSelect(entry[1])end
         if selected then imgui.PopStyleColor(3)end
         used = used + width
     end
@@ -769,31 +774,20 @@ function Menu:bindsPage(imgui, ui, model, callbacks, fonts)
     muted(imgui, ui, 'Сценарии вызываются из колеса; отдельные клавиши для каждого пока не назначены.')
 end
 
-function Menu:addonsPage(imgui, ui, model, callbacks, fonts)
-    heading(imgui, ui, 'Инструменты Police Assistant 2026', fonts.heading)
-    muted(imgui, ui, 'Все реализованные функции помощника')
-    if callbacks.openAssist then
-        imgui.PushStyleColor(imgui.Col.Button,color(imgui,.08,.47,.66,.98));ui.push(function()imgui.PopStyleColor(1)end)
-        if button(imgui,ui,'Помощники · '..(model.assistKey or'Не назначено')..'##assist-open',imgui.ImVec2(-1,54),fonts.button)then callbacks.openAssist()end
-        ui.finish();ui.text('Отдельное окно: мегафон, фиксация, обучение, уведомления и настройки команд.')
-    end
-    if callbacks.openAssist and button(imgui,ui,'Команды сервера · сверка##server-commands-open',imgui.ImVec2(-1,36),fonts.button)then callbacks.openAssist('commands')end
-    local tools = {{'actions', 'Бинды'}, {'wheel', 'Радиальное меню'}, {'widget', 'Виджет'}, {'log', 'Журнал'}, {'extras','Дополнения'},{'identity','Человек'},{'procedures','Процедуры'},{'operations','Действия'}}
-    selectorRow(imgui, tools, self.tool, 'tool', function(key) self.tool = key end)
+function Menu:addonsPage(imgui,ui,model,callbacks,fonts)
+    heading(imgui,ui,'Помощники службы',fonts.heading)
+    muted(imgui,ui,'Выберите задачу текущей смены. Общие параметры находятся в «Настройках».')
+    if callbacks.openAssist and button(imgui,ui,'Открыть быстрое окно помощников ('..(model.assistKey or'F4')..')##assist-open',imgui.ImVec2(-1,42),fonts.button)then callbacks.openAssist()end
+    local tools={{'patrol','Патруль и экипаж'},{'events','События патруля'},{'identity','Человек и личность'},
+        {'vehicle','Машина и мегафон'},{'procedures','Розыск, штрафы, /setmark'},{'evidence','Фиксация (F8)'},{'training','Обучение'},{'extras','Собеседование'}}
+    selectorRow(imgui,tools,self.tool,'tool',function(key)self.tool=key end,ui)
     imgui.Separator()
-    if self.tool == 'actions' then callbacks.actions()
-    elseif self.tool == 'widget' then callbacks.widget()
-    elseif self.tool == 'log' then callbacks.log()
-    elseif self.tool == 'extras' and callbacks.extras then callbacks.extras()
-    elseif self.tool=='identity'and callbacks.identity then callbacks.identity()
-    elseif self.tool=='procedures'and callbacks.procedures then callbacks.procedures()
-    elseif self.tool=='operations'and callbacks.operations then callbacks.operations()
-    else
-        ui.text('Удерживайте ' .. model.wheelKey .. ', выберите сектор и отпустите клавишу.')
-        ui.text('В деморежиме другой игрок не нужен; реальные сообщения не отправляются.')
-        ui.text('Выберите подсвеченного человека удержанием ПКМ или кнопки прицеливания GTA. В настройках можно изменить управление и время удержания; оружие не требуется.')
-        ui.text('Центр колеса и область за его краем отменяют выбор.')
-        if imgui.Button('Настроить клавиши и дистанцию##wheelhelp') then self:navigate('settings')end
+    local route=({patrol='patrol',events='patrolEvents',identity='identity',vehicle='vehicle',procedures='procedures',
+        evidence='evidence',training='training',extras='extras',actions='actions',widget='widget',log='log',operations='operations'})[self.tool]
+    if route and callbacks[route]then callbacks[route]()
+    elseif self.tool=='wheel'then
+        ui.text('Настройка колеса теперь находится в «Настройки → Управление и колесо».')
+        if callbacks.openSettings and button(imgui,ui,'Открыть настройки колеса##wheel-settings',imgui.ImVec2(-1,42),fonts.button)then callbacks.openSettings('options')end
     end
 end
 
@@ -888,7 +882,7 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         local sidebarTextH=0
         for _,line in ipairs(M.contacts)do sidebarTextH=sidebarTextH+M.labelLayout(smallFont,smallSize,artworkWidth,line).height end
         local spacing=self.compact and 6 or 10
-        local navHeight = math.max(1, imgui.GetContentRegionAvail().y - (3*smallSize+sidebarTextH+9*spacing+10))
+        local navHeight = math.max(1, imgui.GetContentRegionAvail().y - (3*smallSize+sidebarTextH+9*spacing+10+math.max(0,42-smallSize)))
         child(imgui, ui, 'navigation##pa26', 0, navHeight, function()
             imgui.PushStyleVarVec2(imgui.StyleVar.ButtonTextAlign, vec(0, .5))
             ui.push(function() imgui.PopStyleVar(1) end)
@@ -909,7 +903,9 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         end, true, 0, 0)
         imgui.Dummy(vec(0, 4))
         withFont(imgui, ui, fonts.small, function()
-            ui.text(model.demo and 'ДЕМО • без отправки' or 'РЕАЛЬНЫЙ РЕЖИМ')
+            imgui.PushStyleColor(imgui.Col.Button,model.demo and color(imgui,.52,.33,.09,.96)or color(imgui,.08,.32,.35,.96));ui.push(function()imgui.PopStyleColor(1)end)
+            if M.fittedButton(imgui,ui,(model.demo and 'ДЕМО · без отправки'or'Реальный режим')..'##sidebar-demo',vec(-1,42),fonts.small)and callbacks.toggleDemo then callbacks.toggleDemo()end
+            ui.finish()
             muted(imgui, ui, model.connected and 'Соединение активно' or 'Ожидание сервера')
             imgui.Dummy(vec(0,6));ui.text('Для связи')
             for _,line in ipairs(M.contacts)do ui.text(line)end

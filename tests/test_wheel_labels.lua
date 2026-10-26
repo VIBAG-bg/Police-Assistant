@@ -11,7 +11,7 @@ local s=fixture({demo=false,alerts=true,notifications=true,categoryWheel=true});
 s.down[0x58]=true;s.step(16,{[0x58]=true});check(s.runtime.wheel)
 for i=1,25 do s.step(5000);check(s.runtime.wheel,'wheel stays open while X is held');eq(#s.sent,0)end
 s.paused=true;s.step();check(not s.runtime.wheel);s.paused=false;s.down[0x58]=false;s.step();eq(#s.sent,0)
-s.commands.pa26();s.step();s.page('settings');s.click='Доступ##settings-tab-options';s.render()
+s.commands.pa26();s.step();s.page('settings');s.click='3. Управление и колесо##settings-tab-options';s.render()
 s.edits={['##Категория 1##wheel-name-citizen']='Свои обращения'};s.render();s.edits={};s.step(650)
 eq(s.workspace.library.settings.wheel_names.citizen,'Свои обращения');eq(wheel.build(s.workspace.library,1).byCategory.citizen.name,'Свои обращения')
 -- The editor and the category's More/search heading share saved custom names.

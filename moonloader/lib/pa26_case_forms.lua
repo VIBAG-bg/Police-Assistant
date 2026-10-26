@@ -218,7 +218,7 @@ function Forms:preview(f)
     local rpSettings,nickname;if self.env.rpSettings then rpSettings,nickname=self.env.rpSettings()end
     local function expand(text)
         local missing
-        local line=text:gsub('{([a-z_]+)}',function(k)
+        local line=core.expandGender(text,self.state and self.state.gender or(self.env.gender and self.env.gender())):gsub('{([a-z_]+)}',function(k)
             local v=values[k];if not v or v==''then missing=k;return ''end;return v
         end)
         if missing then return nil,'Заполните поле: '..missing end
@@ -455,7 +455,7 @@ function Forms:templatePreview(template,f)
     local row=f and catalog.byId[f.reason_id]
     if row then values.game_reason=row.title;values.game_group=row.group_title;values.game_stars=tostring(row.stars);values.amount=tostring(row.stars)end
     local missing=false
-    local text=template:gsub('{([a-z_]+)}',function(key)
+    local text=core.expandGender(template,self.state and self.state.gender or(self.env.gender and self.env.gender())):gsub('{([a-z_]+)}',function(key)
         local v=values[key]
         if not v or v==''then missing=true;return '[не заполнено: '..key..']'end
         return tostring(v):gsub('%s+',' ')

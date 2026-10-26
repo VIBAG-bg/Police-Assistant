@@ -29,12 +29,12 @@ function M.colors(c,cfg)
     local a,b=color(c.color1),color(c.color2)
     return a==b and a or a..cfg.color_separator..b,a,b
 end
-function M.describe(c,cfg)
+function M.describe(c,cfg,gender)
     local name=cfg.model_aliases[tostring(c.model_id)]or c.model_name or cfg.unknown_model
     local color,a,b=M.colors(c,cfg)
     local values={model=name,model_id=tostring(c.model_id),vehicle_id=tostring(c.id),vehicle_color=color,color_one=a,color_two=b}
     local missing
-    local description=cfg.description_template:gsub('{([a-z_]+)}',function(k)if not values[k]then missing=k;return ''end;return values[k]end)
+    local description=core.expandGender(cfg.description_template,gender):gsub('{([a-z_]+)}',function(k)if not values[k]then missing=k;return ''end;return values[k]end)
     if missing then return nil,'Описание машины: используйте {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}.'end
     values.vehicle_description=description;return values
 end
@@ -84,7 +84,7 @@ function Vehicle:values(state,c)
     c=c or self.selected
     for k,v in pairs(self.env.service and self.env.service()or {})do if out[k]==nil or out[k]==''then out[k]=v end end
     out.direction=cfg.direction_enabled and(self.directionValue or cfg.stationary)or cfg.manual_direction
-    if c then local values,err=M.describe(c,cfg);if not values then return nil,err end;for k,v in pairs(values)do out[k]=v end end
+    if c then local values,err=M.describe(c,cfg,out.gender);if not values then return nil,err end;for k,v in pairs(values)do out[k]=v end end
     return out
 end
 function Vehicle:periodic(base)
@@ -107,7 +107,7 @@ function M.preview(action,cfg,values,codec,split)
     if slot and(not phrase or not phrase.enabled)then return nil,'Требование выключено или удалено.'end
     local body=phrase and phrase.template or cfg[action..'_template'];if not body then return nil,'Неизвестное действие транспорта.'end
     values=mapGrid.reportValues(values,body,not megaphone(action)and action~='approach'and action~='window')
-    local missing;body=body:gsub('{([a-z_]+)}',function(k)
+    local missing;body=core.expandGender(body,values.gender):gsub('{([a-z_]+)}',function(k)
         local v=values[k];local tag=k=='local_tag'or k=='global_tag'or k=='prison_tag'
         if v==nil and not tag or v==''and not tag then missing=k;return ''end
         return tag and v and v~=''and tostring(v)..' 'or tostring(v or '')

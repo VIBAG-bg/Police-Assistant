@@ -40,11 +40,11 @@ end
 local s=setup();route(s,'wanted');local st=s.workspace.studio
 check(st.caseForm);eq(st.caseForm.kind,'wanted');eq(st.caseForm.target.id,37);check(not s.workspace.executor.queue)
 click(s,'Нет##Вы видели паспорт этого человека?##wanted-passport_seenno')
-click(s,'Нет##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskno')
-s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
+click(s,'Нет##На подозреваемом полная RP-маска (/mask + аксессуар на лице)?##wanted-maskno')
+s.toggle='Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';s.render()
 click(s,'Далее · причина розыска##wanted-next');s.render();click(s,'С приметами##wanted-appearance-second');s.render()
 s.edits={['##Приметы##wanted-appearance-modal']='Сохраняемые приметы'};s.render();s.edits={}
-click(s,'Далее##wanted-appearance-first')
+click(s,'Далее · к выбору статьи##wanted-appearance-first')
 local wanted=st.caseForm
 -- A second form has its own fields; switching and closing menus keeps the first.
 s.commands.pa26quick();s.step();click(s,'Штраф##quick-system-procedure-fine')

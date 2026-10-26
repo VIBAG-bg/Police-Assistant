@@ -29,7 +29,7 @@ local fixture=require 'support.fixture'
 local s=fixture({demo=false,library=old});s.step();s.page('settings')
 local function healthy()check(not s.hasLog('Ошибка интерфейса'),table.concat(s.logs,'\n'));eq(#s.scopes,0);eq(s.invalidIOReads,0)end
 local function click(label)s.click=label;s.render();eq(s.click,nil,label);healthy()end
-click('Перенос /me и /do##rp-settings');s.render()
+require('support.ui_routes').chat(s,'split');s.render()
 click('Обновить стандартные отыгровки##rp-presets');s.render()
 local studio=s.workspace.studio;check(studio.rpPresetConfirm);check(studio:hasModal())
 local modal=studio:modalIntent({});eq(modal.kind,'rp_presets');check(#modal.lines>150)

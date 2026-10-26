@@ -374,6 +374,7 @@ local function fixture(options)
     imgui.GetContentRegionAvail = function() renderer(); return imgui.ImVec2(math.max(1,s.area.x-s.padding.x*2),math.max(1,s.area.y-s.padding.y*2)) end
     imgui.GetWindowSize = function() renderer(); return imgui.ImVec2(s.area.x,s.area.y) end
     imgui.GetWindowPos = function() renderer(); return imgui.ImVec2(s.currentWindow and s.currentWindow.x or 10,s.currentWindow and s.currentWindow.y or 10) end
+    imgui.GetCursorPos = function() renderer(); return imgui.ImVec2(0,0) end
     imgui.GetCursorPosX = function() renderer(); return s.cursorX or 14 end
     imgui.SetCursorPosX = function(value) renderer(); s.cursorX=value end
     imgui.GetCursorScreenPos = function() renderer(); return imgui.ImVec2(s.cursorX or 14,s.cursorY or 24) end
@@ -566,6 +567,15 @@ local function fixture(options)
     sampRegisterChatCommand = function(name, callback) s.commands[name] = callback; return true end
     sampUnregisterChatCommand = function(name) s.commands[name] = nil end
     getWorkingDirectory = function() return 'moonloader' end
+    -- Runtime health is isolated just like the fixture's other filesystem data.
+    package.loaded.pa26_startup={
+        clear=function()s.startupState=nil end,
+        block=function(_,message)s.startupState='blocked';s.startupMessage=message;return true end,
+        ready=function()s.startupState='ready';return true end,
+        read=function()return s.startupState,s.startupMessage end,
+        announce=function(message)s.logs[#s.logs+1]=message;return true end,
+    }
+
     doesFileExist = function() return true end
     getFolderPath = function() return 'C:/Windows/Fonts' end
     getCursorPos = function() return s.mx or s.io.MousePos.x, s.my or s.io.MousePos.y end

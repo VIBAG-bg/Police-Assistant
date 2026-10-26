@@ -19,7 +19,7 @@ local function offer(s,command)
  check(s.workspace.studio.manualAction,'Manual action confirmation missing');eq(#s.sent,0)
 end
 local function choose(s,yes)
- s.click=yes and'ДА##confirm-yes'or'НЕТ##confirm-no';s.render()
+ s.click=yes and'ДА — отыграть RP и выполнить##confirm-yes'or'НЕТ — выполнить сразу без RP##confirm-no';s.render()
  eq(s.click,nil);for _=1,22 do s.step(1500)end
  check(not s.hasLog('Ошибка интерфейса'));eq(#s.scopes,0)
 end
@@ -42,7 +42,7 @@ for _,change in ipairs({'escape','quit','reuse','settings','session','focus'})do
  elseif change=='settings'then local value=model.copy(s.workspace.library);value.settings.manual_actions.enabled=false;check(s.workspace:save(value))
  elseif change=='session'then s.address='10.0.0.2'
  else onWindowMessage(0x8,0)end
- if change~='escape'and change~='focus'then s.click='ДА##confirm-yes';s.render()end
+ if change~='escape'and change~='focus'then s.click='ДА — отыграть RP и выполнить##confirm-yes';s.render()end
  for _=1,8 do s.step(1600)end;eq(#s.sent,0,change);onScriptTerminate(s.script)
 end
 -- CEF uses a local event; retries of the same receipt cannot ask/send twice.
@@ -64,7 +64,7 @@ eq(#s.sent,1);eq(s.sent[1].line,'/me проверил служебный пла�
 local lib=model.defaults(core.defaults());lib.settings.manual_actions.rules.cuff.rp='/me поправил наручники.'
 local parts=require('pa26_user_files').partition(lib)
 local back=assert(require('pa26_user_files').combine(parts,core.defaults()));eq(back.settings.manual_actions.rules.cuff.rp,'/me поправил наручники.')
-s=setup();s.commands.pa26();s.render();s.page('addons');s.click='Команды сервера · сверка##server-commands-open';s.render();s.render();eq(s.click,nil)
+s=setup();s.commands.pa26();s.render();require('support.ui_routes').chat(s,'commands')
 s.edits={['##RP-шаблон · резерв при отсутствии подходящего бинда##manual-action-rp']='/me подготовил наручники.'};s.render();s.edits={}
 s.toggle='Предлагать RP при ручном вводе команды##manual-actions-enabled';s.render();s.step(750)
 eq(s.workspace.library.settings.manual_actions.enabled,false)

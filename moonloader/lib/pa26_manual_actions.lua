@@ -6,22 +6,22 @@ local excluded={su=true,wanted=true,r=true,rn=true,f=true,fn=true,d=true,df=true
 local targets={cuff=true,uncuff=true,push=true,hold=true,unhold=true,frisk=true,unmask=true,ticket=true,takelic=true,arrest=true,pt=true,unpt=true}
 M.targetHeads=targets
 local standard={
- cuff='/me снял наручники с пояса и зафиксировал их на запястьях задержанного.\n/do Фиксация наручников проверена.',
- uncuff='/me вставил ключ в замок, расстегнул наручники и убрал их в подсумок.',
- frisk='/me надел перчатки и последовательно проверил одежду и карманы задержанного.',
- unmask='/me аккуратно снял маску с лица задержанного и убрал её в пакет для имущества.',
- push='/me открыл дверь служебного автомобиля и, придерживая задержанного, усадил его внутрь.',
- hold='/me взял задержанного под локоть и подготовился сопроводить его за собой.',
- unhold='/me остановился и отпустил руку сопровождаемого.',
- arrest='/me оформил материалы задержания и передал их вместе с задержанным дежурному.',
- ticket='/me заполнил постановление о штрафе, сверил внесённые сведения и подготовил его к выдаче.',
- clear='/me открыл служебную базу и оформил запрос на прекращение розыска.',
- pt='/me активировал служебный терминал и передал диспетчеру сведения о начале преследования.',
- unpt='/me передал диспетчеру сведения о завершении преследования и закрыл запись в терминале.',
- setmark='/me ввёл известный по RP номер телефона в служебный терминал и запросил пеленгацию.\n/do На терминале отображается запрос на определение местоположения по сигналу телефона.',
- ud='/me достал служебное удостоверение, раскрыл его и продемонстрировал собеседнику.',
- takelic='/me оформил изъятие водительского удостоверения и внёс сведения в служебную запись.',
- take='/me надел перчатки, подготовил пакеты для изъятого имущества и приступил к оформлению протокола.'}
+ cuff='/me {gender:снял|сняла} наручники с пояса и {gender:зафиксировал|зафиксировала} их на запястьях задержанного.\n/do Фиксация наручников проверена.',
+ uncuff='/me {gender:вставил|вставила} ключ в замок, {gender:расстегнул|расстегнула} наручники и {gender:убрал|убрала} их в подсумок.',
+ frisk='/me {gender:надел|надела} перчатки и последовательно {gender:проверил|проверила} одежду и карманы задержанного.',
+ unmask='/me аккуратно {gender:снял|сняла} маску с лица задержанного и {gender:убрал|убрала} её в пакет для имущества.',
+ push='/me {gender:открыл|открыла} дверь служебного автомобиля и, придерживая задержанного, {gender:усадил|усадила} его внутрь.',
+ hold='/me {gender:взял|взяла} задержанного под локоть и {gender:подготовился|подготовилась} сопроводить его за собой.',
+ unhold='/me {gender:остановился|остановилась} и {gender:отпустил|отпустила} руку сопровождаемого.',
+ arrest='/me {gender:оформил|оформила} материалы задержания и {gender:передал|передала} их вместе с задержанным дежурному.',
+ ticket='/me {gender:заполнил|заполнила} постановление о штрафе, {gender:сверил|сверила} внесённые сведения и {gender:подготовил|подготовила} его к выдаче.',
+ clear='/me {gender:открыл|открыла} служебную базу и {gender:оформил|оформила} запрос на прекращение розыска.',
+ pt='/me {gender:активировал|активировала} служебный терминал и {gender:передал|передала} диспетчеру сведения о начале преследования.',
+ unpt='/me {gender:передал|передала} диспетчеру сведения о завершении преследования и {gender:закрыл|закрыла} запись в терминале.',
+ setmark='/me {gender:ввёл|ввела} известный по RP номер телефона в служебный терминал и {gender:запросил|запросила} пеленгацию.\n/do На терминале отображается запрос на определение местоположения по сигналу телефона.',
+ ud='/me {gender:достал|достала} служебное удостоверение, {gender:раскрыл|раскрыла} его и {gender:продемонстрировал|продемонстрировала} собеседнику.',
+ takelic='/me {gender:оформил|оформила} изъятие водительского удостоверения и {gender:внёс|внесла} сведения в служебную запись.',
+ take='/me {gender:надел|надела} перчатки, {gender:подготовил|подготовила} пакеты для изъятого имущества и {gender:приступил|приступила} к оформлению протокола.'}
 function M.specs()
  local out={};for _,row in ipairs(require('pa26_server_commands').commands)do
   local head=row[1]:sub(2);if not excluded[head]then out[#out+1]={head=head,title=row[2],target=targets[head]==true}end
@@ -30,7 +30,7 @@ end
 function M.defaults()
  local out={enabled=true,rules={}}
  for _,s in ipairs(M.specs())do out.rules[s.head]={enabled=true,prefer_bind=true,
-  rp=standard[s.head]or('/me открыл служебный терминал и подготовил действие: '..s.title:lower()..'.')}end
+  rp=standard[s.head]or('/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: '..s.title:lower()..'.')}end
  return out
 end
 local function validHead(head)return type(head)=='string'and #head<=32 and head:match('^[a-z][a-z0-9_]*$')and not head:match('^pa26')and not excluded[head]and head~='do'end
@@ -73,8 +73,8 @@ function M.source(lib,head)
   end
  end end
 end
-function M.preview(template)
- return template:gsub('{gender:([^{}|]*)|([^{}]*)}',function(m)return m end):gsub('{([^{}]+)}',function(k)
+function M.preview(template,gender)
+ return core.expandGender(template,gender):gsub('{([^{}]+)}',function(k)
   if k=='param1'or k=='select_id'then return'37'elseif k=='params'then return'37 пример'elseif k:match('^param%d$')then return'пример'end
   return(k:find('name')or k:find('nick'))and'Иван Петров'or'пример'
  end)
@@ -138,8 +138,11 @@ function Controller:tick()
  end
  if p.displayed or s.ownWindow or self.env.busy()then return end
  p.plan,p.error,p.noPlan=self.env.prepare(p)
- p.lines={p.raw,'ДА — выполнить показанный RP, затем ровно эту команду. НЕТ — отправить только команду. Esc — отменить всё.',
-  p.demo and'ДЕМО: отправок в игру нет.'or'Результат команды определяет сервер. Подтверждение RP не устанавливает IC-личность или известный по RP телефон.'}
+ p.lines={'Введена команда: '..p.raw,'Команда придержана и ещё НЕ отправлена на сервер.',
+  'ДА — сначала отыграть RP ниже, затем отправить '..p.raw,
+  'НЕТ — отправить '..p.raw..' сразу без отыгровки.',
+  'Отменить всё (Esc) — ничего не отправлять в игру.',
+  p.demo and'Режим ДЕМО: реальной отправки на сервер не будет.'or'Результат определяет сервер. Отыгровка не заменяет IC-основание действия.'}
  if p.plan then for i=1,#p.plan.lines-1 do p.lines[#p.lines+1]=p.plan.lines[i]end
  else p.lines[#p.lines+1]='RP пока недоступен: '..tostring(p.error)end
  p.displayed=true;self.env.show(p)
@@ -159,14 +162,14 @@ function M.draw(studio,ui)
   local source=rule.prefer_bind and M.source(studio.lib,head)
   ui.text('Источник: '..(source and('бинд «'..source.name..'»; его серверный хвост заменяется введённой командой.')or'RP-шаблон выше.'))
   ui.text('От 1 до 8 строк /me, /do, /try или /todo. Переменные биндов: {param1}…{param8}, {params}, {my_name}, {select_id}, {select_name}. Последние требуют доступного игрока из введённого ID. Лишние серверные команды не исполняются.')
-  ui.text('Пример для /'..head..' 37: '..M.preview(source and source.script or rule.rp))
+  ui.text('Пример для /'..head..' 37: '..M.preview(source and source.script or rule.rp,studio.lib.profile.gender))
  end
  studio.manualNewHead=studio:field('Другая серверная команда · без /##manual-action-new','manual-action-new',studio.manualNewHead or'',128)
  if studio:button('Добавить команду##manual-action-add',ui)then
   local name=studio.manualNewHead:lower():match('^%s*(.-)%s*$')
   if not validHead(name)then studio:notify('Укажите имя без /, пробелов и параметров. Чат, /su и /wanted используют отдельные обработчики.','commands',false)
   elseif cfg.rules[name]then studio:notify('Эта команда уже есть.','commands',false)
-  else cfg.rules[name]={enabled=true,prefer_bind=true,rp='/me подготовил выполнение служебного действия.'};studio.manualActionHead=name end
+  else cfg.rules[name]={enabled=true,prefer_bind=true,rp='/me {gender:подготовил|подготовила} выполнение служебного действия.'};studio.manualActionHead=name end
  end
  studio.manualActionsDraft=cfg;studio:autoSettings('manual_actions',{'settings','manual_actions'},cfg,'manualActionsDraft')
 end

@@ -180,7 +180,7 @@ function Events:line(form,cfg)
     end
     values=mapGrid.reportValues(values,template)
     local missing
-    local body=template:gsub('{([a-z_]+)}',function(k)
+    local body=core.expandGender(template,self.state.gender):gsub('{([a-z_]+)}',function(k)
         local v=shared.text(tostring(values[k]or ''),1024);local tag=k=='local_tag'or k=='prison_tag'or k=='global_tag'
         if not v or v==''and not tag then missing=k;return ''end
         return tag and v~=''and(v..' ')or v

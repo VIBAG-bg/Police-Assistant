@@ -77,7 +77,7 @@ s=setup({chatInputBackend=false});s.workspace.library.settings.chat_dot_commands
 eq(s.events.onSendChat(codec.encode('.к Доклад.')),false);s.chat=false;s.step()
 eq(#s.sent,1);eq(s.sent[1].line,'/r [SIGMA]: Доклад.');s.step();eq(#s.sent,1);onScriptTerminate(s.script)
 -- The GUI switch, literal profile tag and existing bindings survive autosave.
-s=setup();s.chat=false;s.commands.pa26();s.page('settings');s.click='Профиль##settings-tab-profile';s.render()
+s=setup();s.chat=false;s.commands.pa26();s.page('settings');require('support.ui_routes').chat(s,'accent')
 local count=#s.workspace.library.bindings;s.toggle='Добавлять префикс локальной волны в мой /r##manual-radio-prefix';s.render();s.step(650)
 local saved=s.savedLibrary()
 eq(saved.settings.manual_radio_prefix,false);eq(saved.profile.local_tag,'[SIGMA]:');eq(#saved.bindings,count)

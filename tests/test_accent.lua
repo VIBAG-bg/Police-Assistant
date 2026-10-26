@@ -48,7 +48,7 @@ local function open(s,page)
     s.page(page)
 end
 local function saveAccent(s,value)
-    open(s,'settings'); s.click='Профиль##settings-tab-profile'; s.render()
+    open(s,'settings'); require('support.ui_routes').chat(s,'accent')
     s.edits={['Акцент##profile']=value}; s.render()
     s.step(650)
     eq(s.savedLibrary().profile.accent,value)

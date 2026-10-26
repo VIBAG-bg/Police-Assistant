@@ -14,7 +14,7 @@ M.radioVariables={area=true,local_tag=true,global_tag=true,prison_tag=true,calls
 function M.template(value,allowed)
     value=text(value,768)
     if not value or value=='' or value:match('^[/@]') then return nil,'Нужен однострочный текст без /команды.' end
-    local rest=value:gsub('{([a-z_]+)}',function(k)return allowed[k] and '' or '{' end)
+    local rest=core.stripGender(value):gsub('{([a-z_]+)}',function(k)return allowed[k] and '' or '{' end)
     if rest:find('[{}]') then return nil,'В тексте есть неизвестная переменная.' end
     return value
 end

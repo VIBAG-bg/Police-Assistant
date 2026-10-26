@@ -107,7 +107,7 @@ function Taser:tick(state,now)
     if self.queued or self.reloadDone or self.shots==0 or (not manual and (not self:needsReload() or not cfg.auto_reload or self.failedVersion==self.version)) then return end
     if not weapons.safe(state)or not self:activeFor(state)or state.busy or state.wheel or state.alertPending then return end
     self.manual=false
-    local plan,err=weapons.plan(cfg.reload_template,state,self.env.codec,now,'taser_reload',self.life,signature(cfg),cfg.weapon_id)
+    local plan,err=weapons.plan(core.expandGender(cfg.reload_template,state.gender),state,self.env.codec,now,'taser_reload',self.life,signature(cfg),cfg.weapon_id)
     if plan then plan.automatic.shotVersion=self.version;plan.automatic.reloadAuto=not manual end
     local ok
     if plan then ok,err=self.env.start(plan) end
@@ -119,7 +119,7 @@ function Taser:validPlan(plan)
     local cfg=self.env.settings();local s=self.state;local age=core.elapsed(self.now,plan.createdAt)
     return cfg.enabled and (not a.reloadAuto or cfg.auto_reload) and weapons.safe(s)and self:activeFor(s)and a.weapon==cfg.weapon_id and
         a.life==self.life and a.shotVersion==self.version and self.shots>0 and plan.session==s.session and
-        a.ped==s.ped and plan.demo==s.demo and signature(cfg)==a.signature and age and age<=10000+(plan.rpExtraSteps or 0)*(s.sendIntervalMs or 5000)or false
+        a.ped==s.ped and a.gender==s.gender and plan.demo==s.demo and signature(cfg)==a.signature and age and age<=10000+(plan.rpExtraSteps or 0)*(s.sendIntervalMs or 5000)or false
 end
 function Taser:onExecution(kind,q)
     local a=q.plan.automatic

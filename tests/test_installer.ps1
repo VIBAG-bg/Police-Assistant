@@ -1,4 +1,4 @@
-Set-StrictMode -Version Latest
+﻿Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $paRelease=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $paManifestBefore=(Get-FileHash -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Algorithm SHA256).Hash
@@ -57,7 +57,7 @@ $tag='<!-- PA26 CEF chat adapter --><script src="pa26-chat.js"></script>'
 if($patched.Replace($tag,'') -ne $original) { throw 'Patch changed other HUD content' }
 & (Join-Path $paRelease 'install.ps1') -DestinationRoot (Join-Path $cef 'MoonLoader') | Out-Null
 if([IO.File]::ReadAllText((Join-Path $cef 'cef\assets\hud\index.html')) -ne $patched) { throw 'Repeated patch duplicated the tag' }
-foreach($failAfter in @(1,37,89,91,92)) {
+foreach($failAfter in @(1,37,89,91,92,93,94)) {
     $case=Create-Case ('rollback-'+$failAfter) $true
     $before=Snapshot $case
     $failed=$false
@@ -70,6 +70,6 @@ foreach($failAfter in @(1,37,89,91,92)) {
 }
 if((Get-FileHash -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Algorithm SHA256).Hash -ne $paManifestBefore) { throw 'Manifest changed during installer test' }
 if((Get-FileHash -LiteralPath (Join-Path $paRelease 'install.ps1') -Algorithm SHA256).Hash -ne $paInstallerBefore) { throw 'Installer changed during test' }
-$result=[ordered]@{release='0.39.0';status='passed';native_install=$true;cef_install=$true;idempotent_patch=$true;preserved_personal_files=$true;rollback_after=@(1,37,89,91,92);manifest_sha256=$paManifestBefore;installer_sha256=$paInstallerBefore;real_game_written=$false;sandbox=$paRoot}
-$result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $paRelease 'tests\INSTALLER_RESULTS_0380.json') -Encoding UTF8
-'Installer: native, CEF, repeated patch and five rollback points passed.'
+$result=[ordered]@{release='0.40.0';status='passed';native_install=$true;cef_install=$true;idempotent_patch=$true;preserved_personal_files=$true;rollback_after=@(1,37,89,91,92,93,94);manifest_sha256=$paManifestBefore;installer_sha256=$paInstallerBefore;real_game_written=$false;sandbox=$paRoot}
+$result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $paRelease 'tests\INSTALLER_RESULTS_0400.json') -Encoding UTF8
+'Installer: native, CEF, repeated patch and seven rollback points passed.'

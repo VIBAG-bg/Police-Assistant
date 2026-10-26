@@ -47,15 +47,17 @@ for _,name in ipairs({'InputInt','InputText','InputTextMultiline','Button'})do
     local original=im[name]
     im[name]=function(label,...)
         local result=original(label,...)
-        if label:find('wanted',1,true)or label:find('##case-new',1,true)or label=='ДА##confirm-yes'or label=='НЕТ##confirm-no'then
+        if label:find('wanted',1,true)or label:find('##case-new',1,true)or label:find('##confirm%-yes$')or label:find('##confirm%-no$')or label:find('##confirm%-cancel$')then
             local lo,hi=im.GetItemRectMin(),im.GetItemRectMax();local pos,size=im.GetWindowPos(),im.GetWindowSize()
             if name=='InputTextMultiline'then check(pos.x>=0 and pos.x+size.x<=guiIo.DisplaySize.x,'Multiline viewport overflow')else check(lo.x>=pos.x-1 and hi.x<=pos.x+size.x+1,'Overflow: '..pageNow..' '..label)end
             if detachedNow then check(lo.y>=pos.y and hi.y<=pos.y+size.y-8,'Detached control clipped vertically: '..pageNow..' '..label)end
             if im.IsItemVisible()then seen[widthNow..':'..label]=true end
-            if label=='ДА##confirm-yes'or label=='НЕТ##confirm-no'then
+            if label:find('##confirm%-yes$')or label:find('##confirm%-no$')or label:find('##confirm%-cancel$')then
                 check(lo.y>=pos.y and hi.y<=pos.y+size.y,'Modal buttons overflow')
                 local color=im.GetStyle().Colors[im.Col.Button]
-                check(label=='ДА##confirm-yes'and color.y>color.x or label=='НЕТ##confirm-no'and color.x>color.y,'Wrong YES/NO color')
+                if label:find('##confirm%-yes$')then check(color.y>color.x,'YES must be green')
+                elseif pageNow~='manual_action'or label:find('##confirm%-cancel$')then check(color.x>color.y,'Cancel/NO must be red')
+                else check(color.z>color.x,'Manual NO must be neutral, distinct from cancel')end
             end
             if label:find('##wanted%-appearance%-first')or label:find('##wanted%-appearance%-second')or label=='##Приметы##wanted-appearance-modal'then
                 check(lo.y>=pos.y and hi.y<=pos.y+size.y,'Appearance modal control clipped: '..label)
@@ -118,8 +120,8 @@ for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
 end
 editor.manualAction=nil
 for _,label in ipairs({'##wanted-time-delay_ms','##Текст напоминания##wanted-reminder-text','##Приметы##wanted-appearance-modal',
-    'Общая##wanted-appearance-first','С приметами##wanted-appearance-second','Далее##wanted-appearance-first','Назад##wanted-appearance-second',
-    'Проверить отыгровку и команду##wanted-preview','Отправить отыгровку · затем ДА/НЕТ##wanted-prepare','ДА##confirm-yes','НЕТ##confirm-no'})do
+    'Общая (без ввода)##wanted-appearance-first','С приметами##wanted-appearance-second','Далее · к выбору статьи##wanted-appearance-first','Назад##wanted-appearance-second',
+    'Проверить отыгровку и команду##wanted-preview','Отыграть ориентировку в чат (затем ДА/НЕТ на выдачу)##wanted-prepare','ДА — выдать розыск##confirm-yes','НЕТ — не выдавать розыск##confirm-no','Отменить всё (Esc) — не отправлять##confirm-cancel'})do
     check(seen['300:'..label],'Required control unreachable at 300 px: '..label)
 end
 check(modalCount>0)

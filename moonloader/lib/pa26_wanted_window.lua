@@ -21,7 +21,7 @@ function M.draw(s,ui,data,cb)
     if cb.caseValid and not cb.caseValid(f)then
         s.wantedAppearance=nil;ui.text('Форма устарела: игрок отключился или игровая сцена изменилась. Повторите /su ID.');return
     end
-    ui.text(f.target and('Розыск · '..f.target.name..' ['..f.target.id..']')or'Общий список преступников')
+    ui.text(f.target and('Подозреваемый: '..f.target.name..' [ID: '..f.target.id..']')or'Общий список преступников')
     local narrow=im.GetWindowSize().y<650
     if f.stage~='identity'then s.wantedIdentityPage=nil;s.wantedPassportEditor=nil end
     if f.stage=='identity'then
@@ -43,10 +43,10 @@ function M.draw(s,ui,data,cb)
         end
         local details=narrow and s.wantedIdentityPage=='details'
         if not details then
-            if cfg.wanted_require_life_ack then f.life_ack=s:check('Основание из текущей ситуации после последней смерти##wanted-life-ack',f.life_ack)end
-            if cfg.allow_ooc then f.mode=s:choice('Ветка розыска##wanted-mode',f.mode,{{'ic','IC · данные или приметы'},{'ooc','OOC · системная механика'}},ui)end
+            if cfg.wanted_require_life_ack then f.life_ack=s:check('Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack',f.life_ack)end
+            if cfg.allow_ooc then f.mode=s:choice('Ветка розыска##wanted-mode',f.mode,{{'ic','IC · по паспорту или приметам'},{'ooc','OOC · только для пеленгации /setmark'}},ui)end
             if f.mode=='ic'then
-                question(s,f,ui,'На саспекте RP-маска: /mask и скрытое лицо?','mask')
+                question(s,f,ui,'На подозреваемом полная RP-маска (/mask + аксессуар на лице)?','mask')
                 question(s,f,ui,'Вы видели паспорт этого человека?','passport_seen')
                 if cb.caseFillWanted then cb.caseFillWanted(f)end
             end
@@ -59,7 +59,7 @@ function M.draw(s,ui,data,cb)
                 if s:button('Телефон для RP-пеленгации##wanted-phone-edit',ui)then s.wantedIdentityPage='phone'end
                 f.ooc_ack=s:check('Телефон включён; RP-пеленгация; звёзды сниму сразу##wanted-ooc-ack',f.ooc_ack)
             else
-                if f.mask=='yes'then question(s,f,ui,'Личность установлена до RP-маски и с тех пор не теряли человека из виду?','face_before')end
+                if f.mask=='yes'then question(s,f,ui,'Вы установили личность по лицу или паспорту ДО маски и НЕ теряли человека из виду?','face_before')end
                 if f.passport_seen=='yes'then
                     ui.text('Паспорт подтверждён: '..f.ic_name..' · № '..f.passport_number)
                     if s:button('Уточнить имя или номер##wanted-passport-edit',ui)then s.wantedPassportEditor=true end
@@ -112,7 +112,7 @@ function M.draw(s,ui,data,cb)
             if s:button('Следующая##wanted-preview-page-next',ui,width)then s.wantedPreviewPage=math.min(pages,page+1)end
         end
         ui.text('Сначала только RP. После отыгровки — отдельное ДА/НЕТ перед командой.')
-        if s:button('Отправить отыгровку · затем ДА/НЕТ##wanted-prepare',ui)then
+        if s:button('Отыграть ориентировку в чат (затем ДА/НЕТ на выдачу)##wanted-prepare',ui)then
             local offer,err=cb.caseOffer(f)
             if offer then local ok;ok,err=cb.caseAccept(offer);if not ok then notify(s,err)end else notify(s,err)end
         end

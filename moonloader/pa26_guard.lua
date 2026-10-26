@@ -1,6 +1,6 @@
 script_name('PA26 Recovery')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.36.0-dev')
+script_version('0.40.0')
 script_description('Restarts only Police Assistant after a Lua-script termination, with a bounded retry count')
 if type(script_properties)=='function'then script_properties('work-in-pause')end
 
@@ -11,6 +11,7 @@ do
         if ok and p and p:exists(p.ml..'\\pa26-update.pending')then function main()end;return end
     end
 end
+local startup=require 'pa26_startup'
 local core=require 'pa26_core'
 local storage=require 'pa26_config'
 local module=require 'pa26_recovery'
@@ -27,14 +28,10 @@ local loadedAt
 local manual=false
 local lastRead
 local registered=false
-local encoding=require 'encoding'
-local function note(text)
-    print('[PA26 Recovery] '..text)
-    if type(sampAddChatMessage)=='function'and isSampAvailable()then
-        local ok,value=pcall(encoding.CP1251.encode,encoding.CP1251,'[PA] '..text,'UTF-8')
-        if ok then pcall(sampAddChatMessage,value,-1)end
-    end
-end
+local encodingOk,encoding=pcall(require,'encoding')
+if not encodingOk then encoding=nil end
+local verifying
+local function note(text)startup.announce(text,encoding)end
 local function matches(scriptObject)
     if not scriptObject then return false end
     local ok,path=pcall(function()return scriptObject.path end)
@@ -60,7 +57,9 @@ function onScriptTerminate(scriptObject,quitGame)
         return
     end
     if not stopping and matches(scriptObject)then
-        known=true;target=nil;guard:trip(getGameTimer(),'terminated','Main PA script terminated')
+        known=true;target=nil;verifying=nil
+        if startup.read(directory)=='blocked'then guard:stop()
+        else guard:trip(getGameTimer(),'terminated','Main PA script terminated')end
     end
 end
 function onQuitGame()stopping=true;guard:stop()end
@@ -73,7 +72,7 @@ function main()
     registered=sampRegisterChatCommand('pa26restart',function()
         if find()then note('PA работает. Для восстановления окон используйте /pa26repair.');return end
         manual=true
-    end)==true
+    end)~=false
     while not stopping do
         wait(100)
         local now=getGameTimer()
@@ -83,24 +82,29 @@ function main()
             lastRead=now
         end
         local live=find()
+        local startupState=startup.read(directory)
         if live then
             if target~=live then target=live;known=true;loadedAt=now end
             if loadedAt and(core.elapsed(now,loadedAt)or 0)>=settings.stable_ms then guard.attempts=0 end
+            if verifying and startupState=='ready'and(core.elapsed(now,verifying)or 0)>=500 then
+                note('PA загружен заново. Старые действия не повторяются.'..(settings.demo_after_recovery and' Включён деморежим.'or''));verifying=nil
+            end
             -- A queued event from an ordinary script reload must not load a duplicate.
             guard.pending=nil;manual=false
         elseif known and not guard.pending and target then
             target=nil;guard:trip(now,'missing','Main PA script is no longer loaded')
         end
-        if not live and(manual or guard:ready(now,settings))then
+        if startupState=='blocked'and not manual then guard:stop();verifying=nil end
+        if not live and(manual or startupState~='blocked'and guard:ready(now,settings))then
             local requested=manual;manual=false
             if guard:begin(now,settings,requested)then
                 if settings.demo_after_recovery and not module.writeMarker(markerPath,storage.fs)then
                     note('Не удалось подготовить безопасный перезапуск PA. Повторите /pa26restart.');guard:stop()
                 else
+                    startup.clear(directory)
                     local ok,value=pcall(script.load,targetPath)
                     if ok and value then
-                        target=value;known=true;loadedAt=now
-                        note('PA загружен заново. Старые действия не повторяются.'..(settings.demo_after_recovery and' Включён деморежим.'or''))
+                        target=value;known=true;loadedAt=now;verifying=now
                     else
                         known=true;target=nil;guard:trip(now,'load','Failed to load main PA script')
                         note('PA пока не загрузился. Попытка '..guard.attempts..' из '..settings.max_attempts..'. Проверьте moonloader.log.')

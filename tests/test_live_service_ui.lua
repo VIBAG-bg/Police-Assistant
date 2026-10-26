@@ -66,7 +66,7 @@ onScriptTerminate(s.script)
 -- Command-taser fields and manual mode confirmation use the real GUI/save path.
 lib=model.defaults(core.defaults());lib.alerts.enabled=true;lib.alerts.on_duty=true
 s=fixture({demo=false,library=lib,alerts=true,notifications=true,categoryWheel=true});s.step();s.weapon=24;s.step()
-s.page('settings');click(s,'Оружие##settings-tab-weapons');click(s,'Тайзер##Снаряжение##weapons-pagetaser')
+s.page('settings');click(s,'5. Оружие и тайзер##settings-tab-weapons');click(s,'Тайзер##Снаряжение##weapons-pagetaser')
 eq(s.taser.shots,0);s.events.onSendBulletSync({weaponId=24});s.step();eq(s.taser.shots,0)
 click(s,'Подтверждаю: тайзер включён##taser-mode-on');s.step();check(s.taser:activeFor())
 s.events.onSendBulletSync({weaponId=24});s.step();eq(s.taser.shots,1)

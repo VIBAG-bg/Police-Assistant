@@ -55,7 +55,7 @@ function M.prepare(kind,state,cfg,codec,now,life)
     local template=source[kind..'_template'];local channel=source[kind..'_channel']
     if not channel or channel=='' then channel=cfg.channel end
     local values,err=reportValues(state,template);if not values then return nil,err end
-    local body=template:gsub('{([a-z_]+)}',function(key)return values[key]end):match('^%s*(.-)%s*$')
+    local body=core.expandGender(template,state.gender):gsub('{([a-z_]+)}',function(key)return values[key]end):match('^%s*(.-)%s*$')
     local line=channel..' '..body
     local ready;ready,err=rp.line(line,codec,state.rpText,state.my_nick);if not ready then return nil,err end
     local binding=model.newBinding(999999999)

@@ -22,3 +22,6 @@ dist/
 __pycache__/
 .env
 .env.*
+
+# Local verification transcripts
+tests/*_LOG.txt

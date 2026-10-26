@@ -48,7 +48,7 @@ s.down[0x75]=false; s.step(); press(s,0x75); check(text(s,'Выбрано: F6'))
 onScriptTerminate(s.script)
 
 -- Window assignment rejects modifiers and conflicts, previews, then saves on Apply.
-s=fixture({library=seed}); s.step(); s.page('settings'); s.click='Доступ##settings-tab-options'; fresh(s)
+s=fixture({library=seed}); s.step(); s.page('settings'); s.click='3. Управление и колесо##settings-tab-options'; fresh(s)
 s.click='Назначить##quick_key'; fresh(s); check(s.modalOpen); before=s.savedBytes()
 press(s,0x77,{ctrl=true}); check(text(s,'одну клавишу без Ctrl')); eq(s.savedBytes(),before)
 press(s,0x76); check(text(s,'Документы')); press(s,0x7B); check(text(s,'Памятки'))

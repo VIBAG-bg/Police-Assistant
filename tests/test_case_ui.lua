@@ -6,32 +6,32 @@ local function setup(demo)
     local lib=model.defaults(core.defaults());lib.procedures.wanted_command='/su {id} {amount} {basis}'
     lib.procedures.enabled=true;lib.procedures.fine_command='/mockfine {id} {amount} {basis}';lib.procedures.fine_verified=true;lib.procedures.fine_source='LOCAL MOCK'
     local s=fixture({demo=demo==true,library=lib,alerts=true,notifications=true});s.step();check(s.workspace:selectTarget({id=s.id,ped=s.mappedPed,name=s.name}));s.step()
-    s.page('addons');click(s,'Процедуры##toolprocedures');return s
+    s.page('addons');click(s,'Розыск, штрафы, /setmark##toolprocedures');return s
 end
 local function appearance(s)
-    click(s,'Новая форма##case-new');s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
-    click(s,'Нет##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskno')
+    click(s,'Новая форма##case-new');s.toggle='Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';s.render()
+    click(s,'Нет##На подозреваемом полная RP-маска (/mask + аксессуар на лице)?##wanted-maskno')
     click(s,'Нет##Вы видели паспорт этого человека?##wanted-passport_seenno')
     click(s,'Далее · причина розыска##wanted-next')
     s.render();click(s,'С приметами##wanted-appearance-second');s.render()
     edit(s,{['##Приметы##wanted-appearance-modal']='синяя куртка'})
-    click(s,'Далее##wanted-appearance-first')
+    click(s,'Далее · к выбору статьи##wanted-appearance-first')
     click(s,'01.01 · Нападение на гражданина · 1 ур.##wanted-reason-01.01')
     click(s,'Проверить отыгровку и команду##wanted-preview')
 end
 local function prepare(s)
-    click(s,'Отправить отыгровку · затем ДА/НЕТ##wanted-prepare')
+    click(s,'Отыграть ориентировку в чат (затем ДА/НЕТ на выдачу)##wanted-prepare')
     for _=1,12 do s.step(1600);if s.workspace.studio.caseConfirm then break end end
     check(s.workspace.studio.caseConfirm,'A final confirmation must appear after RP');healthy(s)
     for _,r in ipairs(s.sent)do check(r.line:match('^/me ')or r.line:match('^/do ')or r.line:match('^/todo '),'Only RP before final YES')end
 end
 local s=setup();appearance(s);eq(#s.sent,0);prepare(s);local count=#s.sent;check(count>0)
-click(s,'НЕТ##confirm-no');s.step();s.step(2000);eq(#s.sent,count);check(not s.caseForms:view().pending)
-s=setup();appearance(s);prepare(s);count=#s.sent;click(s,'ДА##confirm-yes');eq(#s.sent,count,'No send from rendering')
+click(s,'НЕТ — не выдавать розыск##confirm-no');s.step();s.step(2000);eq(#s.sent,count);check(not s.caseForms:view().pending)
+s=setup();appearance(s);prepare(s);count=#s.sent;click(s,'ДА — выдать розыск##confirm-yes');eq(#s.sent,count,'No send from rendering')
 s.step();s.step();eq(#s.sent,count+1);eq(s.sent[#s.sent].line,'/su 37 1 1');s.step(3000);eq(#s.sent,count+1)
 check(not s.caseForms:offer(s.workspace.studio.caseForm),'No replay of consumed form')
-s=setup();appearance(s);prepare(s);count=#s.sent;s.events.onPlayerQuit(s.id,1);s.step();click(s,'ДА##confirm-yes');s.step(2000);eq(#s.sent,count)
-s=setup();appearance(s);click(s,'Отправить отыгровку · затем ДА/НЕТ##wanted-prepare');s.step();count=#s.sent
+s=setup();appearance(s);prepare(s);count=#s.sent;s.events.onPlayerQuit(s.id,1);s.step();click(s,'ДА — выдать розыск##confirm-yes');s.step(2000);eq(#s.sent,count)
+s=setup();appearance(s);click(s,'Отыграть ориентировку в чат (затем ДА/НЕТ на выдачу)##wanted-prepare');s.step();count=#s.sent
 s.step(16,{[0x23]=true});s.step(4000);eq(#s.sent,count);check(not s.caseForms:view().pending)
 -- Editable settings preserve personal legacy fields, with autosave and preview.
 s=setup();click(s,'Розыск · настройки##Процедуры##case-pagewanted_settings')

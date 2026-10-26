@@ -28,14 +28,18 @@ local editor=Studio.new(im,ffi,model.defaults(require('pa26_core').defaults()),f
 local stack={};local ui={push=function(fn)stack[#stack+1]=fn end,finish=function()assert(table.remove(stack))()end,
     text=function(t)im.PushTextWrapPos(0);im.TextUnformatted(t);im.PopTextWrapPos()end}
 local data={mapState={x=0,y=0,interior=0,area='Doherty'},mapAdapterStatus='Тест проекции без запуска GTA.',queued=nil}
-local maxX=0
+local maxX=0;local outerWidth=0
 local function instrument(name)
     local original=im[name]
     im[name]=function(label,...)
         local result=original(label,...)
         if label:find('##map-',1,true)and im.IsItemVisible()then
             local item=im.GetItemRectMax();local pos=im.GetWindowPos();local width=im.GetWindowSize().x
-            check(item.x<=pos.x+width-7,'Map control exceeds window width: '..label)
+            if name=='InputTextMultiline'then
+                -- Long fields intentionally scroll inside a zero-padding viewport.
+                -- Its visible viewport must fit; the inner text may be wider.
+                check(pos.x>=22 and pos.x+width<=16+outerWidth-6,'Map text viewport exceeds parent: '..label)
+            else check(item.x<=pos.x+width-7,'Map control exceeds window width: '..label)end
             maxX=math.max(maxX,item.x-pos.x)
         end
         return result
@@ -46,6 +50,7 @@ local frames=0;local lastMax=0
 for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
     guiIo.DisplaySize=im.ImVec2(display[1],display[2])
     for _,width in ipairs({300,500,math.min(display[1]-32,1100)})do
+        outerWidth=width
         for frame=1,12 do
             im.NewFrame();im.SetNextWindowPos(im.ImVec2(16,16),im.Cond.Always)
             im.SetNextWindowSize(im.ImVec2(width,display[2]-32),im.Cond.Always)

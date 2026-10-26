@@ -168,7 +168,7 @@ for _,cef in ipairs({false,true})do
     local sent={};for _,r in ipairs(s.sent)do sent[#sent+1]=codec.encode(r.line)end
     eq(table.concat(sent,'\0'),original,'Approved preview must equal all outgoing parts, CEF='..tostring(cef))
     if not s.frames[1].condition()then s.commands.pa26();s.step()end
-    s.page('settings');s.click='Карта##settings-tab-map';s.render();eq(s.click,nil)
+    require('support.ui_routes').screen(s,'map')
     s.toggle='Квадрат рядом с районом в докладах##map-report-area';s.render();s.step(700)
     check(not s.workspace.library.map_grid.report_area)
     local saved=s.savedLibrary()

@@ -141,7 +141,7 @@ function M.draw(studio,ui,data,callbacks)
             local preview,err=callbacks.patrolEventPreview(form,cfg)
             ui.text(preview and('Предпросмотр: '..preview)or('Для предпросмотра: '..tostring(err)))
         end
-        ui.text('Переменные: {subject}, {basis}, {destination}, {details}, {unit}, {crew}, {officer}, {area}, {location}, {map_square}, {duration}, {patrol_id}; также поля и теги профиля. Если имя не установлено, в {subject} впишите известные приметы.')
+        ui.text('Грамматический род: {gender:передал|передала}. Переменные: {subject}, {basis}, {destination}, {details}, {unit}, {crew}, {officer}, {area}, {location}, {map_square}, {duration}, {patrol_id}; также поля и теги профиля. Если имя не установлено, в {subject} впишите известные приметы.')
     end
     studio:observeStatus('patrol_events',view.message,'patrol_events')
     studio:passiveWarning('patrol-event-save',view.saveError and('Журнал не сохранён: '..view.saveError),'patrol_events')

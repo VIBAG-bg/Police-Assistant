@@ -27,7 +27,7 @@ for _,delta in ipairs({{-500,-500},{500,500},{-1000,1000}})do
     local r=s.windows[name];eq(r.x,16);eq(r.y,16);eq(r.width,w);eq(r.height,h);healthy(s)
 end
 check(not s.hasLog('position changed after Begin'));check(not s.hasLog('size changed after Begin'))
-s.page('settings');s.click='Доступ##settings-tab-options';s.render()
+require('support.ui_routes').screen(s,'windows')
 s.floatEdits={['Непрозрачность']=.66};s.render();s.floatEdits={};s.io.WantTextInput=true;s.render()
 physical(s,0x78);check(not s.frames[1].condition());s.io.WantTextInput=false
 local alpha=s.savedLibrary().settings.opacity
@@ -57,7 +57,7 @@ check(not s.frames[1].condition(),'retry storm must stop')
 s.commands.pa26repair();s.step();check(s.frames[1].condition());healthy(s)
 onScriptTerminate(s.script)
 -- Settings are exposed, saved without a separate button, and survive migration.
-s=fixture();s.step();s.page('settings')
+s=fixture();s.step();require('support.ui_routes').screen(s,'recovery')
 s.toggle='Восстанавливать PA после ошибок##recovery-enabled';s.render()
 s.intEdits={['Пауза перед восстановлением, с##recovery-delay_ms']=4,['Попыток подряд##recovery-max_attempts']=2,
     ['Сбросить счётчик после работы без ошибок, с##recovery-stable_ms']=90}

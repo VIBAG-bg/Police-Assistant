@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.39.0')
+script_version('0.40.0')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -11,13 +11,7 @@ do
     local ready,p=pcall(platform.new,getWorkingDirectory())
     if ready and p and p:gate()then function main()end;return end
 end
--- This bootstrap runs before any replaceable PA dependency is loaded.
-do
-    local ok,platform=pcall(require,'pa26_update_platform')
-    if not ok then function main()print('PA update bootstrap missing. Reinstall the complete PA package.')end;return end
-    local ready,p=pcall(platform.new,getWorkingDirectory())
-    if ready and p and p:gate()then function main()end;return end
-end
+require('pa26_startup').clear(getWorkingDirectory())
 local missing = {}
 local function dependency(name)
     local ok, value = pcall(require, name)
@@ -48,6 +42,7 @@ local patrolEventsModule=dependency('pa26_patrol_events')
 local identityModule=dependency('pa26_identity')
 local sceneServices={rp=dependency('pa26_rp_text'),rpUi=dependency('pa26_rp_ui'),commands=dependency('pa26_server_commands'),model=dependency('pa26_vehicle'),worldModule=dependency('pa26_vehicle_world'),evidenceModule=dependency('pa26_evidence'),filesModule=dependency('pa26_evidence_files'),assistUi=dependency('pa26_assist_ui'),hooks={}}
 sceneServices.mapGrid=dependency('pa26_map_grid')
+sceneServices.settingsUi=dependency('pa26_settings_ui')
 sceneServices.mapAdapterModule=dependency('pa26_map_adapter')
 sceneServices.chatModule=dependency('pa26_chat_bridge')
 sceneServices.manualActionModule=dependency('pa26_manual_actions')
@@ -66,9 +61,12 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.39.0' then
+if #missing > 0 or not core or core.VERSION ~= '0.40.0' then
     function main()
-        print('[PA26] Install all v0.39.0 project files and mimgui / encoding. Missing: ' .. table.concat(missing, ', '))
+        local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
+        require('pa26_startup').block(getWorkingDirectory(),reason)
+        while type(isSampAvailable)=='function'and not isSampAvailable()and type(wait)=='function'do wait(100)end
+        require('pa26_startup').announce(reason,encoding)
     end
     return
 end
@@ -711,7 +709,7 @@ identity=identityModule.new({settings=function()return workspace.library.identit
     resolvePassport=function(name,distance)
         for _,target in ipairs(nearbyVisible(distance))do if target.name==name then return target end end
     end})
-caseForms=caseFormsModule.new({settings=function()return workspace.library.procedures end,codec=codec,equal=patrolSession.env.equal,
+caseForms=caseFormsModule.new({gender=function()return workspace.library.profile.gender end,settings=function()return workspace.library.procedures end,codec=codec,equal=patrolSession.env.equal,
     reminders=function()return workspace.library.wanted_reminders end,wall=function()return os.time()end,
     saveReminders=function(rows)local copy=bindingModel.copy(workspace.library);copy.wanted_reminders=rows;return workspace:save(copy)end,
     target=function()return bindingModel.copy(workspace.selectedTarget),workspace.targets.revision end,
@@ -863,7 +861,7 @@ local studioCallbacks={
     setBindingConfirmation=function(id,value)return workspace:setBindingConfirmation(id,value)end,
     openAssist=function(page)
         showWindow[0],showQuick[0],showTips[0]=false,false,false;sceneServices.showAssist[0]=true
-        studio.assistPage=page or studio.assistPage or'megaphone';uiTyping=false;uiInputReset=true;imgui.DisableInput=false
+        studio.assistPage=page or studio.assistPage or'patrol';uiTyping=false;uiInputReset=true;imgui.DisableInput=false
     end,
     assistEqual=patrolSession.env.equal,
     openNoticeSettings=function()openWorkspace('settings');settingsTab='options'end,
@@ -926,13 +924,13 @@ local studioCallbacks={
     identityForget=function(key,nonce)return identity:forget(key,nonce)end,
     identitySubject=function(target,stamp)return identity:subject(target,stamp)end,
     navigateService=function(kind,id)return env.wheelNavigate({kind=kind,id=id,category=kind=='procedure'and 'wanted'or 'service'})end,
-    openPatrolEvents=function()openWorkspace('partners');studio.partnerPage='events'end,
+    openPatrolEvents=function()return studio:requestNavigation(function()openWorkspace('addons',true);menu.tool='events';studio.partnerPage='events'end,'открыть события патруля')end,
     patrolEventForm=function(kind,attempt)return patrolEvents:form(kind,attempt)end,
     patrolEventBindTarget=function(form)return patrolEvents:bindTarget(form)end,
     patrolEventPreview=function(form,settings)local line,err=patrolEvents:line(form,settings);return line and line.line,err end,
     patrolEventOffer=function(form,report)return patrolEvents:propose(form,report)end,
     patrolEventAccept=function(p)return patrolEvents:accept(p)end,
-    openPatrol=function()openWorkspace('partners');studio.partnerPage='patrol'end,
+    openPatrol=function()return studio:requestNavigation(function()openWorkspace('addons',true);menu.tool='patrol';studio.partnerPage='patrol'end,'открыть патруль и экипаж')end,
     patrolOffer=function(action)return patrolSession:propose(action)end,
     patrolAccept=function(p)return patrolSession:accept(p)end,
     patrolPause=function()return patrolSession:pause('Пауза по вашему решению.')end,
@@ -1384,7 +1382,7 @@ local function drawWidgetSettings()
     return changed
 end
 
-settingsTab='general'
+settingsTab='profile'
 local function settingsHeading(value)
     imgui.Dummy(imgui.ImVec2(0,6))
     if menuButtonFont then imgui.PushFont(menuButtonFont); pushScope(function() imgui.PopFont() end) end
@@ -1393,38 +1391,26 @@ local function settingsHeading(value)
     imgui.Dummy(imgui.ImVec2(0,4))
 end
 local function drawSettingsTabs()
-    local available=imgui.GetContentRegionAvail().x
-    local narrow=available<650
-    for index,entry in ipairs({{'general','Основные','Общ.'},{'profile','Профиль','Проф.'},{'options','Доступ','Доступ'},
-        {'radio','Связь','Связь'},{'weapons','Оружие','Оружие'},{'map','Карта','Карта'}}) do
-        if narrow and index==4 then imgui.Dummy(imgui.ImVec2(0,4))
-        elseif index>1 then imgui.SameLine(0,8)end
-        local count=narrow and 3 or 6
-        local width=math.max(1,(available-(count-1)*8)/count)
-        local title=entry[2]
-        local active=settingsTab==entry[1]
-        if active then imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(.08,.48,.66,.96)); pushScope(function() imgui.PopStyleColor(1) end) end
-        if menuModule.fittedButton(imgui,{push=pushScope,finish=endScope,text=text},title..'##settings-tab-'..entry[1],
-            imgui.ImVec2(width,38),narrow and menuSmallFont or menuButtonFont) then settingsTab=entry[1] end
-        if active then endScope() end
-    end
+    sceneServices.settingsUi.drawTabs(studio,{push=pushScope,finish=endScope,text=text},settingsTab,function(tab)settingsTab=tab end,menuSmallFont or menuButtonFont or imgui.GetFont())
 end
-local function drawGeneralSettings()
+local function drawGeneralSettings(part)
     local changed=false
-    if mainButton('Окна и ручной чат##interface-settings')then settingsTab='display'end
-    settingsHeading('Режим работы')
-    demoFlag[0] = runtime.demo
-    if imgui.Checkbox('Деморежим: просмотр без отправки##settingsmode', demoFlag) then setDemo(demoFlag[0]);changed=true end
-    settingsHeading('Компактный виджет')
-    if drawWidgetSettings()then changed=true end
-    if menuModule.fittedButton(imgui,{push=pushScope,finish=endScope,text=text},'Перенос /me и /do##rp-settings',imgui.ImVec2(-1,36),menuButtonFont)then studioCallbacks.openAssist('roleplay')end
-    settingsHeading('Запуск и выполнение')
-    if imgui.Checkbox('Открывать окно после входа в персонажа', onConnectFlag)then changed=true end
+    if part=='controls'then
+    settingsHeading('Клавиши и выполнение сценариев')
     if imgui.SliderFloat('Дистанция, м', distanceValue, 3, 12)then changed=true end
     if imgui.SliderInt('Интервал, мс', intervalValue, 1000, 5000)then changed=true end
     settingsHeading('Клавиши основного меню')
     local menuKey,radialKey=chooseKeys('Клавиша окна',core.menuKeys,draftMenuKey),chooseKeys('Клавиша колеса',core.wheelKeys,draftRadialKey)
     if menuKey~=draftMenuKey or radialKey~=draftRadialKey then draftMenuKey,draftRadialKey=menuKey,radialKey;changed=true end
+    elseif part=='hud'then
+    settingsHeading('Компактный виджет · HUD')
+    if drawWidgetSettings()then changed=true end
+    elseif part=='mode'then
+    settingsHeading('Режим работы')
+    demoFlag[0] = runtime.demo
+    if imgui.Checkbox('Деморежим: просмотр без отправки##settingsmode', demoFlag) then setDemo(demoFlag[0]);changed=true end
+    if imgui.Checkbox('Открывать окно после входа в персонажа', onConnectFlag)then changed=true end
+    else
     settingsHeading('Восстановление PA')
     local d=bindingModel.copy(recoveryDraft or cfg.recovery)
     local enabled=new.bool(d.enabled)
@@ -1440,25 +1426,28 @@ local function drawGeneralSettings()
     text('/pa26repair восстанавливает окна; /pa26restart запускает остановившийся скрипт. Окна можно двигать за заголовок либо зажатой ПКМ по окну; размер меняется за края. Начальный размер стал шире и подстраивается под экран.')
     if changed then recoveryDraft=d end
     if mainButton('Восстановить окна PA##recovery-now')then recoverUi(true)end
+    end
     if changed then saveSettings(true)end
     if generalSaveFailed and mainButton('Повторить запись##general-retry')then saveSettings(true)end
-    text('Переключатели, дистанция, интервал и клавиши сохраняются автоматически.')
 end
 local function drawSettingsPage()
-    if settingsTab=='profile' then studio:draw('profile',{push=pushScope,finish=endScope,text=text},studioData(),studioCallbacks)
-    elseif settingsTab=='options' then studio:draw('options',{push=pushScope,finish=endScope,text=text},studioData(),studioCallbacks)
-    elseif settingsTab=='radio' then studio:draw('alerts',{push=pushScope,finish=endScope,text=text},studioData(),studioCallbacks)
-    elseif settingsTab=='weapons' then studio:draw('weapons',{push=pushScope,finish=endScope,text=text},studioData(),studioCallbacks)
-    elseif settingsTab=='display'then
-        if mainButton('Назад · основные настройки##interface-back')then settingsTab='general'end
-        require('pa26_interface_settings').draw(studio,{push=pushScope,finish=endScope,text=text},studioData(),studioCallbacks,menu)
-    elseif settingsTab=='map' then studio:draw('map',{push=pushScope,finish=endScope,text=text},studioData(),studioCallbacks)
-    else drawGeneralSettings() end
+    local tab,sub=sceneServices.settingsUi.route(settingsTab)
+    settingsTab=tab;if sub then studio.screenSettingsPage=sub end
+    sceneServices.settingsUi.draw(studio,{push=pushScope,finish=endScope,text=text},studioData(),studioCallbacks,settingsTab,{menu=menu,general=drawGeneralSettings})
 end
 
 local function drawLogPage()
     if mainButton('Очистить журнал') then log = {} end
     for _, line in ipairs(log) do text(line) end
+end
+
+studioCallbacks.systemLog=drawLogPage
+studioCallbacks.openSettings=function(tab,sub)
+    return studio:requestNavigation(function()
+        openWorkspace('settings',true);settingsTab=tab or'profile'
+        if tab=='chat'and sub then studio.chatSettingsPage=sub end
+        if tab=='general'and sub then studio.screenSettingsPage=sub end
+    end,'открыть настройки PA')
 end
 
 menu.windowConfig=function()
@@ -1506,16 +1495,23 @@ local function drawMain()
             actions = function() studio:draw('binds',ui,studioData(),studioCallbacks) end,
             updates=function()require('pa26_update_ui').draw(studio,ui,sceneServices.updater,studioCallbacks)end,
             updateLabel=sceneServices.updater:label(),
+            toggleDemo=function()sceneServices.toggleDemoRequested=true end,
+            openSettings=studioCallbacks.openSettings,
             settings = drawSettingsPage, settingsTabs=drawSettingsTabs,
-            settingsTabHeight=function(width)return width-16<650 and 100 or 54 end,
+            settingsTabHeight=function(width)return sceneServices.settingsUi.tabLayout(width,menuSmallFont or menuButtonFont or imgui.GetFont()).total end,
             widget = drawWidgetSettings, log = drawLogPage,
             binds=function() studio:draw('binds',ui,studioData(),studioCallbacks) end,
             hints=function() studio:draw('hints',ui,studioData(),studioCallbacks) end,
             partners=function() studio:draw('partners',ui,studioData(),studioCallbacks) end,
             openPatrol=studioCallbacks.openPatrol,
+            patrol=function()studio:draw('patrol',ui,studioData(),studioCallbacks)end,
+            patrolEvents=function()studio:draw('patrol_events',ui,studioData(),studioCallbacks)end,
+            vehicle=function()studio:draw('vehicle',ui,studioData(),studioCallbacks)end,
+            evidence=function()sceneServices.assistUi.evidence(studio,ui,studioData(),studioCallbacks)end,
+            training=function()sceneServices.assistUi.study(studio,ui,studioData(),studioCallbacks)end,
             stats=function() studio:draw('stats',ui,studioData(),studioCallbacks) end,
             openAssist=studioCallbacks.openAssist,
-            extras=function() studio:draw('extras',ui,studioData(),studioCallbacks) end,
+            extras=function() studio:draw('recruitment',ui,studioData(),studioCallbacks) end,
             identity=function()studio:draw('identity',ui,studioData(),studioCallbacks)end,
             procedures=function()studio:draw('procedures',ui,studioData(),studioCallbacks)end,
             operations=function()studio:draw('operations',ui,studioData(),studioCallbacks)end,
@@ -2472,6 +2468,7 @@ local function updateGame()
     local outgoing=workspace.executor.queue and workspace.executor.queue.plan or workspace.pending and workspace.pending.plan
     alertState.inReport=outgoing and outgoing.alert and outgoing.alert.kind~='police' and outgoing.alert.kind~='prison' or false
     alertState.area=sceneServices.mapState.area
+    alertState.gender=workspace.library.profile.gender
     alertState.radioText={split_enabled=workspace.library.radio_guard.split_enabled,continuation=workspace.library.radio_guard.continuation,max_lines=workspace.library.radio_guard.max_lines}
     for _,key in ipairs({'local_tag','prison_tag','global_tag','callsign','city','department','rank'}) do alertState[key]=workspace.library.profile[key] end
     alertState.map_grid=workspace.library.map_grid
@@ -2706,7 +2703,7 @@ local function updateGame()
         ((uiFailed or (not ownUi() and runtime.wheel == nil)) and not hud.editing)
 end
 
--- Prepare the local chat before yielding to the game/CEF startup. The old
+-- Prepare the local chat before yielding to the game/CEF require('pa26_startup'). The old
 -- placement after the SA:MP gate was too late after a launcher integrity pass.
 sceneServices.readLayout=sceneServices.layoutModule.reader(ffi)
 sceneServices.chatBridge=sceneServices.chatModule.new({fs=storage.fs,assetFs=require('pa26_cef_assets').fs,json=workspace.json,
@@ -2730,8 +2727,11 @@ sceneServices.chatBridge.commands=sceneServices.localCommands;sceneServices.chat
 function main()
     for _, name in ipairs(requiredApis) do
         if type(_G[name]) ~= 'function' then
-            pushLog('Missing API: ' .. name .. '. Check MoonLoader / SAMPFUNCS compatibility.')
+            local reason='Ошибка запуска: клиент не поддерживает '..name..'. Проверьте совместимость MoonLoader и SAMPFUNCS.'
+            require('pa26_startup').block(getWorkingDirectory(),reason)
+            pushLog(reason)
             cleanup()
+            require('pa26_startup').announce(reason,encoding)
             return
         end
     end
@@ -2800,9 +2800,11 @@ function main()
             return acquireTarget(workspace.library.settings.retain_distance)
         end,
         select=function(target)return workspace:selectTarget(target)end})
+    require('pa26_startup').ready(getWorkingDirectory())
     local started, drawReported = false, false
     while true do
         wait(0)
+        if sceneServices.toggleDemoRequested then sceneServices.toggleDemoRequested=nil;setDemo(not runtime.demo);saveSettings(true)end
         updateGame()
         sceneServices.dispatchNativeCommand(studioClock)
         if focused and not isGamePaused()and not context().blocked then sceneServices.chatBridge:dispatch(studioClock)end
@@ -2811,11 +2813,11 @@ function main()
             not context().blocked then recoverUi(false)end
         recovery:healthy(now,cfg.recovery)
         if not started then
-            pushLog('v0.39.0: игровой цикл запущен.')
+            pushLog('v0.40.0: игровой цикл запущен.')
             started = true
         end
         if uiRendered and not drawReported then
-            pushLog('v0.39.0: окно отрисовано.')
+            pushLog('v0.40.0: окно отрисовано.')
             drawReported = true
         end
     end

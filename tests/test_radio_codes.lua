@@ -71,7 +71,7 @@ for _,row in ipairs({{0x34,'code1'},{0x35,'code4'}})do
 end
 local s=setup(true);key(s,0x35,{[0x12]=true});check(s.alerts.pending);key(s,0x59);s.step(120);s.step(1500)
 eq(#s.sent,0);healthy(s);onScriptTerminate(s.script)
-s=setup(false);s.commands.pa26();s.step();s.page('settings');click(s,'Связь##settings-tab-radio')
+s=setup(false);s.commands.pa26();s.step();s.page('settings');click(s,'4. Рация и тревоги##settings-tab-radio')
 s.edits={['##Текст##alerts-template-code4_template']='CODE 4. Поддержка не нужна, {area}.'};s.render();s.edits={};s.step(700)
 eq(s.workspace.library.alerts.code4_template,'CODE 4. Поддержка не нужна, {area}.')
 local saved=s.savedLibrary()
@@ -109,7 +109,7 @@ s.step();if s.frames[1].condition()then s.commands.pa26();s.step()end
 s.commands.pa26sos();s.step();key(s,0x59);s.step(120);s.step(1500)
 eq(#s.sent,0);check(s.hasLog('другой обработчик'));healthy(s);onScriptTerminate(s.script)
 -- Configure through the actual GUI, reload the saved library, then execute it.
-s=setup(false);s.commands.pa26();s.step();s.page('settings');click(s,'Связь##settings-tab-radio')
+s=setup(false);s.commands.pa26();s.step();s.page('settings');click(s,'4. Рация и тревоги##settings-tab-radio')
 s.edits={['##Команда помощи из /help##alerts-help_command']='/testhelp {area}',
     ['##Где и когда проверено##alerts-help_source']='Тестовая модель, не контракт Exsellent'};s.render();s.edits={}
 s.intEdits={['Пауза до команды помощи, мс##alerts-help-delay']=2500};s.render();s.intEdits={}

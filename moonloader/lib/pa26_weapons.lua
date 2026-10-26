@@ -30,7 +30,7 @@ function M.plan(text,state,codec,now,kind,life,signature,weapon)
     binding.category='Автоматические отыгровки';binding.script='/me '..text
     return {binding=binding,requirements={target=false,closest=false},session=state.session,createdAt=now,demo=state.demo,
         has_command=true,steps=ready.steps,lines=ready.lines,wire=ready.wires,rpSignature=ready.rpSignature,rpExtraSteps=#ready.lines-1,
-        automatic={kind=kind,life=life,ped=state.ped,weapon=weapon,signature=signature}}
+        automatic={kind=kind,gender=state.gender,life=life,ped=state.ped,weapon=weapon,signature=signature}}
 end
 function M.new(env)return setmetatable({env=env,life=1,lastWeapon=nil,perWeapon={}},Weapons)end
 function Weapons:reset()
@@ -66,7 +66,7 @@ function Weapons:tick(state,now)
         local live=previousItem(h.drawn,state,cfg)
         if not age or age>cfg.holster_delay_ms+10000 or not cfg.holster_enabled or not live or not live.enabled or not live.holster_enabled or fingerprint(live,cfg)~=h.drawn.signature then self.holster=nil
         elseif age>=cfg.holster_delay_ms and not state.busy and not state.wheel and not state.alertPending and not state.reloadPending then
-            local text=h.drawn.item.holster_template:gsub('{weapon}',function()return h.drawn.item.name end)
+            local text=core.expandGender(h.drawn.item.holster_template,state.gender):gsub('{weapon}',function()return h.drawn.item.name end)
             local plan,err=M.plan(text,state,self.env.codec,now,'weapon_holster',self.life,h.drawn.signature,h.drawn.weapon)
             if plan then plan.automatic.drawKey=h.drawn.key;plan.automatic.item=model.copy(h.drawn.item)end
             self.holster=nil;self.drawn=nil
@@ -82,7 +82,7 @@ function Weapons:tick(state,now)
     local last=self.lastDraw and core.elapsed(now,self.lastDraw)
     local repeated=self.perWeapon[c.key]and core.elapsed(now,self.perWeapon[c.key])
     if self.lastDraw and(not last or last<cfg.cooldown_ms)or self.perWeapon[c.key]and(not repeated or repeated<cfg.repeat_ms)then self.candidate=nil;return end
-    local text=item.template:gsub('{weapon}',function()return item.name end)
+    local text=core.expandGender(item.template,state.gender):gsub('{weapon}',function()return item.name end)
     local plan,err=M.plan(text,state,self.env.codec,now,'weapon_draw',self.life,c.signature,c.weapon)
     if plan then plan.automatic.drawKey=c.key;plan.automatic.item=model.copy(item)end
     self.candidate=nil
@@ -92,7 +92,7 @@ end
 function Weapons:validPlan(plan)
     local a=plan.automatic;if not a or a.kind~='weapon_draw'and a.kind~='weapon_holster'then return true end
     local state=self.state;local cfg=self.env.settings();local age=core.elapsed(self.now,plan.createdAt)
-    if not cfg.enabled or not M.safe(state)or a.life~=self.life or plan.session~=state.session or a.ped~=state.ped or plan.demo~=state.demo or not age or age>5000+(plan.rpExtraSteps or 0)*(state.sendIntervalMs or 5000)then return false end
+    if not cfg.enabled or not M.safe(state)or a.life~=self.life or plan.session~=state.session or a.ped~=state.ped or a.gender~=state.gender or plan.demo~=state.demo or not age or age>5000+(plan.rpExtraSteps or 0)*(state.sendIntervalMs or 5000)then return false end
     local item,key=itemFor(state,cfg)
     if a.kind=='weapon_holster'then
         local live=previousItem(a,state,cfg)

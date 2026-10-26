@@ -8,7 +8,7 @@ local function click(s,label)s.click=label;s.render();eq(s.click,nil,'Not visibl
 local function toggle(s,label)s.toggle=label;s.render();eq(s.toggle,nil,'Not visible: '..label);healthy(s)end
 local function edit(s,values)s.edits=values;s.render();for k in pairs(s.edits)do error('Not visible input: '..k)end;s.edits={};healthy(s)end
 local function open(s,page)
-    s.commands.pa26();s.render();s.page('addons');click(s,'Помощники · F4##assist-open')
+    s.commands.pa26();s.render();s.page('addons');click(s,'Открыть быстрое окно помощников (F4)##assist-open')
     click(s,({evidence='Фиксация',training='Обучение',megaphone='Мегафон'})[page]..'##assist-tabs'..page)
 end
 local lib=model.defaults(core.defaults());lib.vehicle.enabled=true;lib.vehicle.require_patrol=false
@@ -18,7 +18,7 @@ local s=fixture({demo=false,library=lib,alerts=true,notifications=true,categoryW
     return {clock=function()check(not state.rendererContext,'File clock must be read by the main loop');return 100000 end,
         verify=function(path)check(not state.rendererContext,'File IO from renderer');if not state.image then return nil,'Нет нового снимка'end;return {key='new1',path=path,size=600}end}
 end})
-s.step();s.page('addons');click(s,'Помощники · F4##assist-open')
+s.step();s.page('addons');click(s,'Открыть быстрое окно помощников (F4)##assist-open')
 click(s,'Фиксация##assist-tabsevidence')
 edit(s,{['##Что фиксируем##evidence-label']='Проверка документов'})
 click(s,'Подготовить фиксацию##evidence-start');check(s.workspace.studio.assistConfirm);eq(#s.sent,0)

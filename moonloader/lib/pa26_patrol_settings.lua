@@ -18,7 +18,7 @@ M.variables={area=true,local_tag=true,prison_tag=true,global_tag=true,callsign=t
 function M.template(s)
     s=M.text(s,768)
     if not s or s==''or s:match('^[/@]')then return nil,'Нужен текст без команды и перевода строки.'end
-    local rest=s:gsub('{([a-z_]+)}',function(k)return M.variables[k]and ''or '{'end)
+    local rest=core.stripGender(s):gsub('{([a-z_]+)}',function(k)return M.variables[k]and ''or '{'end)
     if rest:find('[{}]')then return nil,'Неизвестная переменная патруля.'end
     return s
 end

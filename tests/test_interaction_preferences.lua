@@ -6,7 +6,7 @@ local function click(s,label)s.click=label;s.render();eq(s.click,nil,label);chec
 local cfg=prefs.defaults();cfg.interaction.started_ms=999;check(not prefs.validate(cfg));cfg.interaction.started_ms=1000
 cfg.interaction.disconnected='{unknown}';check(not prefs.validate(cfg));cfg.interaction.disconnected='{name} [{id}] вышел.';check(prefs.validate(cfg))
 local s=fixture({demo=false});s.step();s.page('settings')
-click(s,'Доступ##settings-tab-options')
+click(s,'3. Управление и колесо##settings-tab-options')
 click(s,'Тексты и сроки карточек##interaction-edit');s.render();eq(s.workspace.studio.assistPage,'notices')
 s.edits={['##Человек вышел с сервера##notice-disconnected']='{name} [{id}] вышел с сервера.',
     ['##Заголовок завершения##notice-ended_title']='Общение закончено'}

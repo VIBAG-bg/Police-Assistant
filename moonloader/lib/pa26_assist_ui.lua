@@ -53,12 +53,12 @@ function M.megaphone(s,ui,data,callbacks)
         if count==0 then ui.text('Добавьте общее объявление во вкладке «Настройки»: выберите адресата «Все окружающие».')end
         im.Separator();s:settingsHeading(ui,'Обращение к выбранной машине')
         if v.selected then
-            local values=require('pa26_vehicle').describe(v.selected,d)
+            local values=require('pa26_vehicle').describe(v.selected,d,s.lib.profile.gender)
             ui.text('Выбрана: '..(values and values.model or d.unknown_model)..' ['..v.selected.id..']')
             if s:button('Снять выбор машины##assist-car-clear',ui)then callbacks.vehicleClear()end
         else ui.text('Для адресного требования выберите видимую машину из списка:')end
         for _,c in ipairs(v.candidates or {})do
-            local values=require('pa26_vehicle').describe(c,d)
+            local values=require('pa26_vehicle').describe(c,d,s.lib.profile.gender)
             if s:button((values and values.model or d.unknown_model)..' ['..c.id..'] · '..math.floor(c.distance)..' м##assist-car-'..c.id,ui)then
                 local ok,err=callbacks.vehicleSelect(c.id);if not ok then note(s,err)end
             end
@@ -218,13 +218,20 @@ function M.notices(s,ui,data,callbacks)
     s.interactionDraft=d;s:autoSettings('interaction',{'assist','interaction'},d,'interactionDraft');s:autosaveHint(ui,'interaction');s:drawNotice(ui)
 end
 function M.draw(s,ui,data,callbacks)
-    s.currentUi=ui;s.preferenceContext=true;s.settingTextChanged=false
-    s.currentNoticeScope='assist'
-    key(s,ui,callbacks,'assist','open_shortcut','Открыть / закрыть помощников')
-    ui.text('Клавиша работает вне чата и текстовых полей. По умолчанию это F4; здесь можно переназначить её или отключить. Повторное нажатие закрывает окно. При вызове помощников нажатие не передаётся игровому действию этой клавиши.')
-    local tab=s.assistPage or 'megaphone'
-    tab=menu.choiceControl(s.imgui,ui,'##assist-tabs','',tab,{{'megaphone','Мегафон'},{'evidence','Фиксация'},{'training','Обучение'},{'notices','Уведомления'},{'roleplay','Перенос RP'},{'commands','Команды'}},s,{buttons=true,font=s.buttonFont});s.assistPage=tab
-    if tab=='megaphone'then M.megaphone(s,ui,data,callbacks)elseif tab=='evidence'then M.evidence(s,ui,data,callbacks)elseif tab=='notices'then M.notices(s,ui,data,callbacks)elseif tab=='roleplay'then require('pa26_rp_ui').draw(s,ui,data,callbacks)elseif tab=='commands'then require('pa26_server_commands').draw(s,ui,data,callbacks)else M.study(s,ui,data,callbacks)end
+    s.currentUi=ui;s.preferenceContext=true;s.settingTextChanged=false;s.currentNoticeScope='assist'
+    local tab=s.assistPage or'patrol'
+    if tab~='roleplay'and tab~='commands'then
+        tab=menu.choiceControl(s.imgui,ui,'##assist-tabs','',tab,{{'patrol','Патруль'},{'megaphone','Мегафон'},{'evidence','Фиксация'},{'training','Обучение'},{'notices','Уведомления'}},s,{buttons=true,font=s.buttonFont})
+        s.assistPage=tab
+    end
+    if s:button('Настройки чата, переноса RP и команд##assist-chat-settings',ui)and callbacks.openSettings then callbacks.openSettings('chat')end
+    if tab=='patrol'then require('pa26_patrol_ui').draw(s,ui,data,callbacks)
+    elseif tab=='megaphone'then M.megaphone(s,ui,data,callbacks)
+    elseif tab=='evidence'then M.evidence(s,ui,data,callbacks)
+    elseif tab=='notices'then M.notices(s,ui,data,callbacks)
+    elseif tab=='roleplay'then require('pa26_rp_ui').draw(s,ui,data,callbacks)
+    elseif tab=='commands'then require('pa26_server_commands').draw(s,ui,data,callbacks)
+    else M.study(s,ui,data,callbacks)end
     s.preferenceContext=nil
 end
 function M.waiting(s,ui,view,now)

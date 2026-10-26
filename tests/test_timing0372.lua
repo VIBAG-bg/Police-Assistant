@@ -69,7 +69,7 @@ im.SliderInt=function(label,value,low,high)
     if fields[label]then eq(low,1);value[0]=1;seen[fields[label]]=true;return true end
     return slider(label,value,low,high)
 end
-s.click='Оружие##settings-tab-weapons';s.render();im.SliderInt=slider;s.step(650)
+s.click='5. Оружие и тайзер##settings-tab-weapons';s.render();im.SliderInt=slider;s.step(650)
 local raw=s.savedLibrary();for _,key in pairs(fields)do check(seen[key],key);eq(raw.weapons[key],1000)end
 check(not s.hasLog('Ошибка интерфейса'));eq(#s.scopes,0);onScriptTerminate(s.script)
 -- The actual main script executes with a one-second global interval; it never

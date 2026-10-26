@@ -48,7 +48,7 @@ end
 function M.template(raw)
     local v=shared.text(raw,768)
     if not v or v==''or v:match('^[/@]')then return nil,'Нужна реплика без команды и перевода строки.'end
-    local rest=v:gsub('{([a-z_]+)}',function(k)return M.variables[k]and ''or '{'end)
+    local rest=core.stripGender(v):gsub('{([a-z_]+)}',function(k)return M.variables[k]and ''or '{'end)
     if rest:find('[{}]')then return nil,'Неизвестная переменная события.'end
     return v
 end

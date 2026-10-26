@@ -19,7 +19,7 @@ local function newDraft(s,name,script)
     s.edits={['Название##bind']=name,['##script']=script}; s.render()
 end
 local function saveProfile(s)
-    open(s,'settings'); s.click='Профиль##settings-tab-profile'; s.render()
+    open(s,'settings'); s.click='1. Профиль##settings-tab-profile'; s.render()
     s.edits={['Позывной экипажа##profile']='P-65'}; s.render()
     s.step(650)
 end

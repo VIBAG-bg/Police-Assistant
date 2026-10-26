@@ -38,7 +38,7 @@ local remaining=assert(manual.prepare(receipt.raw,cfg,rp,'',settings,codec,'Offi
 eq(q:offer('/todo текст*'..string.rep('я',61),'bad').status,'rejected');eq(#sent,1)
 -- The GUI action cap is saved and then applied by the same policy builder.
 local fixture=require 'support.fixture';local f=fixture();f.step();f.page('settings')
-f.click='Перенос /me и /do##rp-settings';f.render()
-f.intEdits={['Действие после * в /todo · максимум 1–60 символов##rp-todo_action_limit']=40};f.render();f.intEdits={};f.step(700)
+require('support.ui_routes').chat(f,'split')
+f.intEdits={['Максимум символов для действия после * в /todo (1–60)##rp-todo_action_limit']=40};f.render();f.intEdits={};f.step(700)
 eq(f.workspace.library.rp_text.todo_action_limit,40)
 check(not f.hasLog('Ошибка интерфейса'));onScriptTerminate(f.script)

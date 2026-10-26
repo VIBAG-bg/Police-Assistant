@@ -149,7 +149,7 @@ function Session:prepareLine(action,a,s,cfg)
     if not checked then return nil,err end
     values=mapGrid.reportValues(values,checked)
     local missing
-    local body=checked:gsub('{([a-z_]+)}',function(key)
+    local body=core.expandGender(checked,s.gender):gsub('{([a-z_]+)}',function(key)
         local v=settings.text(tostring(values[key]or ''),1024)
         local tag=key=='local_tag'or key=='prison_tag'or key=='global_tag'
         if not v or v==''and not tag then missing=key;return ''end

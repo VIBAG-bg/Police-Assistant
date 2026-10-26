@@ -14,7 +14,7 @@ $paTestRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'tests\install-san
 $paTest = $paDestination.StartsWith($paTestRoot + '\',[StringComparison]::OrdinalIgnoreCase)
 if ($paDestination -ne $paReal -and -not $paTest) { throw 'Destination must be the selected launcher or the bounded test sandbox.' }
 if ($TestFailAfter -ne 0 -and -not $paTest) { throw 'Failure injection is allowed only in the test sandbox.' }
-$paOwned = @('lib\pa26_update_platform.lua','lib\pa26_updater.lua','lib\pa26_update_ui.lua','resource\pa26\updater\pa26-update.ps1','lib\pa26_core.lua','lib\pa26_map_grid.lua','lib\pa26_map_adapter.lua','lib\pa26_map_ui.lua','lib\pa26_nearby.lua','lib\pa26_config.lua','lib\pa26_runtime.lua','lib\pa26_hud.lua','lib\pa26_menu.lua',
+$paOwned = @('lib\pa26_startup.lua','lib\pa26_settings_ui.lua','lib\pa26_update_platform.lua','lib\pa26_updater.lua','lib\pa26_update_ui.lua','resource\pa26\updater\pa26-update.ps1','lib\pa26_core.lua','lib\pa26_map_grid.lua','lib\pa26_map_adapter.lua','lib\pa26_map_ui.lua','lib\pa26_nearby.lua','lib\pa26_config.lua','lib\pa26_runtime.lua','lib\pa26_hud.lua','lib\pa26_menu.lua',
     'lib\pa26_chat_bridge.lua','lib\pa26_manual_actions.lua','lib\pa26_cef_assets.lua','lib\pa26_chat_text.lua','lib\pa26_keyboard_layout.lua','lib\pa26_bindings.lua','lib\pa26_binder.lua','lib\pa26_executor.lua','lib\pa26_library.lua','lib\pa26_knowledge.lua','lib\pa26_knowledge_ui.lua',
     'lib\pa26_knowledge_edits.lua','lib\pa26_knowledge_editor_ui.lua','lib\pa26_recovery.lua','pa26_guard.lua',
     'lib\pa26_journal.lua','lib\pa26_studio.lua','lib\pa26_text_editor.lua','lib\pa26_feedback.lua','lib\pa26_workspace.lua','lib\pa26_target.lua','lib\pa26_wheel.lua',

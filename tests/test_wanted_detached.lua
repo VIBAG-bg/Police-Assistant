@@ -11,8 +11,8 @@ local function setup(demo)
 end
 for _,demo in ipairs({false,true})do
     local s,f=setup(demo)
-    s.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';s.render()
-    click(s,'Нет##На саспекте RP-маска: /mask и скрытое лицо?##wanted-maskno')
+    s.toggle='Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';s.render()
+    click(s,'Нет##На подозреваемом полная RP-маска (/mask + аксессуар на лице)?##wanted-maskno')
     click(s,'Да##Вы видели паспорт этого человека?##wanted-passport_seenyes')
     click(s,'Далее · причина розыска##wanted-next');eq(f.stage,'basis');eq(f.ic_name,'Player Name');eq(f.passport_number,'37')
     s.edits={['##Поиск · можно оставить пустым##wanted-search']='неподчинение'};s.render();s.edits={}
@@ -21,18 +21,18 @@ for _,demo in ipairs({false,true})do
     click(s,'Назад · выбор причины##wanted-basis-details-back')
     click(s,'Проверить отыгровку и команду##wanted-preview');eq(f.stage,'preview')
     click(s,'Следующая##wanted-preview-page-next');check(s.workspace.studio.wantedPreviewPage>1)
-    click(s,'Отправить отыгровку · затем ДА/НЕТ##wanted-prepare')
+    click(s,'Отыграть ориентировку в чат (затем ДА/НЕТ на выдачу)##wanted-prepare')
     for _=1,32 do s.step(1600);if s.workspace.studio.caseConfirm then break end end
     check(s.workspace.studio.caseConfirm);for _,row in ipairs(s.sent)do check(not row.line:match('^/su '))end
-    click(s,'ДА##confirm-yes');s.step();s.step(1800)
+    click(s,'ДА — выдать розыск##confirm-yes');s.step();s.step(1800)
     if demo then eq(#s.sent,0)else eq(s.sent[#s.sent].line,'/su 37 8 1')end
     check(not s.frames[1].condition());onScriptTerminate(s.script)
 end
 -- The actual detached window exposes the tracking evidence editor; a general
 -- OOC acknowledgement cannot bypass a missing IC telephone.
 local tracking,tf=setup(false)
-tracking.toggle='Основание из текущей ситуации после последней смерти##wanted-life-ack';tracking.render()
-click(tracking,'OOC · системная механика##Ветка розыска##wanted-modeooc')
+tracking.toggle='Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';tracking.render()
+click(tracking,'OOC · только для пеленгации /setmark##Ветка розыска##wanted-modeooc')
 if tracking.windows['Police Assistant · Розыск##pa26-wanted'].height<650 then click(tracking,'Далее · уточнение сведений##wanted-identity-details')end
 tracking.toggle='Телефон включён; RP-пеленгация; звёзды сниму сразу##wanted-ooc-ack';tracking.render()
 click(tracking,'Далее · причина розыска##wanted-next');eq(tf.stage,'identity')

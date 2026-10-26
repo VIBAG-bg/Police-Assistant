@@ -54,7 +54,7 @@ f.workspace.library.settings.cef_chat_support=true
 poll(false)
 
 -- Russian GUI, immediate save, reload and personal accent preservation.
-f.page('settings');f.click='Профиль##settings-tab-profile';f.render()
+f.page('settings');require('support.ui_routes').chat(f,'filters')
 local preset=false;for _,button in ipairs(f.buttonCalls)do if button.label=='Русский акцент##accent-default'then preset=true end end
 check(not preset,'the redundant accent preset button has been removed')
 f.toggle='Язык ввода рядом с полем чата##cef-layout';f.render();f.step(650)

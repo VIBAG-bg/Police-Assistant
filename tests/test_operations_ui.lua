@@ -9,7 +9,7 @@ local function setup(extra)
     local lib=model.defaults(core.defaults());lib.operations.enabled=true
     local options={demo=false,library=lib,alerts=true,categoryWheel=true}
     for k,v in pairs(extra or {})do options[k]=v end
-    local s=fixture(options);s.step();s.page('addons');click(s,'Действия##tooloperations');return s
+    local s=fixture(options);s.step();require('support.ui_routes').operations(s);return s
 end
 local s=setup();local c=s.workspace.operations;local st=s.workspace.studio
 eq(s.events.onSendCommand(codec.encode('/cuff 37')),nil);s.step();eq(#c.data.rows,1)

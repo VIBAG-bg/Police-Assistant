@@ -95,7 +95,7 @@ s=setup({chatInputBackend=false});onWindowMessage(0x100,13);eq(s.events.onSendCh
 s.chat=false;s.step();eq(#s.sent,0);check(s.hasLog('нет такой команды'));onScriptTerminate(s.script)
 -- Real profile controls autosave explicit off and leave binds/profile intact.
 s=setup();s.chat=false;if not s.frames[1].condition()then s.commands.pa26()end;s.page('settings')
-s.click='Профиль##settings-tab-profile';s.render();local before=model.copy(s.workspace.library.bindings)
+require('support.ui_routes').chat(s,'accent');local before=model.copy(s.workspace.library.bindings)
 local function same(a,b)
     eq(type(a),type(b));if type(a)~='table'then eq(a,b);return end
     for key,value in pairs(a)do same(value,b[key])end

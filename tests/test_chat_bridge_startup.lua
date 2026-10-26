@@ -51,8 +51,8 @@ local seed=model.defaults(core.defaults());eq(seed.settings.cef_chat_diagnostics
 seed.settings.cef_chat_diagnostics=false;eq(assert(model.validate(seed,core.defaults())).settings.cef_chat_diagnostics,false)
 seed.settings.cef_chat_diagnostics=nil;eq(assert(model.validate(seed,core.defaults())).settings.cef_chat_diagnostics,true)
 local fixture=require'support.fixture';local f=fixture({demo=false,library=seed});f.step();if not f.frames[1].condition()then f.commands.pa26()end
-f.page('settings');f.click='Профиль##settings-tab-profile';f.render()
-f.toggle='Диагностика чата##cef-chat-diagnostics';f.render();f.step(650)
+f.page('settings');require('support.ui_routes').chat(f,'filters')
+require('support.ui_routes').click(f,'Диагностика чата##cef-diagnostics-toggle');f.toggle='Диагностика чата##cef-chat-diagnostics';f.render();f.step(650)
 eq(f.workspace.library.settings.cef_chat_diagnostics,false)
 local saved=f.savedLibrary();eq(saved.settings.cef_chat_diagnostics,false)
 onScriptTerminate(f.script)

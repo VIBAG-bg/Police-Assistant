@@ -7,10 +7,11 @@ local function click(s,label)s.click=label;s.render();eq(s.click,nil,label);heal
 local lib=model.defaults(core.defaults());local b=model.newBinding(7);b.name='Длинная отыгровка';b.enabled=true;b.target_required=false
 local body=string.rep('осмотрелся вокруг и проверил обстановку ',4):match('^(.-)%s*$')
 b.script='/me '..body..'\n/do '..body..'\n/r Готово.';lib.bindings[#lib.bindings+1]=b;lib.next_id=8
-local s=fixture({demo=false,library=lib});s.step();s.page('settings');click(s,'Перенос /me и /do##rp-settings');s.render()
-eq(s.workspace.studio.assistPage,'roleplay')
-s.edits={['##Маркер продолжения##rp-marker']='…'};s.render();s.edits={};s.step(700);eq(s.workspace.library.rp_text.marker,'…')
+local s=fixture({demo=false,library=lib});s.step();s.page('settings');require('support.ui_routes').chat(s,'split');s.render()
+eq(s.workspace.studio.chatSettingsPage,'split')
+s.edits={['##Маркер продолжения (обычно ...)##rp-marker']='…'};s.render();s.edits={};s.step(700);eq(s.workspace.library.rp_text.marker,'…')
 local saved=s.savedLibrary();eq(saved.rp_text.body_limit,90);eq(saved.rp_text.marker,'…')
+require('support.ui_routes').click(s,'Тонкая калибровка запаса под длину ника и /do##rp-toggle-adv')
 -- Invalid numeric edits preserve the last valid settings, with visible retry/correction.
 s.intEdits={['Запас до края строки · 0–32##rp-margin']=-1};s.render();s.intEdits={};s.step(700)
 eq(s.workspace.library.rp_text.margin,6);check(s.workspace.studio.autosaves.rp_text.failed)

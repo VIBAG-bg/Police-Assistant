@@ -4,7 +4,7 @@ local preferences=require 'pa26_procedure_settings'
 -- Real GUI editing, autosave, persisted file, then real main/executor timing.
 local seed=model.defaults(core.defaults());seed.alerts.on_duty=true;seed.weapons.enabled=true
 local s=fixture({demo=false,library=seed,alerts=true});s.step();s.page('settings')
-s.click='Оружие##settings-tab-weapons';s.render();eq(s.click,nil)
+s.click='5. Оружие и тайзер##settings-tab-weapons';s.render();eq(s.click,nil)
 local original=s.imgui.SliderInt;local edited=false
 s.imgui.SliderInt=function(label,value,min,max)
     if label=='Оружие в руках, с##weapons-delay_ms'then
@@ -23,7 +23,7 @@ check(s.sent[1].line:match('^/me '));onScriptTerminate(s.script)
 
 -- The multiline reminder GUI must save line breaks, with the exact preview text.
 s=fixture({library=model.defaults(core.defaults()),alerts=true});s.step();s.page('addons')
-s.click='Процедуры##toolprocedures';s.render();eq(s.click,nil)
+s.click='Розыск, штрафы, /setmark##toolprocedures';s.render();eq(s.click,nil)
 s.click='Розыск · настройки##Процедуры##case-pagewanted_settings';s.render();eq(s.click,nil)
 local body='Проверь результат на сервере.\nЗатем проверь необходимость снятия звёзд.'
 s.edits={['##Текст напоминания##wanted-reminder-text']=body};s.render();s.edits={};s.step(700)

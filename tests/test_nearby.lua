@@ -52,7 +52,7 @@ f.click=label;f.render();eq(f.click,nil);eq(#f.sent,0);check(not f.workspace.sel
 f.step(16);check(f.workspace.selectedTarget);eq(f.workspace.selectedTarget.id,37);eq(#f.sent,0)
 -- A stale cached button cannot select an actor hidden between rendering and main.
 f.onScreen=false;f.click=label;f.render();f.workspace:clearTarget('manual');f.step(16);check(not f.workspace.selectedTarget);eq(#f.sent,0)
-f.onScreen=true;f.step(550);f.page('settings');f.click='Доступ##settings-tab-options';f.render();eq(f.click,nil)
+f.onScreen=true;f.step(550);f.page('settings');f.click='3. Управление и колесо##settings-tab-options';f.render();eq(f.click,nil)
 f.toggle='Показывать видимых людей рядом##nearby-enabled';f.render();f.step(700);check(not f.workspace.library.nearby.enabled)
 local saved=f.savedLibrary();check(not saved.nearby.enabled)
 check(not f.hasLog('Ошибка интерфейса'));eq(#f.scopes,0);eq(f.invalidIOReads,0);eq(#f.sent,0)

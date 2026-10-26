@@ -48,10 +48,10 @@ for _,width in ipairs({-1,-12,0})do
 end
 for _,size in ipairs({{760,600},{1600,1000},{2560,1440}})do
     s=fixture();s.step();s.resizeWindows={['Police Assistant 2026##pa26-main']={x=size[1],y=size[2]}}
-    s.page('settings');s.render()
+    require('support.ui_routes').chat(s,'split');s.render()
     local found
-    for _,button in ipairs(s.buttonCalls)do if button.label=='Перенос /me и /do##rp-settings'then found=button end end
-    check(found,'general-settings button must render');check(found.width>=100);check(found.height<=60,'settings label must not become a vertical column')
+    for _,button in ipairs(s.buttonCalls)do if button.label=='Изменить порог и маркер продолжения##manual-chat-rp-settings'then found=button end end
+    check(found,'chat settings button must render');check(found.width>=100);check(found.height<=60,'settings label must not become a vertical column')
     check(not s.hasLog('Ошибка интерфейса'));eq(#s.scopes,0)
 end
 -- A 34px icon must not dictate tooltip width or contaminate the next main window.

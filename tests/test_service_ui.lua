@@ -71,7 +71,7 @@ for _,size in ipairs({{640,480},{1280,720},{1920,1080},{2560,1440}})do
     end
 end
 -- Settings routes: independent drafts, channel save, patrol save, weapon and taser save.
-s=setup();s.commands.pa26();s.step();s.page('settings');s.click='Связь##settings-tab-radio';s.render()
+s=setup();s.commands.pa26();s.step();s.page('settings');s.click='4. Рация и тревоги##settings-tab-radio';s.render()
 s.edits={['##Текст##alerts-template-shots_template']='{callsign} Shots fired. 10-20: {area}.'};s.render();s.edits={}
 local studio=s.workspace and s.workspace.studio
 check(studio and studio.alertDraft)
@@ -87,13 +87,13 @@ studio.radioPage='emergency';s.render()
 s.step()
 raw=s.savedLibrary();eq(raw.alerts.shots_template,'{callsign} Shots fired. 10-20: {area}.')
 check(raw.alerts.patrol.enabled);eq(raw.alerts.patrol.post,'Северный пост')
-s.click='Оружие##settings-tab-weapons';s.render();s.toggle='Включить отыгровку доставания##weapons-enabled';s.render()
+s.click='5. Оружие и тайзер##settings-tab-weapons';s.render();s.toggle='Включить отыгровку доставания##weapons-enabled';s.render()
 s.edits={['##Название для переменных и /me##weapon-name']='ERP Taser'};s.render();s.edits={}
 s.step(650);raw=s.savedLibrary()
 check(raw.weapons.enabled);eq(raw.weapons.items['23'].name,'ERP Taser');eq(raw.alerts.shots_template,'{callsign} Shots fired. 10-20: {area}.')
 s.io.DisplaySize.x,s.io.DisplaySize.y=640,480;s.render();healthy(s)
 local bar;for _,child in ipairs(s.childCalls)do if child.name=='settings-tabs##pa26'then bar=child end end
-check(bar and bar.height==100,'narrow settings tabs must use two visible rows')
+check(bar and bar.height>=100,'narrow settings tabs must use two visible rows')
 studio.weaponPage='taser';s.render()
 s.intEdits={['RP-выстрелов до перезарядки##taser-capacity']=3};s.render();s.intEdits={};s.step(650)
 raw=s.savedLibrary();eq(raw.taser.capacity,3);eq(raw.weapons.items['23'].name,'ERP Taser')

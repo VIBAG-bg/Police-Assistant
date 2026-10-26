@@ -65,14 +65,14 @@ onScriptTerminate(s.script);eq(s.events.onSendAimSync,previous)
 s=setup({aimHandler=function()return false end});eq(s.events.onSendAimSync({camMode=53}),false);eq(s.weaponWarning.aimSample,nil);onScriptTerminate(s.script)
 s=setup();local later=function()end;s.events.onSendAimSync=later;onScriptTerminate(s.script);eq(s.events.onSendAimSync,later)
 -- Both editable warning texts are reachable from the default Weapons page and autosave.
-s=setup();s.commands.pa26();s.step();s.page('settings');s.click='Оружие##settings-tab-weapons';s.render()
+s=setup();s.commands.pa26();s.step();s.page('settings');s.click='5. Оружие и тайзер##settings-tab-weapons';s.render()
 s.click='Предупреждения##Снаряжение##weapons-pagewarning';s.render();s.render()
 s.edits={['##Предупреждение: Тайзер##warning-taser_template']='Стойте! Будет применён тайзер.',
     ['##Предупреждение: Огнестрельное оружие##warning-firearm_template']='Стоять! Прекратите опасные действия.'};s.render();s.edits={};s.step(650)
 local saved=s.savedLibrary()
 eq(saved.weapon_warning.taser_template,'Стойте! Будет применён тайзер.');eq(saved.weapon_warning.firearm_template,'Стоять! Прекратите опасные действия.');healthy(s);onScriptTerminate(s.script)
 -- Show actual profile IDs in its actual order. Hidden names survive 8 -> 4 -> 6 -> 8 and reload validation.
-s=setup();s.commands.pa26();s.step();s.page('settings');s.click='Доступ##settings-tab-options';s.render();local studio=s.workspace.studio
+s=setup();s.commands.pa26();s.step();s.page('settings');s.click='3. Управление и колесо##settings-tab-options';s.render();local studio=s.workspace.studio
 local function profile(name,count)
     studio.optionDraft=studio.optionDraft or model.copy(s.workspace.library.settings);studio.optionDraft.wheel_profile=name
     s.drawnText={};s.render();local fields=0

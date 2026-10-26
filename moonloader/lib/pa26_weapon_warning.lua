@@ -34,10 +34,10 @@ end
 local function scope(s,group)return table.concat({s.session,tostring(s.ped),tostring(s.demo),s.targetKey or 'unselected',group},'\0')end
 local function signature(cfg,s,group,name)
     return table.concat({tostring(cfg.enabled),cfg.mode,cfg.trigger,tostring(cfg.delay_ms),cfg.channel,cfg[group..'_template'],
-        tostring(s.weapon),name,tostring(cfg.no_accent),cfg.no_accent and''or(s.accent or''),scope(s,group)},'\0')
+        tostring(s.weapon),name,tostring(s.gender),tostring(cfg.no_accent),cfg.no_accent and''or(s.accent or''),scope(s,group)},'\0')
 end
 function M.prepare(cfg,state,name,group,codec,now,life)
-    local body=cfg[group..'_template']:gsub('{weapon}',function()return name end)
+    local body=core.expandGender(cfg[group..'_template'],state.gender):gsub('{weapon}',function()return name end)
     local err;body,err=model.applyAccent(body,cfg.no_accent and''or(state.accent or''));if not body then return nil,err end
     local line=(cfg.channel~='' and cfg.channel..' ' or '')..body
     local ready;ready,err=rp.line(line,codec,state.rpText,state.my_nick);if not ready then return nil,err end

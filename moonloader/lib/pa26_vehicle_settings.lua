@@ -44,7 +44,7 @@ end
 function M.template(value)
     local v=shared.text(value,768)
     if not v or v==''or v:match('^[/@]')then return nil,'Нужна реплика без /команды и перевода строки.'end
-    local rest=v:gsub('{([a-z_]+)}',function(k)return M.variables[k]and ''or '{'end)
+    local rest=core.stripGender(v):gsub('{([a-z_]+)}',function(k)return M.variables[k]and ''or '{'end)
     if rest:find('[{}]')then return nil,'Неизвестная переменная транспорта.'end
     return v
 end
@@ -87,7 +87,7 @@ function M.validate(raw)
     for _,k in ipairs({'traffic_stop','pursuit','pursuit_periodic','megaphone','finish','approach','window','description'})do
         local err;out[k..'_template'],err=M.template(raw[k..'_template']or out[k..'_template']);if not out[k..'_template']then return nil,err end
     end
-    local description=out.description_template:gsub('{([a-z_]+)}',function(k)
+    local description=core.stripGender(out.description_template):gsub('{([a-z_]+)}',function(k)
         return({model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true})[k]and ''or '{'
     end)
     if description:find('[{}]')then return nil,'В описании машины доступны модель, ID и цвета.'end

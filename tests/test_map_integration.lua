@@ -7,7 +7,7 @@ local function click(label)s.click=label;s.render();eq(s.click,nil,'Missing cont
 local b=model.newBinding(10);b.script='Район {area}; квадрат {map_square}; сектор {square}.'
 local snap=assert(s.workspace:snapshot(b,{}));eq(snap.values.map_square,'M-13');eq(snap.values.square,'Ручной сектор')
 local plan=assert(binder.compile(b,snap,{},codec));check(plan.lines[1]:find('M-13',1,true));eq(#s.sent,0)
-s.page('settings');click('Карта##settings-tab-map')
+require('support.ui_routes').screen(s,'map')
 check(table.concat(s.drawnText,'\n'):find('Квадраты карты',1,true))
 local before=model.copy(s.workspace.library.bindings)
 s.toggle='Автозаполнение {square}##map-auto-square';s.render();s.step(700);healthy()

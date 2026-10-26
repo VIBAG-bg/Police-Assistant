@@ -32,9 +32,9 @@ onScriptTerminate(s.script);check(bridge.closed)
 seed.settings.cef_chat_support=nil;seed.settings.accent_live_input=false
 local valid=assert(model.validate(seed,core.defaults()));check(valid.settings.cef_chat_support);check(not valid.settings.accent_live_input)
 -- The GUI uses one master accent switch and persists the CEF switch independently.
-s=fixture({demo=false,library=seed});s.step();if not s.frames[1].condition()then s.commands.pa26()end;s.page('settings');s.click='Профиль##settings-tab-profile';s.render()
+s=fixture({demo=false,library=seed});s.step();if not s.frames[1].condition()then s.commands.pa26()end;s.page('settings');require('support.ui_routes').chat(s,'accent')
 s.toggle='Добавлять акцент в мой обычный чат##accent-live';s.render();s.step(650);check(s.workspace.library.settings.accent_live_input)
-s.toggle='Поддержка чата лаунчера##cef-chat';s.render();s.step(650);check(not s.workspace.library.settings.cef_chat_support)
+require('support.ui_routes').chat(s,'filters');s.toggle='Поддержка чата лаунчера##cef-chat';s.render();s.step(650);check(not s.workspace.library.settings.cef_chat_support)
 local saved=s.savedLibrary()
 check(saved.settings.accent_live_input);check(not saved.settings.cef_chat_support);eq(saved.profile.accent,seed.profile.accent)
 onScriptTerminate(s.script)

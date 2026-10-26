@@ -30,7 +30,10 @@ for _,name in ipairs({'Checkbox','InputInt','SliderInt','SliderFloat','InputText
         local result=original(label,...)
         if (label:find('##nearby',1,true)or label:find('##vehicle',1,true))and im.IsItemVisible()then
             local edge=im.GetItemRectMax();local pos=im.GetWindowPos();local width=im.GetWindowSize().x
-            check(edge.x<=pos.x+width-6,'Control exceeds its window: '..label)
+            if name=='InputTextMultiline'then
+                -- Check the scrolling editor viewport, not its logical text width.
+                check(pos.x>=22 and pos.x+width<=16+testWidth-6,'Text viewport exceeds parent: '..label)
+            else check(edge.x<=pos.x+width-6,'Control exceeds its window: '..label)end
             seenControls[tostring(testWidth)..':'..label]=true
         end
         return result

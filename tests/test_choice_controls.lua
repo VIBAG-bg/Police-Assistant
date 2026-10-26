@@ -11,7 +11,7 @@ local function click(s,label)
 end
 local function has(s,text)return table.concat(s.drawnText,'\n'):find(text,1,true)~=nil end
 local s=fixture({demo=false,alerts=true,notifications=true});s.step();s.page('settings')
-click(s,'Оружие##settings-tab-weapons')
+click(s,'5. Оружие и тайзер##settings-tab-weapons')
 local combos={};local begin=s.imgui.BeginCombo
 s.imgui.BeginCombo=function(id,preview)combos[#combos+1]={id=id,preview=preview};return begin(id,preview)end
 s.render()
@@ -44,7 +44,7 @@ s.combo=nil;s.render();combos={};s.combo='##Изменить оружие##weapo
 for _,c in ipairs(combos)do if c.id=='##Изменить оружие##weapon-edit'then eq(c.preview,'SD Pistol · GTA ID 23')end end
 s.combo=nil
 -- Navigation in another section also works without discovering a dropdown.
-click(s,'Связь##settings-tab-radio')
+click(s,'4. Рация и тревоги##settings-tab-radio')
 click(s,'Патруль##Настройки связи##radio-pagepatrol');check(has(s,'Патруль полиции и охрана тюрьмы'))
 click(s,'Автодоклады##Настройки связи##radio-pageautomatic');check(has(s,'Предупреждения и свои автодоклады'))
 click(s,'Экстренные##Настройки связи##radio-pageemergency');check(has(s,'Shots fired · SOS · радиокоды'))

@@ -10,22 +10,23 @@ function M.draw(studio,ui,data,callbacks)
     local im=studio.imgui;studio.currentNoticeScope='vehicle';studio.preferenceContext=true
     local d=studio.vehicleDraft or model.copy(studio.lib.vehicle);local view=data.vehicle or {}
     studio:settingsHeading(ui,'Трафик-стоп и преследование')
+    if studio:button('Открыть реплики мегафона##vehicle-megaphone',ui)then callbacks.openAssist('megaphone')end
     if data.radioState then ui.text('Место: '..(require('pa26_map_grid').location(data.radioState)or 'не определено'))end
     ui.text('Выбор машины не меняет выбранного человека. Перед докладом, отыгровкой или обращением в мегафон PA покажет текст и попросит подтверждение.')
     if view.selected then
-        local values=vehicle.describe(view.selected,d)
+        local values=vehicle.describe(view.selected,d,studio.lib.profile.gender)
         ui.text(values and values.vehicle_description or 'Описание не заполнено')
         ui.text('SA:MP ID '..view.selected.id..' · модель '..view.selected.model_id..' · '..math.floor(view.selected.distance)..' м · '..(view.phase or 'Выбрана'))
         ui.text('Цвета GTA: '..tostring(view.selected.color1)..' / '..tostring(view.selected.color2)..' · названия можно изменить ниже по ID.')
     elseif view.nearest then
-        local values=vehicle.describe(view.nearest,d)
+        local values=vehicle.describe(view.nearest,d,studio.lib.profile.gender)
         ui.text('Ближайшая видимая: '..(values and values.vehicle_description or tostring(view.nearest.model_id)))
     else ui.text('Подходящая машина не найдена. Ваша машина исключена из выбора.')end
     if studio:button('Выбрать ближайшую и начать 10-55##vehicle-select',ui)then M.offer(studio,callbacks,'traffic_stop',true)end
     if #(view.candidates or {})>1 then
         ui.text('Или выберите нужную машину из ближайших на экране:')
         for _,car in ipairs(view.candidates)do
-            local values=vehicle.describe(car,d)
+            local values=vehicle.describe(car,d,studio.lib.profile.gender)
             if studio:button((values and values.vehicle_description or tostring(car.model_id))..' · '..math.floor(car.distance)..' м ['..car.id..']##vehicle-candidate-'..car.id,ui)then
                 local ok,err=callbacks.vehicleSelect(car.id);if not ok then studio:notify(err,'vehicle',false)end
             end
@@ -87,7 +88,7 @@ function M.draw(studio,ui,data,callbacks)
     ui.text(periodic and('Предпросмотр: '..periodic)or('Для предпросмотра: '..tostring(periodicError)))
     ui.text('Перед автодокладом появится предупреждение; до отправки его можно отменить. Доклады используют общую очередь. Если рацию ведёт напарник, PA не отправляет их автоматически.')
     studio:settingsHeading(ui,'Тексты и предпросмотр')
-    ui.text('Без /команды. Переменные: {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}, {vehicle_description}, {direction}; также {unit}, {station}, {crew}, {area}, {location}, {map_square}, {sector}, {callsign} и поля профиля.')
+    ui.text('Грамматический род: {gender:передал|передала}. Без /команды. Переменные: {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}, {vehicle_description}, {direction}; также {unit}, {station}, {crew}, {area}, {location}, {map_square}, {sector}, {callsign} и поля профиля.')
     for _,row in ipairs(settings.actions)do
         local key=row[1]..'_template'
         d[key]=studio:field(row[2]..'##vehicle-template-'..key,'vehicle:template:'..key,d[key],2048,true,78)

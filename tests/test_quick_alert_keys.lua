@@ -21,7 +21,7 @@ s.physicalDown={};s.step();key(s,0x31,{[0x12]=true});check(s.alerts.pending);key
 key(s,0x31,{[0x12]=true});s.physicalDown={[0x12]=true};s.step(150)
 local no=s.alerts.buttons.no;check(no);s.mx,s.my=no.x+3,no.y+3;s.down[0x01]=true;s.mouseClicks={[0]=true};s.step()
 s.down[0x01]=false;s.mouseClicks={};s.step();check(not s.alerts.pending,'mouse N works with Alt cursor, without F9');eq(#s.sent,0)
-s.physicalDown={};s.commands.pa26();s.step();s.page('settings');s.click='Связь##settings-tab-radio';s.render()
+s.physicalDown={};s.commands.pa26();s.step();s.page('settings');s.click='4. Рация и тревоги##settings-tab-radio';s.render()
 s.workspace.studio.warningDraft=model.copy(s.workspace.library.weapon_warning)
 s.click='Назначить SOS##alert-key-sos';s.render();eq(s.workspace.studio.keyCapture.name,'SOS')
 s.guiDown={[0x11]=true,[0x12]=true,[0x51]=true};s.step();s.guiDown={};s.step();check(s.workspace.studio.keyCapture.valid)

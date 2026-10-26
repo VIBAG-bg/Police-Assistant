@@ -127,7 +127,7 @@ local r=s.alerts.bounds;check(r);check(r.x+r.w<=2560 and r.y+r.h<=1440)
 healthy(s);press(s,0x4e);eq(#s.sent,0);onScriptTerminate(s.script)
 -- Save the new channel/templates through the real settings editor, reopen and confirm.
 s=setup({demo=false});s.commands.pa26();s.step();s.page('settings')
-s.click='Связь##settings-tab-radio';s.render()
+s.click='4. Рация и тревоги##settings-tab-radio';s.render()
 s.edits={['##Текст##alerts-template-shots_template']='{callsign} Shots fired. 10-20: {area}.'}
 s.render();s.edits={};s.step(650)
 local saved=s.savedLibrary()

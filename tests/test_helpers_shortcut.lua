@@ -23,7 +23,7 @@ onWindowMessage(0x100,0x73,0);onWindowMessage(0x8,0);onWindowMessage(0x7,0);s.st
 onWindowMessage(0x101,0x73,0);s.step();tap(s,0x73);check(s.frames[4].condition())
 -- The same saved field drives tools, the window and key capture.
 s.workspace.studio.assistPage='evidence';tap(s,0x73);tap(s,0x73);eq(s.workspace.studio.assistPage,'evidence')
-s.toggle=nil;s.click='Убрать##assist-key-clear-assist-open_shortcut';s.render();s.step()
+tap(s,0x73);s.commands.pa26();require('support.ui_routes').settings(s,'options');s.toggle=nil;s.click='Убрать##assist-key-clear-assist-open_shortcut';s.render();s.step();s.workspace.studio.assistPage='evidence';s.page('addons');require('support.ui_routes').id(s,'##assist-open');s.step()
 local saved=s.savedLibrary();eq(saved.assist.open_shortcut.key,0)
 tap(s,0x73);check(s.frames[4].condition(),'disabled shortcut cannot close the current window')
 saved.assist.open_shortcut={key=0x75,ctrl=true,alt=false,shift=false};check(s.workspace:save(saved));s.step()

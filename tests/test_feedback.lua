@@ -14,6 +14,7 @@ end
 local s=fixture({demo=false});s.step();s.commands.pa26();s.step()
 onWindowMessage(0x100,0x73,0);onWindowMessage(0x101,0x73,0);s.step()
 check(s.windows['Police Assistant · Помощники##pa26-assist'])
+require('support.ui_routes').id(s,'##assist-tabsmegaphone')
 local phrase=s.workspace.library.vehicle.phrases[1]
 s.click=phrase.name..'##assist-say-1';s.render();check(s.workspace.studio:hasWarning());eq(#s.sent,0)
 local warning=s.workspace.studio.feedback:peek();check(warning.message:find('Мегафон недоступен',1,true))

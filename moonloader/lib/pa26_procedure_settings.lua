@@ -18,23 +18,23 @@ function M.defaults()
     local out={enabled=false,wanted_enabled=true,fine_enabled=true,mark_enabled=true,allow_ooc=true,fine_unmasked=true,delay_ms=1500,
         wanted_assistant_enabled=true,wanted_intercept=true,wanted_require_life_ack=true,
         wanted_allow_remote=true,wanted_autofill_passport=true,wanted_id_as_passport=true,wanted_suggest_ooc=true,wanted_each_trait=false,
-        wanted_passport_number_rp='/do В служебной записи указан номер паспорта: {passport_number}.',
-        wanted_generic_appearance_rp='/me зажал кнопку тангенты рации и передал диспетчеру известные приметы подозреваемого.\n/do В запросе на подготовку ориентировки указан повод: {game_reason}.',
-        wanted_traits_rp='/todo Приметы подозреваемого: {appearance}*обращаясь по рации к диспетчеру.\n/do В запросе на подготовку ориентировки указан повод: {game_reason}.', 
+        wanted_passport_number_rp="/do В карточке ориентировки указан номер паспорта: {passport_number}.",
+        wanted_generic_appearance_rp="/me {gender:зажал|зажала} кнопку тангенты рации и {gender:передал|передала} диспетчеру приметы подозреваемого.\n/do Диспетчер составил ориентировку на розыск по причине: {game_reason}.",
+        wanted_traits_rp="/todo Диспетчер, приметы подозреваемого: {appearance}*зажав кнопку тангенты рации.\n/do В ориентировке диспетчера указана причина: {game_reason}.",
         wanted_send_mode='direct',wanted_direct_command='/su {id} {game_category} {game_item}',wanted_open_command='/su {id}',wanted_list_command='/wanted',
         wanted_reminder_enabled=true,wanted_reminder_delay_ms=15000,wanted_reminder_snooze_ms=60000,wanted_reminder_show_ms=20000,
         wanted_reminder_title='Проверьте OOC-звёзды',
         wanted_reminder_text='Проверьте результат серверного выбора. Если вы выдали OOC-звёзды, снимите их вручную после нужного этапа. PA не подтверждает выдачу и не отправляет /clear.',
         wanted_command='',fine_command='',mark_command='',wanted_verified=false,fine_verified=false,mark_verified=false,
         wanted_source='',fine_source='',mark_source='',
-        wanted_passport_rp='/me сверил паспортные данные на имя {ic_name} и подготовил карточку ориентировки.\n/do В запросе диспетчеру указан повод: {game_reason}.',
+        wanted_passport_rp="/me {gender:сверил|сверила} паспортные данные на имя {ic_name} и {gender:передал|передала} ориентировку диспетчеру.\n/do В базе данных зафиксирован запрос на розыск по причине: {game_reason}.",
         wanted_appearance_rp='/me зажал кнопку тангенты рации и передал диспетчеру известные приметы подозреваемого: {appearance}.',
-        wanted_ooc_rp='/me ввёл известный номер {phone_number} в служебный терминал и запросил пеленгацию.\n/do В терминале отображается запрос на определение местоположения по сигналу телефона.',
-        wanted_car_intro_rp='/me повернувшись к бортовому компьютеру, авторизовался в служебной базе и открыл карточку ориентировки.',
-        wanted_foot_intro_rp='/me достал служебный КПК, активировал защищённый терминал и открыл карточку ориентировки.',
+        wanted_ooc_rp="/me {gender:ввёл|ввела} известный номер {phone_number} в служебный терминал и {gender:запросил|запросила} пеленгацию сигнала.\n/do На экране терминала отображается расчёт сектора по сигналу сотовой вышки.",
+        wanted_car_intro_rp="/me {gender:повернулся|повернулась} к бортовому компьютеру крузера, {gender:авторизовался|авторизовалась} в базе и {gender:открыл|открыла} карточку ориентировки.",
+        wanted_foot_intro_rp="/me {gender:снял|сняла} служебный КПК с пояса, {gender:разблокировал|разблокировала} терминал и {gender:открыл|открыла} карточку ориентировки.",
         wanted_list_rp='/me открыв {device}, просмотрел список разыскиваемых.',
-        fine_passport_rp='/me сверив паспортные данные на имя {ic_name}, приступил к оформлению постановления о штрафе.',
-        fine_appearance_rp='/me сверив известные сведения, приступил к оформлению постановления о штрафе.',
+        fine_passport_rp="/me {gender:сверил|сверила} паспортные данные {ic_name} и {gender:заполнил|заполнила} бланк постановления о штрафе.",
+        fine_appearance_rp="/me {gender:уточнил|уточнила} установочные данные нарушителя и {gender:оформил|оформила} бланк постановления о штрафе.",
         mark_ic_rp='/me ввёл известный номер {phone_number} в бортовой терминал и отправил запрос.\n/do На экране терминала отображается запрос на определение местоположения.',
         mark_ooc_rp='/me открыв служебный терминал, отправил запрос на определение местоположения.\n/do Запрос передан; на экране терминала отображается ожидание ответа.'}
     for _,kind in ipairs({'wanted','fine','mark'})do
@@ -43,8 +43,8 @@ function M.defaults()
     end
     return out
 end
-local function placeholders(text)
-    local rest=text:gsub('{([a-z_]+)}',function(k)return M.variables[k]and ''or '{'end)
+local function placeholders(text,genderAllowed)
+    local rest=(genderAllowed and core.stripGender(text)or text):gsub('{([a-z_]+)}',function(k)return M.variables[k]and ''or '{'end)
     return not rest:find('[{}]')
 end
 function M.command(raw,kind,verified)
@@ -68,7 +68,7 @@ function M.rp(raw)
         line=line:gsub('\r$',''):match('^%s*(.-)%s*$')
         if line~=''then
             count=count+1
-            if not shared.text(line,768)or not(line:match('^/me%s+')or line:match('^/do%s+')or line:match('^/todo%s+[^*]+%*[^*]+$'))or not placeholders(line)then return nil,'RP-строки начинаются с /me, /do либо /todo текст*действие и используют известные переменные.'end
+            if not shared.text(line,768)or not(line:match('^/me%s+')or line:match('^/do%s+')or line:match('^/todo%s+[^*]+%*[^*]+$'))or not placeholders(line,true)then return nil,'RP-строки начинаются с /me, /do либо /todo текст*действие и используют известные переменные.'end
         end
     end
     if count==0 or count>8 then return nil,'В процедуре нужно от 1 до 8 RP-строк.'end

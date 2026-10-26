@@ -1,7 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$Script)
 $ErrorActionPreference='Stop'
 if([IntPtr]::Size -ne 4) { throw 'Use the 32-bit PowerShell host.' }
-$paGame=(Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Exsellent Launcher\game')
+$paGame=(Join-Path ($env:LOCALAPPDATA) 'Exsellent Launcher\game')
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;

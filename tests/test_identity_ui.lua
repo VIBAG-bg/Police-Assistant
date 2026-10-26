@@ -10,7 +10,7 @@ local function setup()
     lib.alerts.on_duty=true
     local s=fixture({demo=false,library=lib,alerts=true,notifications=true});s.step()
     check(s.workspace:selectTarget({id=s.id,ped=s.mappedPed,name=s.name}));s.step()
-    s.page('addons');click(s,'Человек##toolidentity');return s
+    s.page('addons');click(s,'Человек и личность##toolidentity');return s
 end
 local s=setup();check(s.identity:view().record);eq(s.identity:view().record.passport_seen,'unknown')
 s.edits={['##IC-имя и фамилия из паспорта##identity-ic_name']='John Smith',
