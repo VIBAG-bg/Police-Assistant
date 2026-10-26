@@ -12,7 +12,7 @@ $paManifest=Get-Content -LiteralPath (Join-Path $paRoot 'INSTALL_MANIFEST.json')
 $paVersion=$paManifest.release
 if($paVersion -notmatch '^\d+\.\d+\.\d+$'){throw 'A stable numeric release is required.'}
 $paTag='v'+$paVersion
-$paAssets=@('Police-Assistant-v'+$paVersion+'.zip','pa26-update.zip','SHA256SUMS.txt')
+$paAssets=@(('Police-Assistant-v'+$paVersion+'.zip'),'pa26-update.zip','SHA256SUMS.txt')
 $paFiles=@()
 foreach($paName in $paAssets){
     $paPath=Join-Path $paRoot ('dist\'+$paName)
