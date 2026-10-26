@@ -277,9 +277,17 @@ function Assert-PaPersonal($snapshot) {
     foreach($row in $current){if(-not $old.ContainsKey($row.path) -or $old[$row.path] -ne $row.sha256){throw 'personal_data_changed'}}
 }
 function Get-PaPlan([string]$folder,$m) {
-    $plan=@();foreach($row in $m.files){$plan+=@{path=$row.path;source=Get-PaPath $folder $row.path;sha256=$row.sha256}}
     $cef=@($m.files|Where-Object {$_.path.StartsWith('cef/')})
-    if($cef.Count) {
+    $native=$true
+    if($cef.Count){
+        if($cef.Count -ne 2 -or $m.cef_main_sha256 -cnotmatch '^[0-9a-f]{64}$'){throw 'cef_incompatible'}
+        $hudMain=Get-PaPath $script:PaGame 'cef/assets/hud/main.js'
+        $hudIndex=Get-PaPath $script:PaGame 'cef/assets/hud/index.html'
+        if([IO.File]::Exists($hudMain) -and (Get-PaHash $hudMain) -eq $m.cef_main_sha256){$native=$false}
+        elseif([IO.File]::Exists($hudIndex) -and [IO.File]::ReadAllText($hudIndex).Contains('<!-- PA26 CEF chat adapter -->')){throw 'cef_incompatible'}
+    }
+    $plan=@();foreach($row in $m.files){if($native -and $row.path.StartsWith('cef/')){continue};$plan+=@{path=$row.path;source=Get-PaPath $folder $row.path;sha256=$row.sha256}}
+    if($cef.Count -and -not $native) {
         if($cef.Count -ne 2 -or $m.cef_main_sha256 -cnotmatch '^[0-9a-f]{64}$'){throw 'cef_incompatible'}
         $main=Get-PaPath $script:PaGame 'cef/assets/hud/main.js';if((Get-PaHash $main) -ne $m.cef_main_sha256){throw 'cef_incompatible'}
         $index=Get-PaPath $script:PaGame 'cef/assets/hud/index.html';$bytes=[IO.File]::ReadAllBytes($index)
@@ -342,7 +350,7 @@ function Invoke-PaTransaction([string]$folder,$m) {
             $target=Get-PaPath $script:PaGame $row.path
             if([IO.File]::Exists($target) -ne $row.existed -or ($row.existed -and (Get-PaHash $target) -ne $row.before)){throw 'runtime_changed'}
         }
-        if(@($m.files|Where-Object {$_.path.StartsWith('cef/')}).Count -and (Get-PaHash (Get-PaPath $script:PaGame 'cef/assets/hud/main.js')) -ne $m.cef_main_sha256){throw 'cef_incompatible'}
+        if(@($plan|Where-Object {$_.path.StartsWith('cef/')}).Count -and (Get-PaHash (Get-PaPath $script:PaGame 'cef/assets/hud/main.js')) -ne $m.cef_main_sha256){throw 'cef_incompatible'}
         foreach($row in $plan) {
             Assert-PaClosed;Assert-PaPersonal $personal
             $target=Get-PaPath $script:PaGame $row.path;$temp=$target+'.pa26-new-'+$journal.job

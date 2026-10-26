@@ -36,7 +36,17 @@ function Create-Case([string]$name,[bool]$cef) {
     return $base
 }
 $native=Create-Case 'native' $false
+$nativeBefore=Snapshot $native
+& (Join-Path $paRelease 'install.ps1') -DestinationRoot $native -VerifyOnly | Out-Null
+$nativeAfter=Snapshot $native
+if($nativeBefore.Count -ne $nativeAfter.Count){throw 'VerifyOnly wrote files'}
+foreach($key in $nativeBefore.Keys){if($nativeBefore[$key] -ne $nativeAfter[$key]){throw 'VerifyOnly changed bytes'}}
 & (Join-Path $paRelease 'install.ps1') -DestinationRoot (Join-Path $native 'MoonLoader') | Out-Null
+$nativeBackup=Get-ChildItem -LiteralPath (Join-Path $paRelease 'installation-backups') -Directory | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+foreach($key in $nativeBefore.Keys|Where-Object {$_ -like '*config\police_assistant_2026*'}){
+ $saved=Join-Path $nativeBackup.FullName ('personal'+$key.Replace('\MoonLoader',''))
+ if((Get-FileHash -LiteralPath $saved -Algorithm SHA256).Hash -ne $nativeBefore[$key]){throw 'Personal backup mismatch'}
+}
 if([IO.File]::ReadAllText((Join-Path $native 'MoonLoader\config\police_assistant_2026.ini')) -ne 'PERSONAL INI') { throw 'INI changed' }
 if([IO.File]::ReadAllText((Join-Path $native 'MoonLoader\config\police_assistant_2026_library.json')) -ne 'PERSONAL BINDS') { throw 'Library changed' }
 if([IO.File]::ReadAllText((Join-Path $native 'MoonLoader\config\police_assistant_2026_binds.json')) -ne 'PERSONAL binds.json'){throw 'Personal binds.json changed'}
@@ -70,6 +80,6 @@ foreach($failAfter in @(1,37,89,91,92,93,94)) {
 }
 if((Get-FileHash -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Algorithm SHA256).Hash -ne $paManifestBefore) { throw 'Manifest changed during installer test' }
 if((Get-FileHash -LiteralPath (Join-Path $paRelease 'install.ps1') -Algorithm SHA256).Hash -ne $paInstallerBefore) { throw 'Installer changed during test' }
-$result=[ordered]@{release='0.40.0';status='passed';native_install=$true;cef_install=$true;idempotent_patch=$true;preserved_personal_files=$true;rollback_after=@(1,37,89,91,92,93,94);manifest_sha256=$paManifestBefore;installer_sha256=$paInstallerBefore;real_game_written=$false;sandbox=$paRoot}
-$result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $paRelease 'tests\INSTALLER_RESULTS_0400.json') -Encoding UTF8
+$result=[ordered]@{release=(Get-Content -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Raw|ConvertFrom-Json).release;status='passed';native_install=$true;cef_install=$true;idempotent_patch=$true;preserved_personal_files=$true;personal_backups=$true;verify_only_readonly=$true;rollback_after=@(1,37,89,91,92,93,94);manifest_sha256=$paManifestBefore;installer_sha256=$paInstallerBefore;real_game_written=$false;sandbox=$paRoot}
+$result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $paRelease 'tests\INSTALLER_RESULTS.json') -Encoding UTF8
 'Installer: native, CEF, repeated patch and seven rollback points passed.'

@@ -138,5 +138,39 @@ $case=New-Case 'physical-lock'
 Write-PaMarker ('a'*32);Reject {Invoke-PaTransaction $case.folder $case.manifest} 'existing physical marker refuses another install'
 Reject {Write-PaMarker ('b'*32)} 'marker cannot be overwritten through another alias'
 Check ([IO.File]::ReadAllText($script:PaMarker) -ceq ('a'*32)) 'first marker owner retained';Verify-Old $case
-Write-PaJson (Join-Path $PSScriptRoot 'UPDATER_WORKER_RESULTS.json') @{status='passed';checks=$checks;real_game_written=$false;gta_started=$false;backup_and_rollback=$true;durable_recovery=$true;personal_edits_preserved=$true;real_package_round_trip=$true;metadata_and_approval=$true;active_job_recovery=$true;physical_marker_lock=$true;unicode_personal_names=$true;worker_sha256=Get-PaHash (Join-Path $paRelease 'moonloader\resource\pa26\updater\pa26-update.ps1');sandbox=$paRoot}
+# Optional launcher files never create or rewrite a different client's CEF HUD.
+foreach($environment in @('native','foreign-cef','official-cef','changed-pa-cef')){
+ $case=New-Case ('cef-contract-'+$environment)
+ foreach($name in @('pa26-chat.js','pa26-chat-endpoint.js')){
+  $path=Get-PaPath $case.folder ('cef/assets/hud/'+$name);[IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($path))|Out-Null
+  [IO.File]::WriteAllText($path,'NEW PA CEF')
+  $case.manifest.files+=@{path='cef/assets/hud/'+$name;sha256=Get-PaHash $path;size=(Get-Item $path).Length}
+ }
+ $hashTool=[Security.Cryptography.SHA256]::Create()
+ try{$case.manifest.cef_main_sha256=[BitConverter]::ToString($hashTool.ComputeHash([Text.Encoding]::UTF8.GetBytes('OFFICIAL HUD'))).Replace('-','').ToLowerInvariant()}finally{$hashTool.Dispose()}
+ $hud=Get-PaPath $script:PaGame 'cef/assets/hud'
+ if($environment -ne 'native'){
+  [IO.Directory]::CreateDirectory($hud)|Out-Null
+  $main=Join-Path $hud 'main.js';[IO.File]::WriteAllText($main,$(if($environment -eq 'official-cef'){'OFFICIAL HUD'}else{'FOREIGN OR CHANGED HUD'}))
+  $html='<html><body>CLIENT HUD</body></html>'
+  if($environment -eq 'changed-pa-cef'){$html='<html><body><!-- PA26 CEF chat adapter --><script src="pa26-chat.js"></script></body></html>'}
+  [IO.File]::WriteAllText((Join-Path $hud 'index.html'),$html)
+ }
+ if($environment -eq 'changed-pa-cef'){Reject {Get-PaPlan $case.folder $case.manifest} 'changed existing PA CEF contract refused';continue}
+ $plan=@(Get-PaPlan $case.folder $case.manifest)
+ Check ($plan[-1].path -ceq 'MoonLoader/police_assistant_2026.lua') 'entry replaced last'
+ if($environment -in @('native','foreign-cef')){
+  Check (@($plan|Where-Object {$_.path.StartsWith('cef/')}).Count -eq 0) 'native or foreign CEF excluded'
+  Invoke-PaTransaction $case.folder $case.manifest
+  Check (-not [IO.File]::Exists((Join-Path $hud 'pa26-chat.js'))) 'no adapter added to native client'
+  if($environment -eq 'foreign-cef'){Check ([IO.File]::ReadAllText((Join-Path $hud 'index.html')) -ceq $html) 'foreign markup unchanged'}
+ }else{
+  Check (@($plan|Where-Object {$_.path.StartsWith('cef/')}).Count -eq 3) 'official CEF files and markup prepared'
+  Invoke-PaTransaction $case.folder $case.manifest
+  Check ((Get-PaHash (Join-Path $hud 'main.js')) -eq $case.manifest.cef_main_sha256) 'official client main unchanged'
+  Check ([IO.File]::ReadAllText((Join-Path $hud 'index.html')).Contains('src="pa26-chat-endpoint.js"')) 'official bridge connected'
+  Check (@(Get-PaPlan $case.folder $case.manifest).Count -eq 5) 'repeat patch idempotent'
+ }
+}
+Write-PaJson (Join-Path $PSScriptRoot 'UPDATER_WORKER_RESULTS.json') @{status='passed';checks=$checks;real_game_written=$false;gta_started=$false;backup_and_rollback=$true;durable_recovery=$true;personal_edits_preserved=$true;real_package_round_trip=$true;metadata_and_approval=$true;active_job_recovery=$true;physical_marker_lock=$true;unicode_personal_names=$true;native_and_cef=$true;worker_sha256=Get-PaHash (Join-Path $paRelease 'moonloader\resource\pa26\updater\pa26-update.ps1');sandbox=$paRoot}
 Write-Output ('Updater worker: '+$checks+' checks passed; all runtime/data tests isolated.')

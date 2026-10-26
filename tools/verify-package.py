@@ -31,4 +31,7 @@ for p in [ROOT/'README.md', *(ROOT/'docs').rglob('*.md')]:
         target=link.split('#')[0]
         assert (p.parent/target).exists(), f'Broken link in {p.relative_to(ROOT)}: {target}'
         links+=1
+for row in manifest['setup_files']:
+    assert row['path'] in {'tools/pa-setup.ps1','DEPENDENCIES.json'}
+    assert hashlib.sha256((ROOT/row['path']).read_bytes()).hexdigest()==row['sha256']
 print(f'Package verified: {count} runtime entries, version {manifest["release"]}, {links} local documentation links.')

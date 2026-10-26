@@ -1,49 +1,32 @@
 {
-  "version": "0.39.0",
-  "checked_utc": "2026-10-25T22:51:45.286867+00:00",
-  "lua": {
-    "groups": 145,
-    "syntax_files": 239,
-    "checks": 8388118,
-    "status": "passed"
-  },
-  "cef_browser": {
-    "checks": 482,
-    "status": "passed"
-  },
-  "update_worker": {
-    "checks": 135,
-    "status": "passed"
-  },
-  "native_wanted_x86": {
-    "status": "passed",
-    "checks": 13745,
-    "frames": 1273,
-    "resolutions": 4,
-    "min_window_width": 300,
-    "modal_frames": 192,
-    "gta_started": false,
-    "game_files_written": false,
-    "server_contacted": false,
-    "renderer": "installed 32-bit ImGui, CPU only"
-  },
-  "installer": {
-    "native": true,
-    "cef": true,
-    "repeat": true,
-    "rollback_after": [
-      1,
-      37,
-      89,
-      91,
-      92
-    ],
-    "personal_files_preserved": true,
-    "status": "passed"
-  },
-  "bootstrap_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
-  "source_repository": "VIBAG-bg/Police-Assistant",
-  "game_launched": false,
+  "release": "0.40.1",
+  "status": "local_checks_passed",
+  "game_started": false,
   "real_game_written": false,
-  "in_game_acceptance": "User requested testing the update button personally; no local installation authorized"
+  "lua_groups": 148,
+  "lua_checks": 8814057,
+  "cef_browser_checks": 482,
+  "worker_checks": 148,
+  "setup_checks_with_official_archives": 124,
+  "native_updater_checks": 13,
+  "native_pinned_dependency_checks": 7,
+  "preserved_configuration_paths": 1175,
+  "official_dependency_archives": 3,
+  "official_dependency_files": 21,
+  "installer_rollback_after": [
+    1,
+    37,
+    89,
+    91,
+    92,
+    93,
+    94
+  ],
+  "old_worker_transition": [
+    "native",
+    "launcher"
+  ],
+  "update_program_files": 91,
+  "frozen_protocol": 1,
+  "notes": "Isolated tests; server and actual GTA acceptance remain separate."
 }

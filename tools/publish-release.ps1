@@ -19,7 +19,7 @@ foreach($paName in $paAssets){
     $paFiles+=@{name=$paName;path=$paPath;size=(Get-Item -LiteralPath $paPath).Length;sha256=(Get-FileHash -LiteralPath $paPath -Algorithm SHA256).Hash.ToLowerInvariant()}
 }
 $paNotes=[IO.File]::ReadAllText((Join-Path $paRoot ('docs\RELEASE-'+$paVersion+'.md')),[Text.Encoding]::UTF8)
-if($VerifyOnly){$paFiles | Select-Object name,size,sha256;return}
+if($VerifyOnly){$paFiles | ForEach-Object {[PSCustomObject]$_} | Select-Object name,size,sha256;return}
 
 # Use the normal Git credential helper for this same GitHub host. Never print
 # or persist its reply, credentials, Authorization headers or request objects.

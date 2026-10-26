@@ -1,5 +1,5 @@
 {
-  "release": "0.40.0",
+  "release": "0.40.1",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -51,7 +51,7 @@
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "88c90febd312e9928aff2bf1d5fa21cf317cbd96873a59ddd6d47aa65f1fefb0"
+      "sha256": "08efa9fef6ad8d12fa2593a1c46d9492d6a71ece2e9d30890dbfceb916c7491d"
     },
     {
       "path": "lib\\pa26_evidence.lua",
@@ -339,11 +339,11 @@
     },
     {
       "path": "pa26_guard.lua",
-      "sha256": "237dd704c2e6cc0f2bdb4f8172e7f916f9018b8082d71d171526b8aeebc4f584"
+      "sha256": "8c3413e9e619b72e2995b8d4b6944f4239bcbbe128e8e1b2fe323751229b0070"
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "52c906cc3622f438b6c0bbf1685aa6eec744d032084415432aaf293f46b591e3"
+      "sha256": "c51796fde960000256f45d2af36713ce0c8c69f6e4e4d46e85850176ff5d923d"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",
@@ -363,7 +363,7 @@
     },
     {
       "path": "resource\\pa26\\updater\\pa26-update.ps1",
-      "sha256": "5573a7054eda3959948119b118d2eda722021297f9e13c4452c4b1dee294296b"
+      "sha256": "19fd9df866f1083d14faa99f4c664fcadd6ae760587d8840990e43c6ade1e9e6"
     },
     {
       "path": "resource\\pa26\\wanted-catalog.json",
@@ -378,6 +378,16 @@
     {
       "path": "pa26-chat.js",
       "sha256": "d07aa5041cbf7f18b61b1643c1053cb5f33b7d9a10147b41385f4204da251fe8"
+    }
+  ],
+  "setup_files": [
+    {
+      "path": "tools/pa-setup.ps1",
+      "sha256": "b2899500fd584660448693750b3c27dbbb8b4a3047aec8bb474aa68d02219cba"
+    },
+    {
+      "path": "DEPENDENCIES.json",
+      "sha256": "0f6be260e3da5fed646ce1330bbfa972f4db09649ac3e968a7d6212dba385f35"
     }
   ]
 }

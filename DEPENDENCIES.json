@@ -1,0 +1,180 @@
+{
+  "schema": 1,
+  "purpose": "Only missing library files; never game core, existing libraries or personal data",
+  "packages": [
+    {
+      "id": "encoding",
+      "title": "encoding и iconv · MoonLoader 0.26",
+      "url": "https://www.blast.hk/moonloader/files/moonloader-026.zip",
+      "sha256": "21d55eeefe4c7bb9962a879c0f64ba28c564bc36a330fd282dcd46c8b7280d9f",
+      "size": 1930588,
+      "files": [
+        {
+          "entry": "moonloader/lib/encoding.lua",
+          "target": "lib/encoding.lua",
+          "size": 2636,
+          "sha256": "57cb02218d46eb1b8b2b14ecde30fc0d1798fad9c69c2138ff9a7bf63d3efe9d",
+          "required": true
+        },
+        {
+          "entry": "moonloader/lib/iconv.dll",
+          "target": "lib/iconv.dll",
+          "size": 1000960,
+          "sha256": "bb4cc421b7606055d1d517775b15ce77a27ad97b14de2fc31c9d9e3cf788b98f",
+          "required": true
+        },
+        {
+          "entry": "moonloader/lib/iconv/COPYING-libiconv",
+          "target": "lib/iconv/COPYING-libiconv",
+          "size": 25291,
+          "sha256": "56bdea73b6145ef6ac5259b3da390b981d840c24cb03b8e1cbc678de7ecfa18d",
+          "required": false
+        },
+        {
+          "entry": "moonloader/lib/iconv/README-libiconv",
+          "target": "lib/iconv/README-libiconv",
+          "size": 5801,
+          "sha256": "b4f5932ef35fe4a66ae9e8eecf1bac0702fe2a75ece40861baf3ebbc0ee9ed02",
+          "required": false
+        },
+        {
+          "entry": "moonloader/lib/iconv/README-lua-iconv",
+          "target": "lib/iconv/README-lua-iconv",
+          "size": 4755,
+          "sha256": "7aebae7bea8fb38be3aa18b6e2e6298f9370bfe0b3415ac19fe4d04ba5fca58a",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "mimgui",
+      "title": "mimgui 1.7.1-1 · FYP",
+      "url": "https://luarocks.org/manifests/fyp/mimgui-1.7.1-1.win32-x86.rock",
+      "sha256": "6473acdbf44e686061785227fe9c209af3b434684d14cd71cef55092bfb0500a",
+      "size": 288540,
+      "files": [
+        {
+          "entry": "doc/LICENSE",
+          "target": "lib/mimgui/LICENSE",
+          "size": 1081,
+          "sha256": "adaaac29094d0297fcdc92abe055567c150bb056daf167addf173b495ed0afd1",
+          "required": false
+        },
+        {
+          "entry": "lib/mimgui/cimguidx9.dll",
+          "target": "lib/mimgui/cimguidx9.dll",
+          "size": 543744,
+          "sha256": "1a7a059974c33095edc2f2da880d7c79c99d7e3b3c189e2f51036bb7e519d88b",
+          "required": true
+        },
+        {
+          "entry": "lua/mimgui/cdefs.lua",
+          "target": "lib/mimgui/cdefs.lua",
+          "size": 118018,
+          "sha256": "8e5d3488f23c446a6a8a61b6b0ecc25cc38f326257b14801023bfad3bf650a7e",
+          "required": true
+        },
+        {
+          "entry": "lua/mimgui/dx9.lua",
+          "target": "lib/mimgui/dx9.lua",
+          "size": 6717,
+          "sha256": "617029534c747c9ef91cdf9674e1d399cda3cca719e9aa91240b423ad4e2624f",
+          "required": true
+        },
+        {
+          "entry": "lua/mimgui/imgui.lua",
+          "target": "lib/mimgui/imgui.lua",
+          "size": 103788,
+          "sha256": "dac0e8cad50f766f8284a6bfeccb9ce275aa809d842e90ce81de52991cd87e9a",
+          "required": true
+        },
+        {
+          "entry": "lua/mimgui/init.lua",
+          "target": "lib/mimgui/init.lua",
+          "size": 14627,
+          "sha256": "8a1187a313da1b4eade4dcb9e959e770af99163c2c965d37b46c88aef892a182",
+          "required": true
+        },
+        {
+          "entry": "lua/mimgui/win32.lua",
+          "target": "lib/mimgui/win32.lua",
+          "size": 2276,
+          "sha256": "90a3e731b1df60d2022c6935631553b2424aa28ae45b84797c62d5119df95bee",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "samp",
+      "title": "SAMP.Lua 2.3.0 · FYP",
+      "url": "https://codeload.github.com/THE-FYP/SAMP.Lua/zip/02100ded6373fe3f4e151fd1807ae0276de7f64f",
+      "sha256": "68502e88471ac0aa1fea934899773f31fa1e4ab3d68d36940a7e19fbe41e22f6",
+      "size": 22575,
+      "files": [
+        {
+          "entry": "SAMP.Lua-02100ded6373fe3f4e151fd1807ae0276de7f64f/LICENSE",
+          "target": "lib/samp/LICENSE",
+          "size": 1060,
+          "sha256": "f2084ad4cf23211fb3e68b44740766da00d39cd380e4dfc4a20faa55d429b39d",
+          "required": false
+        },
+        {
+          "entry": "SAMP.Lua-02100ded6373fe3f4e151fd1807ae0276de7f64f/samp/events.lua",
+          "target": "lib/samp/events.lua",
+          "size": 26537,
+          "sha256": "9d4426699ff60d9100c656aaa19842dc255088d368ecb06c79e69ae432acbdb2",
+          "required": true
+        },
+        {
+          "entry": "SAMP.Lua-02100ded6373fe3f4e151fd1807ae0276de7f64f/samp/events/bitstream_io.lua",
+          "target": "lib/samp/events/bitstream_io.lua",
+          "size": 6888,
+          "sha256": "bdc86d8ce69a6b6fd456f0d242224030ba6c91def98919d49ae06423600da689",
+          "required": true
+        },
+        {
+          "entry": "SAMP.Lua-02100ded6373fe3f4e151fd1807ae0276de7f64f/samp/events/core.lua",
+          "target": "lib/samp/events/core.lua",
+          "size": 3739,
+          "sha256": "dc93cf932b15a44c295cfb69fa6bf3651a6ad04c1ec30924eac9f7c363854a1a",
+          "required": true
+        },
+        {
+          "entry": "SAMP.Lua-02100ded6373fe3f4e151fd1807ae0276de7f64f/samp/events/extra_types.lua",
+          "target": "lib/samp/events/extra_types.lua",
+          "size": 1528,
+          "sha256": "a61653de6e370ab6913d8f563d505c01fd74f811602ca80f33164ec3723bb701",
+          "required": true
+        },
+        {
+          "entry": "SAMP.Lua-02100ded6373fe3f4e151fd1807ae0276de7f64f/samp/events/handlers.lua",
+          "target": "lib/samp/events/handlers.lua",
+          "size": 16879,
+          "sha256": "22b5bbbc1590fbc10dafffb7007b8398b84f0463ba53add468633df73c0b8d6a",
+          "required": true
+        },
+        {
+          "entry": "SAMP.Lua-02100ded6373fe3f4e151fd1807ae0276de7f64f/samp/events/utils.lua",
+          "target": "lib/samp/events/utils.lua",
+          "size": 1340,
+          "sha256": "9b210c87ccfc3981200e71f9893bdf89861bbd38eb069a32ed2efc897fd77356",
+          "required": true
+        },
+        {
+          "entry": "SAMP.Lua-02100ded6373fe3f4e151fd1807ae0276de7f64f/samp/raknet.lua",
+          "target": "lib/samp/raknet.lua",
+          "size": 11945,
+          "sha256": "f114023602a6799cd9041347f9ba65d3a27a576af5e9c2a621d59d91e2215920",
+          "required": true
+        },
+        {
+          "entry": "SAMP.Lua-02100ded6373fe3f4e151fd1807ae0276de7f64f/samp/synchronization.lua",
+          "target": "lib/samp/synchronization.lua",
+          "size": 4097,
+          "sha256": "9a41d729323efd63e298020d12b7b7cfbd447b6e7113592fa6eb6d0e88797344",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,19 +1,43 @@
 ﻿[CmdletBinding()]
 param(
     [switch]$VerifyOnly,
-    [string]$DestinationRoot = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Exsellent Launcher\game\MoonLoader'),
+    [string]$DestinationRoot = '',
+    [switch]$Interactive,
+    [switch]$FetchDependencies,
+    [string]$DependencyCache = '',
     [int]$TestFailAfter = 0
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $paSource = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'moonloader'))
 $paManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALL_MANIFEST.json') -Raw | ConvertFrom-Json
-$paDestination = [IO.Path]::GetFullPath($DestinationRoot).TrimEnd('\')
-$paReal = [IO.Path]::GetFullPath((Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Exsellent Launcher\game\MoonLoader'))
-$paTestRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'tests\install-sandbox')).TrimEnd('\')
-$paTest = $paDestination.StartsWith($paTestRoot + '\',[StringComparison]::OrdinalIgnoreCase)
-if ($paDestination -ne $paReal -and -not $paTest) { throw 'Destination must be the selected launcher or the bounded test sandbox.' }
-if ($TestFailAfter -ne 0 -and -not $paTest) { throw 'Failure injection is allowed only in the test sandbox.' }
+$paSetupAllow=@('tools/pa-setup.ps1','DEPENDENCIES.json')
+if(@($paManifest.setup_files).Count -ne 2){throw 'Missing setup manifest.'}
+$paSetupSeen=@{}
+foreach($paRow in $paManifest.setup_files){
+ if($paRow.path -cnotin $paSetupAllow -or $paSetupSeen.ContainsKey($paRow.path)){throw 'Unexpected setup file.'}
+ $paSetupSeen[$paRow.path]=$true
+ $paFile=Join-Path $PSScriptRoot $paRow.path.Replace('/','\')
+ if((Get-FileHash -LiteralPath $paFile -Algorithm SHA256).Hash.ToLowerInvariant() -cne $paRow.sha256){throw 'Setup integrity failed.'}
+}
+. (Join-Path $PSScriptRoot 'tools/pa-setup.ps1')
+$paDefault=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Exsellent Launcher\game\MoonLoader'
+if($Interactive){
+ Add-Type -AssemblyName System.Windows.Forms
+ $paDialog=New-Object Windows.Forms.FolderBrowserDialog
+ $paDialog.Description='Выберите папку GTA San Andreas (с gta_sa.exe) или её папку MoonLoader.'
+ $paDialog.ShowNewFolderButton=$false
+ if(Test-Path -LiteralPath $paDefault){$paDialog.SelectedPath=[IO.Path]::GetDirectoryName($paDefault)}
+ try{if($paDialog.ShowDialog() -ne [Windows.Forms.DialogResult]::OK){throw 'Установка отменена.'};$DestinationRoot=$paDialog.SelectedPath}finally{$paDialog.Dispose()}
+}
+if(-not $DestinationRoot){$DestinationRoot=$paDefault}
+$paTestRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'tests\install-sandbox')).TrimEnd('\')
+$paInput=[IO.Path]::GetFullPath($DestinationRoot).TrimEnd('\')
+$paTest=$paInput.StartsWith($paTestRoot+'\',[StringComparison]::OrdinalIgnoreCase)
+$paDestination=Resolve-PaSetupRoot $DestinationRoot $paTest
+if($TestFailAfter -ne 0 -and -not $paTest){throw 'Failure injection is allowed only in the test sandbox.'}
+$paDependencyManifest=Read-PaDependencyManifest (Join-Path $PSScriptRoot 'DEPENDENCIES.json')
+$paDependencyPlan=@()
 $paOwned = @('lib\pa26_startup.lua','lib\pa26_settings_ui.lua','lib\pa26_update_platform.lua','lib\pa26_updater.lua','lib\pa26_update_ui.lua','resource\pa26\updater\pa26-update.ps1','lib\pa26_core.lua','lib\pa26_map_grid.lua','lib\pa26_map_adapter.lua','lib\pa26_map_ui.lua','lib\pa26_nearby.lua','lib\pa26_config.lua','lib\pa26_runtime.lua','lib\pa26_hud.lua','lib\pa26_menu.lua',
     'lib\pa26_chat_bridge.lua','lib\pa26_manual_actions.lua','lib\pa26_cef_assets.lua','lib\pa26_chat_text.lua','lib\pa26_keyboard_layout.lua','lib\pa26_bindings.lua','lib\pa26_binder.lua','lib\pa26_executor.lua','lib\pa26_library.lua','lib\pa26_knowledge.lua','lib\pa26_knowledge_ui.lua',
     'lib\pa26_knowledge_edits.lua','lib\pa26_knowledge_editor_ui.lua','lib\pa26_recovery.lua','pa26_guard.lua',
@@ -52,12 +76,23 @@ function Assert-PaGameClosed {
     if ($paTest) { return }
     if (@(Get-Process -Name gta_sa,gta-sa -ErrorAction SilentlyContinue).Count) { throw 'Close GTA before installation.' }
 }
-if (-not $paTest) {
-    foreach ($paDependency in @('lib\mimgui\init.lua','lib\mimgui\imgui.lua','lib\encoding.lua')) {
-        if (-not (Test-Path -LiteralPath (Get-PaPath $paDestination $paDependency))) { throw ('Missing existing dependency: ' + $paDependency) }
-    }
+if(-not $paTest){
+ $paMissing=@(Get-PaMissingDependencies $paDestination $paDependencyManifest)
+ if($paMissing.Count){
+  if($VerifyOnly){Write-Output ('Missing libraries: '+(($paMissing|ForEach-Object {$_.title}) -join ', '))}
+  else{
+   Assert-PaGameClosed
+   if(-not $FetchDependencies){throw 'Нужны библиотеки. Запустите «Установить PA.cmd» или укажите -FetchDependencies. См. docs/INSTALLATION.md.'}
+   if($Interactive){
+    $paAnswer=[Windows.Forms.MessageBox]::Show(('Не хватает: '+(($paMissing|ForEach-Object {$_.title}) -join ', ')+'. Скачать проверенные библиотеки? Имеющиеся файлы и настройки не заменяются.'),'Police Assistant',[Windows.Forms.MessageBoxButtons]::OKCancel,[Windows.Forms.MessageBoxIcon]::Information)
+    if($paAnswer -ne [Windows.Forms.DialogResult]::OK){throw 'Установка отменена до изменения файлов.'}
+   }
+   if(-not $DependencyCache){$DependencyCache=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'PoliceAssistant2026\setup-cache'}
+   $paDependencyPlan=@(Get-PaDependencyPlan $paDestination $paMissing $DependencyCache $true)
+  }
+ }
 }
-$paPlan = @()
+$paPlan = @($paDependencyPlan)
 foreach ($paRelative in $paOwned) {
     $paEntry = @($paManifest.files | Where-Object path -EQ $paRelative)
     if ($paEntry.Count -ne 1) { throw ('Missing or duplicate manifest path: ' + $paRelative) }
@@ -79,7 +114,11 @@ function Get-PaByteHash([byte[]]$bytes) {
 }
 $paGameRoot=[IO.Path]::GetDirectoryName($paDestination)
 $paHtml=Get-PaPath $paGameRoot 'cef\assets\hud\index.html'
-if (Test-Path -LiteralPath $paHtml) {
+$paKnownLauncher=$paDestination -ieq [IO.Path]::GetFullPath($paDefault)
+$paContract=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'CEF_CONTRACT.json') -Raw | ConvertFrom-Json
+$paMain=Get-PaPath $paGameRoot 'cef\assets\hud\main.js'
+if((Test-Path -LiteralPath $paMain -PathType Leaf) -and (Get-FileHash -LiteralPath $paMain -Algorithm SHA256).Hash -eq $paContract.hud_main_sha256){$paKnownLauncher=$true}
+if ((Test-Path -LiteralPath $paHtml) -and ($paKnownLauncher -or $paTest)) {
     $paCefRoot=[IO.Path]::GetDirectoryName($paHtml)
     $paMain=Get-PaPath $paCefRoot 'main.js'
     $paContract=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'CEF_CONTRACT.json') -Raw | ConvertFrom-Json
@@ -116,14 +155,46 @@ if (Test-Path -LiteralPath $paHtml) {
         Root=$paCefRoot;BackupRelative='cef-hud\index.html';Content=$paPatched}
 }
 
+$paPlan=@($paPlan|Sort-Object @{Expression={if($_.Relative -ceq 'police_assistant_2026.lua'){1}else{0}}},@{Expression={$_.Target}})
 if ($VerifyOnly) {
     $paPlan | Select-Object Relative,@{Name='Action';Expression={if ($_.Skip) {'Preserve existing INI'} elseif ($_.Existed) {'Backup and replace'} else {'Create'}}}
     return
 }
 Assert-PaGameClosed
 $paBackup = Join-Path $PSScriptRoot ('installation-backups\before-' + [Guid]::NewGuid().ToString('N'))
+Assert-PaSetupPlain $paBackup
 New-Item -ItemType Directory -Path $paBackup -Force | Out-Null
 $paPlan | Select-Object * -ExcludeProperty Content | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $paBackup 'PLAN.json') -Encoding UTF8
+$paPersonal=@()
+$paConfig=Get-PaPath $paDestination 'config'
+$paDirectories=New-Object 'Collections.Generic.Queue[string]'
+if(Test-Path -LiteralPath $paConfig){$paDirectories.Enqueue($paConfig)}
+$paDirectoryCount=0
+while($paDirectories.Count){
+ $paDirectory=$paDirectories.Dequeue();Assert-PaSetupPlain $paDirectory
+ $paDirectoryCount++;if($paDirectoryCount -gt 10000){throw 'Too many personal directories.'}
+ foreach($paPersonalItem in Get-ChildItem -LiteralPath $paDirectory -Force){
+  Assert-PaSetupPlain $paPersonalItem.FullName
+  if($paPersonalItem.PSIsContainer){$paDirectories.Enqueue($paPersonalItem.FullName)}
+  elseif($paPersonalItem.Name -like 'police_assistant_2026*'){
+   $paPersonal+=@{path=$paPersonalItem.FullName;relative=$paPersonalItem.FullName.Substring($paDestination.Length+1);sha256=(Get-FileHash -LiteralPath $paPersonalItem.FullName -Algorithm SHA256).Hash}
+  }
+ }
+}
+foreach($paPersonalItem in $paPersonal){
+ $paPersonalCopy=Get-PaPath $paBackup ('personal\'+$paPersonalItem.relative)
+ New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($paPersonalCopy)) -Force|Out-Null
+ Copy-Item -LiteralPath $paPersonalItem.path -Destination $paPersonalCopy
+ if((Get-FileHash -LiteralPath $paPersonalCopy -Algorithm SHA256).Hash -ne $paPersonalItem.sha256){throw 'Personal backup integrity failed.'}
+}
+$paPersonal|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $paBackup 'PERSONAL.json') -Encoding UTF8
+function Assert-PaPersonalUnchanged {
+ foreach($paPersonalItem in $paPersonal){
+  Assert-PaSetupPlain $paPersonalItem.path
+  if(-not (Test-Path -LiteralPath $paPersonalItem.path) -or (Get-FileHash -LiteralPath $paPersonalItem.path -Algorithm SHA256).Hash -ne $paPersonalItem.sha256){throw 'Personal data changed externally; installation stopped.'}
+ }
+}
+Assert-PaPersonalUnchanged
 foreach ($paItem in $paPlan) {
     if ($paItem.Existed) {
         $paSaved = Get-PaPath $paBackup $paItem.BackupRelative
@@ -138,6 +209,7 @@ try {
     foreach ($paItem in $paPlan) {
         if ($paItem.Skip) { continue }
         Assert-PaGameClosed
+        Assert-PaPersonalUnchanged
         Get-PaPath $paItem.Root $paItem.Relative | Out-Null
         $paCurrent = Test-Path -LiteralPath $paItem.Target
         if ($paCurrent -ne $paItem.Existed -or ($paCurrent -and (Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.BeforeHash)) {
@@ -158,18 +230,20 @@ try {
     foreach ($paItem in $paPlan | Where-Object Skip) {
         if ((Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.BeforeHash) { throw 'Existing settings changed.' }
     }
+    Assert-PaPersonalUnchanged
 } catch {
     $paFailure = $_
     if (-not $paTest -and @(Get-Process -Name gta_sa,gta-sa -ErrorAction SilentlyContinue).Count) { throw 'GTA started during installation. No more files were written; close GTA and rerun the installer. Backup: '+$paBackup }
     if ($paStage -and (Test-Path -LiteralPath $paStage)) { Remove-Item -LiteralPath $paStage }
     foreach ($paItem in $paChanged) {
+        if((Test-Path -LiteralPath $paItem.Target) -and (Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.SHA256){throw ('External edit during rollback; files and backup retained: '+$paBackup)}
         if ($paItem.Existed) { Copy-Item -LiteralPath (Get-PaPath $paBackup $paItem.BackupRelative) -Destination $paItem.Target -Force }
         elseif (Test-Path -LiteralPath $paItem.Target) { Remove-Item -LiteralPath $paItem.Target }
     }
     throw $paFailure
 }
 if (-not $paTest) {
-$paResult=[PSCustomObject]@{release='0.38.0-dev';backup=$paBackup;changed=$paChanged.Count;cef_adapter_installed=(Test-Path -LiteralPath $paHtml);native_game_tested=$false}
+$paResult=[PSCustomObject]@{release=$paManifest.release;backup=$paBackup;changed=$paChanged.Count;cef_adapter_installed=($paKnownLauncher -and (Test-Path -LiteralPath $paHtml));dependencies_added=$paDependencyPlan.Count;destination=$paDestination;native_game_tested=$false}
 $paResult | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALLATION_REPORT.json') -Encoding UTF8
 }
 Write-Output ('Installed and verified ' + $paChanged.Count + ' owned files. Existing INI preserved. Backup: ' + $paBackup)

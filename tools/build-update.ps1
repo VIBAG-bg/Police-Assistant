@@ -16,10 +16,10 @@ foreach($row in $paInstall.files){
     if((Get-PaHash $source) -ne $row.sha256){throw 'Manifest changed after release verification'}
     $paFiles+=@{path=$path;sha256=$row.sha256;size=(Get-Item -LiteralPath $source).Length};$paSources[$path]=$source
 }
+$paCefPolicy=Read-PaJson (Join-Path $paRelease 'UPDATE_CEF_BASELINE.json')
 foreach($row in $paInstall.cef_files){
-    $path='cef/assets/hud/'+$row.path;$source=Join-Path $paRelease ('cef\assets\hud\'+$row.path)
-    if(-not (Test-PaOwned $path) -or (Get-PaHash $source) -ne $row.sha256){throw 'Invalid CEF release entry'}
-    $paFiles+=@{path=$path;sha256=$row.sha256;size=(Get-Item -LiteralPath $source).Length};$paSources[$path]=$source
+ $name=$row.path;$source=Join-Path $paRelease ('cef\assets\hud\'+$name)
+ if($paCefPolicy.hashes.$name -cne (Get-PaHash $source)){throw 'CEF changed: review universal update compatibility before release.'}
 }
 $paContract=Read-PaJson (Join-Path $paRelease 'CEF_CONTRACT.json')
 $paManifest=@{product='police-assistant-2026';protocol=1;storage='pa26-split-json-1';version=$paInstall.release;cef_main_sha256=$paContract.hud_main_sha256;files=$paFiles}

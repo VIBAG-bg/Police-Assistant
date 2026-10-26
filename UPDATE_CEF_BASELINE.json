@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "compatible_release": "0.40.0",
+  "policy": "CEF unchanged; universal update works with native-chat protocol-1 workers",
+  "hashes": {
+    "pa26-chat-endpoint.js": "dafae2adea0cd37d9aae06d45012279c0d4371af956e0b67d90468bb5647cfc8",
+    "pa26-chat.js": "d07aa5041cbf7f18b61b1643c1053cb5f33b7d9a10147b41385f4204da251fe8"
+  }
+}

@@ -1,6 +1,6 @@
 script_name('PA26 Recovery')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.40.0')
+script_version('0.40.1')
 script_description('Restarts only Police Assistant after a Lua-script termination, with a bounded retry count')
 if type(script_properties)=='function'then script_properties('work-in-pause')end
 
