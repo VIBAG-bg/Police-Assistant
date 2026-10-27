@@ -2,7 +2,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $release=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-. (Join-Path $release 'moonloader/resource/pa26/updater/pa26-update.ps1') -Mode Library
+. (Join-Path $release 'tools/pa-setup-window.ps1') -Library
 function Save-Window($Form,[string]$Name){
     try{
         $Form.Show();[Windows.Forms.Application]::DoEvents();$Form.PerformLayout();$Form.Refresh()
@@ -11,10 +11,10 @@ function Save-Window($Form,[string]$Name){
     }finally{$Form.Terminal=$true;$Form.Dispose()}
 }
 $form=New-PaProgressForm
-$form.SetState('INSTALLING UPDATE','Installing 63 / 91 - MoonLoader/lib/pa26_studio.lua',85,'green',$false,$false,'0.40.2')
+$form.SetState('INSTALLING UPDATE','Installing 63 / 95 - MoonLoader/lib/pa26_studio.lua',85,'green',$false,$false,'0.40.3')
 Save-Window $form 'update-window.png'
-$form=New-Object PaSetupWindow
-$form.Text='Police Assistant 0.40.2 | Установка'
+$form=New-PaSetupForm
+$form.Text='Police Assistant 0.40.3 | Установка'
 $form.PathBox.Text='D:\Games\GTA San Andreas'
 $form.PathBox.SelectionStart=0;$form.PathBox.SelectionLength=0
 $form.Requirements.Text="encoding / iconv: уже есть`nmimgui: уже есть`nSAMP.Lua: будет скачана`nОбычный SA:MP — без замены CEF."

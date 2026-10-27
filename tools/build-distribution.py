@@ -9,6 +9,7 @@ files=[ROOT/'moonloader'/r['path'].replace('\\','/') for r in m['files']]
 files += [ROOT/'cef/assets/hud'/r['path'] for r in m['cef_files']]
 files += [ROOT/n for n in ['README.md','CHANGELOG.md','install.ps1','Установить PA.cmd','Показать обновление PA.cmd','INSTALL_MANIFEST.json','CEF_CONTRACT.json']]
 files += [ROOT/r['path'] for r in m['setup_files']]
+files += [ROOT/r['path'] for r in m['preset_files']]
 files += [p for p in (ROOT/'docs').rglob('*') if p.is_file()]
 out=ROOT/'dist';out.mkdir(exist_ok=True)
 archive=out/f'Police-Assistant-v{m["release"]}.zip'
@@ -29,6 +30,7 @@ with zipfile.ZipFile(copy) as z:
     for row in um['files']:
         data=z.read(row['path'])
         assert len(data)==row['size'] and hashlib.sha256(data).hexdigest()==row['sha256']
-rows=[f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}' for p in [archive,copy]]
+for name in ['pa-binds.json','pa-settings.json']:(out/name).write_bytes((ROOT/'presets'/name).read_bytes())
+rows=[f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}' for p in [archive,copy,out/'pa-binds.json',out/'pa-settings.json']]
 (out/'SHA256SUMS.txt').write_text('\n'.join(rows)+'\n',encoding='utf-8')
 print('\n'.join(rows))

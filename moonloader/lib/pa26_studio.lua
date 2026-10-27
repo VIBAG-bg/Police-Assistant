@@ -1622,7 +1622,7 @@ function Studio:drawFilters(ui,data,callbacks)
     self:drawNotice(ui)
 end
 function Studio:hasModal()
-    return self:hasWarning()or self.manualAction~=nil or self.wantedAppearance~=nil or self.rpPresetConfirm~=nil or self.assistConfirm~=nil or self.vehicleConfirm~=nil or self.operationConfirm~=nil or self.caseConfirm~=nil or self.patrolEventConfirm~=nil or self.patrolConfirm~=nil or self.remove~=nil or self.reset~=nil or self.importPreview~=nil or self.confirmPlan~=nil or self.confirmResult~=nil or
+    return self:hasWarning()or self.authorPresetConfirm~=nil or self.manualAction~=nil or self.wantedAppearance~=nil or self.rpPresetConfirm~=nil or self.assistConfirm~=nil or self.vehicleConfirm~=nil or self.operationConfirm~=nil or self.caseConfirm~=nil or self.patrolEventConfirm~=nil or self.patrolConfirm~=nil or self.remove~=nil or self.reset~=nil or self.importPreview~=nil or self.confirmPlan~=nil or self.confirmResult~=nil or
         self.pendingSelection~=nil or self.pendingNavigation~=nil or self.keyCapture~=nil or self.customRemove~=nil
 end
 function Studio:cancelModal()
@@ -1632,6 +1632,7 @@ function Studio:cancelModal()
     if self.wantedAppearance then self.wantedAppearance.form.stage='identity' end
     self.wantedAppearance=nil
     self.manualAction=nil
+    self.authorPresetConfirm=nil
     self.rpPresetConfirm=nil
     self.assistConfirm=nil;self.operationConfirm=nil
     self.vehicleConfirm=nil;self.caseConfirm=nil;self.patrolEventConfirm=nil;self.patrolConfirm=nil; self.remove=nil; self.reset=nil; self.importPreview=nil; self.confirmPlan=nil; self.confirmResult=nil
@@ -1696,6 +1697,7 @@ function Studio:modalIntent(data)
         if warning.skipped then lines[#lines+1]='Несколько повторных предупреждений объединены. Проверьте журнал PA при необходимости.'end
         return{kind='warning',token=warning.token,title=warning.kind=='info'and 'Уведомление'or 'Предупреждение',lines=lines}
     end
+    if self.authorPresetConfirm then return require('pa26_author_controller').modal(self)end
     if self.manualAction then return{kind='manual_action',token='manual-command:'..self.manualAction.token,title='Отыграть действие перед командой?',lines=self.manualAction.lines}end
     if self.pendingNavigation then
         local _,lines=self:unsavedChanges()
@@ -1850,6 +1852,7 @@ function Studio:modalIntent(data)
 end
 function Studio:acceptModal(data,callbacks)
     if self:hasWarning()then return nil,'Сначала закройте предупреждение кнопкой «ОК».'end
+    if self.authorPresetConfirm then return callbacks.authorPresetAccept()end
     if self.rpPresetConfirm then return require('pa26_rp_presets').accept(self,callbacks)end
     if self.assistConfirm then return require('pa26_assist_ui').accept(self,callbacks)end
     if self.operationConfirm then return callbacks.operationAccept(self.operationConfirm)end

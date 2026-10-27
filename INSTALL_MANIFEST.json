@@ -1,5 +1,5 @@
 {
-  "release": "0.40.2",
+  "release": "0.40.3",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -51,7 +51,7 @@
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "e19c149e964105395b1a2a045c4598b950a92224380d763665061284e9f792e9"
+      "sha256": "722b67070add9807e55acae3add14a9a7ea436d9f3918a5647a22e8da1176765"
     },
     {
       "path": "lib\\pa26_evidence.lua",
@@ -243,7 +243,7 @@
     },
     {
       "path": "lib\\pa26_studio.lua",
-      "sha256": "b725674a7b7d8842794a399130719c268db0bc6143dbb07eff0382cea70ec3f3"
+      "sha256": "db337bc466539c69e0b0e686ad9620001591ce8510788a9d05adb16179b92750"
     },
     {
       "path": "lib\\pa26_target.lua",
@@ -267,7 +267,7 @@
     },
     {
       "path": "lib\\pa26_update_ui.lua",
-      "sha256": "676942d8895852003e03bc66f4d2c22fce3ece21046c87171d756350f1236141"
+      "sha256": "be879f8e30c2a8c9080c01237aa5f97801dc0da2ed74ddb19770701e6c1af61d"
     },
     {
       "path": "lib\\pa26_updater.lua",
@@ -339,11 +339,11 @@
     },
     {
       "path": "pa26_guard.lua",
-      "sha256": "80df306311bece09e84048a87f9ccbe55e7bde9aee0dbc7314d05ed078ed8bad"
+      "sha256": "43352ff20a714ccd479c01acc830793ce89865a416a0a1962d65078f0e99a710"
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "e0862aa4494a0d4849078e99ca320912b8bc929700ae700b66d2eeb09e7ba135"
+      "sha256": "3729faad51e7892972cc03794804e3a26d0c0dfe853619fe4589870b6be79b1b"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",
@@ -368,6 +368,22 @@
     {
       "path": "resource\\pa26\\wanted-catalog.json",
       "sha256": "9939d2496f87cfa281faa6ae1dd13e6069f514946a4f11137e6f4b27d55de55a"
+    },
+    {
+      "path": "lib\\pa26_author_io.lua",
+      "sha256": "163e7c2f9ab82c1be88762667e6ef81237e3ef0fb6c2863c66e25866bb1a9d6a"
+    },
+    {
+      "path": "lib\\pa26_author_presets.lua",
+      "sha256": "f659b3522c37b2495b0fadf599c0d5450a53188a61a162e6c8925ea3fb7ec9a8"
+    },
+    {
+      "path": "lib\\pa26_author_store.lua",
+      "sha256": "16fd5748a43081aaefa348dc7595da69a18c851582d468cde94a8d2e1decee5d"
+    },
+    {
+      "path": "lib\\pa26_author_controller.lua",
+      "sha256": "d79aa25f50bf0bd5624340d7bfe7a36db125a7ec1367f4facbcfde3076b97cfd"
     }
   ],
   "cef_files": [
@@ -387,7 +403,7 @@
     },
     {
       "path": "tools/pa-setup-window.ps1",
-      "sha256": "c8fb5ddc2742d0e5088d8636c2a699b09b3417d8769028032ca0a5c6d9b6c0f7"
+      "sha256": "aee22ba58482580419e47eb2fb4256cdc378e7f5e22f2fbf1e381bd248a132cd"
     },
     {
       "path": "tools/pa-start.ps1",
@@ -396,6 +412,28 @@
     {
       "path": "DEPENDENCIES.json",
       "sha256": "0f6be260e3da5fed646ce1330bbfa972f4db09649ac3e968a7d6212dba385f35"
+    },
+    {
+      "path": "tools/pa-seed-presets.ps1",
+      "sha256": "580e606aeda993c203335de12082b684f0f9c30d4114f9ef170b60a42595058b"
+    }
+  ],
+  "preset_files": [
+    {
+      "path": "presets/manifest.json",
+      "sha256": "6e9640af3e7ebc115f549156b140abb72c2740ca2a7c7549c61c08a13158f1f7"
+    },
+    {
+      "path": "presets/pa-binds.json",
+      "sha256": "2ed1f0d55ddaab4f2e6141dc88c9e8c26cd9044c3600df73d4b7b4f150fc4ff0"
+    },
+    {
+      "path": "presets/pa-settings.json",
+      "sha256": "9a386c0df85c6f4ca0a0c8040b97893b2d380e1049c2f3af002e0b7b4e48593f"
+    },
+    {
+      "path": "presets/baseline.json",
+      "sha256": "1653753f2b37b18eccce5074dd4790b15dbdabc2dd22a016c18de4be39f9493b"
     }
   ]
 }

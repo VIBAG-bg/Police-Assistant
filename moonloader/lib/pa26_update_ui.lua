@@ -1,7 +1,7 @@
 local model=require 'pa26_bindings'
 local core=require 'pa26_core'
 local M={}
-function M.draw(s,ui,updater,callbacks)
+function M.draw(s,ui,updater,callbacks,author)
     local im=s.imgui;s.currentUi=ui;s.preferenceContext=true
     s:settingsHeading(ui,'Обновления Police Assistant')
     ui.text('Установлена PA '..core.VERSION)
@@ -19,6 +19,13 @@ function M.draw(s,ui,updater,callbacks)
     s:autoSettings('updates',{'settings','updates'},cfg)
     s:autosaveHint(ui,'updates')
     ui.text('Загрузка запускается только вашей кнопкой. Установка начинается после полного выхода из GTA. Личные JSON/INI, бинды, заметки и журналы не заменяются; перед установкой их актуальные копии сохраняются отдельно вместе с предыдущими файлами PA. Резервные копии автоматически не удаляются.')
+    if author then
+        s:settingsHeading(ui,'Авторские бинды и настройки')
+        ui.text('Отдельные наборы из того же GitHub. Загрузка не заменяет данные: сначала появится окно ДА / НЕТ. Профиль, контакты, заметки и журналы сохраняются. Перед заменой создаётся проверенная копия; после применения перезапустится только PA.')
+        if s:button('Обновить бинд-лист с GitHub##author-binds',ui)then author:start('binds')end
+        if s:button('Обновить настройки с GitHub##author-settings',ui)then author:start('settings')end
+        ui.text(author.status)
+    end
     if not updater then ui.text('Помощник обновления недоступен.');return end
     local labels={idle='Готов к проверке',unavailable='Помощник недоступен',checking='Проверка GitHub',available='Новая версия найдена',
         current='Новая подходящая версия не найдена',downloading='Скачивание и проверка пакета',waiting='Пакет готов · ожидается выход из GTA',

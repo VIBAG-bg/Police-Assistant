@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.40.2')
+script_version('0.40.3')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -61,7 +61,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.40.2' then
+if #missing > 0 or not core or core.VERSION ~= '0.40.3' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -77,6 +77,13 @@ local codec = {
     encode = function(text) return cp1251:encode(text, 'UTF-8') end,
     decode = function(text) return cp1251:decode(text, 'UTF-8') end,
 }
+do
+    local io=require 'pa26_author_io'
+    local loaded,adapter=pcall(io.new,getWorkingDirectory());sceneServices.authorIO=loaded and adapter or nil
+    local ok,why=require('pa26_author_store').recover(getWorkingDirectory()..'\\config\\police_assistant_2026',
+        {encode=encodeJson,decode=decodeJson},sceneServices.authorIO and sceneServices.authorIO.fs or require('pa26_library').fs,io.hash,io.lock)
+    if not ok then function main() require('pa26_startup').announce(why,encoding) end;return end
+end
 local configPath = getWorkingDirectory() .. '\\config\\police_assistant_2026.ini'
 local cfg, configWarnings = storage.load(configPath)
 cfg.recovery=cfg.recovery or core.recoveryDefaults()
@@ -797,6 +804,14 @@ do
         encode=workspace.json.encode,decode=workspace.json.decode,
         notify=function(message,kind)studio:notify(message,'updates',false,kind)end})
 end
+do
+    local io=sceneServices.authorIO
+    sceneServices.authorPresets=require('pa26_author_controller').new({studio=studio,workspace=workspace,json=workspace.json,
+        fs=io and io.fs or require('pa26_library').fs,hash=require('pa26_author_io').hash,lock=require('pa26_author_io').lock,io=io,
+        now=function()return studioClock end,config=function()local copy=bindingModel.copy(cfg);copy.main.demo_mode=runtime.demo;return copy end,
+        busy=function()return workspace.pending~=nil or workspace.executor.queue~=nil or runtime.queue~=nil or (sceneServices.updater.job and sceneServices.updater.job.mode~='Status')end,
+        install=function(p)return sceneServices.installAuthorPreset(p)end,reload=function()thisScript():reload()end})
+end
 studio.warningLog=pushLog
 sceneServices.userWarning=function(message)
     if not uiFailed and focused and not context().blocked then studio:notify(message,'system',false)end
@@ -855,6 +870,7 @@ local function cancelManualActions(reason)
     if patrolEvents.intent or patrolEvents.queued then patrolEvents:cancelReport(reason)end
 end
 local studioCallbacks={
+    authorPresetAccept=function()return sceneServices.authorPresets:accept()end,
     selectNearby=function(t,revision)return sceneServices.nearby:request(t,revision)end,
     selectNearbyId=function(id)return sceneServices.nearby:requestId(id)end,
     recheckMap=function()sceneServices.mapAdapter:reset()end,
@@ -1146,6 +1162,15 @@ local function readEntry(index)
         command = ffi.string(b.command)}
 end
 
+sceneServices.authorPresets.env.callbacks=studioCallbacks
+sceneServices.installAuthorPreset=function(p)
+    workspace:cancel('Применён авторский набор.');runtime:cancel('Применён авторский набор.')
+    if p.kind=='settings' then cfg=p.config;runtime:applyConfig(cfg);workspace.cfg=cfg;workspace.userFiles.cfg=cfg end
+    local lib=workspace.userFiles:load();workspace.library=lib;workspace.libraryFresh=false;workspace.libraryRevision=workspace.libraryRevision+1;workspace.commandDirty=true
+    studio.autosaves={};studio.dirty=false;studio:setLibrary(lib)
+    if p.kind=='settings' then hud.settings=bindingModel.copy(cfg.widget);hud.dirty=false;hud.dirtyAt=nil end
+    showWindow[0],showQuick[0],showTips[0],sceneServices.showAssist[0],sceneServices.showWanted[0]=false,false,false,false,false
+end
 local generalSaveFailed=false
 local function saveSettings(preferencesOnly)
     generalSaveFailed=true
@@ -1493,7 +1518,7 @@ local function drawMain()
         }
         menu:draw(imgui, ui, model, {
             actions = function() studio:draw('binds',ui,studioData(),studioCallbacks) end,
-            updates=function()require('pa26_update_ui').draw(studio,ui,sceneServices.updater,studioCallbacks)end,
+            updates=function()require('pa26_update_ui').draw(studio,ui,sceneServices.updater,studioCallbacks,sceneServices.authorPresets)end,
             updateLabel=sceneServices.updater:label(),
             toggleDemo=function()sceneServices.toggleDemoRequested=true end,
             openSettings=studioCallbacks.openSettings,
@@ -2394,6 +2419,8 @@ local function updateGame()
     local ctx = context()
     knowledge:tick()
     knowledgeUi:tick(ctx.session,now,showWindow[0]and menu.section=='knowledge')
+    sceneServices.authorPresets:tick()
+    if sceneServices.authorPresets.applied then return end
     studio:flushAutosave(studioCallbacks)
     sceneServices.updater:tick()
     prepareNativeChat()
@@ -2813,11 +2840,11 @@ function main()
             not context().blocked then recoverUi(false)end
         recovery:healthy(now,cfg.recovery)
         if not started then
-            pushLog('v0.40.2: игровой цикл запущен.')
+            pushLog('v0.40.3: игровой цикл запущен.')
             started = true
         end
         if uiRendered and not drawReported then
-            pushLog('v0.40.2: окно отрисовано.')
+            pushLog('v0.40.3: окно отрисовано.')
             drawReported = true
         end
     end

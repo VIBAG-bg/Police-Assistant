@@ -6,7 +6,9 @@ param(
     [switch]$FetchDependencies,
     [string]$DependencyCache = '',
     [int]$TestFailAfter = 0,
-    [string]$ProgressFile = ''
+    [string]$ProgressFile = '',
+    [switch]$SkipAuthorBinds,
+    [switch]$SkipAuthorSettings
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -42,8 +44,8 @@ trap {
 Set-PaInstallProgress 'checking' 2 'Проверяю установочный архив и выбранную папку.'
 $paSource = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'moonloader'))
 $paManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALL_MANIFEST.json') -Raw | ConvertFrom-Json
-$paSetupAllow=@('tools/pa-setup.ps1','tools/pa-setup-window.ps1','tools/pa-start.ps1','DEPENDENCIES.json')
-if(@($paManifest.setup_files).Count -ne 4){throw 'Missing setup manifest.'}
+$paSetupAllow=@('tools/pa-setup.ps1','tools/pa-setup-window.ps1','tools/pa-start.ps1','tools/pa-seed-presets.ps1','DEPENDENCIES.json')
+if(@($paManifest.setup_files).Count -ne 5){throw 'Missing setup manifest.'}
 $paSetupSeen=@{}
 foreach($paRow in $paManifest.setup_files){
  if($paRow.path -cnotin $paSetupAllow -or $paSetupSeen.ContainsKey($paRow.path)){throw 'Unexpected setup file.'}
@@ -52,6 +54,7 @@ foreach($paRow in $paManifest.setup_files){
  if((Get-FileHash -LiteralPath $paFile -Algorithm SHA256).Hash.ToLowerInvariant() -cne $paRow.sha256){throw 'Setup integrity failed.'}
 }
 . (Join-Path $PSScriptRoot 'tools/pa-setup.ps1')
+. (Join-Path $PSScriptRoot 'tools/pa-seed-presets.ps1')
 $paDefault=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Exsellent Launcher\game\MoonLoader'
 if(-not $DestinationRoot){$DestinationRoot=$paDefault}
 $paTestRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'tests\install-sandbox')).TrimEnd('\')
@@ -61,7 +64,7 @@ $paDestination=Resolve-PaSetupRoot $DestinationRoot $paTest
 if($TestFailAfter -ne 0 -and -not $paTest){throw 'Failure injection is allowed only in the test sandbox.'}
 $paDependencyManifest=Read-PaDependencyManifest (Join-Path $PSScriptRoot 'DEPENDENCIES.json')
 $paDependencyPlan=@()
-$paOwned = @('lib\pa26_startup.lua','lib\pa26_settings_ui.lua','lib\pa26_update_platform.lua','lib\pa26_updater.lua','lib\pa26_update_ui.lua','resource\pa26\updater\pa26-update.ps1','lib\pa26_core.lua','lib\pa26_map_grid.lua','lib\pa26_map_adapter.lua','lib\pa26_map_ui.lua','lib\pa26_nearby.lua','lib\pa26_config.lua','lib\pa26_runtime.lua','lib\pa26_hud.lua','lib\pa26_menu.lua',
+$paOwned = @('lib\pa26_author_io.lua','lib\pa26_author_presets.lua','lib\pa26_author_store.lua','lib\pa26_author_controller.lua','lib\pa26_startup.lua','lib\pa26_settings_ui.lua','lib\pa26_update_platform.lua','lib\pa26_updater.lua','lib\pa26_update_ui.lua','resource\pa26\updater\pa26-update.ps1','lib\pa26_core.lua','lib\pa26_map_grid.lua','lib\pa26_map_adapter.lua','lib\pa26_map_ui.lua','lib\pa26_nearby.lua','lib\pa26_config.lua','lib\pa26_runtime.lua','lib\pa26_hud.lua','lib\pa26_menu.lua',
     'lib\pa26_chat_bridge.lua','lib\pa26_manual_actions.lua','lib\pa26_cef_assets.lua','lib\pa26_chat_text.lua','lib\pa26_keyboard_layout.lua','lib\pa26_bindings.lua','lib\pa26_binder.lua','lib\pa26_executor.lua','lib\pa26_library.lua','lib\pa26_knowledge.lua','lib\pa26_knowledge_ui.lua',
     'lib\pa26_knowledge_edits.lua','lib\pa26_knowledge_editor_ui.lua','lib\pa26_recovery.lua','pa26_guard.lua',
     'lib\pa26_journal.lua','lib\pa26_studio.lua','lib\pa26_text_editor.lua','lib\pa26_feedback.lua','lib\pa26_workspace.lua','lib\pa26_target.lua','lib\pa26_wheel.lua',
@@ -183,6 +186,12 @@ if ((Test-Path -LiteralPath $paHtml) -and ($paKnownLauncher -or $paTest)) {
         Root=$paCefRoot;BackupRelative='cef-hud\index.html';Content=$paPatched}
 }
 
+$paPreset=@{plan=@();replace=@{};summary=@{binds='disabled';settings='disabled'}}
+if(-not $VerifyOnly){
+ $paIniRow=@($paPlan|Where-Object Relative -CEQ 'config\police_assistant_2026.ini')[0]
+ $paPreset=Get-PaPresetSeedPlan $PSScriptRoot $paDestination $paManifest (-not $SkipAuthorBinds) (-not $SkipAuthorSettings) $paIniRow
+ $paPlan+=@($paPreset.plan)
+}
 $paPlan=@($paPlan|Sort-Object @{Expression={if($_.Relative -ceq 'police_assistant_2026.lua'){1}else{0}}},@{Expression={$_.Target}})
 if ($VerifyOnly) {
     $paPlan | Select-Object Relative,@{Name='Action';Expression={if ($_.Skip) {'Preserve existing INI'} elseif ($_.Existed) {'Backup and replace'} else {'Create'}}}
@@ -220,7 +229,9 @@ $paPersonal|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $paBacku
 function Assert-PaPersonalUnchanged {
  foreach($paPersonalItem in $paPersonal){
   Assert-PaSetupPlain $paPersonalItem.path
-  if(-not (Test-Path -LiteralPath $paPersonalItem.path) -or (Get-FileHash -LiteralPath $paPersonalItem.path -Algorithm SHA256).Hash -ne $paPersonalItem.sha256){throw 'Personal data changed externally; installation stopped.'}
+  $expected=$paPersonalItem.sha256
+  if($paPreset.replace.ContainsKey($paPersonalItem.path) -and @($paChanged|Where-Object Target -CEQ $paPersonalItem.path).Count){$expected=$paPreset.replace[$paPersonalItem.path]}
+  if(-not (Test-Path -LiteralPath $paPersonalItem.path) -or (Get-FileHash -LiteralPath $paPersonalItem.path -Algorithm SHA256).Hash -ne $expected){throw 'Personal data changed externally; installation stopped.'}
  }
 }
 Assert-PaPersonalUnchanged
@@ -278,7 +289,7 @@ try {
     throw $paFailure
 }
 if (-not $paTest) {
-$paResult=[PSCustomObject]@{release=$paManifest.release;backup=$paBackup;changed=$paChanged.Count;cef_adapter_installed=($paKnownLauncher -and (Test-Path -LiteralPath $paHtml));dependencies_added=$paDependencyPlan.Count;destination=$paDestination;native_game_tested=$false}
+$paResult=[PSCustomObject]@{release=$paManifest.release;author_presets=$paPreset.summary;backup=$paBackup;changed=$paChanged.Count;cef_adapter_installed=($paKnownLauncher -and (Test-Path -LiteralPath $paHtml));dependencies_added=$paDependencyPlan.Count;destination=$paDestination;native_game_tested=$false}
 $paResult | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALLATION_REPORT.json') -Encoding UTF8
 }
 Write-Output ('Installed and verified ' + $paChanged.Count + ' owned files. Existing INI preserved. Backup: ' + $paBackup)

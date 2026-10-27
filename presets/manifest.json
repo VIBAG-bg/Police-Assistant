@@ -1,0 +1,20 @@
+{
+  "format": "police-assistant.author-presets",
+  "schema": 1,
+  "version": "0.40.3",
+  "minimum_pa": "0.40.3",
+  "files": {
+    "pa-binds.json": {
+      "sha256": "2ed1f0d55ddaab4f2e6141dc88c9e8c26cd9044c3600df73d4b7b4f150fc4ff0",
+      "size": 90370
+    },
+    "pa-settings.json": {
+      "sha256": "9a386c0df85c6f4ca0a0c8040b97893b2d380e1049c2f3af002e0b7b4e48593f",
+      "size": 66022
+    },
+    "baseline.json": {
+      "sha256": "1653753f2b37b18eccce5074dd4790b15dbdabc2dd22a016c18de4be39f9493b",
+      "size": 72611
+    }
+  }
+}

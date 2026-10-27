@@ -43,7 +43,7 @@ function Get-PaSetupPreflight([string]$Selected){
     }
     return @{moonloader=$ml;missing=$missing.Count;details=($lines -join "`n")+"`n"+$cef;running=(@(Get-Process -Name gta_sa,gta-sa -ErrorAction SilentlyContinue).Count -gt 0)}
 }
-function Start-PaSetupChild([string]$Selected,[string]$Job,[string]$Cache='',[int]$FailAfter=0){
+function Start-PaSetupChild([string]$Selected,[string]$Job,[string]$Cache='',[int]$FailAfter=0,[bool]$IncludeBinds=$true,[bool]$IncludeSettings=$true){
     $jobRoot=[IO.Path]::GetFullPath($Job)
     $base=[IO.Path]::GetFullPath((Join-Path $paSetupSource 'installation-backups/ui-jobs')).TrimEnd('\')
     if(-not $jobRoot.StartsWith($base+'\',[StringComparison]::OrdinalIgnoreCase) -or $jobRoot.Substring($base.Length+1) -cnotmatch '^[a-f0-9]{32}$'){throw 'Invalid setup job.'}
@@ -51,6 +51,8 @@ function Start-PaSetupChild([string]$Selected,[string]$Job,[string]$Cache='',[in
     [IO.Directory]::CreateDirectory($jobRoot)|Out-Null
     $quote={param([string]$value) if($value -match '["\r\n]'){throw 'Invalid setup argument.'};return '"'+$value+'"'}
     $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File '+(&$quote (Join-Path $paSetupSource 'install.ps1'))+' -DestinationRoot '+(&$quote $Selected)+' -FetchDependencies -ProgressFile '+(&$quote (Join-Path $jobRoot 'progress.json'))
+    if(-not $IncludeBinds){$args+=' -SkipAuthorBinds'}
+    if(-not $IncludeSettings){$args+=' -SkipAuthorSettings'}
     if($Cache){$args+=' -DependencyCache '+(&$quote $Cache)}
     if($FailAfter){$args+=' -TestFailAfter '+$FailAfter}
     $exe=Join-Path ([Environment]::SystemDirectory) 'WindowsPowerShell/v1.0/powershell.exe'
@@ -64,7 +66,19 @@ function Read-PaSetupJob([string]$Job){
     if($row -and ((Get-PaField $row 'product') -cne 'police-assistant-setup' -or (Get-PaField $row 'job') -cne [IO.Path]::GetFileName($Job))){throw 'Setup status owner mismatch.'}
     return $row
 }
-function New-PaSetupForm {return (New-Object PaSetupWindow)}
+function New-PaSetupForm {
+ $form=New-Object PaSetupWindow
+ $hostPanel=New-Object Windows.Forms.FlowLayoutPanel;$hostPanel.Dock='Fill';$hostPanel.FlowDirection='TopDown';$hostPanel.WrapContents=$false;$hostPanel.Margin=New-Object Windows.Forms.Padding(0)
+ $binds=New-Object Windows.Forms.CheckBox;$binds.Text='Установить авторский бинд-лист';$binds.Checked=$true;$binds.AutoSize=$true;$binds.ForeColor=[PaUpdateWindow]::Ink
+ $settings=New-Object Windows.Forms.CheckBox;$settings.Text='Установить авторские настройки';$settings.Checked=$true;$settings.AutoSize=$true;$settings.ForeColor=[PaUpdateWindow]::Ink
+ $hostPanel.Controls.Add($binds);$hostPanel.Controls.Add($settings)
+ $form.Current.Controls.Remove($form.Footer);$form.Current.Controls.Add($hostPanel,0,4)
+ $form|Add-Member -NotePropertyName AuthorBinds -NotePropertyValue $binds
+ $form|Add-Member -NotePropertyName AuthorSettings -NotePropertyValue $settings
+ $form|Add-Member -NotePropertyName AuthorPanel -NotePropertyValue $hostPanel
+ $form.Steps.Text='Свои данные сохраняются';$form.Steps.Width=200
+ return $form
+}
 function Show-PaSetupWindow {
     $unused=New-PaProgressForm;$unused.Dispose()
     $form=New-PaSetupForm
@@ -93,8 +107,8 @@ function Show-PaSetupWindow {
             &$refresh
             if(-not $state.preflight -or $state.preflight.running){return}
             $state.job=Join-Path $paSetupSource ('installation-backups/ui-jobs/'+[guid]::NewGuid().ToString('N'))
-            $state.child=Start-PaSetupChild $state.preflight.moonloader $state.job $DependencyCache $TestFailAfter
-            $form.BeginInstallation();$state.last=2
+            $state.child=Start-PaSetupChild $state.preflight.moonloader $state.job $DependencyCache $TestFailAfter $form.AuthorBinds.Checked $form.AuthorSettings.Checked
+            $form.Current.Controls.Remove($form.AuthorPanel);$form.Current.Controls.Add($form.Footer,0,4);$form.BeginInstallation();$state.last=2
         }catch{[Windows.Forms.MessageBox]::Show($form,(Get-PaSetupExplanation $_.Exception.Message),'Установка не началась','OK','Error')|Out-Null}
     }.GetNewClosure())
     $timer=New-Object Windows.Forms.Timer;$timer.Interval=400

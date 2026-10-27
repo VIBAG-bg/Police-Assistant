@@ -1,22 +1,17 @@
 {
-  "release": "0.40.2",
-  "status": "published_verified",
+  "release": "0.40.3",
+  "status": "local_gates_passed_publication_pending",
   "game_started": false,
   "real_game_written": false,
-  "lua_groups": 148,
-  "lua_checks": 8815512,
+  "lua_groups": 149,
+  "lua_checks": 8816183,
+  "final_focused_checks": 8939,
+  "author_model_checks": 358,
+  "installer_presets_checks": 27,
+  "native_author_io_checks": 10,
   "cef_browser_checks": 482,
-  "worker_checks": 148,
-  "progress_checks": 58,
   "setup_window_checks": 32,
-  "setup_checks_with_official_archives": 124,
-  "native_updater_checks": 13,
   "preserved_configuration_paths": 1175,
-  "added_settings": [
-    "updates.show_progress_window"
-  ],
-  "official_dependency_archives": 3,
-  "official_dependency_files": 21,
   "installer_rollback_after": [
     1,
     37,
@@ -24,28 +19,14 @@
     91,
     92,
     93,
-    94
+    94,
+    97,
+    98
   ],
-  "old_worker_transition": [
-    "native",
-    "launcher"
-  ],
-  "update_program_files": 91,
-  "frozen_protocol": 1,
-  "windows_compatibility_requirements": [
-    "Windows 7 SP1",
-    "Windows 10",
-    "Windows 11",
-    "Windows PowerShell 5.1",
-    ".NET Framework >= 4.5.2"
-  ],
+  "program_updater_unchanged": true,
+  "author_binds": 83,
+  "standard_notes": 2,
+  "public_profile_and_contacts": false,
   "windows7_vm_tested": false,
-  "notes": "Local isolated tests, actual WinForms and 32-bit helper, both release-commit GitHub Actions runs passed. Published ZIPs downloaded and verified. GTA/server and real Windows 7 VM remain separate acceptance.",
-  "actions_status": "completed",
-  "actions_conclusion": "success",
-  "actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40461479496",
-  "tag_actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40461563815",
-  "source_commit": "a84487cc6b8ea301d1181cb2688217546737ef59",
-  "public_update_sha256": "354cdc580f0db686f74acd48f797317e4032871e8fb92fd9911ebba395e42093",
-  "public_installer_sha256": "4514e4f64109d363ea6aee833d3d1f707cf257cca79fdf2e8811964e34b3fd09"
+  "notes": "Full Lua regression passed before final source-origin and binds-only HUD preservation fixes; focused tests passed after these fixes. Native 32-bit IO and actual installer controls tested. GTA/server and a real Windows 7 VM were not launched."
 }
