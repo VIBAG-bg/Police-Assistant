@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>PA — Windows 7, 10 и 11</title>
+<style>body{background:#08141a;color:#ddeadf;font:17px/1.6 "Segoe UI",Arial,sans-serif;margin:40px auto;padding:0 24px;max-width:880px}h1,h2,a{color:#31dc96}section{border:1px solid #29444c;padding:18px 24px;margin:20px 0;background:#0d1e25}code{color:#a6dcea}li{margin:10px 0}small{color:#a2b9bb}</style></head><body>
+<p>EXSELLENT RP · POLICE ASSISTANT</p><h1>Подготовка Windows к установке PA</h1>
+<p>Установщик и обновлятор используют <b>Windows PowerShell 5.1</b> и <b>.NET Framework 4.5.2 или новее</b>. На Windows 10 и 11 они обычно уже установлены. Для Windows 7 нужен <b>Service Pack 1</b> и отдельная подготовка.</p>
+<section><h2>Windows 7 SP1</h2><ol>
+<li>Проверь выпуск и разрядность Windows в «Панель управления → Система». Если SP1 не установлен, сначала обнови Windows до SP1.</li>
+<li>Установи <a href="https://dotnet.microsoft.com/en-us/download/dotnet-framework/net48">.NET Framework 4.8 Runtime с сайта Microsoft</a> и перезагрузи компьютер, если попросит установщик. Подходит и уже установленная версия 4.5.2–4.7.2.</li>
+<li>Скачай <a href="https://www.microsoft.com/en-us/download/details.aspx?id=54616">Windows Management Framework 5.1 с сайта Microsoft</a>. Для 64-битной Windows 7 нужен <code>Win7AndW2K8R2-KB3191566-x64.zip</code>, для 32-битной — <code>Win7-KB3191566-x86.zip</code>. Распакуй пакет и следуй инструкции Microsoft внутри. Это обновление Windows может запросить права администратора.</li>
+<li>Перезагрузи компьютер. Снова запусти <b>«Установить PA.cmd»</b> из полностью распакованного архива PA.</li>
+</ol><p>Компоненты Windows не устанавливаются PA скрытно. До прохождения проверки файлы игры не меняются.</p></section>
+<section><h2>Windows 10 / 11</h2><p>Запусти «Установить PA.cmd», выбери свою GTA/MoonLoader и нажми «Установить». Если проверка сообщает о старом PowerShell, используй штатный Windows PowerShell 5.1, а не консоль старой сторонней сборки Windows.</p></section>
+<section><h2>Нужен ли запуск от администратора?</h2><p>Обычно нет. Он может понадобиться, если сама игра лежит в защищённой папке и появляется именно «Отказано в доступе». Ошибка <code>You must provide a value expression ... '-' operator</code> указывает на разбор команды: старый PowerShell не понимает современный синтаксис. Повышение прав его не обновляет.</p><p>Распакуй PA в обычную папку пользователя. Не запускай установщик изнутри ZIP.</p></section>
+<section><h2>Загрузка не проходит на семёрке</h2><p>Для GitHub и источников библиотек нужен HTTPS с TLS 1.2 и рабочие корневые сертификаты Windows. Установи доступные обновления Windows и .NET. PA не отключает проверку сертификатов и не подменяет её небезопасной загрузкой. При сетевой ошибке сохраняются прежние файлы.</p></section>
+<p><small>Матрица требований и ранний отказ проверены автоматическими тестами. Отдельная проверка этой версии в настоящей Windows 7 не выполнялась; совместимость сторонней GTA-сборки, SA:MP и ASI зависит от её компонентов.</small></p>
+</body></html>

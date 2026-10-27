@@ -7,7 +7,7 @@ subprocess.run([sys.executable,str(ROOT/'tools/verify-package.py')],check=True)
 m=json.loads((ROOT/'INSTALL_MANIFEST.json').read_text('utf-8-sig'))
 files=[ROOT/'moonloader'/r['path'].replace('\\','/') for r in m['files']]
 files += [ROOT/'cef/assets/hud'/r['path'] for r in m['cef_files']]
-files += [ROOT/n for n in ['README.md','CHANGELOG.md','install.ps1','Установить PA.cmd','INSTALL_MANIFEST.json','CEF_CONTRACT.json']]
+files += [ROOT/n for n in ['README.md','CHANGELOG.md','install.ps1','Установить PA.cmd','Показать обновление PA.cmd','INSTALL_MANIFEST.json','CEF_CONTRACT.json']]
 files += [ROOT/r['path'] for r in m['setup_files']]
 files += [p for p in (ROOT/'docs').rglob('*') if p.is_file()]
 out=ROOT/'dist';out.mkdir(exist_ok=True)

@@ -36,7 +36,10 @@ def leaves(v,p=''):
 old,new=snapshot(base),snapshot(ROOT)
 old_paths=leaves({'core_ini':old['ini'],'validated_library':old['library'],'new_binding_shape':old['new_binding']})
 new_paths=leaves({'core_ini':new['ini'],'validated_library':new['library'],'new_binding_shape':new['new_binding']})
-assert old_paths==new_paths,'Config path/type changed'
+added={'validated_library.settings.updates.show_progress_window':'bool'}
+assert {k:v for k,v in new_paths.items() if k not in added}==old_paths,'Config path/type changed'
+assert {k:v for k,v in new_paths.items() if k in added}==added,'Unexpected added settings'
+assert new['library']['settings']['updates']['show_progress_window'] is True
 assert old['ini']==new['ini'],'Core INI defaults changed'
 assert old['actions']==new['actions'],'Six base actions changed'
 assert old['library']['bindings']==new['library']['bindings'],'Base bind/female RP changed'
@@ -53,7 +56,7 @@ hashes={}
 for name in protected:
     a=(base/name).read_bytes();b=(ROOT/name).read_bytes();assert a==b,f'Protected file changed: {name}'
     hashes[name]=hashlib.sha256(b).hexdigest()
-result={'status':'passed','baseline':str(base),'config_paths':len(old_paths),'same_path_types':True,
+result={'status':'passed','baseline':str(base),'config_paths':len(old_paths),'same_path_types':True,'added_settings':added,
     'base_actions_unchanged':True,'default_bindings_unchanged':True,'bind_presets_rp_unchanged':True,
     'variables_unchanged':True,'protected_sha256':hashes,'game_written':False}
 path=ROOT/'tests/PRESERVATION040.json';path.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')

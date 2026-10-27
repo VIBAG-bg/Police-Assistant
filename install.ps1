@@ -5,14 +5,45 @@ param(
     [switch]$Interactive,
     [switch]$FetchDependencies,
     [string]$DependencyCache = '',
-    [int]$TestFailAfter = 0
+    [int]$TestFailAfter = 0,
+    [string]$ProgressFile = ''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+if($Interactive -and -not $VerifyOnly){
+    & (Join-Path $PSScriptRoot 'tools/pa-start.ps1') -Mode Install
+    return
+}
+$paChanged=@();$paRollbackCompleted=$false;$paProgressPath='';$paManifest=$null
+if($ProgressFile -and -not $VerifyOnly){
+    $paProgressPath=[IO.Path]::GetFullPath($ProgressFile)
+    $paUIRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'installation-backups/ui-jobs')).TrimEnd('\')
+    if(-not $paProgressPath.StartsWith($paUIRoot+'\',[StringComparison]::OrdinalIgnoreCase) -or $paProgressPath.Substring($paUIRoot.Length+1) -cnotmatch '^[a-f0-9]{32}\\progress\.json$'){throw 'Invalid installation progress path.'}
+    $paAncestor=$paProgressPath
+    while($paAncestor){
+        if((Test-Path -LiteralPath $paAncestor) -and ((Get-Item -LiteralPath $paAncestor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Installation progress path is a link.'}
+        $paAncestor=[IO.Path]::GetDirectoryName($paAncestor)
+    }
+    if(-not (Test-Path -LiteralPath ([IO.Path]::GetDirectoryName($paProgressPath)) -PathType Container)){throw 'Installation progress directory is missing.'}
+}
+function Set-PaInstallProgress([string]$Stage,[int]$Percent,[string]$Detail,[bool]$Terminal=$false,[bool]$Safe=$false){
+    if(-not $paProgressPath){return}
+    try{
+        $row=@{product='police-assistant-setup';job=[IO.Path]::GetFileName([IO.Path]::GetDirectoryName($paProgressPath));stage=$Stage;percent=$Percent;detail=$Detail;terminal=$Terminal;safe=$Safe;pid=$PID;version=$(if($paManifest){$paManifest.release}else{''})}
+        $temp=$paProgressPath+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
+        [IO.File]::WriteAllText($temp,($row|ConvertTo-Json -Depth 5 -Compress),(New-Object Text.UTF8Encoding($false)))
+        if([IO.File]::Exists($paProgressPath)){[IO.File]::Replace($temp,$paProgressPath,[NullString]::Value)}else{[IO.File]::Move($temp,$paProgressPath)}
+    }catch{} # Status display must not change the file transaction.
+}
+trap {
+    Set-PaInstallProgress 'failed' 0 $_.Exception.Message $true ($paRollbackCompleted -or $paChanged.Count -eq 0)
+    break
+}
+Set-PaInstallProgress 'checking' 2 'Проверяю установочный архив и выбранную папку.'
 $paSource = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'moonloader'))
 $paManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALL_MANIFEST.json') -Raw | ConvertFrom-Json
-$paSetupAllow=@('tools/pa-setup.ps1','DEPENDENCIES.json')
-if(@($paManifest.setup_files).Count -ne 2){throw 'Missing setup manifest.'}
+$paSetupAllow=@('tools/pa-setup.ps1','tools/pa-setup-window.ps1','tools/pa-start.ps1','DEPENDENCIES.json')
+if(@($paManifest.setup_files).Count -ne 4){throw 'Missing setup manifest.'}
 $paSetupSeen=@{}
 foreach($paRow in $paManifest.setup_files){
  if($paRow.path -cnotin $paSetupAllow -or $paSetupSeen.ContainsKey($paRow.path)){throw 'Unexpected setup file.'}
@@ -22,14 +53,6 @@ foreach($paRow in $paManifest.setup_files){
 }
 . (Join-Path $PSScriptRoot 'tools/pa-setup.ps1')
 $paDefault=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Exsellent Launcher\game\MoonLoader'
-if($Interactive){
- Add-Type -AssemblyName System.Windows.Forms
- $paDialog=New-Object Windows.Forms.FolderBrowserDialog
- $paDialog.Description='Выберите папку GTA San Andreas (с gta_sa.exe) или её папку MoonLoader.'
- $paDialog.ShowNewFolderButton=$false
- if(Test-Path -LiteralPath $paDefault){$paDialog.SelectedPath=[IO.Path]::GetDirectoryName($paDefault)}
- try{if($paDialog.ShowDialog() -ne [Windows.Forms.DialogResult]::OK){throw 'Установка отменена.'};$DestinationRoot=$paDialog.SelectedPath}finally{$paDialog.Dispose()}
-}
 if(-not $DestinationRoot){$DestinationRoot=$paDefault}
 $paTestRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'tests\install-sandbox')).TrimEnd('\')
 $paInput=[IO.Path]::GetFullPath($DestinationRoot).TrimEnd('\')
@@ -74,7 +97,10 @@ function Get-PaPath([string]$root,[string]$relative) {
 }
 function Assert-PaGameClosed {
     if ($paTest) { return }
-    if (@(Get-Process -Name gta_sa,gta-sa -ErrorAction SilentlyContinue).Count) { throw 'Close GTA before installation.' }
+    while (@(Get-Process -Name gta_sa,gta-sa -ErrorAction SilentlyContinue).Count) {
+        Set-PaInstallProgress 'paused' 55 'Закройте GTA. Установка продолжится после закрытия игры.'
+        Start-Sleep -Milliseconds 500
+    }
 }
 if(-not $paTest){
  $paMissing=@(Get-PaMissingDependencies $paDestination $paDependencyManifest)
@@ -88,10 +114,12 @@ if(-not $paTest){
     if($paAnswer -ne [Windows.Forms.DialogResult]::OK){throw 'Установка отменена до изменения файлов.'}
    }
    if(-not $DependencyCache){$DependencyCache=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'PoliceAssistant2026\setup-cache'}
+   Set-PaInstallProgress 'downloading' 15 'Скачиваю и проверяю недостающие библиотеки. Игра пока не изменяется.'
    $paDependencyPlan=@(Get-PaDependencyPlan $paDestination $paMissing $DependencyCache $true)
   }
  }
 }
+Set-PaInstallProgress 'verifying_package' 40 'Проверяю контрольные суммы файлов PA.'
 $paPlan = @($paDependencyPlan)
 foreach ($paRelative in $paOwned) {
     $paEntry = @($paManifest.files | Where-Object path -EQ $paRelative)
@@ -161,6 +189,7 @@ if ($VerifyOnly) {
     return
 }
 Assert-PaGameClosed
+Set-PaInstallProgress 'backup' 55 'Создаю резервные копии личных данных и прежних файлов PA.'
 $paBackup = Join-Path $PSScriptRoot ('installation-backups\before-' + [Guid]::NewGuid().ToString('N'))
 Assert-PaSetupPlain $paBackup
 New-Item -ItemType Directory -Path $paBackup -Force | Out-Null
@@ -207,6 +236,7 @@ $paChanged = @()
 $paStage = $null
 try {
     foreach ($paItem in $paPlan) {
+        Set-PaInstallProgress 'installing' (70+[int](23*$paChanged.Count/[Math]::Max(1,$paPlan.Count))) ('Устанавливаю: '+$paItem.Relative)
         if ($paItem.Skip) { continue }
         Assert-PaGameClosed
         Assert-PaPersonalUnchanged
@@ -227,19 +257,24 @@ try {
         if ((Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.SHA256) { throw 'Installed file integrity failed.' }
         if ($paTest -and $TestFailAfter -gt 0 -and $paChanged.Count -eq $TestFailAfter) { throw 'Injected installation failure.' }
     }
+    Set-PaInstallProgress 'verifying_install' 95 'Проверяю все установленные файлы и сохранность личных данных.'
+    Assert-PaGameClosed
+    foreach($paItem in $paPlan | Where-Object {-not $_.Skip}){if((Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.SHA256){throw 'Final installation verification failed.'}}
     foreach ($paItem in $paPlan | Where-Object Skip) {
         if ((Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.BeforeHash) { throw 'Existing settings changed.' }
     }
     Assert-PaPersonalUnchanged
 } catch {
     $paFailure = $_
-    if (-not $paTest -and @(Get-Process -Name gta_sa,gta-sa -ErrorAction SilentlyContinue).Count) { throw 'GTA started during installation. No more files were written; close GTA and rerun the installer. Backup: '+$paBackup }
+    Set-PaInstallProgress 'rollback' 70 'Восстанавливаю прежние файлы PA после ошибки.'
+    Assert-PaGameClosed
     if ($paStage -and (Test-Path -LiteralPath $paStage)) { Remove-Item -LiteralPath $paStage }
     foreach ($paItem in $paChanged) {
         if((Test-Path -LiteralPath $paItem.Target) -and (Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.SHA256){throw ('External edit during rollback; files and backup retained: '+$paBackup)}
         if ($paItem.Existed) { Copy-Item -LiteralPath (Get-PaPath $paBackup $paItem.BackupRelative) -Destination $paItem.Target -Force }
         elseif (Test-Path -LiteralPath $paItem.Target) { Remove-Item -LiteralPath $paItem.Target }
     }
+    $paRollbackCompleted=$true
     throw $paFailure
 }
 if (-not $paTest) {
@@ -247,3 +282,5 @@ $paResult=[PSCustomObject]@{release=$paManifest.release;backup=$paBackup;changed
 $paResult | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALLATION_REPORT.json') -Encoding UTF8
 }
 Write-Output ('Installed and verified ' + $paChanged.Count + ' owned files. Existing INI preserved. Backup: ' + $paBackup)
+
+Set-PaInstallProgress 'completed' 100 ('PA установлен и проверен. Можно запускать GTA. Резервная копия: '+$paBackup) $true $true

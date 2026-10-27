@@ -1,5 +1,9 @@
 local module=require 'pa26_updater';local model=require 'pa26_bindings';local core=require 'pa26_core'
 local cfg=module.defaults();eq(cfg.repository,'VIBAG-bg/Police-Assistant');check(not cfg.check_on_start)
+check(cfg.show_progress_window)
+check(assert(module.validate({repository='Owner/Repo'})).show_progress_window,'old settings get a visible progress window')
+check(not assert(module.validate({repository='Owner/Repo',show_progress_window=false})).show_progress_window)
+check(not module.validate({repository='Owner/Repo',show_progress_window='yes'}))
 eq(assert(module.validate({repository='https://github.com/Owner/Repo/'})).repository,'Owner/Repo')
 for _,repo in ipairs({'owner/repo.git','https://evil.test/x','a/b/c','a/b?token=x','a/b#x','a/b\n','a;evil/b','/a/b','a/b@v1'})do check(not module.validate({repository=repo}),repo)end
 for _,n in ipairs({0,121,1.5,0/0,math.huge})do check(not module.validate({timeout_seconds=n}))end
@@ -30,7 +34,7 @@ check(not s.u:check());eq(#s.started,1);check(s.notices[#s.notices].message:find
 s.cfg.repository='Owner/Repo';check(s.u:check());check(not s.u:check());eq(#s.started,2)
 local candidate={version='0.39.0',sha256=string.rep('a',64),asset_id=7,notes='Описание автора'}
 s.tick('available','new_version',candidate);eq(s.u.candidate.version,'0.39.0');eq(#s.started,2)
-check(s.u:download());eq(s.started[3].mode,'Prepare');check(s.started[3].data.approved)
+check(s.u:download());eq(s.started[3].mode,'Prepare');check(s.started[3].data.approved);check(s.started[3].data.show_progress_window)
 s.tick('waiting','downloaded_close_game');local notices=#s.notices
 for _=1,10 do s.tick()end;eq(#s.notices,notices,'same status must not open a modal every frame')
 check(s.u:cancel());check(s.cancelled);s.tick('cancelled','cancelled');check(not s.u.job)
@@ -56,6 +60,8 @@ check(button);eq(button.parent,'sidebar##pa26')
 s.click='Обновления PA##pa26-updates';s.render();check(s.click==nil)
 s.edits={['GitHub: владелец/репозиторий##updates-repository']='Owner/Repo'};s.render();s.edits={};s.step(650)
 eq(s.savedLibrary().settings.updates.repository,'Owner/Repo')
+s.toggle='Показывать отдельное окно установки##updates-progress-window';s.render();s.step(650)
+check(not s.savedLibrary().settings.updates.show_progress_window,'window preference is editable and persists')
 local studio=s.workspace.studio
 local general=model.copy(s.workspace.library.settings);general.opacity=.75
 studio:autoSettings('settings',{'settings'},general)

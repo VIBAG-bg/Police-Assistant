@@ -20,9 +20,13 @@ jobs:
       - shell: powershell
         run: ./tests/test_updater.ps1
       - shell: powershell
+        run: ./tests/test_update_progress.ps1
+      - shell: powershell
         run: ./tests/test_installer.ps1
       - shell: powershell
         run: ./tests/test_setup.ps1
+      - shell: powershell
+        run: ./tests/test_setup_window.ps1
       - shell: powershell
         run: ./tools/build-update.ps1
       - run: python tools/build-distribution.py

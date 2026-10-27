@@ -1,10 +1,10 @@
 local core=require 'pa26_core'
 local M={};local Updater={};Updater.__index=Updater
-function M.defaults()return {enabled=true,repository='VIBAG-bg/Police-Assistant',check_on_start=false,include_prerelease=false,timeout_seconds=30}end
+function M.defaults()return {enabled=true,repository='VIBAG-bg/Police-Assistant',check_on_start=false,include_prerelease=false,timeout_seconds=30,show_progress_window=true}end
 function M.validate(raw)
     local out=M.defaults();if raw==nil then return out end
     if type(raw)~='table'then return nil,'Неверные настройки обновления.'end
-    for _,key in ipairs({'enabled','check_on_start','include_prerelease'})do if raw[key]~=nil then
+    for _,key in ipairs({'enabled','check_on_start','include_prerelease','show_progress_window'})do if raw[key]~=nil then
         if type(raw[key])~='boolean'then return nil,'Неверный переключатель обновления.'end;out[key]=raw[key]end end
     local repo=raw.repository or''
     if type(repo)~='string'or #repo>140 or not core.validUtf8(repo)or repo:find('%c')then return nil,'Укажите GitHub: владелец/репозиторий.'end
@@ -32,7 +32,8 @@ local messages={
     cef_incompatible='Версия игрового чата отличается от поддерживаемой. Установка остановлена.',
     personal_data_changed='Личные файлы изменились во время установки. PA остановил обновление и сохраняет резервные копии.',
     close_wait_expired='Истекло ожидание закрытия GTA. Проверьте состояние обновления перед новым запуском.',
-    downloaded_close_game='Обновление скачано и проверено. Закройте GTA и дождитесь завершения установки перед повторным запуском. Резервная копия актуальных личных файлов будет сделана после выхода.',
+    downloaded_close_game='Обновление скачано и проверено. Закройте GTA и дождитесь сообщения «Готово» в отдельном окне обновления, если его показ включён. До завершения не запускайте игру. Актуальные копии личных файлов сохраняются после выхода.',
+    close_game_to_continue='GTA была запущена до завершения обновления. Закройте её: установка ждёт и продолжится безопасно. Дождитесь SUCCESS в окне обновления.',
     close_game_to_recover='Закройте GTA: помощник восстановит согласованную версию PA из резервной копии.',
     update_installed='Обновление установлено и проверено. Личные файлы сохранены; резервная копия доступна в папке обновлений.',
     update_rolled_back='Обновление отменено; предыдущие файлы PA восстановлены. Личные файлы не заменялись. Резервная копия сохранена.',
@@ -49,7 +50,7 @@ function Updater:start(mode,candidate)
     if mode~='Status'and(not cfg.enabled or cfg.repository=='')then self.env.notify('Источник обновления не настроен. Укажите репозиторий GitHub в настройках на этой странице.','warning');return false end
     if not self.env.platform then self:notify('invalid_game_root');return false end
     local request={product='police-assistant-2026',moonloader=self.env.platform.ml,repository=cfg.repository,
-        include_prerelease=cfg.include_prerelease,timeout_seconds=cfg.timeout_seconds,approved=mode=='Prepare',candidate=candidate}
+        include_prerelease=cfg.include_prerelease,timeout_seconds=cfg.timeout_seconds,show_progress_window=cfg.show_progress_window,approved=mode=='Prepare',candidate=candidate}
     local ok,text=pcall(self.env.encode,request);if not ok then self:notify('invalid_request');return false end
     local good,job,err=pcall(self.env.platform.start,self.env.platform,mode,text)
     if not good or not job then self:notify(err or'launch_failed');return false end

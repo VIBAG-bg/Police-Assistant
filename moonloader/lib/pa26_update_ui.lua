@@ -12,6 +12,8 @@ function M.draw(s,ui,updater,callbacks)
     ui.text('Официальный источник: VIBAG-bg/Police-Assistant. Если поле очистить, запросов к GitHub нет. Используются публичные GitHub Releases и пакет pa26-update.zip; пароли и токены сюда не вводятся.')
     cfg.check_on_start=s:check('Проверять новую версию при входе##updates-on-start',cfg.check_on_start)
     cfg.include_prerelease=s:check('Предлагать также предварительные выпуски##updates-prerelease',cfg.include_prerelease)
+    cfg.show_progress_window=s:check('Показывать отдельное окно установки##updates-progress-window',cfg.show_progress_window)
+    ui.text('Окно на русском с зелёным прогрессом остаётся после выхода из GTA. Возвращайтесь в игру после «Готово — можно запускать GTA». Его можно свернуть; до результата закрытие окна отключено. При раннем запуске GTA помощник ждёт её закрытия и продолжает установку.')
     local n=im.new.int(cfg.timeout_seconds)
     if im.SliderInt('Ожидание сети, с##updates-timeout',n,1,120)then cfg.timeout_seconds=n[0]end
     s:autoSettings('updates',{'settings','updates'},cfg)

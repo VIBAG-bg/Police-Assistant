@@ -1,4 +1,4 @@
-Set-StrictMode -Version Latest
+﻿Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $paRelease=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $paRelease 'moonloader\resource\pa26\updater\pa26-update.ps1') -Mode Library
@@ -92,8 +92,17 @@ foreach($bad in @('../escape.lua','MoonLoader/config/police_assistant_2026_binds
 $case=New-Case 'game-reopened';$script:waitCalls=0
 function Wait-PaClosed([bool]$allowCancel=$true){$script:waitCalls++;$script:running=$false}
 $script:PaFault={param($n)if($n -eq 1){$script:running=$true}}
-Reject {Invoke-PaTransaction $case.folder $case.manifest} 'game restart interrupts install'
-Check ($script:waitCalls -eq 1) 'recovery waits for closed game';Verify-Old $case;$script:PaFault=$null
+Invoke-PaTransaction $case.folder $case.manifest
+Check ($script:waitCalls -eq 1) 'installation waits for a reopened game'
+Check ((Get-PaCurrent) -eq '0.39.0') 'early restart resumes instead of rolling back'
+Check ((Get-PaHash (Join-Path $case.ml 'config\police_assistant_2026_binds.json')) -eq $case.bind) 'resumed install preserves personal data'
+Check (-not [IO.File]::Exists($script:PaMarker)) 'resumed install removes gate only when complete';$script:PaFault=$null
+# The approved production path also waits for a game that opens at the handoff boundary.
+$case=New-Case 'game-open-at-handoff';$script:running=$true;$script:waitCalls=0
+Invoke-PaTransaction $case.folder $case.manifest $true
+Check ($script:waitCalls -eq 1) 'production handoff waits before creating its safety gate'
+Check ((Get-PaCurrent) -eq '0.39.0') 'handoff race finishes the selected version'
+Check ((Get-PaHash (Join-Path $case.ml 'config\police_assistant_2026_binds.json')) -eq $case.bind) 'handoff preserves personal data'
 # Valid release package round trip: extraction, per-file verification and install.
 $case=New-Case 'valid-package'
 foreach($rel in @('lib\pa26_update_platform.lua','resource\pa26\updater\pa26-update.ps1')){

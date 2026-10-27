@@ -27,7 +27,9 @@ python tests/run_tests.py --report tests/RESULTS.json
 node tests/test_cef_chat.js
 powershell -NoProfile -File tests/test_updater.ps1
 powershell -NoProfile -File tests/test_installer.ps1
-powershell -NoProfile -File tests/test_setup.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tests/test_setup.ps1
+powershell -NoProfile -STA -ExecutionPolicy Bypass -File tests/test_update_progress.ps1 -Render
+powershell -NoProfile -STA -ExecutionPolicy Bypass -File tests/test_setup_window.ps1 -Render
 python tools/verify-package.py
 ```
 
@@ -62,3 +64,5 @@ python tools/build-distribution.py
 Универсальный update ZIP 0.40.1 исключает неизменённые CEF-адаптеры. `UPDATE_CEF_BASELINE.json` фиксирует совместимую базу; изменение JS требует отдельного решения по совместимости, а не удаления проверки. Неподвижный `pa26_update_platform.lua` менять нельзя. При изменении только документации не пересобирай уже опубликованные assets; для новых исполняемых файлов нужен следующий выпуск.
 
 Публикация из проверенного коммита: `tools/publish-release.ps1 -Commit <SHA>`. Помощник использует обычную авторизацию Git, создаёт черновик, проверяет загруженные SHA-256 и только затем публикует. Он отказывается заменять существующий релиз. Перед публикацией проверь, что main указывает на нужный коммит.
+
+`tools/pa-start.ps1` должен оставаться синтаксически совместимым с PowerShell 2: он проверяет среду до чтения остальных скриптов. Остальной установщик рассчитан на Windows PowerShell 5.1 / .NET 4.5.2+. Все PS1 с русскими литералами сохраняются как UTF-8 с BOM; CMD — ASCII. `install.ps1 -VerifyOnly` остаётся без записи, а структурированный прогресс разрешён только в `installation-backups/ui-jobs/<guid>/progress.json`.

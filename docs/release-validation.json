@@ -1,16 +1,20 @@
 {
-  "release": "0.40.1",
-  "status": "published_verified",
+  "release": "0.40.2",
+  "status": "local_checks_passed",
   "game_started": false,
   "real_game_written": false,
   "lua_groups": 148,
-  "lua_checks": 8814057,
+  "lua_checks": 8815512,
   "cef_browser_checks": 482,
   "worker_checks": 148,
+  "progress_checks": 58,
+  "setup_window_checks": 32,
   "setup_checks_with_official_archives": 124,
   "native_updater_checks": 13,
-  "native_pinned_dependency_checks": 7,
   "preserved_configuration_paths": 1175,
+  "added_settings": [
+    "updates.show_progress_window"
+  ],
   "official_dependency_archives": 3,
   "official_dependency_files": 21,
   "installer_rollback_after": [
@@ -28,10 +32,13 @@
   ],
   "update_program_files": 91,
   "frozen_protocol": 1,
-  "notes": "Isolated tests; server and actual GTA acceptance remain separate.",
-  "actions_status": "completed",
-  "actions_conclusion": "success",
-  "actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40418690107",
-  "public_update_sha256": "201a8c6caf4c9f6bd78ffcca9ef1c777211a051cb428ce76498126c298ac1cff",
-  "public_installer_sha256": "57aba227eb485de6caa960cd4cb41be8fe98d4dfc0847d1b8f3c0284a96841bc"
+  "windows_compatibility_requirements": [
+    "Windows 7 SP1",
+    "Windows 10",
+    "Windows 11",
+    "Windows PowerShell 5.1",
+    ".NET Framework >= 4.5.2"
+  ],
+  "windows7_vm_tested": false,
+  "notes": "Isolated fixtures and actual native UI; no GTA/server or real Windows 7 acceptance. Final PowerShell status catch is covered by focused tests; Lua sources match the full regression snapshot."
 }
