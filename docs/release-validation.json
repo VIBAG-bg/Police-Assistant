@@ -1,17 +1,58 @@
 {
-  "release": "0.40.3",
-  "status": "published_verified",
+  "release": "0.40.4",
+  "status": "validated_for_release",
+  "base_release": "0.40.3",
   "game_started": false,
   "real_game_written": false,
-  "lua_groups": 149,
-  "lua_checks": 8816274,
-  "final_focused_checks": 8939,
-  "author_model_checks": 358,
-  "installer_presets_checks": 27,
-  "native_author_io_checks": 10,
+  "lua_groups": 150,
+  "lua_checks": 8681600,
+  "syntax_files": 255,
   "cef_browser_checks": 482,
-  "setup_window_checks": 32,
+  "worker_checks": 148,
+  "update_progress_checks": 53,
+  "setup_checks": 101,
+  "setup_window_checks": 28,
+  "installer_presets_checks": 29,
   "preserved_configuration_paths": 1175,
+  "fresh_demo_default": false,
+  "existing_demo_preference_preserved": true,
+  "native_hotfix_checks": 478,
+  "native_hotfix_frames": 177,
+  "native_resolutions": [
+    [
+      640,
+      480
+    ],
+    [
+      1152,
+      864
+    ],
+    [
+      1366,
+      768
+    ],
+    [
+      1920,
+      1080
+    ],
+    [
+      2560,
+      1440
+    ]
+  ],
+  "native_window_sizes": [
+    "70%",
+    "full available screen"
+  ],
+  "native_font_sizes": [
+    16,
+    24
+  ],
+  "native_real_menu_and_ack_clicks": true,
+  "native_exchange_checks": 535,
+  "native_exchange_frames": 96,
+  "native_editor_checks": 60,
+  "native_editor_frames": 41,
   "installer_rollback_after": [
     1,
     37,
@@ -23,30 +64,20 @@
     97,
     98
   ],
-  "program_updater_unchanged": true,
-  "author_binds": 83,
-  "standard_notes": 2,
-  "public_profile_and_contacts": false,
-  "windows7_vm_tested": false,
-  "notes": "Both GitHub Actions runs passed for the release commit: all 149 Lua groups, CEF, worker, progress, installer rollback, setup, preset seeding and distribution. Published ZIPs and both JSON sidecars downloaded and verified; native 32-bit sidecar IO validated. GTA/server and a real Windows 7 VM were not launched.",
-  "actions_status": "completed",
-  "actions_conclusion": "success",
-  "actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40500275511",
-  "tag_actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40500429599",
-  "source_commit": "5e28cea99bb6b6cb2b18552728182e340cc4bf61",
-  "public_update_sha256": "7db05f3d6545069ba3adf067629bfc4eb5ffb6634e4fac3b5211c49c6dbe06d0",
-  "public_installer_sha256": "79b01d3156ab05bd080195cec5e3c85b3b2d2be7297fff96e1bca7df189e4106",
-  "public_native32_preset_downloads": [
-    "binds",
-    "settings"
-  ],
-  "legacy_worker_detected_release": [
-    "0.40.1",
-    "0.40.2"
-  ],
   "old_worker_transition": [
     "native",
     "launcher"
   ],
-  "update_program_files": 95
+  "update_program_files": 95,
+  "update_package_sha256": "018db0ec847de84298b4a6f5f7b8451412ada76bd9808f9ef8c5eabe5ebd92c2",
+  "program_updater_unchanged": true,
+  "cef_unchanged": true,
+  "frozen_platform_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
+  "author_binds": 83,
+  "author_binds_unchanged": true,
+  "standard_notes": 2,
+  "public_profile_and_contacts": false,
+  "windows7_vm_tested": false,
+  "copilot_included": false,
+  "notes": "All listed checks ran locally on final runtime bytes. New tests cover a clean real-mode install, saved mode and failed saves, 83-bind import through main, acknowledgement input, one reload and preservation. Native32 validates usable panel height, scroll fallback and real mouse clicks. Publication and GitHub Actions results are recorded separately; GTA/server not launched."
 }

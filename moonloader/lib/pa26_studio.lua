@@ -724,8 +724,7 @@ function Studio:drawEditor(ui,data,callbacks)
     local im=self.imgui
     -- Header belongs to the outer pane. Only the body below it can scroll.
     if self:button('Сохранить сценарий',ui)then self:saveDraft(callbacks)end
-    ui.text(self.dirty and 'Изменения ещё не сохранены'or 'Редактор сценария · Все изменения сохранены')
-    ui.text(string.format('Сценарий %03d',model.bindingNumber(self.lib,self.draft.id)or(#self.lib.bindings+1)))
+    ui.text(string.format('Сценарий %03d · ',model.bindingNumber(self.lib,self.draft.id)or(#self.lib.bindings+1))..(self.dirty and'Изменения ещё не сохранены'or'Все изменения сохранены'))
     im.Separator()
     child(self,ui,'bind-editor-body##studio',0,math.max(1,im.GetContentRegionAvail().y),function()
         self:drawEditorBody(ui,data,callbacks)
@@ -771,47 +770,31 @@ function Studio:moveBinding(offset,callbacks,id)
         return
     end end
 end
--- The card list is the only scrolling part of the left pane. Reserve the
--- complete measured toolbar before giving its remaining height to the cards.
+-- Management controls live in a menu so their labels cannot consume the list.
 function Studio:drawBindingList(ui,data,callbacks,search)
-    local im=self.imgui; local gap=10
-    local width=math.max(1,(im.GetContentRegionAvail().x-gap)/2)
-    local rows={{'Дублировать##bind','Удалить##bind'},
-        {'Экспорт всех биндов','Импорт биндов'},
-        {'Экспорт выбранного бинда','Файлы обмена##bind-files'}}
-    local font=self.buttonFont or im.GetFont(); local size=tonumber(font.FontSize)
-    local heights,total={},10
-    for i,row in ipairs(rows) do
-        heights[i]=42
-        for _,name in ipairs(row) do
-            local visible=name:match('^(.-)##') or name
-            heights[i]=math.max(heights[i],font:CalcTextSizeA(size,100000,math.max(1,width-28),visible).y+16)
-        end
-        total=total+heights[i]+gap
-    end
-    local height=math.max(1,im.GetContentRegionAvail().y-total)
-    local origin=im.GetCursorScreenPos()
-    child(self,ui,'bindrows##studio',0,height,function()
-        for number,b in ipairs(self.lib.bindings) do
-            if search=='' or model.casefold(b.name..' '..b.category..' '..b.command..' '..(b.command_alias or '')):find(search,1,true) then
-                self:bindingRow(ui,data,callbacks,b,number,false)
+    local im=self.imgui;local clicked={}
+    if self:button('Действия с биндами##bind-tools',ui)then self.bindToolsVisible=true;im.OpenPopup('bind-tools##studio')end
+    if self.bindToolsVisible then
+    im.SetNextWindowSize(im.ImVec2(math.min(460,im.GetIO().DisplaySize.x-48),math.min(280,im.GetIO().DisplaySize.y-48)),im.Cond.Appearing)
+    if im.BeginPopup('bind-tools##studio')then
+        ui.push(function()im.EndPopup()end)
+        local rows={{'Дублировать##bind','Удалить##bind'},
+            {'Экспорт всех биндов','Импорт биндов'},
+            {'Экспорт выбранного бинда','Файлы обмена##bind-files'}}
+        local width=math.max(1,(im.GetContentRegionAvail().x-10)/2)
+        for _,row in ipairs(rows)do
+            local font=self.buttonFont or im.GetFont();local height=42
+            for _,name in ipairs(row)do height=math.max(height,font:CalcTextSizeA(tonumber(font.FontSize),100000,math.max(1,width-28),name:match('^(.-)##')or name).y+16)end
+            for column,name in ipairs(row)do
+                if column==2 then im.SameLine(0,10)end
+                if menuModule.fittedButton(im,ui,name,im.ImVec2(width,height),self.buttonFont)then clicked[name]=true;self.bindToolsVisible=false;im.CloseCurrentPopup()end
             end
         end
-    end,0,0,false)
-    local reorder=self.reorderRequest; self.reorderRequest=nil
-    if reorder then self:moveBinding(reorder.offset,callbacks,reorder.id) end
-    local clicked={}
-    local y=origin.y+height+10
-    for i,row in ipairs(rows) do
-        im.SetCursorScreenPos(im.ImVec2(origin.x,y))
-        for column,name in ipairs(row) do
-            if column==2 then im.SameLine(0,gap) end
-            if menuModule.fittedButton(im,ui,name,im.ImVec2(width,heights[i]),self.buttonFont) then clicked[name]=true end
-        end
-        y=y+heights[i]+gap
+        ui.finish()
+    else self.bindToolsVisible=false end
     end
-    if clicked['Дублировать##bind'] then self:duplicateBinding() end
-    if clicked['Удалить##bind'] and self.selected then self.remove={kind='binding',id=self.selected} end
+    if clicked['Дублировать##bind']then self:duplicateBinding()end
+    if clicked['Удалить##bind']and self.selected then self.remove={kind='binding',id=self.selected}end
     if clicked['Экспорт всех биндов']then callbacks.export('binds')end
     if clicked['Импорт биндов']then callbacks.import('binds')end
     if clicked['Экспорт выбранного бинда']then
@@ -820,12 +803,26 @@ function Studio:drawBindingList(ui,data,callbacks,search)
     if clicked['Файлы обмена##bind-files']then
         self:notify('Бинды: config/police_assistant_2026_binds.json. Для обмена: police_assistant_2026_binds_exchange.json в той же папке. Экспортируется сохранённый текст; несохранённые правки сначала сохраните. Профиль, заметки, контакты и настройки в экспорт не входят. Для импорта замените файл обмена полученным JSON и нажмите «Импорт биндов».','binds',false,'info')
     end
+    child(self,ui,'bindrows##studio',0,math.max(120,im.GetContentRegionAvail().y),function()
+        for number,b in ipairs(self.lib.bindings)do
+            if search==''or model.casefold(b.name..' '..b.category..' '..b.command..' '..(b.command_alias or'')):find(search,1,true)then
+                self:bindingRow(ui,data,callbacks,b,number,false)
+            end
+        end
+    end,0,0,false)
+    local reorder=self.reorderRequest;self.reorderRequest=nil
+    if reorder then self:moveBinding(reorder.offset,callbacks,reorder.id)end
 end
 function Studio:drawBindings(ui,data,callbacks)
     local im=self.imgui
     if self.pendingSelection and not self.draft then
         self.pendingSelection=nil; self.pendingEditorTab=nil; self.dirty=false
         self:clearTextFocus(); self:notify('Нет редактируемого сценария. Выберите бинд или создайте новый.')
+    end
+    if data.nearby and data.nearby.enabled then
+        local target=data.target
+        local title=target and('Цель: '..target.name..' ['..target.id..'] · выбрать другого')or'Выбрать игрока для проверки бинда'
+        if self:button(title..'##bind-target',ui)then callbacks.openQuick()end
     end
     local wide=im.GetContentRegionAvail().x>=730
     local headerWidth=math.max(1,(im.GetContentRegionAvail().x-10)/2)
@@ -834,14 +831,14 @@ function Studio:drawBindings(ui,data,callbacks)
     if self:button('Быстрое меню',ui,headerWidth) then callbacks.openQuick() end
     if not wide and self.bindPane=='editor' then
         if self:button('К списку биндов##bind-back',ui) then self.bindPane='list' end
-        local height=math.max(1,im.GetContentRegionAvail().y)
+        local height=math.max(300,im.GetContentRegionAvail().y)
         child(self,ui,'bindeditor##studio',0,height,function() self:drawEditor(ui,data,callbacks) end)
         return
     end
     local query=self:field('Поиск##library','search',self.query,256); self.query=query
     local search=model.casefold(query)
     if wide then ui.text('Выберите бинд слева, чтобы изменить его. Границу между списком и редактором можно перетаскивать.') end
-    local panes=M.bindingPanels(im.GetContentRegionAvail().x,math.max(1,im.GetContentRegionAvail().y),self.bindRatio)
+    local panes=M.bindingPanels(im.GetContentRegionAvail().x,math.max(300,im.GetContentRegionAvail().y),self.bindRatio)
     local left,height=panes.wide and panes.left or panes.width,panes.height
     if panes.wide then
         local cursor=im.GetCursorScreenPos()
@@ -1423,6 +1420,13 @@ function Studio:drawProfile(ui,data,callbacks,part)
     part=part or 'all'
     local copy=model.copy(self.lib);local im=self.imgui;copy.profile=self.profileDraft or model.copy(copy.profile)
     if part=='profile'or part=='all'then
+    self:settingsHeading(ui,'Режим работы PA')
+    local mode,modeChanged=self:choice('Режим##profile-demo-mode',data.demo and'demo'or'real',
+        {{'real','РЕАЛЬНЫЙ РЕЖИМ · ДЕМО ВЫКЛ'},{'demo','ДЕМО РЕЖИМ · без отправки'}},ui)
+    if modeChanged and callbacks.setDemoMode then callbacks.setDemoMode(mode=='demo')end
+    ui.text(data.demo and'ДЕМО включён: сценарии показывают предпросмотр и не отправляют команды в игру.'or'Реальный режим: после ваших действий и подтверждений PA отправляет реплики и команды в игру.')
+    ui.text('Выбранный режим сохраняется после перезапуска. При первой установке включён реальный режим.')
+    im.Separator()
     ui.text('Данные персонажа и службы. Изменения сохраняются автоматически.')
     self:profileGroup(ui,copy,'Персонаж и служба',{{'name','RP-имя'},{'department','Ведомство'},{'rank','Должность'},{'case_number','Личное дело'}})
     self:profileGroup(ui,copy,'Экипаж и рация',{{'callsign','Позывной экипажа'},{'local_tag','Префикс локальной волны'},
@@ -2102,8 +2106,8 @@ function Studio:draw(page,ui,data,callbacks)
     self.settingTextChanged=false;self.preferenceContext=page=='profile'or page=='options'or page=='alerts'or page=='weapons'or page=='extras'or page=='map'
     self.currentNoticeScope=page
     self:queueStatus(ui,data,callbacks)
-    if page=='binds'or page=='identity'or page=='procedures'then require('pa26_nearby').draw(self,ui,data,callbacks)end
-    if page=='binds' then self:drawBindings(ui,data,callbacks)
+    if page=='identity'or page=='procedures'then require('pa26_nearby').draw(self,ui,data,callbacks)end
+    if page=='binds' then menuModule.scrollBody(self.imgui,ui,'binding-workspace##studio',function()self:drawBindings(ui,data,callbacks)end)
     elseif page=='hints' then self:drawNotes(ui,data,callbacks,false)
     elseif page=='partners' then self:drawPartners(ui,data,callbacks)
     elseif page=='stats' then self:drawStats(ui,data,callbacks)

@@ -112,6 +112,8 @@ test_names.append('test_map_locations.lua')
 test_names.extend(['test_nearby.lua','test_vehicle_selection.lua'])
 test_names.extend(['test_wanted_forms.lua','test_user_files.lua','test_user_files_ui.lua','test_resume_acceptance.lua'])
 test_names.extend(['test_wanted_accounts.lua','test_wanted_remote.lua','test_wanted_passport_memory.lua','test_wanted_todo.lua'])
+test_names.append('test_hotfix0404.lua')
+
 parser = argparse.ArgumentParser()
 test_names.extend(['test_cef_assets.lua','test_hud_close.lua','test_manual_radio.lua'])
 test_names.extend(['test_text_segments.lua','test_action_preferences.lua'])

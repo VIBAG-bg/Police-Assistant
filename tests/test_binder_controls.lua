@@ -13,12 +13,13 @@ local function button(s,label)
     for _,b in ipairs(s.buttonCalls) do if b.label==label then return b end end
     error('button not drawn: '..label)
 end
-local function remove(s) s.click='Удалить##bind'; fresh(s); check(s.modalOpen) end
+local function remove(s) s.click='Действия с биндами##bind-tools';fresh(s);s.click='Удалить##bind'; fresh(s); check(s.modalOpen) end
 local function answered(s,label) s.click=label; fresh(s); check(not s.modalOpen); eq(s.popup,nil) end
 
 -- Creation belongs to the fixed parent, and all six controls stay outside card scrolling.
 local s=fixture(); s.step(); s.page('binds'); fresh(s)
-eq(button(s,'+ Новый сценарий ( Добавить бинд )').parent,'content##pa26')
+eq(button(s,'+ Новый сценарий ( Добавить бинд )').parent,'binding-workspace##studio')
+s.click='Действия с биндами##bind-tools';fresh(s)
 for _,name in ipairs({'Дублировать##bind',
     'Удалить##bind','Экспорт всех биндов','Импорт биндов'}) do
     local b=button(s,name); eq(b.parent,'bindlist##studio'); check(b.width>0 and b.height>=42)
@@ -33,7 +34,7 @@ for _,c in ipairs(s.childCalls) do
 end
 -- Measured button labels fit their reserved height, including both columns at min width.
 for _,size in ipairs({{760,600},{1180,700}}) do
-    s.resizeWindows={['Police Assistant 2026##pa26-main']={x=size[1],y=size[2]}}; fresh(s)
+    s.resizeWindows={['Police Assistant 2026##pa26-main']={x=size[1],y=size[2]}};s.click='Действия с биндами##bind-tools';fresh(s)
     for _,paint in ipairs(s.drawnLabels) do
         for _,name in ipairs({'Дублировать','Удалить','Экспорт всех биндов','Импорт биндов'}) do
             if paint.text==name then

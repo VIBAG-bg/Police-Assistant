@@ -82,7 +82,7 @@ record(s); press(s,0x78); release(s,0x78); check(text(s,'Главное меню
 press(s,0x5B); press(s,0x75); release(s,0x5B); release(s,0x75)
 check(text(s,'Windows оставлена системе')); cancel(s); eq(#s.sent,0)
 for _,key in ipairs(s.serverKeys) do eq(key,0x1B,'recorded keys must not reach server input') end
-fresh(s); local deletion
+s.click='Действия с биндами##bind-tools';fresh(s); local deletion
 for _,button in ipairs(s.buttonCalls) do if button.label=='Удалить##bind' then deletion=button end end
 check(deletion); check(not text(s,'Удалить выбранный'))
 onScriptTerminate(s.script)

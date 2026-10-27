@@ -32,6 +32,7 @@ im.Button=function(label,...)
         check(lo.x>=pos.x-1 and hi.x<=pos.x+size.x+1,'Control outside horizontal bounds: '..label)
         if im.IsItemVisible()then seen[widthNow..':'..label]=true end
     end
+    if label=='Действия с биндами##bind-tools'then return true end
     return result
 end
 for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do

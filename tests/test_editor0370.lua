@@ -29,7 +29,7 @@ s.click='Сохранить сценарий';s.render();check(studio:hasWarning
 check(studio.feedback:peek().message:find('сохранён',1,true));s.step(10000);check(studio:hasWarning(),'success needs acknowledgement')
 local all={};studio:drawNotice({text=function(v)all[#all+1]=v end});eq(#all,0,'no notification footer')
 ack(s);s.step();check(s.commands.my_pass);eq(s.commands.passport_rp,nil)
-s.click='Файлы обмена##bind-files';s.render();check(studio:hasWarning());check(studio.feedback:peek().message:find('binds_exchange.json',1,true));ack(s)
+s.click='Действия с биндами##bind-tools';s.render();s.click='Файлы обмена##bind-files';s.render();check(studio:hasWarning());check(studio.feedback:peek().message:find('binds_exchange.json',1,true));ack(s)
 s.click='Текст##editor-tab';s.render();s.click='Шаги##mode';s.render();s.render();eq(studio.editor,'steps')
 local modes={}
 for _,b in ipairs(s.buttonCalls)do
@@ -51,7 +51,7 @@ for _,nativePed in ipairs({1,31415})do
 end
 -- A number in the nearby UI chooses the same visible officer without needing
 -- the exact camera center. Walls, disconnects and stale clicks still fail.
-s=fixture({demo=false});s.name='Officer_Friendly';s.sx=100;s.step();s.page('binds');s.step(550)
+s=fixture({demo=false});s.name='Officer_Friendly';s.sx=100;s.step();s.page('binds');s.click='Выбрать игрока для проверки бинда##bind-target';s.render();s.step(550)
 s.edits={['Выбрать игрока по ID##nearby-id']='37'};s.render();s.click='Выбрать по ID##nearby-select-id';s.render()
 check(not s.workspace.selectedTarget);s.step(16);check(s.workspace.selectedTarget);eq(s.workspace.selectedTarget.name,'Officer_Friendly');eq(#s.sent,0)
 s.workspace:clearTarget('manual');s.clear=false;s.click='Выбрать по ID##nearby-select-id';s.render();s.step(16);check(not s.workspace.selectedTarget)

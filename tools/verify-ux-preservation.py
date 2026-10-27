@@ -40,7 +40,8 @@ added={'validated_library.settings.updates.show_progress_window':'bool'}
 assert {k:v for k,v in new_paths.items() if k not in added}==old_paths,'Config path/type changed'
 assert {k:v for k,v in new_paths.items() if k in added}==added,'Unexpected added settings'
 assert new['library']['settings']['updates']['show_progress_window'] is True
-assert old['ini']==new['ini'],'Core INI defaults changed'
+expected_ini=json.loads(json.dumps(old['ini']));expected_ini['main']['demo_mode']=False
+assert expected_ini==new['ini'],'Only the requested fresh-install demo default may change'
 assert old['actions']==new['actions'],'Six base actions changed'
 assert old['library']['bindings']==new['library']['bindings'],'Base bind/female RP changed'
 assert old['variables']==new['variables'] and old['radioVariables']==new['radioVariables'],'Variables changed'
@@ -51,7 +52,10 @@ for key,row in old['bindPresets'].items():
     assert expected==new['bindPresets'][key],f'Binding RP preset changed: {key}'
 protected=['moonloader/lib/pa26_update_platform.lua','moonloader/lib/pa26_bindings.lua',
     'moonloader/resource/pa26/knowledge-base.json','moonloader/resource/pa26/knowledge-policy.json',
-    'moonloader/config/police_assistant_2026.ini','cef/assets/hud/pa26-chat.js','cef/assets/hud/pa26-chat-endpoint.js']
+    'cef/assets/hud/pa26-chat.js','cef/assets/hud/pa26-chat-endpoint.js']
+old_ini=(base/'moonloader/config/police_assistant_2026.ini').read_bytes()
+new_ini=(ROOT/'moonloader/config/police_assistant_2026.ini').read_bytes()
+assert new_ini.replace(b'demo_mode=false',b'demo_mode=true')==old_ini,'INI changed beyond the requested fresh-install mode'
 hashes={}
 for name in protected:
     a=(base/name).read_bytes();b=(ROOT/name).read_bytes();assert a==b,f'Protected file changed: {name}'
@@ -60,4 +64,4 @@ result={'status':'passed','baseline':str(base),'config_paths':len(old_paths),'sa
     'base_actions_unchanged':True,'default_bindings_unchanged':True,'bind_presets_rp_unchanged':True,
     'variables_unchanged':True,'protected_sha256':hashes,'game_written':False}
 path=ROOT/'tests/PRESERVATION040.json';path.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-print(f'Preservation: {len(old_paths)} configuration paths/types, base binds, variables, frozen loader and knowledge bytes match 0.39.')
+print(f'Preservation: {len(old_paths)} configuration paths/types, base binds, variables, frozen loader and knowledge bytes preserved; only the requested fresh demo default differs.')

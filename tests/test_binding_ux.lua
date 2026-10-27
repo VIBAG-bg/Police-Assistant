@@ -69,20 +69,20 @@ end
 -- Reproduce delete 007 -> next draft. Order is contiguous and identity remains stable.
 local s=fixture(); s.step(); openLibrary(s); watchRows(s)
 create(s,'Седьмой'); eq(library(s).bindings[7].id,7)
-s.click='Удалить##bind'; s.render(); s.click='ДА##confirm-yes'; s.render(); s.step()
+s.click='Действия с биндами##bind-tools';s.render();s.click='Удалить##bind'; s.render(); s.click='ДА##confirm-yes'; s.render(); s.step()
 eq(#library(s).bindings,6); eq(library(s).next_id,8)
 s.click='+ Новый сценарий ( Добавить бинд )'; renderFresh(s); check(drawn(s,'Сценарий 007'))
 s.edits={['Название##bind']='Повторно седьмой'}; s.render(); s.click='Сохранить сценарий'; s.render();s.ackInfo(); s.step()
 local lib=library(s); eq(#lib.bindings,7); eq(lib.bindings[7].id,8); contiguousRows(s,7)
 s.click='Запуск##editor-tab'; renderFresh(s)
 check(drawn(s,'Сценарий 007')); check(drawn(s,'/pa26run 8'),'stable invocation is shown separately from list order')
-s.click='Дублировать##bind'; renderFresh(s); check(drawn(s,'Сценарий 008'))
+s.click='Действия с биндами##bind-tools';s.render();s.click='Дублировать##bind'; renderFresh(s); check(drawn(s,'Сценарий 008'))
 s.click='Сохранить сценарий'; s.render();s.ackInfo(); s.step(); contiguousRows(s,8)
 lib=library(s); eq(lib.bindings[8].id,9)
 
 -- Delete in the middle, reorder and search: original row numbers and associations survive.
 s.click='002  Документы##bind2'; s.render()
-s.click='Удалить##bind'; s.render(); s.click='ДА##confirm-yes'; s.render(); s.step()
+s.click='Действия с биндами##bind-tools';s.render();s.click='Удалить##bind'; s.render(); s.click='ДА##confirm-yes'; s.render(); s.step()
 lib=library(s); eq(#lib.bindings,7); eq(lib.wheel[2],0)
 for _,i in ipairs({1,3,4,5,6}) do eq(lib.wheel[i],i) end
 contiguousRows(s,7); eq(model.bindingNumber(lib,8),6); eq(model.bindingNumber(lib,9),7)

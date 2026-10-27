@@ -4,6 +4,7 @@ local core=require 'pa26_core'
 local base='moonloader\\config\\police_assistant_2026'
 local function click(s,label)
     s.ackInfo()
+    if label:find('бинд',1,true)then s.click='Действия с биндами##bind-tools';s.render()end
     s.click=label;s.render();check(not s.click,'Button not reached: '..label)
     check(not s.hasLog('Ошибка интерфейса'),table.concat(s.logs,'\n'))
 end

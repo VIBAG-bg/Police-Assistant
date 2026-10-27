@@ -26,6 +26,7 @@ foreach($mode in @(@($true,$true),@($true,$false),@($false,$true),@($false,$fals
   Check (@((Get-Content $bind.Source -Raw|ConvertFrom-Json).bindings).Count -eq $(if($mode[0]){83}else{6})) 'bind checkbox is independent'
   Check (@((Get-Content $note.Source -Raw|ConvertFrom-Json).notes).Count -eq 2) 'exactly two public notes'
   Check (-not(Test-Path (Join-Path $c.ml 'config/police_assistant_2026_settings.json'))) 'planning does not write game data'
+  if($mode[1]){Check ((Get-Content -LiteralPath $c.ini.Source -Raw) -match '(?m)^demo_mode=false$') 'fresh author settings start in real mode'}
  }
 }
 $c=New-Case 'stock' $true;$p=Get-PaPresetSeedPlan $release $c.ml $manifest $true $true $c.ini

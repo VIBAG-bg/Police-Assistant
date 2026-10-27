@@ -769,7 +769,18 @@ local function fixture(options)
     evidenceModule.new=function(...)local a=originalEvidenceNew(...);s.evidence=a;return a end
     local filesModule=require 'pa26_evidence_files';local originalFilesNew=filesModule.new
     if options.evidenceFiles then filesModule.new=function()return options.evidenceFiles(s)end end
+    local author=require 'pa26_author_controller';local originalAuthor=author.new
+    author.new=function(env)
+        if options.authorPresetIO then
+            env.io=options.authorPresetIO;env.fs=memoryFs
+            env.hash=function(text)local h=1;for i=1,#text do h=(h*31+text:byte(i))%2147483647 end;return string.format('%08x',h)..string.rep('0',56)end
+            env.lock=function()return function()end end
+            env.reload=function()s.reloads=(s.reloads or 0)+1 end
+        end
+        local c=originalAuthor(env);s.authorPresets=c;return c
+    end
     dofile('moonloader/police_assistant_2026.lua')
+    author.new=originalAuthor
     evidenceModule.new=originalEvidenceNew;filesModule.new=originalFilesNew
     runtimeModule.new=originalRuntimeNew
     alertsModule.new=originalAlertsNew

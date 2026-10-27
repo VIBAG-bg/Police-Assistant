@@ -43,7 +43,7 @@
       "schema": 2,
       "show_on_connect": true,
       "max_distance": 8,
-      "demo_mode": true,
+      "demo_mode": false,
       "interval_ms": 1500,
       "menu_key": 120
     },

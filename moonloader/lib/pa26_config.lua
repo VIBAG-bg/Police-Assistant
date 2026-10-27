@@ -115,7 +115,9 @@ function M.load(path, fs)
     end
     warnings[1] = text and ('INI не загружен: ' .. tostring(err)) or
         'INI не найден или недоступен. Загружены безопасные настройки.'
-    return core.defaults(), warnings
+    local fallback=core.defaults()
+    if text or backup or rollback then fallback.main.demo_mode=true end
+    return fallback, warnings
 end
 
 local function finishBackup(path, fs)

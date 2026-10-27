@@ -48,7 +48,7 @@ eq(lib.bindings[7].name,'Новый после настроек'); eq(lib.bindin
 check(not s.hasLog('Ошибка интерфейса')); onScriptTerminate(s.script)
 
 -- Duplicate is an unsaved record too; settings must not replace it with the source.
-s=fixture(); s.step(); open(s,'binds'); s.click='Дублировать##bind'; s.render()
+s=fixture(); s.step(); open(s,'binds'); s.click='Действия с биндами##bind-tools';s.render();s.click='Дублировать##bind'; s.render()
 s.edits={['Название##bind']='Самостоятельная копия',['##script']='Текст копии.'}; s.render()
 saveProfile(s); open(s,'binds'); s.click='Сохранить сценарий'; s.render();s.ackInfo(); s.step()
 lib=library(s); eq(#lib.bindings,7); eq(lib.bindings[7].name,'Самостоятельная копия')
@@ -98,7 +98,7 @@ s=fixture(); s.step(); open(s,'binds')
 for _=1,6 do
     lib=library(s); local row=lib.bindings[1]
     s.click='001  '..row.name..'##bind'..row.id; s.render()
-    s.click='Удалить##bind'; s.render(); s.click='ДА##confirm-yes'; s.render(); s.step()
+    s.click='Действия с биндами##bind-tools';s.render();s.click='Удалить##bind'; s.render(); s.click='ДА##confirm-yes'; s.render(); s.step()
 end
 eq(#library(s).bindings,0)
 newDraft(s,'Первый заново','После пустой библиотеки.')
