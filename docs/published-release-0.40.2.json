@@ -1,0 +1,23 @@
+{
+  "release": "0.40.2",
+  "repository": "VIBAG-bg/Police-Assistant",
+  "tag": "v0.40.2",
+  "release_url": "https://github.com/VIBAG-bg/Police-Assistant/releases/tag/v0.40.2",
+  "status": "passed",
+  "previous_worker": "0.40.1",
+  "real_github_metadata": true,
+  "worker_detected_stable": true,
+  "downloaded_and_validated_files": 91,
+  "update_sha256": "354cdc580f0db686f74acd48f797317e4032871e8fb92fd9911ebba395e42093",
+  "installer_sha256": "4514e4f64109d363ea6aee833d3d1f707cf257cca79fdf2e8811964e34b3fd09",
+  "user_data_unchanged": true,
+  "real_game_written": false,
+  "actions_status": "completed",
+  "actions_conclusion": "success",
+  "checked_utc": "2026-10-27T06:33:15.5579357Z",
+  "actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40461479496",
+  "tag_actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40461563815",
+  "source_commit": "a84487cc6b8ea301d1181cb2688217546737ef59",
+  "windows7_vm_tested": false,
+  "public_installer_verify_only_passed": true
+}

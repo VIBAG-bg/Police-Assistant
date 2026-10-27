@@ -1,6 +1,6 @@
 {
   "release": "0.40.2",
-  "status": "local_checks_passed",
+  "status": "published_verified",
   "game_started": false,
   "real_game_written": false,
   "lua_groups": 148,
@@ -40,5 +40,12 @@
     ".NET Framework >= 4.5.2"
   ],
   "windows7_vm_tested": false,
-  "notes": "Isolated fixtures and actual native UI; no GTA/server or real Windows 7 acceptance. Final PowerShell status catch is covered by focused tests; Lua sources match the full regression snapshot."
+  "notes": "Local isolated tests, actual WinForms and 32-bit helper, both release-commit GitHub Actions runs passed. Published ZIPs downloaded and verified. GTA/server and real Windows 7 VM remain separate acceptance.",
+  "actions_status": "completed",
+  "actions_conclusion": "success",
+  "actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40461479496",
+  "tag_actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40461563815",
+  "source_commit": "a84487cc6b8ea301d1181cb2688217546737ef59",
+  "public_update_sha256": "354cdc580f0db686f74acd48f797317e4032871e8fb92fd9911ebba395e42093",
+  "public_installer_sha256": "4514e4f64109d363ea6aee833d3d1f707cf257cca79fdf2e8811964e34b3fd09"
 }
