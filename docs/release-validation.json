@@ -1,10 +1,10 @@
 {
   "release": "0.40.3",
-  "status": "local_gates_passed_publication_pending",
+  "status": "published_verified",
   "game_started": false,
   "real_game_written": false,
   "lua_groups": 149,
-  "lua_checks": 8816183,
+  "lua_checks": 8816274,
   "final_focused_checks": 8939,
   "author_model_checks": 358,
   "installer_presets_checks": 27,
@@ -28,5 +28,25 @@
   "standard_notes": 2,
   "public_profile_and_contacts": false,
   "windows7_vm_tested": false,
-  "notes": "Full Lua regression passed before final source-origin and binds-only HUD preservation fixes; focused tests passed after these fixes. Native 32-bit IO and actual installer controls tested. GTA/server and a real Windows 7 VM were not launched."
+  "notes": "Both GitHub Actions runs passed for the release commit: all 149 Lua groups, CEF, worker, progress, installer rollback, setup, preset seeding and distribution. Published ZIPs and both JSON sidecars downloaded and verified; native 32-bit sidecar IO validated. GTA/server and a real Windows 7 VM were not launched.",
+  "actions_status": "completed",
+  "actions_conclusion": "success",
+  "actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40500275511",
+  "tag_actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40500429599",
+  "source_commit": "5e28cea99bb6b6cb2b18552728182e340cc4bf61",
+  "public_update_sha256": "7db05f3d6545069ba3adf067629bfc4eb5ffb6634e4fac3b5211c49c6dbe06d0",
+  "public_installer_sha256": "79b01d3156ab05bd080195cec5e3c85b3b2d2be7297fff96e1bca7df189e4106",
+  "public_native32_preset_downloads": [
+    "binds",
+    "settings"
+  ],
+  "legacy_worker_detected_release": [
+    "0.40.1",
+    "0.40.2"
+  ],
+  "old_worker_transition": [
+    "native",
+    "launcher"
+  ],
+  "update_program_files": 95
 }
