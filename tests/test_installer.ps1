@@ -45,8 +45,12 @@ $nativeOutput=@(& (Join-Path $paRelease 'install.ps1') -DestinationRoot (Join-Pa
 $nativeBackupLine=$nativeOutput|Where-Object {$_ -is [string] -and $_ -match '^Installed and verified \d+ owned files\..* Backup: (.+)$'}|Select-Object -Last 1
 if(-not $nativeBackupLine -or $nativeBackupLine -notmatch ' Backup: (.+)$'){throw 'Installer did not return its backup identity'}
 $nativeBackup=Get-Item -LiteralPath $Matches[1]
+$personalMap=@((Get-Content -LiteralPath (Join-Path $nativeBackup.FullName 'PERSONAL.json') -Raw|ConvertFrom-Json))
 foreach($key in $nativeBefore.Keys|Where-Object {$_ -like '*config\police_assistant_2026*'}){
- $saved=Join-Path $nativeBackup.FullName ('personal'+$key.Replace('\MoonLoader',''))
+ $relative=$key.Replace('\MoonLoader\','')
+ $entry=@($personalMap|Where-Object relative -CEQ $relative)
+ if($entry.Count -ne 1){throw 'Missing personal backup mapping'}
+ $saved=Join-Path $nativeBackup.FullName $entry[0].backup_file
  if((Get-FileHash -LiteralPath $saved -Algorithm SHA256).Hash -ne $nativeBefore[$key]){throw 'Personal backup mismatch'}
 }
 if([IO.File]::ReadAllText((Join-Path $native 'MoonLoader\config\police_assistant_2026.ini')) -ne 'PERSONAL INI') { throw 'INI changed' }

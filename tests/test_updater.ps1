@@ -1,4 +1,4 @@
-﻿Set-StrictMode -Version Latest
+Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $paRelease=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $paRelease 'moonloader\resource\pa26\updater\pa26-update.ps1') -Mode Library
@@ -48,7 +48,8 @@ Invoke-PaTransaction $case.folder $case.manifest
 Check ((Get-PaCurrent) -eq '0.39.0') 'new version installed'
 Check (-not [IO.File]::Exists($script:PaMarker)) 'completion removes gate'
 $journal=Read-PaJson (Join-Path $case.job 'journal.json')
-Check ([IO.File]::ReadAllText((Join-Path $journal.backup 'personal\MoonLoader\config\police_assistant_2026_notes.json')) -like '*edited after download') 'latest notes backed up'
+$savedNote=@($journal.personal|Where-Object path -CEQ 'MoonLoader/config/police_assistant_2026_notes.json')[0]
+Check ([IO.File]::ReadAllText((Join-Path $journal.backup $savedNote.backup_file)) -like '*edited after download') 'latest notes backed up'
 Check ((Get-PaHash (Join-Path $case.ml 'config\police_assistant_2026_binds.json')) -eq $case.bind) 'success preserves personal bytes'
 Reject {Invoke-PaTransaction $case.folder $case.manifest} 'no same-version replay'
 foreach($after in @(1,2,3)){
@@ -76,7 +77,8 @@ $script:PaFault=$null
 $case=New-Case 'damaged-backup';$script:PaFault={param($n)throw 'simulated_crash'}
 Reject {Invoke-PaTransaction $case.folder $case.manifest} 'crash before recovery test';$script:PaFault=$null
 $journal=Read-PaJson (Join-Path $case.job 'journal.json')
-[IO.File]::WriteAllText((Join-Path $journal.backup 'runtime\MoonLoader\lib\pa26_core.lua'),'DAMAGED')
+$coreBackup=@($journal.plan|Where-Object path -CEQ 'MoonLoader/lib/pa26_core.lua')[0]
+[IO.File]::WriteAllText((Get-PaRuntimeBackup $journal $coreBackup),'DAMAGED')
 Reject {Restore-PaTransaction $journal} 'damaged backup cannot be restored'
 Check ([IO.File]::Exists($script:PaMarker)) 'damaged recovery stays gated'
 # Malicious archive entries and wrong hashes are rejected before runtime planning.

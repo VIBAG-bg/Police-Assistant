@@ -338,10 +338,23 @@ function Copy-PaVerified([string]$from,[string]$to,[string]$expected) {
     Assert-PaPlain $from;Assert-PaPlain $to
     if((Get-PaHash $from) -ne $expected){throw 'source_hash_changed'}
     [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($to))|Out-Null
-    $input=[IO.File]::OpenRead($from)
-    $output=New-Object IO.FileStream($to,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None,65536,[IO.FileOptions]::WriteThrough)
-    try {$input.CopyTo($output);$output.Flush($true)}finally{$input.Dispose();$output.Dispose()}
+    $inputStream=$null;$outputStream=$null
+    try {
+        $inputStream=[IO.File]::OpenRead($from)
+        $outputStream=New-Object IO.FileStream($to,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None,65536,[IO.FileOptions]::WriteThrough)
+        $inputStream.CopyTo($outputStream);$outputStream.Flush($true)
+    }finally{if($inputStream){$inputStream.Dispose()};if($outputStream){$outputStream.Dispose()}}
     if((Get-PaHash $to) -ne $expected){throw 'backup_hash_mismatch'}
+}
+function Get-PaRuntimeBackup($journal,$row) {
+    # Existing journals keep their original mirrored paths. New backups use
+    # short indexed names; the journal preserves the complete source mapping.
+    $layout=[string](Get-PaField $journal 'backup_layout' '')
+    if(-not $layout){return Get-PaPath $journal.backup ('runtime/'+$row.path)}
+    if($layout -cne 'flat-v1'){throw 'unsafe_journal'}
+    $relative=[string](Get-PaField $row 'backup_file' '')
+    if($relative -cnotmatch '^runtime/[0-9]{4}\.bin$'){throw 'unsafe_journal'}
+    return Get-PaPath $journal.backup $relative
 }
 function Get-PaVersion([string]$text) {
     if($text -cnotmatch '^v?(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$'){throw 'invalid_version'}
@@ -594,7 +607,7 @@ function Restore-PaTransaction($journal) {
         if($row.existed -and $actual -eq $row.before){continue}
         if($actual -and $actual -ne $row.sha256){throw 'runtime_changed_during_recovery'}
         if($row.existed){
-            $backup=Get-PaPath $journal.backup ('runtime/'+$row.path)
+            $backup=Get-PaRuntimeBackup $journal $row
             if((Get-PaHash $backup) -ne $row.before){throw 'damaged_backup'}
             $temp=$target+'.pa26-restore-'+[guid]::NewGuid().ToString('N');Copy-PaVerified $backup $temp $row.before;Wait-PaInstallationClosed
             if([IO.File]::Exists($target)){[IO.File]::Replace($temp,$target,[NullString]::Value)}else{[IO.File]::Move($temp,$target)}
@@ -615,13 +628,20 @@ function Invoke-PaTransaction([string]$folder,$m,[bool]$WaitForGame=$false) {
     $order=0;foreach($row in $plan) {
         Wait-PaInstallationClosed
         $target=Get-PaPath $script:PaGame $row.path;$row.order=$order;$order++;$row.existed=[IO.File]::Exists($target);$row.before=''
-        if($row.existed){$row.before=Get-PaHash $target;Copy-PaVerified $target (Get-PaPath $backup ('runtime/'+$row.path)) $row.before}
+        $row.backup_file='runtime/'+$row.order.ToString('D4')+'.bin'
+        if($row.existed){$row.before=Get-PaHash $target;Copy-PaVerified $target (Get-PaPath $backup $row.backup_file) $row.before}
         $backed++;Set-PaProgress 'backup' (55+[int](15*$backed/[Math]::Max(1,$totalBackup))) ('Backup '+$backed+' / '+$totalBackup)
     }
-    foreach($row in $personal){Wait-PaInstallationClosed;Copy-PaVerified (Get-PaLocalPath $script:PaGame $row.path) (Get-PaLocalPath $backup ('personal/'+$row.path)) $row.sha256;$backed++;Set-PaProgress 'backup' (55+[int](15*$backed/[Math]::Max(1,$totalBackup))) ('Backup '+$backed+' / '+$totalBackup)}
+    $personalIndex=0
+    foreach($row in $personal){
+        Wait-PaInstallationClosed
+        $row.backup_file='personal/'+$personalIndex.ToString('D6')+'.bin';$personalIndex++
+        Copy-PaVerified (Get-PaLocalPath $script:PaGame $row.path) (Get-PaPath $backup $row.backup_file) $row.sha256
+        $backed++;Set-PaProgress 'backup' (55+[int](15*$backed/[Math]::Max(1,$totalBackup))) ('Backup '+$backed+' / '+$totalBackup)
+    }
     Assert-PaPersonal $personal
     $journal=@{product='police-assistant-2026';phase='applying';job=[IO.Path]::GetFileName($script:PaJob);moonloader=$script:PaML;
-        version=$m.version;backup=$backup;personal=$personal;plan=$plan;touched=0}
+        version=$m.version;backup=$backup;backup_layout='flat-v1';personal=$personal;plan=$plan;touched=0}
     Write-PaJson (Join-Path $backup 'BACKUP.json') $journal
     Write-PaJson (Join-Path $script:PaJob 'journal.json') $journal
     Write-PaMarker $journal.job

@@ -102,6 +102,6 @@ s.edits={['##textstep5']='A.\nB.\nC.'}; fresh(); source=save(); eq(#binder.parse
 s.click='Текст##mode'; fresh(); s.click='Шаги##mode'; fresh(); eq(countSteps(),1)
 s.click='001  Представиться##bind1'; fresh()
 s.click='007  Многострочные шаги##bind7'; fresh(); fresh(); eq(countSteps(),1); eq(messages()[1],'A.\nB.\nC.')
-s.click='Дублировать##bind'; fresh(); fresh(); eq(countSteps(),1); eq(messages()[1],'A.\nB.\nC.')
+s.click='Действия с биндами##bind-tools';s.render();s.click='Дублировать##bind'; fresh(); fresh(); eq(countSteps(),1); eq(messages()[1],'A.\nB.\nC.')
 check(not s.hasLog('Ошибка интерфейса')); eq(#s.sent,0); eq(#s.scopes,0)
 onScriptTerminate(s.script)

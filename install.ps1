@@ -202,6 +202,8 @@ Set-PaInstallProgress 'backup' 55 'Создаю резервные копии л
 $paBackup = Join-Path $PSScriptRoot ('installation-backups\before-' + [Guid]::NewGuid().ToString('N'))
 Assert-PaSetupPlain $paBackup
 New-Item -ItemType Directory -Path $paBackup -Force | Out-Null
+$paBackupIndex=0
+foreach($paItem in $paPlan){$paItem.BackupRelative='runtime\'+$paBackupIndex.ToString('D4')+'.bin';$paBackupIndex++}
 $paPlan | Select-Object * -ExcludeProperty Content | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $paBackup 'PLAN.json') -Encoding UTF8
 $paPersonal=@()
 $paConfig=Get-PaPath $paDestination 'config'
@@ -219,8 +221,10 @@ while($paDirectories.Count){
   }
  }
 }
+$paPersonalIndex=0
 foreach($paPersonalItem in $paPersonal){
- $paPersonalCopy=Get-PaPath $paBackup ('personal\'+$paPersonalItem.relative)
+ $paPersonalItem.backup_file='personal\'+$paPersonalIndex.ToString('D6')+'.bin';$paPersonalIndex++
+ $paPersonalCopy=Get-PaPath $paBackup $paPersonalItem.backup_file
  New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($paPersonalCopy)) -Force|Out-Null
  Copy-Item -LiteralPath $paPersonalItem.path -Destination $paPersonalCopy
  if((Get-FileHash -LiteralPath $paPersonalCopy -Algorithm SHA256).Hash -ne $paPersonalItem.sha256){throw 'Personal backup integrity failed.'}

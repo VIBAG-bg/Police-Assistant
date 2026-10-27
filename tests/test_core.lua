@@ -1,7 +1,7 @@
 local core = require 'pa26_core'
 local cfg = core.defaults()
 check(core.validateSettings(cfg))
-eq(cfg.main.demo_mode, true)
+eq(cfg.main.demo_mode, false)
 eq(#core.actions, 6)
 local independent = core.defaults()
 cfg.cuff.command = '/changed {id}'

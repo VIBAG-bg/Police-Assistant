@@ -1,21 +1,23 @@
 {
   "release": "0.41.0",
-  "status": "local_review_verified",
-  "base_release": "0.40.3",
-  "source_base": "1e39023811079eb11cc092e6eb15eacd4f0c9d8f",
+  "status": "validated_for_release",
+  "base_release": "0.40.4",
+  "source_base": "d8c16367d37240dd973d66020993992a8cb19122",
+  "includes_hotfix_0404": true,
   "game_started": false,
   "real_game_written": false,
   "github_published": false,
-  "lua_groups": 154,
-  "lua_checks": 8925461,
-  "syntax_files": 265,
+  "lua_groups": 155,
+  "lua_checks": 8790533,
+  "syntax_files": 267,
   "cef_browser_checks": 482,
   "worker_checks": 148,
   "update_progress_checks": 53,
-  "setup_checks": 101,
-  "setup_window_checks": 28,
-  "installer_presets_checks": 27,
-  "preserved_configuration_paths": 1175,
+  "legacy_windows_path_checks": 224,
+  "legacy_installer_path_checks": 35,
+  "legacy_path_policy": "Windows PowerShell 5.1, legacy .NET path switches in isolated child processes; registry unchanged",
+  "nested_personal_backups_preserved": true,
+  "old_mirrored_journal_recovery": true,
   "installer_rollback_after": [
     1,
     37,
@@ -29,65 +31,83 @@
     102,
     103
   ],
+  "setup_checks": 101,
+  "setup_window_checks": 28,
+  "installer_presets_checks": 29,
+  "preserved_configuration_paths": 1175,
+  "fresh_demo_default": false,
+  "existing_demo_preference_preserved": true,
   "native32": {
     "copilot": {
       "checks": 64,
       "frames": 32
     },
-    "ux040": {
-      "checks": 3590,
-      "frames": 256
-    },
-    "windows": {
-      "checks": 202
-    },
-    "pd": {
-      "checks": 3352,
-      "frames": 252
-    },
-    "wanted": {
-      "checks": 13890,
-      "frames": 1273
-    },
-    "extra_popups": {
-      "checks": 23
-    },
-    "screens_file_io": "passed; isolated directory only",
-    "resolutions": [
-      [
-        640,
-        480
+    "hotfix0404": {
+      "checks": 478,
+      "frames": 177,
+      "resolutions": [
+        [
+          640,
+          480
+        ],
+        [
+          1152,
+          864
+        ],
+        [
+          1366,
+          768
+        ],
+        [
+          1920,
+          1080
+        ],
+        [
+          2560,
+          1440
+        ]
       ],
-      [
-        1366,
-        768
+      "window_sizes": [
+        "70%",
+        "full"
       ],
-      [
-        1920,
-        1080
-      ],
-      [
-        2560,
-        1440
+      "font_sizes": [
+        16,
+        24
       ]
-    ]
+    },
+    "exchange": {
+      "checks": 535,
+      "frames": 96
+    },
+    "editor": {
+      "checks": 60,
+      "frames": 41
+    },
+    "screens_file_io": "passed in isolated directory"
   },
   "old_worker_transition": [
     "native",
     "launcher"
   ],
+  "old_worker_versions": [
+    "0.40.3",
+    "0.40.4 (byte-identical helper)"
+  ],
+  "old_worker_path_error_requires_full_installer_once": true,
   "update_program_files": 100,
-  "update_package_sha256": "0428247538363c2702012455e7645e3b7d0faa6cbb6981b5d3bded57e0e593cb",
-  "manifest_sha256": "b89c149f7267defb1f108afd5e34759092a5ffb5885f798edeb140d5c42ae89e",
-  "program_updater_unchanged": true,
+  "update_package_sha256": "39d8e387f1346e7403fe81c21b0849b680dd4c122f867de46aa9ef7439e7c20d",
+  "manifest_sha256": "c409d9d0007175c3a2d827015e55c5fb563638b0fc096dc4bf542e0bb5b98da3",
+  "worker_sha256": "ec160838d1f19d7952685ae96040b2c5b52c895afb766e4a11fac27d5dd9c3f9",
+  "program_updater_changed": true,
   "cef_unchanged": true,
-  "author_presets_unchanged": true,
-  "frozen_platform_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
   "author_binds": 83,
+  "author_payloads_unchanged_since_0404": true,
+  "frozen_platform_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
   "standard_notes": 2,
   "public_profile_and_contacts": false,
   "windows7_vm_tested": false,
   "forum_snapshot": "2026-10-25",
   "forum_recrawl_performed": false,
-  "notes": "All listed checks ran locally on the final runtime bytes. Isolated installer/update fixtures preserve personal files and CEF. Native ImGui uses the installed x86 library without GTA, server sends or writes to the game. This is a review build, not a published release or game acceptance."
+  "notes": "Current merged runtime passed all listed local gates. Native32 uses installed x86 ImGui without GTA. Legacy path tests reproduce old mirrored-backup failure and verify short indexed backups, nested personal copies, old-journal recovery and rollback. Existing old workers can install on compatible paths; a worker already failing on long paths needs the full installer once. Publication and GitHub Actions are verified separately."
 }

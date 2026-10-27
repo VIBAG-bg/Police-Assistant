@@ -907,6 +907,7 @@ local function cancelManualActions(reason)
 end
 local studioCallbacks={
     manualFriskMode=function(token,mode)return sceneServices.manualActions:friskMode(token,mode)end,
+    setDemoMode=function(value)if type(value)=='boolean'then sceneServices.requestDemoMode=value end end,
     authorPresetAccept=function()return sceneServices.authorPresets:accept()end,
     selectNearby=function(t,revision)return sceneServices.nearby:request(t,revision)end,
     selectNearbyId=function(id)return sceneServices.nearby:requestId(id)end,
@@ -1396,8 +1397,6 @@ local function chooseKeys(label, choices, value)
 end
 
 local function drawActions()
-    demoFlag[0] = runtime.demo
-    if imgui.Checkbox('Деморежим: просмотр без отправки', demoFlag) then setDemo(demoFlag[0]) end
     text('Выберите действие для настройки.')
     imgui.Separator()
     local available = imgui.GetContentRegionAvail().x
@@ -1477,8 +1476,8 @@ local function drawGeneralSettings(part)
     if drawWidgetSettings()then changed=true end
     elseif part=='mode'then
     settingsHeading('Режим работы')
-    demoFlag[0] = runtime.demo
-    if imgui.Checkbox('Деморежим: просмотр без отправки##settingsmode', demoFlag) then setDemo(demoFlag[0]);changed=true end
+    text(runtime.demo and'Режим: ДЕМО · без отправки' or'Режим: РЕАЛЬНЫЙ · команды передаются в игру')
+    if mainButton('Изменить режим в профиле##mode-profile')then studioCallbacks.openSettings('profile')end
     if imgui.Checkbox('Открывать окно после входа в персонажа', onConnectFlag)then changed=true end
     else
     settingsHeading('Восстановление PA')
@@ -1565,7 +1564,6 @@ local function drawMain()
             actions = function() studio:draw('binds',ui,studioData(),studioCallbacks) end,
             updates=function()require('pa26_update_ui').draw(studio,ui,sceneServices.updater,studioCallbacks,sceneServices.authorPresets)end,
             updateLabel=sceneServices.updater:label(),
-            toggleDemo=function()sceneServices.toggleDemoRequested=true end,
             openSettings=studioCallbacks.openSettings,
             settings = drawSettingsPage, settingsTabs=drawSettingsTabs,
             settingsTabHeight=function(width)return sceneServices.settingsUi.tabLayout(width,menuSmallFont or menuButtonFont or imgui.GetFont()).total end,
@@ -2480,7 +2478,15 @@ local function updateGame()
     knowledge:tick()
     knowledgeUi:tick(ctx.session,now,showWindow[0]and menu.section=='knowledge')
     sceneServices.authorPresets:tick()
-    if sceneServices.authorPresets.applied then return end
+    if sceneServices.authorPresets.applied then
+        -- Applying a preset closes the old pages. The acknowledgement must keep
+        -- receiving input even while all gameplay controllers wait for reload.
+        widgetCursor=false;hud:stopInteraction()
+        local interactive=not shutdown and not uiFailed and focused and not ctx.paused and not ctx.blocked and studio:hasWarning()
+        workspaceFrame.HideCursor=not interactive
+        imgui.DisableInput=not interactive
+        return
+    end
     studio:flushAutosave(studioCallbacks)
     sceneServices.updater:tick()
     prepareNativeChat()
@@ -2845,7 +2851,7 @@ function main()
         {'su',function(arguments)sceneServices.queueWantedInput('su',arguments)end},
         {'wanted',function(arguments)sceneServices.queueWantedInput('wanted',arguments)end},
         {'pa26repair',function()recoverUi(true)end},
-        {'pa26demo', function() setDemo(not runtime.demo) end},
+        {'pa26demo', function() sceneServices.requestDemoMode=not runtime.demo end},
         {'pa26cancel', function() if alerts.pending then alerts:decide(false) end;closeForInput('Отменено командой /pa26cancel.'); workspace:clearTarget('manual') end},
         {'pa26hud', function() hud:setVisible(not hud.settings.visible) end},
         {'pa26hudreset', function() hud:resetPosition() end},
@@ -2905,7 +2911,13 @@ function main()
     local started, drawReported = false, false
     while true do
         wait(0)
-        if sceneServices.toggleDemoRequested then sceneServices.toggleDemoRequested=nil;setDemo(not runtime.demo);saveSettings(true)end
+        if sceneServices.requestDemoMode~=nil then
+            local desired=sceneServices.requestDemoMode;sceneServices.requestDemoMode=nil
+            if desired~=runtime.demo then
+                local previous=runtime.demo;setDemo(desired);saveSettings(true)
+                if generalSaveFailed then setDemo(previous)end
+            end
+        end
         updateGame()
         sceneServices.dispatchNativeCommand(studioClock)
         if focused and not isGamePaused()and not context().blocked then sceneServices.chatBridge:dispatch(studioClock)end

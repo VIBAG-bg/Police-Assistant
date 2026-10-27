@@ -19,7 +19,11 @@ function C:tick()
  local e=self.env;local s=e.studio
  if self.applied then
   if not self.ackQueued and not s:hasModal()then self.ackQueued=true;self:notice('Набор сохранён. Резервная копия: '..self.backup..'\nНажмите ОК — PA перезапустится и применит новые значения. Игра продолжит работать.','info')
-  elseif self.ackQueued and not s:hasModal()then e.reload()end
+  elseif self.ackQueued and not s:hasModal()and not self.reloadQueued then
+   self.reloadQueued=true
+   local ok=pcall(e.reload)
+   if not ok then self:notice('Набор сохранён, но PA не удалось перезапустить. Перезапустите PA или игру; резервная копия: '..self.backup)end
+  end
   return
  end
  if self.offered and not s.authorPresetConfirm then self.offered=false;self.status='Применение отменено. Текущие значения сохранены.'end

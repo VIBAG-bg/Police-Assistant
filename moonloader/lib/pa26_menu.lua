@@ -797,16 +797,16 @@ function Menu:addonsPage(imgui,ui,model,callbacks,fonts)
 end
 
 -- Geometry is independent of rendering and keeps the footer outside the scroll.
-function M.layout(w, h,footerTextHeight)
+function M.layout(w, h,footerTextHeight,editing)
     if not core.finite(w) or not core.finite(h) or w < 440 or h < 300 then return nil end
     local margin = w < 800 and 10 or 16
     local gap = w < 800 and 12 or 16
     local side = w < 800 and 184 or (w < 1060 and 224 or 280)
     local rightX = margin + side + gap
     local rightW = w - rightX - margin
-    local columns = rightW >= 800 and 4 or 2
+    local columns = (editing or rightW >= 800) and 4 or 2
     local rows=4/columns
-    local footerH=14+rows*40+(rows-1)*12+8+(footerTextHeight or(columns==4 and 32 or 46))+12
+    local footerH=editing and 64 or(14+rows*40+(rows-1)*12+8+(footerTextHeight or(columns==4 and 32 or 46))+12)
     local bodyY = margin + 60 + gap
     local footerY = h - margin - footerH
     return {margin = margin, gap = gap, side = side, x = rightX, w = rightW,
@@ -819,7 +819,8 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
     self.guardNavigation=callbacks.guardNavigation
     local size, pos = imgui.GetWindowSize(), imgui.GetWindowPos()
     local w, h = size.x, size.y
-    local layout = M.layout(w, h)
+    local editing=self.section=='binds'
+    local layout = M.layout(w, h,nil,editing)
     if not layout then
         ui.text('Police Assistant')
         ui.text(M.credit)
@@ -832,7 +833,7 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
     local creditH=M.labelLayout(smallFont,smallSize,layout.w-32,M.credit).height
     local contactH=M.labelLayout(smallFont,smallSize,layout.w-32,M.contactText).height
     local footerTextH=creditH+4+contactH
-    layout=M.layout(w,h,footerTextH)
+    layout=M.layout(w,h,footerTextH,editing)
     local side = layout.side
     local list, vec = imgui.GetWindowDrawList(), imgui.ImVec2
     local function packed(r, g, b, a) return imgui.ColorConvertFloat4ToU32(color(imgui, r, g, b, a)) end
@@ -887,7 +888,7 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         local sidebarTextH=0
         for _,line in ipairs(M.contacts)do sidebarTextH=sidebarTextH+M.labelLayout(smallFont,smallSize,artworkWidth,line).height end
         local spacing=self.compact and 6 or 10
-        local navHeight = math.max(1, imgui.GetContentRegionAvail().y - (3*smallSize+sidebarTextH+9*spacing+10+math.max(0,42-smallSize)))
+        local navHeight = math.max(1, imgui.GetContentRegionAvail().y - (2*smallSize+sidebarTextH+9*spacing+10))
         child(imgui, ui, 'navigation##pa26', 0, navHeight, function()
             imgui.PushStyleVarVec2(imgui.StyleVar.ButtonTextAlign, vec(0, .5))
             ui.push(function() imgui.PopStyleVar(1) end)
@@ -908,9 +909,6 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         end, true, 0, 0)
         imgui.Dummy(vec(0, 4))
         withFont(imgui, ui, fonts.small, function()
-            imgui.PushStyleColor(imgui.Col.Button,model.demo and color(imgui,.52,.33,.09,.96)or color(imgui,.08,.32,.35,.96));ui.push(function()imgui.PopStyleColor(1)end)
-            if M.fittedButton(imgui,ui,(model.demo and 'ДЕМО · без отправки'or'Реальный режим')..'##sidebar-demo',vec(-1,42),fonts.small)and callbacks.toggleDemo then callbacks.toggleDemo()end
-            ui.finish()
             muted(imgui, ui, model.connected and 'Соединение активно' or 'Ожидание сервера')
             imgui.Dummy(vec(0,6));ui.text('Для связи')
             for _,line in ipairs(M.contacts)do ui.text(line)end
@@ -959,7 +957,7 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
     local shortLabels = {'Команды', 'Клавиши', 'Функции', 'Переменные'}
     for index, link in ipairs(links) do
         if (index - 1) % columns ~= 0 then imgui.SameLine(0, 12) end
-        local label = layout.w < 650 and shortLabels[index] or link[2]
+        local label = (editing or layout.w < 650) and shortLabels[index] or link[2]
         local active=self.section=='hints'and self.referenceOpen and self.guide==link[1]
         if active then imgui.PushStyleColor(imgui.Col.Button,color(imgui,.09,.43,.62,.94));ui.push(function()imgui.PopStyleColor(1)end)end
         if button(imgui, ui, label .. '##footer', vec(buttonWidth, 40), fonts.compact or fonts.button) then
@@ -968,6 +966,7 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         if active then ui.finish()end
         if index % columns == 0 and index < #links then imgui.SetCursorPosX(layout.x + 16) end
     end
+    if not editing then
     imgui.SetCursorPos(vec(layout.x + 16, layout.footerY + layout.footerH - footerTextH - 12))
     withFont(imgui, ui, fonts.small, function()
         imgui.PushTextWrapPos(imgui.GetCursorPosX()+layout.w-32);ui.push(function()imgui.PopTextWrapPos()end)
@@ -976,6 +975,7 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         imgui.TextUnformatted(M.contactText)
         ui.finish()
     end)
+    end
 end
 
 return M

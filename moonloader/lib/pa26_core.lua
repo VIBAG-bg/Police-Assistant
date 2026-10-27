@@ -109,7 +109,7 @@ end
 
 function M.defaults()
     local cfg = {main = {schema = M.SCHEMA, show_on_connect = true, menu_key = 0x78,
-        radial_key = 0x58, max_distance = 8, interval_ms = 1500, demo_mode = true},
+        radial_key = 0x58, max_distance = 8, interval_ms = 1500, demo_mode = false},
         widget = M.widgetDefaults(),recovery=M.recoveryDefaults()}
     for _, a in ipairs(M.actions) do
         cfg[a.key] = {enabled = a.enabled~=false, me = a.me, do_text = a.do_text, command = a.command}
@@ -168,11 +168,13 @@ function M.normalizeConfig(raw)
     local cfg, warnings = M.defaults(), {}
     local function warn(s) warnings[#warnings + 1] = s end
     if type(raw) ~= 'table' or type(raw.main) ~= 'table' then
+        cfg.main.demo_mode=true
         warn('Повреждён раздел main. Загружены безопасные настройки.')
         return cfg, warnings
     end
     local schema = raw.main.schema == nil and 1 or tonumber(raw.main.schema)
     if schema ~= 1 and schema ~= M.SCHEMA then
+        cfg.main.demo_mode=true
         warn('Неизвестная версия INI. Загружены безопасные настройки.')
         return cfg, warnings
     end

@@ -20,9 +20,13 @@ jobs:
       - shell: powershell
         run: ./tests/test_updater.ps1
       - shell: powershell
+        run: ./tests/test_update_legacy_paths.ps1
+      - shell: powershell
         run: ./tests/test_update_progress.ps1
       - shell: powershell
         run: ./tests/test_installer.ps1
+      - shell: powershell
+        run: ./tests/test_installer_legacy_paths.ps1
       - shell: powershell
         run: ./tests/test_setup.ps1
       - shell: powershell

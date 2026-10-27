@@ -6,7 +6,7 @@ local studio=s.workspace.studio
 check(not studio:hasWarning(),'background autosave stays silent')
 eq(s.savedLibrary().profile.name,'Notice Officer')
 local footer={};studio:drawNotice({text=function(v)footer[#footer+1]=v end});eq(#footer,0)
-s.page('binds');s.click='Файлы обмена##bind-files';s.render()
+s.page('binds');s.click='Действия с биндами##bind-tools';s.render();s.click='Файлы обмена##bind-files';s.render()
 check(studio:hasWarning());eq(studio:modalIntent({}).title,'Уведомление')
 local token=studio.feedback:peek().token;s.step(10000);eq(studio.feedback:peek().token,token)
 s.page('hints');check(studio:hasWarning(),'navigation cannot lose an unread result')

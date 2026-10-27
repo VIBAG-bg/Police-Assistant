@@ -38,7 +38,7 @@ eq(#require('pa26_server_commands').bindingWarnings(upgraded.bindings[3]),1)
 for _,bad in ipairs({false,'true',1})do local c=mod.defaults();c.enabled=bad;if type(bad)~='boolean'then check(not mod.validate(c))end end
 for _,field in ipairs({'distance','max_people','interval_ms'})do local c=mod.defaults();c[field]=0/0;check(not mod.validate(c))end
 -- Real UI/main(): one click, no server sends, native revalidation next tick.
-local fixture=require 'support.fixture';local f=fixture({demo=false});f.step();f.page('binds');f.step(550)
+local fixture=require 'support.fixture';local f=fixture({demo=false});f.step();f.page('binds');f.click='Выбрать игрока для проверки бинда##bind-target';f.render();f.step(550)
 local list=f.workspace.library.nearby;check(list.enabled)
 check(table.concat(f.drawnText,'\n'):find('Люди рядом',1,true))
 local function buttonLabel(f)
@@ -52,13 +52,13 @@ f.click=label;f.render();eq(f.click,nil);eq(#f.sent,0);check(not f.workspace.sel
 f.step(16);check(f.workspace.selectedTarget);eq(f.workspace.selectedTarget.id,37);eq(#f.sent,0)
 -- A stale cached button cannot select an actor hidden between rendering and main.
 f.onScreen=false;f.click=label;f.render();f.workspace:clearTarget('manual');f.step(16);check(not f.workspace.selectedTarget);eq(#f.sent,0)
-f.onScreen=true;f.step(550);f.page('settings');f.click='3. Управление и колесо##settings-tab-options';f.render();eq(f.click,nil)
+f.onScreen=true;f.step(550);if not f.frames[1].condition()then f.commands.pa26();f.step()end;f.page('settings');f.click='3. Управление и колесо##settings-tab-options';f.render();eq(f.click,nil)
 f.toggle='Показывать видимых людей рядом##nearby-enabled';f.render();f.step(700);check(not f.workspace.library.nearby.enabled)
 local saved=f.savedLibrary();check(not saved.nearby.enabled)
 check(not f.hasLog('Ошибка интерфейса'));eq(#f.scopes,0);eq(f.invalidIOReads,0);eq(#f.sent,0)
 onScriptTerminate(f.script)
 -- A spawn with the same player handle/session must retire an old UI click.
-f=fixture({demo=false});f.step();f.page('binds');f.step(550)
+f=fixture({demo=false});f.step();f.page('binds');f.click='Выбрать игрока для проверки бинда##bind-target';f.render();f.step(550)
 f.click=buttonLabel(f);f.render();eq(f.click,nil)
 f.events.onSendSpawn();f.step(16);check(not f.workspace.selectedTarget);eq(#f.sent,0)
 onScriptTerminate(f.script)

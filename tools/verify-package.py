@@ -3,6 +3,11 @@ from pathlib import Path
 import hashlib, json, re
 
 ROOT=Path(__file__).resolve().parents[1]
+# PowerShell 5.1 treats scripts without a BOM as the ANSI code page.
+for script in [ROOT/'install.ps1', *(ROOT/'tools').glob('*.ps1'), *(ROOT/'moonloader/resource/pa26/updater').glob('*.ps1')]:
+    data=script.read_bytes()
+    if any(b>=128 for b in data):
+        assert data.startswith(b'\xef\xbb\xbf'), f'Windows PowerShell needs UTF-8 BOM: {script}'
 manifest=json.loads((ROOT/'INSTALL_MANIFEST.json').read_text('utf-8-sig'))
 assert re.fullmatch(r'\d+\.\d+\.\d+(?:-[\w.-]+)?', manifest['release'])
 count=0

@@ -3,13 +3,13 @@ local storage = require 'pa26_config'
 local cfg = core.defaults()
 local text = assert(storage.serialize(cfg))
 local packaged, packageNotes = storage.load('moonloader/config/police_assistant_2026.ini')
-eq(#packageNotes, 0); eq(packaged.main.demo_mode, true)
+eq(#packageNotes, 0); eq(packaged.main.demo_mode, false)
 eq(assert(storage.serialize(packaged)), text)
 local raw = assert(storage.parse('\239\187\191' .. text:gsub('\n', '\r\n')))
 local roundtrip, warnings = core.normalizeConfig(raw)
 eq(#warnings, 0)
 eq(roundtrip.cuff.command, '/cuff {id}')
-eq(roundtrip.main.demo_mode, true)
+eq(roundtrip.main.demo_mode, false)
 for _, invalid in ipairs({'', 'x=1', '[main]\nx=1\nx=2',
     '[main]\na=1\n[main]\nb=2', '[main]\nnot-a-key', '[main]\nx=a\0b',
     '[main]\nx=\255', string.rep('a', storage.MAX_BYTES + 1)}) do

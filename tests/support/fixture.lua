@@ -782,8 +782,19 @@ local function fixture(options)
         if not options.copilot then env.settings=function()local c=require('pa26_bindings').copy(get());c.colleagues_enabled=false;return c end end
         local c=originalColleagues(env);s.colleagues=c;return c
     end
+    local author=require 'pa26_author_controller';local originalAuthor=author.new
+    author.new=function(env)
+        if options.authorPresetIO then
+            env.io=options.authorPresetIO;env.fs=memoryFs
+            env.hash=function(text)local h=1;for i=1,#text do h=(h*31+text:byte(i))%2147483647 end;return string.format('%08x',h)..string.rep('0',56)end
+            env.lock=function()return function()end end
+            env.reload=function()s.reloads=(s.reloads or 0)+1 end
+        end
+        local c=originalAuthor(env);s.authorPresets=c;return c
+    end
     dofile('moonloader/police_assistant_2026.lua')
     cm.new=originalCopilot;colleagues.new=originalColleagues
+    author.new=originalAuthor
     evidenceModule.new=originalEvidenceNew;filesModule.new=originalFilesNew
     runtimeModule.new=originalRuntimeNew
     alertsModule.new=originalAlertsNew

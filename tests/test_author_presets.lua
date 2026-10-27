@@ -11,6 +11,7 @@ local lib=model.defaults(cfg);lib.profile.name='Private Officer';lib.notes[1].bo
 lib.settings.updates.repository='Private/Repo';lib.settings.wheel_names.citizen='MY WHEEL'
 local a=assert(m.prepare('binds',binds,lib,cfg));eq(#a.library.bindings,83);check(m.equal(a.library.notes,lib.notes));check(m.equal(a.library.settings,lib.settings));eq(a.library.profile.name,'Private Officer')
 local b=assert(m.prepare('settings',settings,lib,cfg));check(m.equal(b.library.bindings,lib.bindings));check(m.equal(b.library.notes,lib.notes));check(m.equal(b.library.profile,lib.profile));eq(b.library.settings.updates.repository,'Private/Repo');check(not b.config.main.demo_mode)
+local demoCfg=model.copy(cfg);demoCfg.main.demo_mode=true;check(assert(m.prepare('settings',settings,lib,demoCfg)).config.main.demo_mode,'Applying settings preserves an explicit demo choice')
 check(m.equal(b.library.settings.window_layout,settings.settings.data.settings.window_layout));check(m.equal(b.library.settings.wheel_names,settings.settings.data.settings.wheel_names))
 check(not m.decode('binds','{bad',json));check(not m.decode('binds',read('pa-settings.json'),json));check(not m.decode('settings',read('pa-binds.json'),json));check(not m.decode('settings',string.rep('x',m.MAX_BYTES+1),json))
 local tampered=model.copy(settings);tampered.inject='command';check(not m.decode('settings',json.encode(tampered),json))

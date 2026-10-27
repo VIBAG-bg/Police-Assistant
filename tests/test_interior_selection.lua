@@ -33,7 +33,7 @@ for _,area in ipairs({1,3,6,10,18})do
         elseif route=='gaze'then s.aimed=false;aim(s)
         elseif route=='id'then s.commands.pa26select('37');s.step(16)
         else
-            s.commands.pa26();s.page('binds');s.step(550)
+            s.commands.pa26();s.page('binds');s.click='Выбрать игрока для проверки бинда##bind-target';s.render();s.step(550)
             if route=='nearby-id'then
                 s.edits={['Выбрать игрока по ID##nearby-id']='37'};s.render();s.click='Выбрать по ID##nearby-select-id'
             else
@@ -106,7 +106,7 @@ for _,why in ipairs({'quit','join','identity','death','session','toggle-off'})do
     elseif why=='session'then s.connected=false;s.step(300)end
     check(not s.workspace.selectedTarget,why);eq(#s.sent,0);healthy(s);onScriptTerminate(s.script)
 end
-s=setup(6,0);s.commands.pa26();s.page('binds');s.step(550)
+s=setup(6,0);s.commands.pa26();s.page('binds');s.click='Выбрать игрока для проверки бинда##bind-target';s.render();s.step(550)
 s.edits={['Выбрать игрока по ID##nearby-id']='37'};s.render();s.click='Выбрать по ID##nearby-select-id';s.render()
 s.localInterior=7;s.step(16);check(not s.workspace.selectedTarget,'stale nearby click crossed interior boundary')
 eq(#s.sent,0);healthy(s);onScriptTerminate(s.script)
