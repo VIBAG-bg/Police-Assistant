@@ -16,8 +16,8 @@ function M.noticeDefaults()
 end
 function M.defaults()
     local out={evidence={enabled=false,time_enabled=false,time_command='/time',time_verified=false,time_source='',
-        delay_ms=1500,timeout_ms=60000,confirmation_ms=30000,
-        prompt='Нажмите F8 в игре, затем откройте помощник и укажите полный путь к созданному снимку.',
+        delay_ms=1500,timeout_ms=60000,confirmation_ms=30000,auto_scan=true,screens_dir='',scan_ms=500,idle_scan_ms=5000,
+        prompt='Нажмите F8 в игре. PA найдёт новый снимок автоматически; полный путь можно указать вручную.',
         file_hint='Полный путь к новому PNG или JPG. PA проверит файл; нажатие клавиши само по себе не считается сохранённым снимком.'},
         training={enabled=true,limit=10,department='all',next_id=1,cards={},progress={}},history={},interaction=M.noticeDefaults()}
     for _,r in ipairs(M.keys)do out[r[1]]={key=0,ctrl=false,alt=false,shift=false}end
@@ -62,6 +62,12 @@ function M.validate(raw)
     end
     if not out.evidence.time_command:match('^/[a-zA-Z][a-zA-Z0-9_]*$')then return nil,'Команда времени должна состоять из /имени без аргументов.'end
     if out.evidence.time_enabled and(not out.evidence.time_verified or out.evidence.time_source=='')then return nil,'Сначала подтвердите команду времени по /help или ответу сервера и укажите источник.'end
+    if e.auto_scan~=nil then if type(e.auto_scan)~='boolean'then return nil,'Проверьте поиск снимков.'end;out.evidence.auto_scan=e.auto_scan end
+    out.evidence.screens_dir=e.screens_dir or''
+    if not text(out.evidence.screens_dir,1024)then return nil,'Проверьте каталог снимков.'end
+    for _,r in ipairs({{'scan_ms',500,5000},{'idle_scan_ms',1000,60000}})do
+        if e[r[1]]~=nil then if not shared.integer(e[r[1]],r[2],r[3])then return nil,'Проверьте интервал поиска снимков.'end;out.evidence[r[1]]=e[r[1]]end
+    end
     local t=raw.training or out.training
     if type(t)~='table'or type(t.enabled)~='boolean'or not shared.integer(t.limit,1,50)or not shared.integer(t.next_id,1,999999999)or
         not({all=true,EPD=true,FBI=true,Alcatraz=true})[t.department]or not shared.array(t.cards,M.MAX_CARDS)or type(t.progress)~='table'then return nil,'Повреждены учебные карточки.'end

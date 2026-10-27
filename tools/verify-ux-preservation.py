@@ -36,9 +36,10 @@ def leaves(v,p=''):
 old,new=snapshot(base),snapshot(ROOT)
 old_paths=leaves({'core_ini':old['ini'],'validated_library':old['library'],'new_binding_shape':old['new_binding']})
 new_paths=leaves({'core_ini':new['ini'],'validated_library':new['library'],'new_binding_shape':new['new_binding']})
-added={'validated_library.settings.updates.show_progress_window':'bool'}
-assert {k:v for k,v in new_paths.items() if k not in added}==old_paths,'Config path/type changed'
-assert {k:v for k,v in new_paths.items() if k in added}==added,'Unexpected added settings'
+added={k:v for k,v in new_paths.items() if k not in old_paths}
+allowed=('validated_library.vehicle.copilot.','validated_library.settings.manual_actions.frisk_','validated_library.assist.evidence.')
+for k in added:assert k.startswith(allowed) or k=='validated_library.settings.updates.show_progress_window','Unexpected setting: '+k
+assert {k:new_paths.get(k) for k in old_paths}==old_paths,'Existing config path/type changed'
 assert new['library']['settings']['updates']['show_progress_window'] is True
 assert old['ini']==new['ini'],'Core INI defaults changed'
 assert old['actions']==new['actions'],'Six base actions changed'

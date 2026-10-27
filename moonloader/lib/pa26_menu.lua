@@ -714,6 +714,11 @@ end
 
 function Menu:homePage(imgui, ui, model, callbacks, fonts)
     local available = imgui.GetContentRegionAvail().x
+    local screens=model.evidence and model.evidence.screens
+    if screens and screens.nearLimit then
+        ui.text('Скриншоты SA:MP: '..screens.count..' / 1000 · индекс '..screens.maxIndex..'/999. Скоро потребуется архив.')
+        if callbacks.openAssist and button(imgui,ui,'Открыть архив скриншотов##home-screens',imgui.ImVec2(available,40),fonts.button)then callbacks.openAssist('evidence')end
+    end
     self:loadAsset(imgui, 'banner')
     local heroHeight = self:assetHeight('banner', available)
     if not self:drawAsset(imgui, 'banner', available, heroHeight) then

@@ -97,6 +97,7 @@ for _,row in ipairs(eventSettings.catalog)do
     if row[3]:find('{area}',1,true)then check(p.line:find('H-18',1,true));samples['event_'..row[1]]=p.lines
     else check(not p.line:find('H-18',1,true),'No unsolicited location in a location-free template')end
 end
+base.occupants_text='внутри один';base.tac='TAC 1';base.armed_text='';base.stop_outcome='проведена беседа'
 local vcfg=vehicleSettings.defaults()
 for _,action in ipairs({'traffic_stop','pursuit','pursuit_periodic','finish'})do
     local p=prepared(assert(vehicle.preview(action,vcfg,base,codec,base.radioText)))

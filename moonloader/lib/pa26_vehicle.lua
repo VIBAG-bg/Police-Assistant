@@ -33,6 +33,11 @@ function M.describe(c,cfg,gender)
     local name=cfg.model_aliases[tostring(c.model_id)]or c.model_name or cfg.unknown_model
     local color,a,b=M.colors(c,cfg)
     local values={model=name,model_id=tostring(c.model_id),vehicle_id=tostring(c.id),vehicle_color=color,color_one=a,color_two=b}
+    local cp=cfg.copilot or{}
+    values.occupants=tostring(c.occupants or 1);values.occupants_text=({[0]='салон пуст',[1]='внутри один',[2]='внутри двое',[3]='внутри трое',[4]='внутри четверо'})[c.occupants or 1]or('внутри '..tostring(c.occupants)..' чел.')
+    values.driver_id=c.driver_id and tostring(c.driver_id)or'';values.driver_name=c.driver_name and c.driver_name:gsub('_',' ')or'Водитель'
+    values.vehicle_plate=cp.select_plate and cp.select_plate~=''and cp.select_plate or c.plate or'не установлен'
+    values.tac=cp.tac_channel or'TAC 1';values.stop_outcome=cp.stop_outcome or'проведена беседа';values.armed_text=(c.armed or cp.pursuit_armed)and' Подозреваемые вооружены!'or''
     local missing
     local description=core.expandGender(cfg.description_template,gender):gsub('{([a-z_]+)}',function(k)if not values[k]then missing=k;return ''end;return values[k]end)
     if missing then return nil,'Описание машины: используйте {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}.'end
@@ -84,6 +89,10 @@ function Vehicle:values(state,c)
     c=c or self.selected
     for k,v in pairs(self.env.service and self.env.service()or {})do if out[k]==nil or out[k]==''then out[k]=v end end
     out.direction=cfg.direction_enabled and(self.directionValue or cfg.stationary)or cfg.manual_direction
+    local profile=self.env.profile and self.env.profile()or{};local nearby=out.colleagues or{}
+    if not out.unit or out.unit==''then out.unit=profile.callsign~=''and profile.callsign or nearby.autoCallsign or'2-L-1'end
+    if not out.station or out.station==''then out.station=nearby.station or'SFPS'end
+    if not out.crew or out.crew==''then out.crew=profile.name~=''and profile.name or out.my_name or'Офицер'end
     if c then local values,err=M.describe(c,cfg,out.gender);if not values then return nil,err end;for k,v in pairs(values)do out[k]=v end end
     return out
 end
@@ -108,9 +117,9 @@ function M.preview(action,cfg,values,codec,split)
     local body=phrase and phrase.template or cfg[action..'_template'];if not body then return nil,'Неизвестное действие транспорта.'end
     values=mapGrid.reportValues(values,body,not megaphone(action)and action~='approach'and action~='window')
     local missing;body=core.expandGender(body,values.gender):gsub('{([a-z_]+)}',function(k)
-        local v=values[k];local tag=k=='local_tag'or k=='global_tag'or k=='prison_tag'
+        local v=values[k];local tag=k=='local_tag'or k=='global_tag'or k=='prison_tag'or k=='armed_text'
         if v==nil and not tag or v==''and not tag then missing=k;return ''end
-        return tag and v and v~=''and tostring(v)..' 'or tostring(v or '')
+        return tag and k~='armed_text'and v and v~=''and tostring(v)..' 'or tostring(v or '')
     end)
     if missing then return nil,'Заполните поле: '..missing end
     local channel=phrase and phrase.channel or action=='megaphone'and cfg.megaphone_channel or action=='approach'and '/me'or action=='window'and '/do'or cfg.channel

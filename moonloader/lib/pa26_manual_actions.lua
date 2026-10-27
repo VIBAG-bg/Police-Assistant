@@ -28,7 +28,9 @@ function M.specs()
  end;return out
 end
 function M.defaults()
- local out={enabled=true,rules={}}
+ local out={enabled=true,rules={},frisk_mode='saved',
+  frisk_primary_rp='/me {gender:поставил|поставила} задержанного у опоры и быстрыми движениями без перчаток {gender:прохлопал|прохлопала} верхнюю одежду, торс и ноги на наличие оружия.\n/do Что офицер {gender:мог|могла} нащупать под одеждой задержанного?',
+  frisk_full_rp='/me {gender:надел|надела} плотные чёрные резиновые перчатки, тщательно {gender:проверил|проверила} все карманы и обувь задержанного и {gender:выложил|выложила} вещи под камеру крузера.\n/do Предметы, подлежащие изъятию по результатам обыска, подготовлены к упаковке в зип-пакет и бокс для улик.'}
  for _,s in ipairs(M.specs())do out.rules[s.head]={enabled=true,prefer_bind=true,
   rp=standard[s.head]or('/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: '..s.title:lower()..'.')}end
  return out
@@ -37,7 +39,15 @@ local function validHead(head)return type(head)=='string'and #head<=32 and head:
 function M.validate(raw)
  local out=M.defaults();if raw==nil then return out end
  if type(raw)~='table'or type(raw.enabled)~='boolean'or type(raw.rules)~='table'then return nil,'Неверные настройки ручных команд.'end
- out.enabled=raw.enabled;local count=0
+ out.enabled=raw.enabled;out.frisk_mode=raw.frisk_mode or'saved'
+ if not({saved=true,primary=true,full=true})[out.frisk_mode]then return nil,'Выберите режим обыска.'end
+ for _,key in ipairs({'frisk_primary_rp','frisk_full_rp'})do
+  local value=raw[key]or out[key]
+  if type(value)~='string'or #value>4096 or not core.validUtf8(value)or value:gsub('\n',''):find('%c')then return nil,'Проверьте шаблон обыска.'end
+  local count=0;for line in(value..'\n'):gmatch('(.-)\n')do if line~=''then count=count+1;if not line:match('^/me%s+')and not line:match('^/do%s+')then return nil,'Режим обыска: используйте /me и /do.'end end end
+  if count<1 or count>8 then return nil,'Режим обыска: от 1 до 8 строк.'end;out[key]=value
+ end
+ local count=0
  for head,r in pairs(raw.rules)do
   count=count+1
   if count>64 or not validHead(head)or type(r)~='table'or type(r.enabled)~='boolean'or type(r.prefer_bind)~='boolean'or
@@ -58,9 +68,13 @@ function M.validate(raw)
 end
 function M.rule(lib,head)
  local cfg=lib.settings.manual_actions or M.defaults()
- return cfg.enabled and cfg.rules[head]and cfg.rules[head].enabled and cfg.rules[head]or nil
+ local r=cfg.enabled and cfg.rules[head]and cfg.rules[head].enabled and cfg.rules[head]or nil
+ if r and head=='frisk'and cfg.frisk_mode and cfg.frisk_mode~='saved'then
+  local copy=require('pa26_patrol_settings').copy(r);copy.rp=cfg[cfg.frisk_mode=='primary'and'frisk_primary_rp'or'frisk_full_rp'];copy.prefer_bind=false;return copy
+ end;return r
 end
 function M.source(lib,head)
+ local cfg=lib.settings.manual_actions;if head=='frisk'and cfg.frisk_mode and cfg.frisk_mode~='saved'then return end
  local binder=require 'pa26_binder';local model=require 'pa26_bindings'
  for _,b in ipairs(lib.bindings)do if b.enabled then
   local steps=binder.parse(b.script);local last=steps and steps[#steps]
@@ -119,6 +133,10 @@ function Controller:decide(token,yes)
  if p.answer~=nil then return nil,'Решение уже принято.'end
  p.answer=yes;return true
 end
+function Controller:friskMode(token,mode)
+ local p=self.pending;if not p or p.head~='frisk'or p.token~=token or p.answer~=nil or not({saved=true,primary=true,full=true})[mode]then return nil,'Выбор обыска устарел.'end
+ p.frisk_mode=mode;p.displayed=false;p.refresh=true;self.env.close(p.token);return true
+end
 function Controller:cancel()self.pending=nil;self.approved=nil end
 function Controller:validPlan(plan)
  local p=self.approved;return p and plan.manualCommand and plan.manualCommand.token==p.token and self:fresh(p)or false
@@ -136,16 +154,18 @@ function Controller:tick()
   plan.manualCommand={token=p.token};plan.automatic={kind='manual_command'};p.approvedAt=self.env.now();self.approved=p
   local ok,why=self.env.start(plan);if not ok then self.approved=nil;self.env.notice(why)end;return
  end
- if p.displayed or s.ownWindow or self.env.busy()then return end
+ if p.displayed or(s.ownWindow and not p.refresh)or self.env.busy()then return end
  p.plan,p.error,p.noPlan=self.env.prepare(p)
  p.lines={'Введена команда: '..p.raw,'Команда придержана и ещё НЕ отправлена на сервер.',
   'ДА — сначала отыграть RP ниже, затем отправить '..p.raw,
   'НЕТ — отправить '..p.raw..' сразу без отыгровки.',
   'Отменить всё (Esc) — ничего не отправлять в игру.',
   p.demo and'Режим ДЕМО: реальной отправки на сервер не будет.'or'Результат определяет сервер. Отыгровка не заменяет IC-основание действия.'}
+ if self.env.guard then local warning=self.env.guard(p);if warning then table.insert(p.lines,1,warning)end end
  if p.plan then for i=1,#p.plan.lines-1 do p.lines[#p.lines+1]=p.plan.lines[i]end
  else p.lines[#p.lines+1]='RP пока недоступен: '..tostring(p.error)end
- p.displayed=true;self.env.show(p)
+ if p.head=='frisk'then p.frisk_mode=p.frisk_mode or(self.env.library().settings.manual_actions.frisk_mode or'saved')end
+ p.displayed=true;p.refresh=nil;self.env.show(p)
 end
 function M.draw(studio,ui)
  local model=require 'pa26_bindings';local cfg=studio.manualActionsDraft or model.copy(studio.lib.settings.manual_actions or M.defaults())
@@ -156,6 +176,13 @@ function M.draw(studio,ui)
  studio.manualActionHead=studio:choice('Команда##manual-actions-head',studio.manualActionHead or'cuff',choices,ui)
  local head=studio.manualActionHead;local rule=cfg.rules[head]
  if rule then
+  if head=='frisk'then
+   cfg.frisk_mode=studio:choice('Тип обыска##frisk-mode',cfg.frisk_mode,{{'saved','Свой бинд / сохранённый шаблон'},{'primary','Первичный · без перчаток'},{'full','Полный · перчатки и зип-пакет'}},ui)
+   for _,r in ipairs({{'frisk_primary_rp','Первичный обыск'},{'frisk_full_rp','Полный обыск'}})do
+    cfg[r[1]]=studio:field(r[2]..'##'..r[1],'manual:'..r[1],cfg[r[1]],8193,true,105)
+    ui.text('Предпросмотр: '..M.preview(cfg[r[1]],studio.lib.profile.gender))
+   end
+  end
   rule.enabled=studio:check('Обрабатывать эту команду##manual-action-enabled',rule.enabled)
   rule.prefer_bind=studio:check('Сначала брать RP из подходящего включённого бинда##manual-action-bind',rule.prefer_bind)
   rule.rp=studio:field('RP-шаблон · резерв при отсутствии подходящего бинда##manual-action-rp','manual-action-rp:'..head,rule.rp,8192,true,110)

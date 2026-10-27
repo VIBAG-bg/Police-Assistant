@@ -20,6 +20,8 @@ end,{decode=function()error('GXT must not be decoded as CP1251')end},function()r
 local cfg=prefs.defaults()
 for modelId=400,611 do id=modelId;local rows=w.scan(cfg);eq(#rows,1);eq(rows[1].model_name,names[modelId])end
 eq(gxtReads,0,'Font-encoded GXT must never reach a vehicle label')
-for _,bad in ipairs({399,612,411.5,0/0,math.huge})do id=bad;eq(#w.scan(cfg),0)end
+for _,bad in ipairs({399,65536,411.5,0/0,math.huge})do id=bad;eq(#w.scan(cfg),0)end
 id=411;local c=w.scan(cfg)[1];cfg.model_aliases['411']='Мой Infernus';local value=assert(vehicle.describe(c,cfg));eq(value.model,'Мой Infernus')
 eq(c.model_name,'Infernus','A personal alias does not mutate native identity')
+
+for _,custom in ipairs({612,1000,20000,65535})do id=custom;local rows=w.scan(cfg);eq(#rows,1);local d=assert(vehicle.describe(rows[1],cfg));eq(d.model,cfg.unknown_model);cfg.model_aliases[tostring(custom)]='Своя модель';eq(assert(vehicle.describe(rows[1],cfg)).model,'Своя модель');check(prefs.validate(cfg))end

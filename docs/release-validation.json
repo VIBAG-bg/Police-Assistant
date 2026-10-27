@@ -1,16 +1,20 @@
 {
-  "release": "0.40.3",
-  "status": "published_verified",
+  "release": "0.41.0",
+  "status": "local_review_verified",
+  "base_release": "0.40.3",
+  "source_base": "1e39023811079eb11cc092e6eb15eacd4f0c9d8f",
   "game_started": false,
   "real_game_written": false,
-  "lua_groups": 149,
-  "lua_checks": 8816274,
-  "final_focused_checks": 8939,
-  "author_model_checks": 358,
-  "installer_presets_checks": 27,
-  "native_author_io_checks": 10,
+  "github_published": false,
+  "lua_groups": 154,
+  "lua_checks": 8925461,
+  "syntax_files": 265,
   "cef_browser_checks": 482,
-  "setup_window_checks": 32,
+  "worker_checks": 148,
+  "update_progress_checks": 53,
+  "setup_checks": 101,
+  "setup_window_checks": 28,
+  "installer_presets_checks": 27,
   "preserved_configuration_paths": 1175,
   "installer_rollback_after": [
     1,
@@ -21,32 +25,69 @@
     93,
     94,
     97,
-    98
+    98,
+    102,
+    103
   ],
-  "program_updater_unchanged": true,
-  "author_binds": 83,
-  "standard_notes": 2,
-  "public_profile_and_contacts": false,
-  "windows7_vm_tested": false,
-  "notes": "Both GitHub Actions runs passed for the release commit: all 149 Lua groups, CEF, worker, progress, installer rollback, setup, preset seeding and distribution. Published ZIPs and both JSON sidecars downloaded and verified; native 32-bit sidecar IO validated. GTA/server and a real Windows 7 VM were not launched.",
-  "actions_status": "completed",
-  "actions_conclusion": "success",
-  "actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40500275511",
-  "tag_actions_url": "https://github.com/VIBAG-bg/Police-Assistant/actions/runs/40500429599",
-  "source_commit": "5e28cea99bb6b6cb2b18552728182e340cc4bf61",
-  "public_update_sha256": "7db05f3d6545069ba3adf067629bfc4eb5ffb6634e4fac3b5211c49c6dbe06d0",
-  "public_installer_sha256": "79b01d3156ab05bd080195cec5e3c85b3b2d2be7297fff96e1bca7df189e4106",
-  "public_native32_preset_downloads": [
-    "binds",
-    "settings"
-  ],
-  "legacy_worker_detected_release": [
-    "0.40.1",
-    "0.40.2"
-  ],
+  "native32": {
+    "copilot": {
+      "checks": 64,
+      "frames": 32
+    },
+    "ux040": {
+      "checks": 3590,
+      "frames": 256
+    },
+    "windows": {
+      "checks": 202
+    },
+    "pd": {
+      "checks": 3352,
+      "frames": 252
+    },
+    "wanted": {
+      "checks": 13890,
+      "frames": 1273
+    },
+    "extra_popups": {
+      "checks": 23
+    },
+    "screens_file_io": "passed; isolated directory only",
+    "resolutions": [
+      [
+        640,
+        480
+      ],
+      [
+        1366,
+        768
+      ],
+      [
+        1920,
+        1080
+      ],
+      [
+        2560,
+        1440
+      ]
+    ]
+  },
   "old_worker_transition": [
     "native",
     "launcher"
   ],
-  "update_program_files": 95
+  "update_program_files": 100,
+  "update_package_sha256": "0428247538363c2702012455e7645e3b7d0faa6cbb6981b5d3bded57e0e593cb",
+  "manifest_sha256": "b89c149f7267defb1f108afd5e34759092a5ffb5885f798edeb140d5c42ae89e",
+  "program_updater_unchanged": true,
+  "cef_unchanged": true,
+  "author_presets_unchanged": true,
+  "frozen_platform_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
+  "author_binds": 83,
+  "standard_notes": 2,
+  "public_profile_and_contacts": false,
+  "windows7_vm_tested": false,
+  "forum_snapshot": "2026-10-25",
+  "forum_recrawl_performed": false,
+  "notes": "All listed checks ran locally on the final runtime bytes. Isolated installer/update fixtures preserve personal files and CEF. Native ImGui uses the installed x86 library without GTA, server sends or writes to the game. This is a review build, not a published release or game acceptance."
 }

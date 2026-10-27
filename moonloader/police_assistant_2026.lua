@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.40.3')
+script_version('0.41.0')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -40,6 +40,7 @@ local patrolModule = dependency('pa26_patrol')
 local patrolSessionModule=dependency('pa26_patrol_session')
 local patrolEventsModule=dependency('pa26_patrol_events')
 local identityModule=dependency('pa26_identity')
+local studioClock=0 -- Shared by target scoring and UI; updated only in main.
 local sceneServices={rp=dependency('pa26_rp_text'),rpUi=dependency('pa26_rp_ui'),commands=dependency('pa26_server_commands'),model=dependency('pa26_vehicle'),worldModule=dependency('pa26_vehicle_world'),evidenceModule=dependency('pa26_evidence'),filesModule=dependency('pa26_evidence_files'),assistUi=dependency('pa26_assist_ui'),hooks={}}
 sceneServices.mapGrid=dependency('pa26_map_grid')
 sceneServices.settingsUi=dependency('pa26_settings_ui')
@@ -61,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.40.3' then
+if #missing > 0 or not core or core.VERSION ~= '0.41.0' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -292,14 +293,21 @@ local function context()
 end
 
 -- Native scene reads only: visible, loaded nearby peds; no online-ID sweep.
-local function bodyPointVisible(cx, cy, cz, x, y, z, inVehicle)
+local function bodyPointVisible(cx, cy, cz, x, y, z, inVehicle, ped)
     if isLineOfSightClear(cx, cy, cz, x, y, z, true, true, false, true, false) == true then return true end
     if not inVehicle then return false end
     -- Keep vehicle/body collisions enabled. Only native see-through materials
     -- (e.g. glass) may pass; never ignore an occupant's whole vehicle.
-    local hit = optionalRead('processLineOfSight', cx, cy, cz, x, y, z,
+    local hit,colPoint = optionalRead('processLineOfSight', cx, cy, cz, x, y, z,
         true, true, false, true, true, true, false, false)
-    return hit == false -- missing API, exceptions and unknown results fail closed
+    if hit==false then return true end
+    if hit==true and ped and type(colPoint)=='table'and colPoint.entityType==2 and core.finite(colPoint.entity)and
+        type(_G.getVehiclePointerHandle)=='function'and type(_G.storeCarCharIsInNoSave)=='function'then
+        local own=optionalRead('storeCarCharIsInNoSave',ped)
+        return core.finite(own)and optionalRead('getVehiclePointerHandle',colPoint.entity)==own and
+            optionalRead('isLineOfSightClear',cx,cy,cz,x,y,z,true,false,false,true,false)==true
+    end
+    return false
 end
 
 local function visiblePed(ped, maxDistance)
@@ -323,7 +331,7 @@ local function visiblePed(ped, maxDistance)
     local visibleOffsets = {}
     local offsets = inVehicle and {.8, .55, .3, .05} or {.8, .2, -.25}
     for _, offset in ipairs(offsets) do
-        if bodyPointVisible(cx, cy, cz, x, y, z + offset, inVehicle) then
+        if bodyPointVisible(cx, cy, cz, x, y, z + offset, inVehicle, ped) then
             visibleOffsets[#visibleOffsets + 1] = offset
         end
     end
@@ -361,11 +369,15 @@ local function acquireTarget(maxDistance)
     if not core.finite(width) or not core.finite(height) or width < 300 or height < 300 then
         return nil, 'Размер игрового экрана недоступен.'
     end
-    for _, name in ipairs({'getAllChars', 'convert3DCoordsToScreenEx', 'convertWindowScreenCoordsToGameScreenCoords'}) do
+    for _, name in ipairs({'getAllChars', 'convert3DCoordsToScreenEx'}) do
         if type(_G[name]) ~= 'function' then return nil, 'Для выбора взглядом недоступна функция: ' .. name end
     end
     local peds = optionalRead('getAllChars')
     if type(peds) ~= 'table' then return nil, 'Список загруженных персонажей недоступен.' end
+    local anchorX,anchorY=width*.5,height*.5
+    local sample=sceneServices.aimSample;local age=sample and core.elapsed(studioClock,sample.at)
+    if sample and age and age<=1500 and sample.session==connectionKey()and sample.ped==PLAYER_PED and
+        (sample.mode==53 or sample.mode==55)and optionalRead('isCharInAnyCar',PLAYER_PED)==false and optionalRead('isButtonPressed',0,6)==true then anchorX,anchorY=width*.53,height*.40 end
     local seen, count, best, bestScore, secondScore = {}, 0
     for _, candidate in pairs(peds) do
         count = count + 1
@@ -379,8 +391,7 @@ local function acquireTarget(maxDistance)
                 for _, offset in ipairs(visual.visibleOffsets) do
                     local projected, wx, wy = optionalRead('convert3DCoordsToScreenEx', visual.x, visual.y, visual.z + offset, true, true)
                     if projected == true and core.finite(wx) and core.finite(wy) then
-                        local gx, gy = optionalRead('convertWindowScreenCoordsToGameScreenCoords', wx, wy)
-                        local candidateScore = core.cameraScore(gx, gy, width, height)
+                        local candidateScore = core.cameraScore(wx, wy, width, height,anchorX,anchorY)
                         if candidateScore ~= nil and (score == nil or candidateScore < score) then score = candidateScore end
                     end
                 end
@@ -560,6 +571,7 @@ workspace = workspaceModule.new({
         if plan.rpSignature and plan.rpSignature~=sceneServices.rp.signature(workspace.library.rp_text,hud.data.nickname)then return false end
         if plan.textSignature and plan.textSignature~=sceneServices.rp.signature(workspace.library.rp_text)then return false end
         if plan.evidenceAction then return sceneServices.evidence and sceneServices.evidence:validPlan(plan)or false end
+        if plan.copilotAction then return sceneServices.copilot and sceneServices.copilot:validPlan(plan)or false end
         if plan.vehicleAction then return sceneServices.vehicle and sceneServices.vehicle:validPlan(plan)or false end
         if plan.caseProcedure then return caseForms and caseForms:validPlan(plan)or false end
         if plan.patrolEvent then return patrolEvents and patrolEvents:validPlan(plan)or false end
@@ -575,8 +587,10 @@ workspace = workspaceModule.new({
         end
         return true
     end,
-    executionEvent=function(kind,q)
+    executionEvent=function(kind,q,line)
+        if kind=='sent_line'and sceneServices.colleagues then sceneServices.colleagues:command(line,studioClock)end
         if sceneServices.evidence then sceneServices.evidence:onExecution(kind,q)end
+        if sceneServices.copilot then sceneServices.copilot:onExecution(kind,q,line)end
         if sceneServices.vehicle then sceneServices.vehicle:onExecution(kind,q)end
         if caseForms then caseForms:onExecution(kind,q)end
         if patrolEvents then patrolEvents:onExecution(kind,q)end
@@ -606,7 +620,7 @@ sceneServices.nearby=require('pa26_nearby').new({settings=function()return works
         local t=streamed==true and inspectPed(ped,nil,distance)or nil
         return t and t.id==id and t or nil
     end,select=function(t)return workspace:selectTarget(t)end})
-local studioClock=0 -- UI callbacks read the clock cached by the game loop.
+-- UI callbacks share the forward-declared game-loop clock.
 alerts=alertModule.new({settings=function() return workspace.library.alerts end,codec=codec,log=pushLog,
     shortcuts=function()return workspace.library.alert_shortcuts end,
     offered=function(kind)
@@ -732,9 +746,28 @@ caseForms=caseFormsModule.new({gender=function()return workspace.library.profile
     end})
 sceneServices.world=sceneServices.worldModule.new(optionalRead,codec,function()return PLAYER_PED end)
 sceneServices.vehicle=sceneServices.model.new({settings=function()return workspace.library.vehicle end,codec=codec,scan=sceneServices.world.scan,resolve=sceneServices.world.resolve,ownCar=sceneServices.world.ownCar,selectionStatus=sceneServices.world.status,
-    service=function()return {unit=workspace.library.patrol_session.unit,station=workspace.library.patrol_session.station,crew=workspace.library.profile.name}end,
+    profile=function()return workspace.library.profile end,service=function()return {unit=workspace.library.patrol_session.unit,station=workspace.library.patrol_session.station,crew=workspace.library.profile.name}end,
     equal=patrolSession.env.equal,patrol=function()return patrolSession.data.active end,start=startAutomatic,
     cancel=function(token,reason)local q=workspace.executor.queue;if q and q.plan.vehicleAction and q.plan.vehicleAction.token==token then workspace.executor:cancel(reason)end end})
+sceneServices.colleagues=require('pa26_colleagues').new({read=optionalRead,settings=function()return workspace.library.vehicle.copilot end,
+    partners=function()return workspace.library.partners end,profile=function()return workspace.library.profile end,
+    crew=function()local a=patrolSession.data.active;return a and #(a.members or{})>1 or false end})
+sceneServices.readDriver=function(id)
+    if not core.validId(id)or optionalRead('sampIsPlayerConnected',id)~=true or optionalRead('sampIsPlayerNpc',id)~=false then return end
+    local ok,ped=optionalRead('sampGetCharHandleBySampPlayerId',id)
+    if ok~=true or not core.finite(ped)or optionalRead('doesCharExist',ped)~=true or optionalRead('isCharDead',ped)~=false then return end
+    local back,mapped=optionalRead('sampGetPlayerIdByCharHandle',ped);if back~=true or mapped~=id then return end
+    local name=optionalRead('sampGetPlayerNickname',id);if type(name)~='string'or name==''then return end
+    local weapon=optionalRead('getCurrentCharWeapon',ped);local x,y,z=optionalRead('getCharCoordinates',ped);local lx,ly,lz=optionalRead('getCharCoordinates',PLAYER_PED)
+    local distance=core.finite(x)and core.finite(y)and core.finite(z)and core.finite(lx)and core.finite(ly)and core.finite(lz)and math.sqrt((x-lx)^2+(y-ly)^2+(z-lz)^2)or nil
+    return{id=id,ped=ped,name=name,generation=sceneServices.nearby.generations[id]or 0,distance=distance,x=x,y=y,z=z,
+        armed=core.finite(weapon)and weapon>=22 and weapon<=38,weapon=weapon}
+end
+sceneServices.copilot=require('pa26_copilot').new({vehicle=sceneServices.vehicle,settings=function()return workspace.library.vehicle.copilot end,
+    profile=function()return workspace.library.profile end,codec=codec,equal=patrolSession.env.equal,driver=sceneServices.readDriver,taserActive=function(s)return taser:activeFor(s)end,start=startAutomatic,
+    notice=function(message)if sceneServices.userWarning then sceneServices.userWarning(message)end end,
+    cancel=function(token,reason)local q=workspace.executor.queue;if q and q.plan.copilotAction and q.plan.copilotAction.token==token then workspace.executor:cancel(reason)end end})
+sceneServices.copilotUi=require 'pa26_copilot_ui'
 sceneServices.files=sceneServices.filesModule.new()
 sceneServices.evidence=sceneServices.evidenceModule.new({settings=function()return workspace.library.assist.evidence end,
     feedback=function(message)if sceneServices.userWarning then sceneServices.userWarning(message)end end,
@@ -776,11 +809,13 @@ notifications=notificationsModule.new({skipShortcut=function()return workspace.l
     skip=function(token)return radioGuard:cancel(token)end,
     action=function(owner,token,yes)if owner=='radio'then
         if yes then return radioGuard:decide(token,true)end;return radioGuard:cancel(token)
+    elseif owner=='vehicle'then return sceneServices.copilot:decide(token,yes)
     elseif owner=='weapon'then return weaponWarning:decide(token,yes)
     elseif owner=='patrol'then return patrolEvents:decideNotice(token,yes)
     elseif owner=='wanted'then return caseForms:decideReminder(token,yes)end end,
     shown=function(owner,token)if owner=='radio'then radioGuard:shown(token)
         elseif owner=='weapon'then weaponWarning:shown(token)elseif owner=='patrol'then patrolEvents:shown(token)
+        elseif owner=='vehicle'then sceneServices.copilot:shown(token)
         elseif owner=='wanted'then caseForms:shownReminder(token)end end})
 patrol=patrolModule.new({settings=effectivePatrol,log=pushLog,
     lead=function()return workspace.library.radio_guard.lead_ms end,
@@ -823,7 +858,7 @@ knowledgeUi.warningBlocking=function()return studio:hasWarning()end
 knowledge.action='load'
 local function noticeAvoid()
     local out={}
-    for _,r in pairs({hud=not alerts.suppressHud and hud.bounds or nil,alert=alerts.bounds,taser=taser.bounds})do if r then out[#out+1]=r end end
+    for _,r in pairs({hud=not alerts.suppressHud and hud.bounds or nil,alert=alerts.bounds,taser=taser.bounds,copilot=sceneServices.copilot.bounds})do if r then out[#out+1]=r end end
     if not alerts.suppressHud then for _,r in ipairs(hud.noticeBounds or {})do out[#out+1]=r end end
     return out
 end
@@ -858,18 +893,20 @@ local function studioData()
         nearby=sceneServices.nearby:view(),mapState=sceneServices.mapState,mapAdapterStatus=sceneServices.mapAdapter:message(),
         textFiltersAvailable=workspace.chatFiltersAvailable or(sceneServices.chatBridge and workspace.library.settings.cef_chat_support and sceneServices.chatBridge.status=='connected'),
         target=workspace.selectedTarget,targetState=workspace.targets:view(),queued=workspace.executor.queue,
-        localNickname=hud.data.nickname,rpSettings=workspace.library.rp_text,evidence=sceneServices.evidence:view(),vehicle=sceneServices.vehicle:view(),operations=workspace.operations:view(),radioState=alerts.state,patrol=patrol:view(),patrolSession=patrolSession:view(patrol:view()),patrolEvents=patrolEvents:view(),identity=identity:view(),caseForms=caseForms:view(),taser=taser:view(),codec=codec,autoReport=radioGuard:view()}
+        localNickname=hud.data.nickname,rpSettings=workspace.library.rp_text,evidence=sceneServices.evidence:view(),vehicle=sceneServices.vehicle:view(),copilot=sceneServices.copilot:view(),operations=workspace.operations:view(),radioState=alerts.state,patrol=patrol:view(),patrolSession=patrolSession:view(patrol:view()),patrolEvents=patrolEvents:view(),identity=identity:view(),caseForms=caseForms:view(),taser=taser:view(),codec=codec,autoReport=radioGuard:view()}
 end
 local function cancelManualActions(reason)
     if sceneServices.manualActions then sceneServices.manualActions:cancel()end
     sceneServices.evidence:cancel(reason)
     sceneServices.vehicle:cancel(reason)
+    sceneServices.copilot:cancel(reason)
     workspace.operations:cancelReview()
     if caseForms.intent or caseForms.queued or caseForms.awaitingCommand then caseForms:reset(reason)end
     if patrolSession.intent or patrolSession.queued then patrolSession:cancelQueued(reason)end
     if patrolEvents.intent or patrolEvents.queued then patrolEvents:cancelReport(reason)end
 end
 local studioCallbacks={
+    manualFriskMode=function(token,mode)return sceneServices.manualActions:friskMode(token,mode)end,
     authorPresetAccept=function()return sceneServices.authorPresets:accept()end,
     selectNearby=function(t,revision)return sceneServices.nearby:request(t,revision)end,
     selectNearbyId=function(id)return sceneServices.nearby:requestId(id)end,
@@ -877,7 +914,7 @@ local studioCallbacks={
     setBindingConfirmation=function(id,value)return workspace:setBindingConfirmation(id,value)end,
     openAssist=function(page)
         showWindow[0],showQuick[0],showTips[0]=false,false,false;sceneServices.showAssist[0]=true
-        studio.assistPage=page or studio.assistPage or'patrol';uiTyping=false;uiInputReset=true;imgui.DisableInput=false
+        studio.assistPage=page or studio.assistPage or'traffic';uiTyping=false;uiInputReset=true;imgui.DisableInput=false
     end,
     assistEqual=patrolSession.env.equal,
     openNoticeSettings=function()openWorkspace('settings');settingsTab='options'end,
@@ -886,9 +923,17 @@ local studioCallbacks={
     evidenceCheck=function(path)return sceneServices.evidence:check(path)end,
     evidenceCancel=function()sceneServices.evidence:cancel('Фиксация отменена пользователем.')end,
     evidenceRetry=function()sceneServices.evidence:retrySave()end,
+    evidenceArchiveOffer=function()return sceneServices.evidence:proposeArchive()end,
+    evidenceArchiveAccept=function(p)return sceneServices.evidence:archive(p)end,
+    evidenceRefresh=function()sceneServices.evidence.scanAt=nil end,
+    copilotOffer=function(action)return sceneServices.copilot:propose(action)end,
+    copilotSelect=function()return sceneServices.vehicle:selectNearest()end,
+    copilotPreview=function(action,cfg)
+        return sceneServices.copilot:previewTemplate(action,cfg)
+    end,
     taserMode=function(active)return taser:confirmMode(active)end,
     vehicleOffer=function(action,nearest)return sceneServices.vehicle:propose(action,nearest)end,
-    vehicleAccept=function(p)return sceneServices.vehicle:accept(p)end,
+    vehicleAccept=function(p)if p.copilot then return sceneServices.copilot:accept(p)end;return sceneServices.vehicle:accept(p)end,
     vehicleClear=function()sceneServices.vehicle:clearTarget('Выбор машины снят вами.')end,
     vehicleSelect=function(id)return sceneServices.vehicle:selectCandidate(id)end,
     vehiclePreview=function(action,draft)
@@ -1492,7 +1537,7 @@ local function drawMain()
         io.DisplaySize.x < 220 or io.DisplaySize.y < 220 then uiTyping = false; return end
     if not menu:prepareWindow(imgui,'main') then return end
     local overHudOk, overHud = pcall(hud.overWidget, hud, imgui)
-    if overHudOk then overHud=(overHud and not alerts.suppressHud) or alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)end
+    if overHudOk then overHud=(overHud and not alerts.suppressHud) or alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)or sceneServices.copilotUi.over(sceneServices.copilot,imgui)end
     local flags = imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoSavedSettings +
         imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse+
         imgui.WindowFlags.NoResize+imgui.WindowFlags.NoMove
@@ -1513,7 +1558,7 @@ local function drawMain()
             demo = runtime.demo, sent = metrics.sent, previews = metrics.previews, connections = metrics.connections,
             menuKey = core.keyName(cfg.main.menu_key), wheelKey = core.keyName(cfg.main.radial_key),
             actions = core.actions,
-            variables=bindingModel.variables,variableInfo=bindingModel.variableInfo,caseNumber=workspace.library.profile.case_number,
+            evidence=sceneServices.evidence:view(),variables=bindingModel.variables,variableInfo=bindingModel.variableInfo,caseNumber=workspace.library.profile.case_number,
             quickKey=bindingModel.keyName(workspace.library.settings.quick_key),tipsKey=bindingModel.keyName(workspace.library.settings.tips_key),assistKey=bindingModel.shortcutName(workspace.library.assist.open_shortcut),
         }
         menu:draw(imgui, ui, model, {
@@ -1578,9 +1623,9 @@ local function beforeUiFrame()
     local ok, wantsMouse = pcall(function()
         hud:prepareInput(imgui, otherUi,widgetCursor)
         local fonts={body=hudFont,heading=hudHeadingFont}
-        taser:reserve(imgui,hud,fonts);alerts:measure(imgui,hud,fonts);taser:place(imgui,hud,fonts)
+        taser:reserve(imgui,hud,fonts);sceneServices.copilotUi.reserve(sceneServices.copilot,imgui,hud,fonts,hud.equipmentHeight);alerts:measure(imgui,hud,fonts);taser:place(imgui,hud,fonts);sceneServices.copilotUi.place(sceneServices.copilot,imgui,hud,fonts)
         notifications:measure(imgui,fonts,noticeAvoid())
-        return hud:wantsMouse(imgui) or ((ownUi() or widgetCursor or hud.editing) and (alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)))
+        return hud:wantsMouse(imgui) or ((ownUi() or widgetCursor or hud.editing) and (alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)or sceneServices.copilotUi.over(sceneServices.copilot,imgui)))
     end)
     if not ok then
         local firstFailure=not hud.failed
@@ -1610,7 +1655,7 @@ local function drawCategoryWheel(io,wheel)
     imgui.Begin('PA26 wheel##pa26',nil,imgui.WindowFlags.NoDecoration+imgui.WindowFlags.NoMove+
         imgui.WindowFlags.NoSavedSettings+imgui.WindowFlags.NoBackground+imgui.WindowFlags.NoScrollWithMouse)
     pushScope(function() imgui.End() end)
-    local overWidget=(not alerts.suppressHud and hud:overWidget(imgui)) or hud.drag~=nil or alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)
+    local overWidget=(not alerts.suppressHud and hud:overWidget(imgui)) or hud.drag~=nil or alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)or sceneServices.copilotUi.over(sceneServices.copilot,imgui)
     local route=wheelModel.hover(wheel.nav,wheel.catalog,layout,io.MousePos.x-layout.cx,io.MousePos.y-layout.cy,
         studioClock,overWidget,wheel.demo,wheel.target)
     runtime:setBindingChoice(route,studioClock)
@@ -1650,7 +1695,7 @@ local function drawWheel()
     local draw, vec = imgui.GetWindowDrawList(), imgui.ImVec2
     local cx, cy = left + width / 2, top + 325 * scale
     local outer, inner = 218 * scale, 92 * scale
-    local overWidget = (not alerts.suppressHud and hud:overWidget(imgui)) or hud.drag ~= nil or alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)
+    local overWidget = (not alerts.suppressHud and hud:overWidget(imgui)) or hud.drag ~= nil or alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)or sceneServices.copilotUi.over(sceneServices.copilot,imgui)
     local ready = wheel.demo or wheel.target ~= nil
     local choice = ready and not overWidget and core.radialAction(io.MousePos.x - cx, io.MousePos.y - cy, inner, outer) or nil
     if choice then local b=bindingModel.find(workspace.library,workspace.library.wheel[choice]); if not b or not b.enabled then choice=nil end end
@@ -1741,7 +1786,7 @@ local function drawWorkspaceWindows()
     local function window(title,flag,key,body)
         if not menu:prepareWindow(imgui,key) then return end
         local flags=imgui.WindowFlags.NoCollapse+imgui.WindowFlags.NoSavedSettings+imgui.WindowFlags.NoMove+imgui.WindowFlags.NoResize+imgui.WindowFlags.NoScrollbar+imgui.WindowFlags.NoScrollWithMouse
-        if alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)then flags=flags+imgui.WindowFlags.NoMouseInputs end
+        if alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)or sceneServices.copilotUi.over(sceneServices.copilot,imgui)then flags=flags+imgui.WindowFlags.NoMouseInputs end
         local visible=imgui.Begin(title,flag,flags)
         if not flag[0]and studio:unsavedChanges()then
             flag[0]=true
@@ -1793,15 +1838,16 @@ end
 
 widgetFrame = imgui.OnFrame(function()
     -- No dependency on the settings window, radial wheel or their UI error flag.
-    return not shutdown and focused and hud.connected and (hud.settings.visible or alerts:visible() or taser:view().visible or notifications:view().visible) and not hud.failed
+    return not shutdown and focused and hud.connected and (hud.settings.visible or alerts:visible() or taser:view().visible or notifications:view().visible or sceneServices.copilot:view().visible) and not hud.failed
 end, function() safeHudDraw(beforeUiFrame) end, function()
     safeHudDraw(function()
         local fonts={body=hudFont,heading=hudHeadingFont}
-        taser:reserve(imgui,hud,fonts);alerts:measure(imgui,hud,fonts);taser:place(imgui,hud,fonts)
+        taser:reserve(imgui,hud,fonts);sceneServices.copilotUi.reserve(sceneServices.copilot,imgui,hud,fonts,hud.equipmentHeight);alerts:measure(imgui,hud,fonts);taser:place(imgui,hud,fonts);sceneServices.copilotUi.place(sceneServices.copilot,imgui,hud,fonts)
         if hud.settings.visible and not alerts.suppressHud then hud:draw(imgui,hudFont,hudHeadingFont) end
         hud:drawNotices(imgui,hudFont,hudHeadingFont)
         alerts:draw(imgui,hud,fonts)
         taser:draw(imgui,hud,fonts)
+        sceneServices.copilotUi.drawHud(sceneServices.copilot,imgui)
         notifications:draw(imgui,fonts,noticeAvoid())
     end)
 end)
@@ -1909,19 +1955,27 @@ sceneServices.manualActions=sceneServices.manualActionModule.new({codec=codec,no
     end,
     accountValid=function(a)return not a or optionalRead('sampIsPlayerConnected',a.id)==true and type(a.name)=='string'and
         optionalRead('sampGetPlayerNickname',a.id)==a.name and(sceneServices.nearby.generations[a.id]or 0)==a.generation end,
+    guard=function(p)
+        if p.head~='cuff'and p.head~='arrest'then return end
+        local cp=sceneServices.copilot;local s=cp.state or{};local nearby=sceneServices.colleagues.snapshot
+        local pursuing=cp.enteredDangerInPursuit==true and(cp.phase=='Преследование'or cp.phase=='10-66'or cp.phase=='10-57 FOXTROT')
+        return require('pa26_colleagues').guard(workspace.library.vehicle.copilot,s.area or hud.data.district,#(nearby.nearbyOfficers or{})+1,pursuing)
+    end,
     notice=function(message)studio:notify(message,'commands',false)end,
     showing=function(token)return studio.manualAction and studio.manualAction.token==token end,
     close=function(token)if studio.manualAction and studio.manualAction.token==token then studio.manualAction=nil end end,
     show=function(p)showWindow[0],showTips[0]=false,false;showQuick[0]=true;studio.manualAction=p;uiInputReset=true;imgui.DisableInput=false end,
     start=function(plan)return workspace:request({kind='startPlan',plan=plan,returnTo='quick'})end,
     prepare=function(p)
-        local model=bindingModel;local binder=require('pa26_binder');local cfg=workspace.library.settings.manual_actions
+        local model=bindingModel;local binder=require('pa26_binder');local lib=workspace.library
+        if p.frisk_mode then lib=model.copy(lib);lib.settings.manual_actions.frisk_mode=p.frisk_mode end
+        local cfg=lib.settings.manual_actions;local rule=sceneServices.manualActionModule.rule(lib,p.head)
         local ctx=context();local wire=core.encodeWire(p.raw,codec)
         local noPlan={binding={id=1,name='Ручная /'..p.head,stat='none'},steps={{kind='message',text=p.raw,wire=wire}},lines={p.raw},
             requirements={target=false,closest=false},session=ctx.session,createdAt=studioClock,demo=runtime.demo,has_command=true}
         if p.passThrough then return nil,nil,noPlan end
         local args,why=model.parseArguments(p.args or'');if not args then return nil,why,noPlan end
-        local source=cfg.rules[p.head].prefer_bind and sceneServices.manualActionModule.source(workspace.library,p.head)
+        local source=rule.prefer_bind and sceneServices.manualActionModule.source(lib,p.head)
         local target
         if p.account then
             local loaded,ped=optionalRead('sampGetCharHandleBySampPlayerId',p.account.id)
@@ -1931,10 +1985,10 @@ sceneServices.manualActions=sceneServices.manualActionModule.new({codec=codec,no
             local req=binder.requirements(b)
             if req.target and not target then return nil,'Игрок из команды сейчас недоступен для персональной отыгровки.'end
             local snapshot,err=workspace:snapshot(b,{target=target});if not snapshot then return nil,err end
-            return sceneServices.manualActionModule.plan(workspace.library,p.head,p.raw,model.copy(args),snapshot,b,codec,workspace.library.rp_text)
+            return sceneServices.manualActionModule.plan(lib,p.head,p.raw,model.copy(args),snapshot,b,codec,workspace.library.rp_text)
         end
         local plan,err;if source then plan,err=compile(source)end
-        if not plan then local fallback=model.newBinding(1);fallback.name='Ручная /'..p.head;fallback.script=cfg.rules[p.head].rp;plan,err=compile(fallback)end
+        if not plan then local fallback=model.newBinding(1);fallback.name='Ручная /'..p.head;fallback.script=rule.rp;plan,err=compile(fallback)end
         return plan,err,noPlan
     end})
 sceneServices.manualText=function(raw,input,owned)
@@ -2185,11 +2239,12 @@ sceneServices.observeMessage=function(text,source,now)
     if type(text)~='string'or not core.validUtf8(text)then return end
     local visible=text:gsub('{%x%x%x%x%x%x}',''):match('^%s*(.-)%s*$')
     local fresh=not sceneServices.chatBridge or sceneServices.chatBridge:observe(visible,source,now)
-    if fresh then identity:serverMessage(visible);taser:serverMessage(visible)end
+    if fresh then identity:serverMessage(visible);taser:serverMessage(visible);sceneServices.colleagues:observe(visible)end
     for _,filter in ipairs(workspace.library.filters)do if filter.enabled and visible:sub(1,#filter.prefix)==filter.prefix then return false end end
     if fresh then workspace.operations:onChat(text)end
 end
 sceneServices.observeCommand=function(line)
+    sceneServices.colleagues:command(line,studioClock)
     taser:command(line);patrolEvents:command(line,'Введено вручную · попытка',nil)
     workspace.operations:observe(line,'manual',nil,'observed')
 end
@@ -2333,6 +2388,7 @@ local function connectChatFilters()
         local previous
         if type(previousDamageHandler)=='function' then previous=previousDamageHandler(id,amount,weapon,bodypart);if previous==false then return false end end
         alerts:takeDamage(id,amount,weapon,bodypart)
+        if core.finite(amount)and amount>0 then sceneServices.copilot:damage(id,weapon,studioClock);taser:damage(weapon)end
         return previous
     end
     events.onSendTakeDamage=damageHandler
@@ -2349,7 +2405,10 @@ local function connectChatFilters()
     aimHandler=function(data)
         local previous
         if type(previousAimHandler)=='function' then previous=previousAimHandler(data);if previous==false then return false end end
-        weaponWarning:observeAim(type(previous)=='table' and previous[1] or data)
+        local observed=type(previous)=='table'and previous[1]or data
+        weaponWarning:observeAim(observed)
+        local ok,mode=pcall(function()return tonumber(observed.camMode)end)
+        if ok and core.finite(mode)and mode%1==0 and mode>=0 and mode<=255 then sceneServices.aimSample={mode=mode,at=studioClock,session=connectionKey(),ped=PLAYER_PED}end
         return previous
     end
     events.onSendAimSync=aimHandler
@@ -2358,6 +2417,7 @@ local function connectChatFilters()
         hook.handler=function(...)
             sceneServices.chatEpoch=sceneServices.chatEpoch+1
             sceneServices.nearby:reset()
+            sceneServices.colleagues:reset();sceneServices.copilot:reset('Подключение или жизнь изменились.')
             if sceneServices.chatBridge then sceneServices.chatBridge.pending=nil;sceneServices.chatBridge.seen={}end
             alerts:invalidateLife()
             patrolSession:interrupt('Персонаж или подключение изменились.')
@@ -2434,6 +2494,7 @@ local function updateGame()
         if workspace.library.settings.keep_target_on_interior_change then workspace.targets:sceneChanged()
         else workspace:clearTarget('interior')end
         sceneServices.nearby:reset()
+            sceneServices.colleagues:reset();sceneServices.copilot:reset('Подключение или жизнь изменились.')
         if sceneServices.aimPicker then sceneServices.aimPicker:reset()end
     end
     sceneServices.targetArea=ctx.session and core.finite(area)and{session=ctx.session,ped=PLAYER_PED,area=area}or nil
@@ -2567,8 +2628,10 @@ local function updateGame()
     if patrolKey then
         if patrolKey:match('^assist%-')then studioCallbacks.openAssist(patrolKey=='assist-megaphone-window'and'megaphone'or patrolKey:sub(8))end
         if patrolKey:match('^vehicle%-')then
-            openWorkspace('partners');studio.partnerPage='vehicle'
-            require('pa26_vehicle_ui').offer(studio,studioCallbacks,patrolKey:match('^vehicle%-phrase%-(%d+)$')and('megaphone_'..patrolKey:match('(%d+)$'))or patrolKey=='vehicle-select'and 'traffic_stop'or patrolKey=='vehicle-pursuit'and 'pursuit'or 'megaphone',patrolKey=='vehicle-select')
+            studioCallbacks.openAssist('traffic')
+            if patrolKey=='vehicle-select'then local ok,err=sceneServices.vehicle:selectNearest();if not ok then studio:notify(err,'vehicle',false)end
+            elseif patrolKey=='vehicle-pursuit'then sceneServices.copilotUi.offer(studio,studioCallbacks,'pursuit')
+            else require('pa26_vehicle_ui').offer(studio,studioCallbacks,'megaphone_'..patrolKey:match('(%d+)$'),false)end
         end
         if patrolKey=='patrol-events'then studioCallbacks.openPatrolEvents()elseif not patrolKey:match('^vehicle%-')and not patrolKey:match('^assist%-')then studioCallbacks.openPatrol()end
         local a=patrolSession.data.active
@@ -2605,7 +2668,20 @@ local function updateGame()
     end
     workspace.operations:tick(alertState,now)
     patrolSession.readScene(alertState,now)
+    sceneServices.colleagues:tick(alertState,now);alertState.colleagues=sceneServices.colleagues:view()
+    local hour=optionalRead('getTimeOfDay');alertState.gameHour=core.finite(hour)and hour or nil;alertState.moscowTime=core.moscowTime()
     sceneServices.vehicle:tick(alertState,now)
+    sceneServices.copilot:tick(alertState,now)
+    alertState.taserCombatEnabled=workspace.library.vehicle.copilot.combat_guard;alertState.taserCombatMs=workspace.library.vehicle.copilot.combat_ms;alertState.taserCombatTemplate=workspace.library.vehicle.copilot.combat_warning
+    local cv=sceneServices.copilot:view()
+    if workspace.library.vehicle.copilot.combat_guard and(cv.combat or cv.car and cv.car.armed or sceneServices.copilot.driverLive and sceneServices.copilot.driverLive.armed)then alertState.taserCombatText=workspace.library.vehicle.copilot.combat_warning end
+    local person=workspace.selectedTarget and sceneServices.readDriver(workspace.selectedTarget.id)
+    if alertState.taserCombatEnabled and person and person.armed then alertState.taserCombatText=workspace.library.vehicle.copilot.combat_warning end
+    local cm=sceneServices.copilot.widgetMail;sceneServices.copilot.widgetMail=nil
+    if cm and cm.life==sceneServices.copilot.life and(core.elapsed(now,cm.at)or math.huge)<500 and not hasUiModal()then
+        local p,err=sceneServices.copilot:propose(cm.action)
+        if p then showQuick[0]=true;studio.vehicleConfirm=p else studio:notify(err,'vehicle',false)end
+    end
     alertState.busy=alertState.busy or(workspace.executor.queue and tostring(workspace.executor.queue))
     sceneServices.evidence:tick(alertState,now)
     alertState.busy=alertState.busy or(workspace.executor.queue and tostring(workspace.executor.queue))
@@ -2633,6 +2709,7 @@ local function updateGame()
     alertState.busy=alertState.busy or (workspace.executor.queue and tostring(workspace.executor.queue))
     radioGuard:tick(alertState,now)
     taser:tick(alertState,now)
+    alertState.taserCombatText=alertState.taserCombatText or taser:combatWarning()
     alertState.taserActive=taser:activeFor(alertState)
     alertState.taserRoleItem={name=workspace.library.taser.name,template=workspace.library.taser.draw_template,holster_enabled=true,holster_template=workspace.library.taser.holster_template}
     alertState.reloadPending=alertState.taserActive and(taser:needsReload()or taser.queued)or false
@@ -2647,6 +2724,7 @@ local function updateGame()
     for _,c in ipairs(weaponWarning:candidates())do candidates[#candidates+1]=c end
     for _,c in ipairs(patrolEvents:candidates())do candidates[#candidates+1]=c end
     for _,c in ipairs(caseForms:candidates())do candidates[#candidates+1]=c end
+    for _,c in ipairs(sceneServices.copilot:candidates())do candidates[#candidates+1]=c end
     local noticeKeys=physicalKeys
     local noticeConsumed=notifications:tick(candidates,alertState,now,noticeKeys)
     local review,reviewError=patrolEvents:takeNoticeReview()
@@ -2670,10 +2748,6 @@ local function updateGame()
     local px,py
     if widgetCursor or hud.drag then
         local x, y = optionalRead('getCursorPos')
-        if core.finite(x) and core.finite(y) then
-            local gx, gy = optionalRead('convertWindowScreenCoordsToGameScreenCoords', x, y)
-            if core.finite(gx) and core.finite(gy) then x, y = gx, gy end
-        end
         px,py=x,y;hud:setPointer(x,y,isKeyDown(0x01),isKeyDown(0x02))
     end
     local b=hud.bounds
@@ -2840,11 +2914,11 @@ function main()
             not context().blocked then recoverUi(false)end
         recovery:healthy(now,cfg.recovery)
         if not started then
-            pushLog('v0.40.3: игровой цикл запущен.')
+            pushLog('v0.41.0: игровой цикл запущен.')
             started = true
         end
         if uiRendered and not drawReported then
-            pushLog('v0.40.3: окно отрисовано.')
+            pushLog('v0.41.0: окно отрисовано.')
             drawReported = true
         end
     end

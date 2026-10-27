@@ -1,5 +1,5 @@
 -- Original Police Assistant 2026 rules. Lua 5.1 / LuaJIT, no game APIs.
-local M = {VERSION = '0.40.3', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
+local M = {VERSION = '0.41.0', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
 M.actions = {
     {key = 'introduce', label = 'Представиться', me = 'остановившись рядом, достал служебное удостоверение и раскрыл его перед собеседником.', do_text = 'Удостоверение раскрыто: данные и фотография видны собеседнику.', command = ''},
     {key = 'documents', label = 'Документы', me = 'оглянувшись по сторонам, обратился к собеседнику с просьбой предъявить паспорт.', do_text = 'Готов ли собеседник предъявить документ?', command = ''},
@@ -338,12 +338,14 @@ function M.radialAction(dx, dy, inner, outer)
     return M.wheelSlots[math.min(slot, 6)]
 end
 
-function M.cameraScore(x, y, width, height)
+function M.cameraScore(x, y, width, height, anchorX, anchorY)
     if not M.finite(x) or not M.finite(y) or not M.finite(width) or not M.finite(height) or
         width < 300 or height < 300 or width > 32768 or height > 32768 or
         x < 0 or y < 0 or x > width or y > height then return nil end
     local radius = math.min(width, height) * .10
-    local dx, dy = x - width / 2, y - height / 2
+    anchorX,anchorY=anchorX or width/2,anchorY or height/2
+    if not M.finite(anchorX)or not M.finite(anchorY)or anchorX<0 or anchorX>width or anchorY<0 or anchorY>height then return nil end
+    local dx, dy = x - anchorX, y - anchorY
     local distance = math.sqrt(dx * dx + dy * dy) / radius
     if not M.finite(distance) or distance > 1 then return nil end
     return distance
@@ -357,4 +359,5 @@ function M.pedAreaCompatible(localArea,remoteArea)
     local function valid(n)return M.finite(n)and n%1==0 and n>=0 and n<=255 end
     return valid(localArea)and valid(remoteArea)and(remoteArea==0 or localArea==remoteArea)
 end
+function M.moscowTime(ts)return os.date('!*t',(ts or os.time())+10800)end
 return M

@@ -47,7 +47,7 @@ function Evidence:record(status,path,details)
     local p=self.active or self.queued or self.intent
     if not p then return end
     self.pendingRecord={status=status,demo=p.demo,verified=status=='verified',date=self.env.date(),label=p.label,path=path or '',details=details or ''}
-    self.active=nil;self.queued=nil;self.intent=nil;self.checkRequest=nil;self.sample=nil;self.recordAttempted=false
+    self.active=nil;self.queued=nil;self.intent=nil;self.checkRequest=nil;self.autoPath=nil;self.sample=nil;self.recordAttempted=false
 end
 function Evidence:cancel(reason)
     local p=self.queued;self:record('cancelled','',reason or 'Отменено пользователем.')
@@ -68,10 +68,41 @@ function Evidence:check(path)
     self.checkRequest=path;self.sample=nil;self.checkAt=nil;return true
 end
 function Evidence:retrySave()if self.pendingRecord then self.recordAttempted=false end end
+function Evidence:proposeArchive()
+ if self.active or self.intent or self.queued or self.archiveRequest then return nil,'Завершите фиксацию перед переносом снимков.'end
+ if not self.scan or self.scan.maxIndex<0 then return nil,'Обновите состояние каталога: снимки SA:MP пока не найдены.'end
+ return {dir=self.scan.dir,count=self.scan.count,maxIndex=self.scan.maxIndex,session=self.state and self.state.session,demo=self.state and self.state.demo}
+end
+function Evidence:archive(p)
+ if self.active or self.intent or self.queued or self.archiveRequest or not p or not self.state or p.session~=self.state.session or p.demo~=self.state.demo or not self.scan or p.dir~=self.scan.dir then return nil,'Состояние фиксации или папка изменились. Подтвердите архив заново.'end
+ self.archiveRequest=model.copy(p);return true
+end
 function Evidence:tick(state,now)
     local previous=self.state;self.state=model.copy(state);self.now=now
     if previous and(previous.session~=state.session or previous.ped~=state.ped or previous.demo~=state.demo or not core.elapsed(now,self.lastTick))then self:cancel('Игровая сцена изменилась.')end
     self.lastTick=now
+    local cfg=self.env.settings()
+    if self.archiveRequest then
+        local p=self.archiveRequest;self.archiveRequest=nil
+        if not safe(state)or p.session~=state.session or p.demo~=state.demo then self:warn('Перенос отменён: игровая сцена изменилась.')
+        elseif p.demo then self:warn('ДЕМО: снимки не перемещались.')
+        else
+            local ok,result,err=pcall(self.env.files.archiveScreens,p.dir,os.date('%Y%m%d-%H%M%S'))
+            if not ok or not result then self:warn(err or'Не удалось перенести снимки. Исходные файлы сохранены.')
+            else self:warn('Перенесено: '..result.moved..'. Оставлено на месте: '..result.skipped..'. Архив: '..result.archiveDir)end
+            self.scanAt=nil;self.scan=nil
+        end
+    end
+    local scanAge=self.scanAt and core.elapsed(now,self.scanAt)
+    local scanInterval=self.active and(cfg.scan_ms or 500)or(cfg.idle_scan_ms or 5000)
+    if cfg.auto_scan~=false and self.env.files.scanScreens and(not scanAge or scanAge>=scanInterval)then
+        self.scanAt=now;local ok,scan,err=pcall(self.env.files.scanScreens,cfg.screens_dir or'')
+        self.scan=ok and scan or nil;self.scanError=ok and err or'Проверка папки снимков недоступна.'
+        local p=self.active
+        if p and self.scan and self.scan.latestFile and self.scan.latestCreated>=p.clock and self.scan.latestWritten>=p.clock and not self.checkRequest then
+            self.autoPath=self.scan.latestFile
+        end
+    end
     if self.env.settings().enabled then self.fileClock=clock(self)else self.fileClock=nil end
     if not safe(state)or not self.env.settings().enabled then if self.intent or self.queued or self.active then self:cancel('Фиксация отменена: игра недоступна или функция выключена.')end end
     if self.intent then
@@ -91,10 +122,11 @@ function Evidence:tick(state,now)
         local elapsed=core.elapsed(now,p.waitAt)
         if not elapsed or elapsed>p.cfg.timeout_ms then self:record('timeout','','Истекло время ожидания снимка.');self:warn('Снимок не подтверждён: время ожидания истекло.')
         elseif not self.env.equal(p.cfg,self.env.settings())then self:cancel('Настройки фиксации изменились.')
-        elseif self.checkRequest and(not self.checkAt or(core.elapsed(now,self.checkAt)or 0)>=500)then
+        elseif (self.checkRequest or self.autoPath)and(not self.checkAt or(core.elapsed(now,self.checkAt)or 0)>=(cfg.scan_ms or 500))then
             self.checkAt=now
-            local ok,file,err=pcall(self.env.files.verify,self.checkRequest,p.clock)
-            if not ok or not file then self:warn(err or 'Проверка файла не удалась.');self.checkRequest=nil;self.sample=nil
+            local manual=self.checkRequest~=nil;local path=self.checkRequest or self.autoPath
+            local ok,file,err=pcall(self.env.files.verify,path,p.clock)
+            if not ok or not file then if manual then self:warn(err or 'Проверка файла не удалась.')end;self.checkRequest=nil;self.autoPath=nil;self.sample=nil
             elseif self.sample and self.sample.key==file.key then
                 self:record('verified',file.path,'Новый файл PNG/JPG прочитан; размер и время записи стабильны. Это не проверка содержания доказательства.')
                 self.message='Файл снимка проверен. Содержание проверьте самостоятельно.'
@@ -107,6 +139,7 @@ function Evidence:tick(state,now)
     end
 end
 function Evidence:view()
-    return {active=model.copy(self.active),pending=self.intent~=nil or self.queued~=nil,unsaved=model.copy(self.pendingRecord),message=self.message}
+    return {active=model.copy(self.active),pending=self.intent~=nil or self.queued~=nil,unsaved=model.copy(self.pendingRecord),message=self.message,
+        screens=self.scan and {dir=self.scan.dir,count=self.scan.count,maxIndex=self.scan.maxIndex,nearLimit=self.scan.nearLimit,full=self.scan.full}or nil,scanError=self.scanError}
 end
 return M

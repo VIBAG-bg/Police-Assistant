@@ -34,7 +34,7 @@ function M.new(read,codec,ped)
         if mapped~=true or roundtrip~=handle then return end
         local x,y,z=read('getCarCoordinates',handle)
         local model=read('getCarModel',handle)
-        if not core.finite(x)or not core.finite(y)or not core.finite(z)or not core.finite(model)or model~=math.floor(model)or model<400 or model>611 then return end
+        if not core.finite(x)or not core.finite(y)or not core.finite(z)or not core.finite(model)or model~=math.floor(model)or model<400 or model>65535 then return end
         local distance=math.sqrt((x-lx)^2+(y-ly)^2+(z-lz)^2)
         if distance>maximum then return end
         if visible then
@@ -46,7 +46,18 @@ function M.new(read,codec,ped)
         -- A GXT label may encode a modded font, rather than CP1251 or UTF-8.
         -- Mapping a verified model ID avoids corrupt names in UI and game text.
         local label=names[model]
-        return {id=id,handle=handle,model_id=model,model_name=label,color1=a,color2=b,x=x,y=y,z=z,distance=distance}
+        local driver=read('getDriverOfCar',handle);local driverKnown=core.finite(driver);local driverId,driverName
+        if core.finite(driver)and read('doesCharExist',driver)==true then
+            local mapped,pid=read('sampGetPlayerIdByCharHandle',driver)
+            local back,ped=read('sampGetCharHandleBySampPlayerId',pid)
+            if mapped==true and core.validId(pid)and back==true and ped==driver and read('sampIsPlayerConnected',pid)==true and read('sampIsPlayerNpc',pid)==false then driverId=pid;driverName=read('sampGetPlayerNickname',pid)end
+        else driver=nil end
+        local passengers=read('getNumberOfPassengers',handle)
+        if not core.finite(passengers)then passengers=0 end;passengers=math.max(0,math.min(20,math.floor(passengers)))
+        local weapon=driver and read('getCurrentCharWeapon',driver)
+        return {id=id,handle=handle,model_id=model,model_name=label,color1=a,color2=b,x=x,y=y,z=z,distance=distance,
+            driver_known=driverKnown,driver_ped=driver,driver_id=driverId,driver_name=driverName,passengers=passengers,occupants=(driver and 1 or 0)+passengers,
+            armed=core.finite(weapon)and weapon>=22 and weapon<=38 and weapon~=40}
     end
     function api.scan(cfg)
         local lx,ly,lz,own=location();if not lx then api.lastStatus='Координаты недоступны.';return {}end

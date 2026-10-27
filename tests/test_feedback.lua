@@ -11,7 +11,8 @@ q:once('state',nil,'x');check(q:once('state','Ошибка.','x'));q:clear();che
 local function findButton(s,id)
     for i=#s.buttonCalls,1,-1 do if s.buttonCalls[i].label==id then return s.buttonCalls[i]end end
 end
-local s=fixture({demo=false});s.step();s.commands.pa26();s.step()
+local initial=model.defaults(require('pa26_core').defaults());initial.vehicle.megaphone_enabled=false
+local s=fixture({demo=false,library=initial});s.step();s.commands.pa26();s.step()
 onWindowMessage(0x100,0x73,0);onWindowMessage(0x101,0x73,0);s.step()
 check(s.windows['Police Assistant · Помощники##pa26-assist'])
 require('support.ui_routes').id(s,'##assist-tabsmegaphone')

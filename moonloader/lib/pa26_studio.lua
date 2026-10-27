@@ -1311,6 +1311,13 @@ function Studio:drawPatrol(ui,data,callbacks)
     self:drawNotice(ui)
 end
 function Studio:drawWeapons(ui,data,callbacks)
+    local duty,changed=self:check('На службе · разрешить автофункции PA (оружие, тайзер и рация)##weapons-on-duty',self.lib.alerts.on_duty)
+    ui.text('Разрешает автоматические отыгровки и напоминания PA. Не заменяет серверный выход на смену.')
+    if changed then
+        local copy=model.copy(self.lib);copy.alerts.on_duty=duty
+        local ok,err=callbacks.save(copy)
+        if ok then if self.alertDraft then self.alertDraft.on_duty=duty end else self:notify(err,'weapons',false)end
+    end
     ui.text('В текстах доступно {gender:достал|достала}; род выбирается в Профиле. Предпросмотр показывает готовую реплику.')
     self.weaponPage=self:choice('Снаряжение##weapons-page',self.weaponPage or 'draw',
         {{'draw','Отыгрывание оружия · одиночные /me','Отыгрывание оружия','Выберите оружие, отредактируйте его название и отыгровки. Задержки ниже помогут избежать лишних повторов.'},
@@ -1771,6 +1778,7 @@ function Studio:modalIntent(data)
         local p=self.vehicleConfirm
         local lines={p.target and p.description or'Общее объявление для окружающих.',
             p.target and('Машина ['..p.target.id..'] · GTA модель '..p.target.model_id)or('Реплика: '..(p.label or'Мегафон')),'Y — ДА · N — НЕТ'}
+        if p.confirmationNote then lines[#lines+1]=p.confirmationNote end
         for _,line in ipairs(p.prepared.lines)do lines[#lines+1]=line end
         lines[#lines+1]=p.demo and 'Демо: отправок на сервер нет.'or 'После ДА PA отправит показанные строки по очереди. Результат команды нужно проверить в игре.'
         return {kind='vehicle',token=p.token,title=p.target and'Выполнить действие с выбранной машиной?'or'Передать общее объявление?',lines=lines}
@@ -1971,7 +1979,7 @@ function Studio:drawModal(ui,data,callbacks)
     end
     local spec={title=intent and intent.title or '',lines=model.copy(intent and intent.lines or{}),
         titleFont=self.buttonFont,buttonFont=self.buttonFont,pageState=self.modalPagination,columns=intent and(intent.kind=='warning'or intent.kind=='manual_action')and 1 or intent and intent.kind=='changes' and 3 or 2,
-        extraHeight=intent and intent.kind=='capture' and 136 or intent and intent.kind=='wanted_appearance_input'and 90 or 0,
+        extraHeight=intent and intent.kind=='manual_action'and self.manualAction and self.manualAction.head=='frisk'and 68 or intent and intent.kind=='capture' and 136 or intent and intent.kind=='wanted_appearance_input'and 90 or 0,
         extraAfterLines=intent and intent.kind=='wanted_appearance_input',
         buttons=intent and intent.kind=='warning'and{'ОК'}or intent and intent.kind=='changes' and {'Сохранить','Отбросить','Остаться'} or
             intent and intent.kind=='capture' and {'Назначить','Отмена'}or
@@ -2056,12 +2064,20 @@ function Studio:drawModal(ui,data,callbacks)
                     else self.modalError=why end
                 end
             elseif intent.kind=='manual_action'then
+                local refreshed=false
+                if self.manualAction.head=='frisk'then
+                    local mode=self.manualAction.frisk_mode or'saved'
+                    local selected,changed=self:choice('Тип обыска##manual-frisk-mode',mode,{{'saved','Своя отыгровка'},{'primary','Первичный · без перчаток'},{'full','Полный · перчатки'}},ui)
+                    if changed and callbacks.manualFriskMode then local ok,err=callbacks.manualFriskMode(self.manualAction.token,selected);if ok then self.modalToken=nil;im.CloseCurrentPopup();self.modalVisible=false;refreshed=true else self.modalError=err end end
+                end
+                if not refreshed then
                 local width=math.max(1,im.GetContentRegionAvail().x)
                 local yes=green(spec.buttons[1]..'##confirm-yes',width)
                 local no=neutral(spec.buttons[2]..'##confirm-no',width)
                 local cancel=red(spec.buttons[3]..'##confirm-cancel',width)
                 if cancel then close();callbacks.stop()
                 elseif yes or no then execute(function()return callbacks.manualActionDecide(self.manualAction.token,yes==true)end)end
+                end
             elseif intent.kind=='capture' then
                 local capture=self.keyCapture
                 local width=math.max(1,(im.GetContentRegionAvail().x-10)/2)

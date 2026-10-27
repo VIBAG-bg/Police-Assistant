@@ -135,6 +135,7 @@ function Warning:tick(state,now)
     if self.env.uiAvailable and not self.env.uiAvailable()then self:dismiss();self.candidate=nil;self.lastSignature=nil;return end
     if not cfg.enabled or not state.session or not state.ped or not state.alive or not state.onDuty then self:dismiss();self.candidate=nil;self.lastSignature=nil;self.manual=nil;return end
     local group=self:group(state);local name=self.env.weaponName(state.weapon)
+    if group=='taser'and state.taserCombatText then self:dismiss();self.manual=nil;return end
     local sig=signature(cfg,state,group,name)
     if self.lastSignature~=sig then self.candidate={at=now,signature=sig};self.lastSignature=sig end
     local p=self.pending

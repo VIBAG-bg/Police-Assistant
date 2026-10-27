@@ -1,31 +1,34 @@
 local shared=require 'pa26_patrol_settings'
 local core=require 'pa26_core'
 local M={}
+local copilot=require 'pa26_copilot_settings'
 M.variables=shared.copy(shared.variables)
 M.vehicleFields={model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true,vehicle_description=true}
+for _,k in ipairs({'occupants','occupants_text','driver_id','driver_name','vehicle_plate','tac','armed_text','stop_outcome'})do M.variables[k]=true;if k~='tac'and k~='stop_outcome'then M.vehicleFields[k]=true end end
 for _,k in ipairs({'model','model_id','vehicle_id','vehicle_color','color_one','color_two','direction','vehicle_description'})do M.variables[k]=true end
 M.actions={{'traffic_stop','Начать трафик-стоп 10-55'},{'pursuit','Начать преследование'},{'megaphone','Обратиться в мегафон'},{'finish','Завершить остановку / погоню'},{'approach','Подойти к остановленной машине'},{'window','Спросить об открытом окне'}}
-M.keys={{'select_shortcut','Выбрать машину и подтвердить 10-55'},{'pursuit_shortcut','Подтвердить преследование'},{'megaphone_shortcut','Открыть выбор реплик мегафона'}}
+M.keys={{'select_shortcut','Выбрать машину и открыть компактную консоль'},{'pursuit_shortcut','Подтвердить преследование'},{'megaphone_shortcut','Открыть выбор реплик мегафона'}}
 M.phraseCount=8
 M.phraseConditions={{'any','Всегда'},{'vehicle','Из служебной машины'},{'foot','Пешком'},{'stop','Во время 10-55'},{'pursuit','Во время погони'}}
 for i=1,M.phraseCount do M.keys[#M.keys+1]={'phrase_'..i..'_shortcut','Мегафон · требование '..i}end
 function M.defaults()
-    local out={enabled=false,require_patrol=true,megaphone_enabled=false,megaphone_require_patrol=false,megaphone_require_duty=true,
+    local out={enabled=true,require_patrol=false,megaphone_enabled=true,megaphone_require_patrol=false,megaphone_require_duty=true,
         megaphone_require_radio=false,megaphone_wheel=true,radius=40,retain_distance=200,approach_distance=6,front_only=true,occupied_only=true,scan_ms=250,
         selection_mode='auto',selection_ranking='direction',cone_angle=65,height_tolerance=0,
         direction_enabled=true,manual_direction='',motion_ms=300,stationary_distance=.15,max_motion_distance=100,stationary='На месте',
         directions={'Север','Северо-восток','Восток','Юго-восток','Юг','Юго-запад','Запад','Северо-запад'},
         channel='/r',megaphone_channel='/m',confirmation_ms=30000,model_aliases={},color_aliases={},
         pause_patrol_reports=true,pursuit_periodic=true,pursuit_confirmation=true,pursuit_interval_ms=60000,
-        traffic_stop_template='{local_tag}{unit}, провожу трафик-стоп 10-55. {vehicle_description}. Экипаж: {crew}. Район: {area}. Далее недоступен.',
-        pursuit_template='{local_tag}{unit}, начинаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}. Экипаж: {crew}.',
+        traffic_stop_template='{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.',
+        pursuit_template='{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}',
         pursuit_periodic_template='{local_tag}{unit}, продолжаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}.',
         megaphone_template='Водитель автомобиля {model}, говорит {station}. Немедленно остановитесь у обочины и выключите двигатель.',
-        finish_template='{local_tag}{unit}, остановка / преследование {model} завершено. Район: {area}. Далее доступен.',
+        finish_template='{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4.',
         approach_template='подойдя к машине, коснулся заднего фонаря и, держа руку у кобуры, направился к водителю.',
         window_template='Открыто ли окно со стороны водителя?',
         unknown_model='Модель не определена',unknown_color='Цвет не определён',color_separator=' / ',
         description_template='{model}, цвет: {vehicle_color}'}
+    out.copilot=copilot.defaults()
     out.phrases={}
     local initial={
         {'Остановиться','Водитель автомобиля {model}, говорит {station}. Остановитесь у обочины и выключите двигатель.'},
@@ -51,6 +54,7 @@ end
 function M.validate(raw)
     local out=M.defaults();if raw==nil then return out end
     if type(raw)~='table'then return nil,'Повреждены настройки транспорта.'end
+    local cp,cpErr=copilot.validate(raw.copilot);if not cp then return nil,cpErr end;out.copilot=cp
     if raw.selection_mode~=nil then out.selection_mode=raw.selection_mode end
     if not({auto=true,vehicle=true,camera=true,screen=true})[out.selection_mode]then return nil,'Проверьте режим выбора машины.'end
     if raw.selection_ranking~=nil then out.selection_ranking=raw.selection_ranking end
@@ -95,7 +99,7 @@ function M.validate(raw)
         if not shared.array(raw.directions,8)or #raw.directions~=8 then return nil,'Нужны восемь подписей направлений.'end
         for i,v in ipairs(raw.directions)do out.directions[i]=shared.text(v,80);if not out.directions[i]or out.directions[i]==''then return nil,'Заполните направление.'end end
     end
-    for _,sp in ipairs({{'model_aliases',400,611},{'color_aliases',0,255}})do
+    for _,sp in ipairs({{'model_aliases',400,65535},{'color_aliases',0,255}})do
         local map=raw[sp[1]]or {};if type(map)~='table'then return nil,'Неверный словарь транспорта.'end
         for k,v in pairs(map)do
             local n=type(k)=='string'and tonumber(k)

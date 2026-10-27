@@ -96,6 +96,15 @@ end
 function M.evidence(s,ui,data,callbacks)
     local im=s.imgui;local d=s.evidenceDraft or model.copy(s.lib.assist.evidence);local view=data.evidence or {}
     s.currentNoticeScope='evidence';s:settingsHeading(ui,'Фиксация доказательств')
+    if view.screens then
+        ui.text('Скриншоты SA:MP: '..view.screens.count..' / 1000 (макс. индекс: '..view.screens.maxIndex..'/999)')
+        ui.text('Папка: '..view.screens.dir)
+        if view.screens.nearLimit then ui.text('Счётчик близок к пределу. Перенесите завершённые снимки в архив перед следующей фиксацией.')end
+        if s:button('Освободить счётчик SA:MP → Перенести скрины в подпапку Архива##screens-archive',ui)then
+            local p,err=callbacks.evidenceArchiveOffer();if p then s.assistConfirm={kind='archive_screens',proposal=p}else note(s,err)end
+        end
+    elseif view.scanError then ui.text(view.scanError)end
+    if s:button('Обновить состояние папки##screens-refresh',ui)then callbacks.evidenceRefresh()end
     ui.text('PA может отправить проверенную вами команду времени, затем дождётся снимка, который вы сделаете клавишей F8. Автоматическая съёмка пока не подключена. Журнал PA сам по себе не заменяет снимок, видео или проверку администрации.')
     s.evidenceLabel=s:field('Что фиксируем##evidence-label','assist:evidence:label',s.evidenceLabel or '',384)
     if not view.active and not view.pending then
@@ -116,6 +125,11 @@ function M.evidence(s,ui,data,callbacks)
     if view.unsaved and s:button('Повторить запись журнала##evidence-retry',ui)then callbacks.evidenceRetry()end
     im.Separator();s:settingsHeading(ui,'Настройки фиксации')
     d.enabled=s:check('Включить помощник фиксации##evidence-enabled',d.enabled)
+    d.auto_scan=s:check('Автоматически искать новый файл после F8##screens-auto',d.auto_scan)
+    d.screens_dir=s:field('Папка снимков · пусто = «Документы» SA:MP##screens-dir','evidence:screens-dir',d.screens_dir,2049)
+    number(s,ui,d,'scan_ms','Поиск во время фиксации, мс##screens-scan')
+    number(s,ui,d,'idle_scan_ms','Проверка счётчика в фоне, мс##screens-idle')
+    ui.text('Архив переносит только завершённые sa-mp-*.png/jpg в новую подпапку. Недавно записанные или занятые файлы остаются на месте. Удаления и перезаписи нет. F8 нажимаете вы.')
     local command,commandEdited=s:field('Команда времени без аргументов##evidence-command','assist:evidence:command',d.time_command,128)
     if commandEdited and command~=d.time_command then d.time_command=command;d.time_verified=false;d.time_enabled=false end
     d.time_source=s:field('Где проверена команда: /help или ответ сервера##evidence-source','assist:evidence:source',d.time_source,1024)
@@ -219,13 +233,14 @@ function M.notices(s,ui,data,callbacks)
 end
 function M.draw(s,ui,data,callbacks)
     s.currentUi=ui;s.preferenceContext=true;s.settingTextChanged=false;s.currentNoticeScope='assist'
-    local tab=s.assistPage or'patrol'
+    local tab=s.assistPage or'traffic'
     if tab~='roleplay'and tab~='commands'then
-        tab=menu.choiceControl(s.imgui,ui,'##assist-tabs','',tab,{{'patrol','Патруль'},{'megaphone','Мегафон'},{'evidence','Фиксация'},{'training','Обучение'},{'notices','Уведомления'}},s,{buttons=true,font=s.buttonFont})
+        tab=menu.choiceControl(s.imgui,ui,'##assist-tabs','',tab,{{'traffic','Трафик и погоня'},{'patrol','Патруль'},{'megaphone','Мегафон'},{'evidence','Фиксация'},{'training','Обучение'},{'notices','Уведомления'}},s,{buttons=true,font=s.buttonFont})
         s.assistPage=tab
     end
     if s:button('Настройки чата, переноса RP и команд##assist-chat-settings',ui)and callbacks.openSettings then callbacks.openSettings('chat')end
-    if tab=='patrol'then require('pa26_patrol_ui').draw(s,ui,data,callbacks)
+    if tab=='traffic'then require('pa26_copilot_ui').draw(s,ui,data,callbacks)
+    elseif tab=='patrol'then require('pa26_patrol_ui').draw(s,ui,data,callbacks)
     elseif tab=='megaphone'then M.megaphone(s,ui,data,callbacks)
     elseif tab=='evidence'then M.evidence(s,ui,data,callbacks)
     elseif tab=='notices'then M.notices(s,ui,data,callbacks)
@@ -247,6 +262,7 @@ function M.waiting(s,ui,view,now)
 end
 function M.modal(s)
     local a=s.assistConfirm;if not a then return end
+    if a.kind=='archive_screens'then return {kind='assistant',token='screens-archive:'..a.proposal.dir,title='Перенести снимки SA:MP в архив?',lines={'Папка: '..a.proposal.dir,'Найдено изображений: '..a.proposal.count..'; максимальный индекс: '..a.proposal.maxIndex..'.','Завершённые sa-mp-*.png/jpg будут перенесены в новую подпапку PA_Archive_дата. Свежие и занятые файлы останутся. Ничего не удаляется и не перезаписывается.','Имена в журнале старых фиксаций останутся прежними; новый путь будет показан после переноса.',a.proposal.demo and'ДЕМО: перемещения не будет.'or'ДА — перенести; НЕТ — оставить все файлы на месте.'}}end
     if a.kind=='evidence'then
         local p=a.proposal;local lines={p.label,'Район: '..p.area}
         for _,line in ipairs(p.lines)do lines[#lines+1]=line end
@@ -261,6 +277,7 @@ end
 function M.accept(s,callbacks)
     local a=s.assistConfirm;if not a then return nil,'Подтверждение отсутствует.'end
     if a.kind=='evidence'then return callbacks.evidenceAccept(a.proposal)end
+    if a.kind=='archive_screens'then return callbacks.evidenceArchiveAccept(a.proposal)end
     local copy=model.copy(s.lib)
     if a.kind=='delete_card'then
         copy.assist.training=model.copy(s.trainingDraft or s.lib.assist.training);local found

@@ -579,7 +579,7 @@ local function fixture(options)
     doesFileExist = function() return true end
     getFolderPath = function() return 'C:/Windows/Fonts' end
     getCursorPos = function() return s.mx or s.io.MousePos.x, s.my or s.io.MousePos.y end
-    convertWindowScreenCoordsToGameScreenCoords = function(x,y) return x,y end
+    convertWindowScreenCoordsToGameScreenCoords = function(x,y) return x*640/s.io.DisplaySize.x,y*448/s.io.DisplaySize.y end
     sampGetPlayerPing = function() return s.ping or 40 end
     getCharActiveInterior=function(ped)
         if ped==PLAYER_PED then return s.localInterior or 0 end
@@ -672,10 +672,14 @@ local function fixture(options)
         return s.projected~=false,s.sx or s.io.DisplaySize.x/2,s.sy or s.io.DisplaySize.y/2
     end
     isLineOfSightClear = function(_, _, _, _, _, z, buildings, vehicles, actors, objects)
-        check(buildings == true and vehicles == true and actors == false and objects == true)
+        check(buildings == true and actors == false and objects == true)
+        if vehicles==false then return s.worldClear~=false end
+        check(vehicles==true)
         if s.glass or (s.upperBlocked and math.abs(z-.8)<.01) then return false end
         return s.clear
     end
+    getVehiclePointerHandle=function(pointer)return pointer end
+    storeCarCharIsInNoSave=function(ped)return ped==PLAYER_PED and(s.ownCarHandle or 51)or(s.targetCarHandle or 50)end
     s.transparentReads=0
     processLineOfSight = function(_, _, _, _, _, _, buildings, vehicles, actors, objects, particles, seeThrough, ignoreObjects, shootThrough)
         check(buildings==true and vehicles==true and actors==false and objects==true and particles==true)
@@ -683,6 +687,7 @@ local function fixture(options)
         s.transparentReads=s.transparentReads+1
         if s.traceError then error('injected transparent-surface trace error') end
         if s.traceNil then return nil end
+        if s.collision then return true,{entityType=2,entity=s.collision}end
         return not s.clear
     end
     sampSendChat = function(value)
@@ -768,8 +773,17 @@ local function fixture(options)
     local evidenceModule=require 'pa26_evidence';local originalEvidenceNew=evidenceModule.new
     evidenceModule.new=function(...)local a=originalEvidenceNew(...);s.evidence=a;return a end
     local filesModule=require 'pa26_evidence_files';local originalFilesNew=filesModule.new
-    if options.evidenceFiles then filesModule.new=function()return options.evidenceFiles(s)end end
+    filesModule.new=function()if options.evidenceFiles then return options.evidenceFiles(s)end;return{clock=function()return 1000000000 end,verify=function()return nil,'Fixture: no screenshot'end,scanScreens=function()return nil,'Fixture: no screenshot directory'end}end
+    local cm=require 'pa26_copilot';local originalCopilot=cm.new
+    cm.new=function(env)local c=originalCopilot(env);s.copilot=c;return c end
+    local colleagues=require 'pa26_colleagues';local originalColleagues=colleagues.new
+    colleagues.new=function(env)
+        local get=env.settings
+        if not options.copilot then env.settings=function()local c=require('pa26_bindings').copy(get());c.colleagues_enabled=false;return c end end
+        local c=originalColleagues(env);s.colleagues=c;return c
+    end
     dofile('moonloader/police_assistant_2026.lua')
+    cm.new=originalCopilot;colleagues.new=originalColleagues
     evidenceModule.new=originalEvidenceNew;filesModule.new=originalFilesNew
     runtimeModule.new=originalRuntimeNew
     alertsModule.new=originalAlertsNew

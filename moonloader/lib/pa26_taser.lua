@@ -11,9 +11,13 @@ function Taser:reset()
     self.life=self.life+1;self.state=nil;self.now=nil;self.shots=0;self.version=0;self.events={};self.lastShot=nil
     self.queued=false;self.manual=false;self.failedVersion=nil;self.violation=false;self.status=nil
     self.overflow=false
-    self.reloadDone=nil
+    self.reloadDone=nil;self.firearmAt=nil;self.firearmMail=nil
     self.activeCapacity=nil
     self.mode='inactive';self.pendingMode=nil;self.commandMail=nil;self.replyMail=nil;self.manualMode=nil;self.modeSource=nil
+end
+function Taser:damage(weapon)
+ local s=self.state
+ if core.finite(weapon)and weapon>=22 and weapon<=38 and s and s.session then self.firearmMail={at=self.now,session=s.session,ped=s.ped,demo=s.demo}end
 end
 function Taser:activeFor(state)
     local cfg=self.env.settings();local s=state or self.state
@@ -83,6 +87,8 @@ function Taser:tick(state,now)
     if self.state and (not dt or self.state.session~=state.session or self.state.ped~=state.ped or
         self.state.alive~=state.alive or self.state.demo~=state.demo or self.weaponId~=cfg.weapon_id or self.activation~=cfg.activation) then self:reset()end
     self.state=state;self.now=now;self.weaponId=cfg.weapon_id;self.activation=cfg.activation
+    local damage=self.firearmMail;self.firearmMail=nil
+    if damage and damage.session==state.session and damage.ped==state.ped and damage.demo==state.demo and(core.elapsed(now,damage.at)or math.huge)<=(state.taserCombatMs or 10000)then self.firearmAt=damage.at end
     self:updateMode(state,now,cfg)
     if not self.activeCapacity or self.shots==0 and not self.queued and not self.reloadDone then self.activeCapacity=cfg.capacity or M.CAPACITY end
     if not cfg.enabled or not state.session or not state.alive then self.events={};self.manual=false;return end
@@ -137,9 +143,15 @@ function Taser:onExecution(kind,q)
         self.queued=false;self.failedVersion=self.version;self.status='Перезарядка прервана · повторите'
     end
 end
+function Taser:combatWarning()
+ local s=self.state;if not s then return end;local age=self.firearmAt and core.elapsed(self.now,self.firearmAt)
+ return s.taserCombatText or(s.taserCombatEnabled and age and age<=(s.taserCombatMs or 10000)and s.taserCombatTemplate)or nil
+end
 function Taser:view()
     local cfg=self.env.settings();local s=self.state
     if not cfg.enabled or not cfg.hud or not s or not s.session or not s.alive or not s.focused or s.paused or s.weapon~=cfg.weapon_id then return {visible=false} end
+    local damageAge=self.firearmAt and core.elapsed(self.now,self.firearmAt)
+    local combat=s.taserCombatText or(s.taserCombatEnabled and damageAge and damageAge<=(s.taserCombatMs or 10000)and s.taserCombatTemplate)
     local remaining=self:remaining();local needs=self:needsReload();local available=self.env.observed and self.env.observed()
     local status
     if not self:activeFor(s)then status=self.mode=='unknown'and 'Режим тайзера не подтверждён · проверьте в настройках'or 'Обычный пистолет · тайзер не включён'
@@ -153,7 +165,7 @@ function Taser:view()
     return {visible=true,demo=s.demo,charges=self:capacity()-self.shots,capacity=self:capacity(),pendingCapacity=(cfg.capacity or M.CAPACITY)~=self:capacity()and cfg.capacity or nil,
         remaining=remaining,ready=self:activeFor(s)and available~=false and not needs and not self.queued and remaining==0,
         mode=self.mode or 'inactive',modeSource=self.modeSource,pendingMode=self.pendingMode~=nil,
-        status=status,violation=self.violation,needs=needs,queued=self.queued,button=self:activeFor(s)and self.shots>0 and not self.queued and not self.reloadDone and
+        combatWarning=combat,status=status,violation=self.violation,needs=needs,queued=self.queued,button=self:activeFor(s)and self.shots>0 and not self.queued and not self.reloadDone and
             (not cfg.auto_reload or self.failedVersion==self.version),progress=1-remaining/cfg.cooldown_ms}
 end
 function Taser:reserve(im,hud,fonts)
@@ -169,7 +181,7 @@ function Taser:reserve(im,hud,fonts)
     m.titleH=heading:CalcTextSizeA(16*scale,100000,m.wrap,m.title).y
     m.statusH=body:CalcTextSizeA(14*scale,100000,m.wrap,v.status).y
     m.h=2*pad+m.titleH+7*scale+m.statusH+13*scale
-    if v.violation then m.warning='Нарушен интервал или лимит выстрелов';m.warningH=body:CalcTextSizeA(12*scale,100000,m.wrap,m.warning).y;m.h=m.h+m.warningH+6*scale end
+    if v.violation or v.combatWarning then m.warning=(v.combatWarning or'')..(v.violation and' Нарушен интервал или лимит выстрелов'or'');m.warningH=body:CalcTextSizeA(12*scale,100000,m.wrap,m.warning).y;m.h=m.h+m.warningH+6*scale end
     if v.button then m.h=m.h+36*scale end
     self.metrics=m;hud:setEquipmentHeight(m.h)
 end

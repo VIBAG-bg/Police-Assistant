@@ -6,7 +6,7 @@ local function equal(a,b)
     for k,v in pairs(a)do if not equal(v,b[k])then return false end end;for k in pairs(b)do if a[k]==nil then return false end end;return true
 end
 local function setup()
-    local c=prefs.defaults();c.megaphone_enabled=true
+    local c=prefs.defaults();c.enabled=false;c.require_patrol=true;c.megaphone_enabled=true
     local s={session='server',ped=1,alive=true,focused=true,paused=false,blocked=false,onDuty=true,radioEnabled=false,demo=false,station='SFPS'}
     local car={id=7,handle=20,model_id=411,model_name='Infernus',color1=1,color2=0,distance=5}
     local ctx={cfg=c,state=s,plans={},now=1000,cars={}}

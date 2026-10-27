@@ -34,11 +34,11 @@ click(s,'Выбрать ближайшую и начать 10-55##vehicle-select
 s.step();healthy(s);check(#s.sent>=1);for _=1,5 do s.step(1500)end
 eq(s.vehicleController.phase,'10-55');check(s.sent[1].line:find('Infernus',1,true))
 local stored=model.copy(s.workspace.library);local seen=false
-for _,line in ipairs(s.sent)do if line.line:find('10%-55')then seen=true end end;check(seen)
+for _,line in ipairs(s.sent)do if line.line:find('провожу остановку',1,true)then seen=true end end;check(seen)
 -- Physical hotkeys work with F9 closed and open the vehicle tab, never the patrol tab.
 s.commands.pa26();s.physicalDown={};s.step()
 s.physicalDown={[0x12]=true,[0x37]=true};s.step();s.physicalDown={};s.step()
-eq(s.workspace.studio.partnerPage,'vehicle');check(s.workspace.studio.vehicleConfirm)
+eq(s.workspace.studio.assistPage,'traffic');check(s.frames[4].condition());check(not s.frames[1].condition());check(not s.workspace.studio.vehicleConfirm)
 local before=#s.sent;s.physicalDown={[0x4e]=true};s.step();s.physicalDown={};s.step();check(not s.workspace.studio.vehicleConfirm);eq(#s.sent,before)
 s.commands.pa26();s.physicalDown={};s.step()
 s.physicalDown={[0x12]=true,[0x39]=true};s.step();s.physicalDown={};s.step();check(s.frames[4].condition());check(not s.workspace.studio.vehicleConfirm)

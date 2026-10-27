@@ -98,7 +98,7 @@ function M.draw(studio,ui,data,callbacks)
     d.description_template=studio:field('Описание машины##vehicle-description','vehicle:description',d.description_template,1024,true,62)
     ui.text('Для описания доступны {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}. Если цвет не удалось определить, PA не подставляет случайное название.')
     studio:settingsHeading(ui,'Названия моделей и цветов')
-    for _,sp in ipairs({{'model_aliases','Модель GTA',400,611,'model_id'},{'color_aliases','Цвет GTA',0,255,'color1'}})do
+    for _,sp in ipairs({{'model_aliases','Модель GTA',400,65535,'model_id'},{'color_aliases','Цвет GTA',0,255,'color1'}})do
         local id=studio[sp[1]..'Edit']or(view.selected and view.selected[sp[5]])or sp[3]
         ui.text(sp[2]..' · ID');im.PushItemWidth(-1);ui.push(function()im.PopItemWidth()end)
         local n=im.new.int(id);if im.InputInt('##vehicle-alias-'..sp[1],n)then id=n[0]end;ui.finish()

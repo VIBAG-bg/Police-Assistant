@@ -1,6 +1,6 @@
 -- Documented Windows file APIs only; no GTA/SAMP offsets or screenshot injection.
 local M={}
-function M.new()
+local function basic()
     local ffi=require 'ffi'
     if ffi.os~='Windows'then return {clock=function()end,verify=function()return nil,'Проверка файлов доступна только в Windows.'end}end
     pcall(ffi.cdef,[[
@@ -52,4 +52,5 @@ function M.new()
             return a
         end}
 end
+function M.new()return require('pa26_screens').new(basic())end
 return M
