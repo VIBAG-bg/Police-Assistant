@@ -17,6 +17,7 @@ isLineOfSightClear=function()check(not s.rendererContext);return true end
 s.step();s.commands.pa26();s.step();if s.frames[1].condition()then s.commands.pa26();s.step()end
 s.physicalDown={[0x12]=true,[0x37]=true};s.step();s.physicalDown={};s.step()
 eq(s.workspace.studio.assistPage,'traffic');check(s.frames[4].condition());check(not s.frames[1].condition());check(s.vehicleController.selected);eq(#s.sent,0)
+eq(s.workspace.selectedTarget.id,37,'Driver ID reaches ordinary interaction immediately after Alt+7');eq(s.workspace.selectedTarget.name,s.name)
 s.click='Вызов 9-1-1 · Код 3##copilot-quick-call911';s.render();eq(s.click,nil);check(s.workspace.studio.vehicleConfirm.carFree);eq(#s.sent,0)
 s.click='ДА##confirm-yes';s.render();for _=1,8 do s.step(1600)end;check(#s.sent>0);check(not s.copilot.phase,'Manual radio report does not start traffic')
 local radioBefore=#s.sent

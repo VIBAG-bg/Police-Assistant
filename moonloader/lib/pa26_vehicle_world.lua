@@ -104,7 +104,8 @@ function M.new(read,codec,ped)
                         mode=='vehicle'and carAngle or mode=='camera'and camAngle or nil
                     local close=c.distance<=(cfg.close_radius or 15)and read('isCarOnScreen',handle)==true
                     local eligible=(mode=='screen'or not forward or angle~=nil or close)and(maxHeight==0 or math.abs(c.z-lz)<=maxHeight)
-                    if eligible and(not cfg.occupied_only or c.occupants>0)then c.angle=angle or 0;c.selection_basis=basis or 'экран';out[#out+1]=c end
+                    local playerDriver=core.validId(c.driver_id)and core.finite(c.driver_ped)and read('doesCharExist',c.driver_ped)==true
+                    if eligible and(not cfg.occupied_only or playerDriver)then c.angle=angle or 0;c.selection_basis=basis or 'экран';out[#out+1]=c end
                 end
             end
         end

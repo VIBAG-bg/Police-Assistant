@@ -1,14 +1,14 @@
 {
-  "release": "0.41.1",
+  "release": "0.41.2",
   "status": "validated_for_release",
-  "base_release": "0.41.0",
-  "source_base": "7c979278dddcf422149271d72340ed159fecf21e",
+  "base_release": "0.41.1",
+  "source_base": "1e27e29cfd434c1a1233579111879f991ac63948",
   "game_started": false,
   "real_game_written": false,
   "github_published": false,
-  "lua_groups": 156,
-  "lua_checks": 8864652,
-  "syntax_files": 268,
+  "lua_groups": 157,
+  "lua_checks": 8985858,
+  "syntax_files": 270,
   "cef_browser_checks": 519,
   "cef_native32_checks": 108,
   "native32": [
@@ -20,8 +20,8 @@
     {
       "test": "test_copilot_native32.lua",
       "status": "passed",
-      "checks": 357,
-      "frames": 91
+      "checks": 595,
+      "frames": 210
     },
     {
       "test": "test_dependencies_native32.lua",
@@ -59,7 +59,7 @@
     {
       "test": "test_pd_native32.lua",
       "status": "passed",
-      "checks": 3381,
+      "checks": 3382,
       "frames": 254
     },
     {
@@ -134,7 +134,7 @@
   "worker_checks": 148,
   "legacy_windows_path_checks": 224,
   "legacy_installer_path_checks": 35,
-  "update_progress_checks": 53,
+  "update_progress_checks": 58,
   "installer_rollback_after": [
     1,
     37,
@@ -146,23 +146,28 @@
     97,
     98,
     102,
-    103
+    103,
+    104
   ],
   "setup_checks": 101,
-  "setup_window_checks": 28,
+  "normal_installer_launch_checks": 9,
+  "normal_installer_script_entry": true,
+  "setup_window_checks": 34,
+  "setup_window_rendered": true,
+  "progress_window_rendered": true,
   "installer_presets_checks": 29,
   "update_compatibility": [
     {
       "environment": "native",
       "preserved_files": 6,
-      "files": 100,
+      "files": 101,
       "worker": "0.40.3",
       "personal_backups_preserved": true
     },
     {
       "environment": "launcher",
       "preserved_files": 8,
-      "files": 102,
+      "files": 103,
       "worker": "0.40.3",
       "personal_backups_preserved": true
     },
@@ -175,14 +180,14 @@
     {
       "environment": "native",
       "preserved_files": 6,
-      "files": 100,
+      "files": 101,
       "worker": "0.41.0",
       "personal_backups_preserved": true
     },
     {
       "environment": "launcher",
       "preserved_files": 8,
-      "files": 102,
+      "files": 103,
       "worker": "0.41.0",
       "personal_backups_preserved": true
     },
@@ -191,25 +196,46 @@
       "personal_preserved": true,
       "expected_rejection": "cef_incompatible",
       "worker": "0.41.0"
+    },
+    {
+      "environment": "native",
+      "preserved_files": 6,
+      "files": 101,
+      "worker": "0.41.1",
+      "personal_backups_preserved": true
+    },
+    {
+      "environment": "launcher",
+      "preserved_files": 8,
+      "files": 103,
+      "worker": "0.41.1",
+      "personal_backups_preserved": true
+    },
+    {
+      "environment": "incompatible-cef",
+      "personal_preserved": true,
+      "expected_rejection": "cef_incompatible",
+      "worker": "0.41.1"
     }
   ],
-  "update_program_files": 102,
-  "update_package_sha256": "a1d8bb0949262aa48f386e296d2b477eae99cf3c175c2ed6ff075d40a6886bc2",
-  "manifest_sha256": "fc7035a5f6da1c75bfecb2adbc5e7aa2388b972b60d23f2989d30519002576f0",
-  "worker_sha256": "ec160838d1f19d7952685ae96040b2c5b52c895afb766e4a11fac27d5dd9c3f9",
-  "program_updater_changed": false,
-  "cef_adapter_changed": true,
+  "update_program_files": 103,
+  "update_package_sha256": "deef517405069945bf06c2b228d0099618673e3cca7590aa6d39ea4b28ea58b9",
+  "manifest_sha256": "5b5822faa7590271ec1d666234c36bf06715576c226fa0e53b655277218cefa7",
+  "worker_sha256": "4045a42f86e3c18860fa5518a9d92d290fff3c7d931243284b5de3ceda899a22",
+  "program_updater_changed": true,
+  "cef_adapter_changed": false,
   "cef_update_requires_official_hud_hash": true,
   "minimum_reviewed_old_worker": "0.40.3",
   "preserved_configuration_paths": 1175,
   "base_actions_variables_and_binds_preserved": true,
   "author_binds": 83,
-  "author_payloads_unchanged_since_0410": true,
+  "author_payloads_unchanged_since_0411": true,
   "frozen_platform_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
   "standard_notes": 2,
   "public_profile_and_contacts": false,
   "forum_snapshot": "2026-10-25",
   "forum_recrawl_performed": false,
+  "dispatch_rules_checked": "2026-10-28: 3.1, 10.4, 8.2",
   "windows7_vm_tested": false,
   "notes": "All local gates passed on this runtime. Native x86/ImGui and the real HUD send function were tested without GTA or server sends. Installation, rollback and old-worker transitions use isolated fixtures. Actual GTA and CEF gameplay acceptance remains unverified. Publication and GitHub Actions are checked separately."
 }

@@ -44,7 +44,7 @@ function M.draw(studio,ui,data,callbacks)
     if view.selection_status then ui.text(view.selection_status)end
     im.Separator();studio:settingsHeading(ui,'Настройки транспорта')
     for _,row in ipairs({{'enabled','Трафик-стоп и погоня'},{'require_patrol','Только в активном патруле'},
-        {'front_only','Экран и прямая видимость'},{'occupied_only','Только непустые машины'},{'occupied_priority','Приоритет машин с людьми'},{'sync_driver_target','Водитель — цель биндов'},{'direction_enabled','Направление движения'}})do
+        {'front_only','Экран и прямая видимость'},{'occupied_only','Только с игроком за рулём'},{'occupied_priority','Приоритет машин с людьми'},{'sync_driver_target','Водитель — цель биндов'},{'direction_enabled','Направление движения'}})do
         local v,edit=studio:check(row[2]..'##vehicle-'..row[1],d[row[1]]);if edit then d[row[1]]=v end
     end
     d.selection_mode=studio:choice('Направление выбора##vehicle-selection-mode',d.selection_mode,{{'auto','Авто: перед машиной или камерой'},{'vehicle','Куда направлена моя машина'},{'camera','Куда смотрит камера'},{'screen','Только видимость на экране'}},ui)
@@ -53,7 +53,7 @@ function M.draw(studio,ui,data,callbacks)
         ui.text(r[2]);im.PushItemWidth(-1);ui.push(function()im.PopItemWidth()end)
         local value=im.new.int(d[r[1]]);if im.SliderInt('##vehicle-'..r[1],value,r[3],r[4])then d[r[1]]=value[0]end;ui.finish()
     end
-    ui.text('Непустой считается и машина с одними пассажирами. Автовыбор привязывает водителя к {select_id}. В режиме «Авто» подходят машины перед капотом или камерой; близкая видимая машина доступна и сбоку. Дома закрывают обзор. Уже выбранная машина сама не заменяется. Высота исключает машины на другой эстакаде; 0 отключает этот фильтр.')
+    ui.text('По умолчанию выбираются только машины с подключённым игроком за рулём. Пустые, с одними пассажирами и с NPC пропускаются. Уже выбранная машина сохраняется после выхода водителя для продолжения остановки или пешей погони. Автовыбор привязывает водителя к {select_id}. «Авто» учитывает капот и камеру; близкая видимая машина доступна и сбоку. Дома закрывают обзор.')
     for _,row in ipairs({{'radius','Дальность выбора, м · 5–150'},{'retain_distance','Дальность удержания, м'},{'approach_distance','Подойти к машине пешком, м'},
         {'scan_ms','Обновление машин, мс'},{'motion_ms','Замер движения, мс'},
         {'max_motion_distance','Порог скачка координат, м'},{'confirmation_ms','Срок подтверждения, мс'}})do

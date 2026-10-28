@@ -17,7 +17,7 @@ local function setup()
             unit='P-01',station='SFPS',crew='Victor Auditore',area='Doherty',map_square='J-6',radioText={split_enabled=true,max_lines=6,continuation='...'}},
         cars={{id=11,handle=101,model_id=411,model_name='Infernus',color1=1,color2=0,distance=8},
             {id=12,handle=102,model_id=597,model_name='PoliceCar',color1=0,color2=1,distance=4}}}
-    s.cfg.enabled=true;s.cfg.megaphone_enabled=true;s.cfg.require_patrol=true
+    s.cfg.enabled=true;s.cfg.megaphone_enabled=true;s.cfg.require_patrol=true;s.cfg.occupied_only=false -- Abstract cars for executor/lifecycle tests.
     local v=vehicle.new({settings=function()return s.cfg end,codec=codec,equal=equal,patrol=function()return s.active end,
         scan=function()return shared.copy(s.cars)end,resolve=function(target)for _,c in ipairs(s.cars)do if c.handle==target.handle then return shared.copy(c)end end end,
         ownCar=function()return s.own end,start=function(p)s.plans[#s.plans+1]=p;return not s.fail,'injected failure'end})

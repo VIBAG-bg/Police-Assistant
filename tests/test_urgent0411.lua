@@ -12,9 +12,9 @@ check(not hud.cityName(0/0,0,0));check(not hud.cityName(4000,4000,0))
 local map=grid.defaults();map.auto_city=false;eq(grid.values(map,{city='Своя метка'},1500,-1500,0,0).city,'Своя метка')
 eq(grid.values(map,{city=''},1500,-1500,0,0).city,'Лос-Сантос');check(not grid.values(grid.defaults(),{},1500,-1500,1,0).city)
 check(not grid.validate((function()local c=grid.defaults();c.auto_city='yes';return c end)()))
-local cfg=prefs.defaults();eq(cfg.radius,60);eq(cfg.height_tolerance,15);check(cfg.sync_driver_target and cfg.occupied_priority and not cfg.occupied_only)
+local cfg=prefs.defaults();eq(cfg.radius,60);eq(cfg.height_tolerance,15);check(cfg.sync_driver_target and cfg.occupied_priority and cfg.occupied_only);eq(cfg.copilot_migrated,2)
 local legacy=model.copy(cfg);legacy.copilot_migrated=nil;legacy.enabled=false;legacy.megaphone_enabled=false;legacy.require_patrol=true;legacy.occupied_only=true;legacy.radius=40;legacy.cone_angle=65;legacy.height_tolerance=0
-local migrated=assert(prefs.validate(legacy));check(migrated.enabled and migrated.megaphone_enabled and not migrated.require_patrol and not migrated.occupied_only);eq(migrated.radius,60);eq(migrated.copilot_migrated,1)
+local migrated=assert(prefs.validate(legacy));check(migrated.enabled and migrated.megaphone_enabled and not migrated.require_patrol and migrated.occupied_only);eq(migrated.radius,60);eq(migrated.copilot_migrated,2)
 migrated.enabled=false;migrated.megaphone_enabled=false;migrated.occupied_only=true;migrated.radius=13
 local personal=assert(prefs.validate(migrated));check(not personal.enabled and not personal.megaphone_enabled and personal.occupied_only);eq(personal.radius,13)
 legacy.radius=29;local custom=assert(prefs.validate(legacy));check(not custom.enabled);eq(custom.radius,29)
@@ -42,6 +42,7 @@ local funcs={doesCharExist=function(p)return p==1 or p==300 end,getCharCoordinat
  sampGetPlayerIdByCharHandle=function()return true,37 end,sampGetCharHandleBySampPlayerId=function()return true,300 end,
  sampIsPlayerConnected=function()return true end,sampIsPlayerNpc=function()return false end,sampGetPlayerNickname=function()return'Driver_Name'end}
 local api=world.new(function(name,...)if funcs[name]then return funcs[name](...)end end,codec,function()return 1 end)
+cfg.occupied_only=false -- Geometry cases deliberately exercise the optional all-car mode.
 for _,distance in ipairs({0,1,2,5,10,15})do for _,deg in ipairs({-180,-90,0,90,180})do
  local a=math.rad(deg);cars={[11]={x=math.sin(a)*distance,y=math.cos(a)*distance,z=0}};eq(#api.scan(cfg),1,'Close visible car at any angle')
 end end
@@ -50,7 +51,7 @@ cars={[11]={x=0,y=61,z=0}};eq(#api.scan(cfg),0)
 cars={[11]={x=0,y=5,z=16}};eq(#api.scan(cfg),0,'Other floor excluded');cfg.height_tolerance=0;eq(#api.scan(cfg),1);cfg.height_tolerance=15
 cars={[11]={x=1,y=1,z=0}};clear=false;eq(#api.scan(cfg),0,'Known building obstruction remains blocked even close')
 clear=nil;eq(#api.scan(cfg),1,'Unavailable LOS has bounded near fallback');cars[11].y=20;eq(#api.scan(cfg),0);clear=true
-cars={[11]={x=0,y=20,z=0,passengers=1}};cfg.occupied_only=true;eq(#api.scan(cfg),1,'Passenger-only vehicle counts as occupied');cars[11].passengers=0;eq(#api.scan(cfg),0);cfg.occupied_only=false;eq(#api.scan(cfg),1)
+cars={[11]={x=0,y=20,z=0,passengers=1}};cfg.occupied_only=true;eq(#api.scan(cfg),0,'A passenger cannot substitute for a player driver');cars[11].passengers=0;eq(#api.scan(cfg),0);cfg.occupied_only=false;eq(#api.scan(cfg),1)
 cars[11].screen=false;eq(#api.scan(cfg),0);check(losCalls>0)
 local V=require 'pa26_vehicle';local state={session='s',ped=1,alive=true,focused=true,onDuty=true,radioEnabled=true,inVehicle=true,area='Ganton',city='Лос-Сантос',map_square='H-7',my_nick='Officer_Name',radioText={split_enabled=true,max_lines=6,continuation='...'}}
 local rows={{id=11,handle=11,model_id=560,model_name='Sultan',distance=30,angle=0,occupants=1,driver_id=37,driver_ped=300,driver_name='Driver_Name',x=0,y=30,z=0,color1=0,color2=1},
@@ -81,7 +82,7 @@ for _,action in ipairs({'call911','arrived','break_report'})do
  local proposal,err=cp:propose(action);check(proposal,err);check(proposal.carFree and proposal.car==nil);check(cp:accept(proposal));local prior=#plans;cp:tick(state,now+1);eq(#plans,prior+1)
  check(cp:validPlan(plans[#plans]));cp:onExecution('completed',{plan=plans[#plans]});check(not cp.phase,'Quick report must not start traffic stop')
 end
-check(not cp:propose('lost'));state.inVehicle=false;cp:tick(state,now+2);check(not cp:view().visible);state.patrolActive=true;cp:tick(state,now+3);check(cp:view().visible,'Foot patrol card');state.patrolStatus='paused';cp:tick(state,now+4);check(cp:view().statusTitle:find('ПАУЗА',1,true))
+check(cp:propose('lost'),'Lost report uses an editable vehicle fallback');state.inVehicle=false;cp:tick(state,now+2);check(not cp:view().visible);state.patrolActive=true;cp:tick(state,now+3);check(cp:view().visible,'Foot patrol card');state.patrolStatus='paused';cp:tick(state,now+4);check(cp:view().statusTitle:find('ПАУЗА',1,true))
 cfg.copilot.hud=false;check(not cp:view().visible);cfg.copilot.hud=true;state.focused=false;cp:tick(state,now+5);check(not cp:view().visible);state.focused=true
 -- Weapon guard does not consume text, system key messages or unrelated keys.
 for _,message in ipairs({0x100,0x101})do for _,key in ipairs({0x30,0x39,0x60,0x69,0x51,0x45})do check(bridge.weaponKey(message,key))end end

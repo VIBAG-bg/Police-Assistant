@@ -2,19 +2,23 @@
 -- Suggestions never send; each accepted frozen plan uses the ordinary executor.
 local core=require 'pa26_core';local model=require 'pa26_bindings';local radio=require 'pa26_radio_text'
 local settings=require 'pa26_copilot_settings';local vehicleModel=require 'pa26_vehicle'
+local dispatch=require 'pa26_dispatch'
 local M={};local C={};C.__index=C
 M.actions={{'stop_order','10-55 · Мегафон: остановиться у обочины'}, {'stop','10-55 · Доклад об остановке'},
  {'approach','10-55 · Подойти к фаре и осмотреть салон'}, {'high_risk','10-66 · CODE 3 и запрос экипажей'},
  {'risk_order','10-66 · Выбросить ключи и выйти'}, {'pursuit','10-57 VICTOR · Начать погоню'},
  {'foot','10-57 FOXTROT · Пешая погоня'}, {'finish','Завершить ситуацию'}}
 M.quick={{'call911','Вызов 9-1-1 · Код 3'},{'arrived','Прибыл на место · опрос граждан'},{'break_report','Перерыв · Код 7, до 15 минут'},{'lost','Потерян · Код 4 АДАМ'}}
-local carFree={call911=true,arrived=true,break_report=true}
+M.dispatchActions=dispatch.actions
+local carFree={call911=true,arrived=true,break_report=true,lost=true}
+for _,row in ipairs(dispatch.actions)do carFree[row[1]]=true end
  local labels={stop='Машина остановилась · Доложить о 10-55?',return_car='Водитель вышел · Потребовать вернуться?',
  pursuit='Машина уезжает · Начать 10-57 VICTOR?',foot='Водитель убегает · 10-57 FOXTROT?',
  approach='Вы подошли к машине · Осмотреть салон?',high_risk='Машина остановилась после погони · 10-66?',
  armed='Вооружённый водитель · Запросить поддержку?',combat='Попадание по офицеру · Передать CODE 0?',
  taser_warning='Пешая погоня · Предупредить о тайзере?',pursuit_mark='Повторить только /pt · без розыска?',fast_wanted='Ориентировка и розыск 8.1 + /pt?',combat_wanted='Подтверждённое нападение · Розыск 2.2 + /pt?'}
  for _,row in ipairs(M.quick)do labels[row[1]]=row[2]end
+ for _,row in ipairs(dispatch.actions)do labels[row[1]]=row[2]end
  local fast={fast_wanted=true,combat_wanted=true,pursuit_mark=true}
 local function safe(s)return s and s.session and s.alive and s.focused and not s.paused and not s.blocked and s.onDuty and s.radioEnabled end
 local function idSame(a,b)return a and b and a.id==b.id and a.name==b.name and a.generation==b.generation end
@@ -61,9 +65,14 @@ function C:values(override)
  v.driver_id=self.driver and tostring(self.driver.id)or'';v.driver_name=self.driver and self.driver.name:gsub('_',' ')or'Водитель'
  v.tac=cfg.tac_channel;v.stop_outcome=cfg.stop_outcome;v.armed_text=(c.armed or cfg.pursuit_armed or self.driverLive and self.driverLive.armed)and' Подозреваемые вооружены!'or''
  v.my_firstname=(profile.name~=''and profile.name or s.my_name or s.my_nick or'Офицер'):gsub('_',' '):match('^%S+')or'Офицер'
+ if not self.car then v.vehicle_description=cfg.lost_vehicle_fallback end
+ v.dispatch_officers=dispatch.officers(s);v.robbery_min_officers=cfg.robbery_min_officers
+ v.officers=#(colleagues.nearbyOfficers or{})+1;v.min_officers=cfg.min_officers
+ v.warnings=self.tireWarnings;v.warning_count=cfg.warning_count;v.ooc_warning_count=cfg.ooc_warning_count
  return v
 end
 function C:prepare(action,override)
+ action=dispatch.aliases[action]or action
  local cfg=override or self.env.settings();local values,why=self:values(cfg);if not values then return nil,why end
  local lines,wires,steps={},{},{};local rpSignature,textSignature
  local function add(channel,text)
@@ -77,18 +86,29 @@ function C:prepare(action,override)
   if #steps>64 then return nil,'План слишком длинный: сократите тексты.'end;return true
  end
  local function template(key,channel)
+  if type(cfg.templates[key])~='string'then return nil,'Заполните текст Copilot: '..tostring(key)end
   for line in(cfg.templates[key]..'\n'):gmatch('(.-)\n')do if line~=''then local ok,err=add(channel,line);if not ok then return nil,err end end end;return true
  end
  local function explicitRp(key)
+  if type(cfg.templates[key])~='string'then return nil,'Заполните RP Copilot: '..tostring(key)end
   for line in(cfg.templates[key]..'\n'):gmatch('(.-)\n')do if line~=''then local cmd,body=line:match('^(/%l+)%s+(.+)$')
-   if cmd~='/me'and cmd~='/do'and cmd~='/try'and cmd~='/todo'then return nil,'В RP ориентировки допустимы только /me, /do, /try и /todo.'end
+   if cmd~='/me'and cmd~='/do'and cmd~='/try'and cmd~='/todo'then return nil,'В RP допустимы только /me, /do, /try и /todo.'end
    local ok,err=add(cmd,body);if not ok then return nil,err end
   end end;return true
  end
  local function command(text)local w,err=core.encodeWire(text,self.env.codec);if not w then return nil,err end
   steps[#steps+1]={kind='message',text=text,wire=w};lines[#lines+1]=text;wires[#wires+1]=w;return true end
  local channel=self.env.vehicle.env.settings().channel;local ok,err
- if fast[action]then
+ local dispatchAction=dispatch.byAction[action]
+ if dispatchAction then
+  if not cfg.dispatch_enabled then return nil,'Включите «Вызовы и спецситуации» в настройках Copilot.'end
+  if dispatchAction.mega then ok,err=template(dispatchAction.radio,self.env.vehicle.env.settings().megaphone_channel)
+  else
+   ok=true
+   if cfg.dispatch_rp_enabled then ok,err=explicitRp(self.state.inVehicle and dispatchAction.rp or dispatchAction.foot)end
+   if ok then ok,err=template(dispatchAction.radio,channel)end
+  end
+ elseif fast[action]then
   if self.done[action]then return nil,'Это действие розыска уже передано в этой ситуации. Для нового случая завершите текущую ситуацию.'end
   if not self.driverLive or not idSame(self.driverLive,self.driver)then return nil,'Водитель не установлен или его ID уже сменил владельца.'end
   if action=='combat_wanted'and not self.attackConfirmed then return nil,'Нет подтверждённого нападения этого водителя.'end
@@ -120,28 +140,41 @@ function C:prepare(action,override)
 end
 function C:previewTemplate(key,cfg)
  local values,err=self:values(cfg);if not values then return nil,err end
- local text=cfg.templates[key];if not text then return nil,'Неизвестная реплика.'end
+ local note=({robbery_warning=true,dispatch_confirmation_note=true,gas_confirmation_note=true})[key]
+ local text=note and cfg[key]or cfg.templates[key];if not text then return nil,'Неизвестная реплика.'end
  local body;body,err=M.expand(text,values);if not body then return nil,err end
+ if note then return body end
  local channels={approach_day='/me',approach_night='/me',window='/do',ooc_hint='/n',risk_single='/m',risk_multi='/m',return_car=self.state.inVehicle and'/m'or'/s',stop_order='/m',tire='/m',taser_warning='/s',backup_risk='/mark',backup_combat='/mark'}
- local channel=channels[key]or self.env.vehicle.env.settings().channel
- if key=='wanted_rp'or key=='combat_rp'then return body end
+ local channel=channels[key]or key=='gas_order'and self.env.vehicle.env.settings().megaphone_channel or self.env.vehicle.env.settings().channel
+ if dispatch.isRp(key)then return body end
  local out={};for line in(body..'\n'):gmatch('(.-)\n')do if line~=''then out[#out+1]=channel..' '..line end end;return table.concat(out,'\n')
 end
 function C:propose(action)
+ action=dispatch.aliases[action]or action
  local cfg=self.env.settings();local s=self.state;local v=self.env.vehicle
  if not cfg.enabled or not v.env.settings().enabled or not safe(s)then return nil,'Включите Copilot, транспорт, службу и рацию.'end
- local vcfg=v.env.settings();local mega=({stop_order=true,risk_order=true,tire=true,return_car=true})[action]
+ local vcfg=v.env.settings();local dispatchAction=dispatch.byAction[action]
+ local mega=({stop_order=true,risk_order=true,tire=true,return_car=true})[action]or dispatchAction and dispatchAction.mega
  if mega and not vcfg.megaphone_enabled then return nil,'Включите мегафон в настройках.'end
  local patrol=v.env.patrol and v.env.patrol();local needsPatrol=vcfg.require_patrol or mega and vcfg.megaphone_require_patrol
  if needsPatrol and(not patrol or patrol.status~='active')then return nil,'Сначала начните патруль или измените условие доступа.'end
  if not carFree[action]and not self.car then return nil,'Сначала выберите видимую машину.'end
  if self.intent or self.queued then return nil,'Дождитесь текущего действия.'end
  local prepared,err=self:prepare(action);if not prepared then return nil,err end
+ local note=fast[action]and action~='pursuit_mark'and'ДА подтверждает IC-основание и личность установленного водителя. SA:MP ID и ник сами по себе не заменяют RP-установление личности. Проверьте показанные раздел и подпункт розыска.'or nil
+ local guardRisk=action=='dispatch_business'and cfg.robbery_guard and dispatch.officers(s)<cfg.robbery_min_officers or false
+ if dispatchAction then
+  local values=self:values();note,err=M.expand(dispatchAction.mega and cfg.gas_confirmation_note or cfg.dispatch_confirmation_note,values)
+  if not note then return nil,err end
+  if guardRisk then local warning;warning,err=M.expand(cfg.robbery_warning,values);if not warning then return nil,err end;note=warning..'\n\n'..note end
+ end
  self.serial=self.serial+1
  return {token='copilot:'..self.life..':'..self.serial,action=action,life=self.life,session=s.session,ped=s.ped,demo=s.demo,at=self.now,
   copilot=true,carFree=carFree[action]==true,needsPatrol=needsPatrol,patrol_id=patrol and patrol.id,target=not carFree[action]and model.copy(self.car)or nil,cfg=model.copy(cfg),car=not carFree[action]and model.copy(self.car)or nil,driver=fast[action]and model.copy(self.driver)or nil,prepared=prepared,
   phase=self.phase,label=labels[action]or action,assault=action=='combat_wanted',description=(self:values()or{}).vehicle_description,
-  confirmationNote=fast[action]and action~='pursuit_mark'and'ДА подтверждает IC-основание и личность установленного водителя. SA:MP ID и ник сами по себе не заменяют RP-установление личности. Проверьте показанные раздел и подпункт розыска.'or nil,
+  confirmationNote=note,confirmationTitle=guardRisk and'Ограбление бизнеса · проверьте состав патруля'or nil,
+  dispatchAction=dispatchAction~=nil,dispatchRp=dispatchAction~=nil and not dispatchAction.mega and cfg.dispatch_rp_enabled,
+  inVehicle=s.inVehicle==true,guardRisk=guardRisk,
   vehicleCfg=model.copy(v.env.settings())}
 end
 function C:valid(p,started)
@@ -149,6 +182,8 @@ function C:valid(p,started)
  if not p or p.life~=self.life or not safe(s)or p.session~=s.session or p.ped~=s.ped or p.demo~=s.demo or not age or age>(started and 600000 or self.env.settings().toast_ms)or
   not self.env.equal(p.cfg,self.env.settings())or not self.env.equal(p.vehicleCfg,self.env.vehicle.env.settings())then return false end
  if p.carFree~=(carFree[p.action]==true)then return false end
+ if p.dispatchRp and p.inVehicle~=(s.inVehicle==true)then return false end
+ if p.action=='dispatch_business'and self.env.settings().robbery_guard and p.guardRisk~=(dispatch.officers(s)<self.env.settings().robbery_min_officers)then return false end
  if not p.carFree and(not vehicleModel.same(p.car,self.car)or p.car.color1~=self.car.color1 or p.car.color2~=self.car.color2)then return false end
  local patrol=self.env.vehicle.env.patrol and self.env.vehicle.env.patrol()
  if p.needsPatrol and(not patrol or patrol.status~='active'or p.patrol_id~=patrol.id)then return false end

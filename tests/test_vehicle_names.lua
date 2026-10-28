@@ -17,7 +17,7 @@ local w=world.new(function(name,...)
     if name=='getGxtText'or name=='getNameOfVehicleModel'then gxtReads=gxtReads+1;return '\255\254Иероглифы' end
     if api[name]then return api[name](...)end
 end,{decode=function()error('GXT must not be decoded as CP1251')end},function()return 1 end)
-local cfg=prefs.defaults()
+local cfg=prefs.defaults();cfg.occupied_only=false -- Model/GXT tests do not supply player identity natives.
 for modelId=400,611 do id=modelId;local rows=w.scan(cfg);eq(#rows,1);eq(rows[1].model_name,names[modelId])end
 eq(gxtReads,0,'Font-encoded GXT must never reach a vehicle label')
 for _,bad in ipairs({399,65536,411.5,0/0,math.huge})do id=bad;eq(#w.scan(cfg),0)end

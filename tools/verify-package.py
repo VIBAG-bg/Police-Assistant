@@ -10,6 +10,11 @@ for script in [ROOT/'install.ps1', *(ROOT/'tools').glob('*.ps1'), *(ROOT/'moonlo
         assert data.startswith(b'\xef\xbb\xbf'), f'Windows PowerShell needs UTF-8 BOM: {script}'
 manifest=json.loads((ROOT/'INSTALL_MANIFEST.json').read_text('utf-8-sig'))
 assert re.fullmatch(r'\d+\.\d+\.\d+(?:-[\w.-]+)?', manifest['release'])
+installer=(ROOT/'install.ps1').read_text('utf-8-sig')
+owned=re.search(r'\$paOwned\s*=\s*@\((.*?)\)\s*\r?\n',installer,re.S)
+assert owned, 'Installer runtime allowlist is missing'
+allowed=re.findall(r"'([^']+)'",owned.group(1))
+assert len(allowed)==len(set(allowed)) and set(allowed)=={r['path'] for r in manifest['files']}, 'Installer allowlist and release manifest differ'
 count=0
 for prefix,key in [('moonloader','files'),('cef/assets/hud','cef_files')]:
     names=set()

@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.41.1')
+script_version('0.41.2')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -62,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.41.1' then
+if #missing > 0 or not core or core.VERSION ~= '0.41.2' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -755,7 +755,11 @@ sceneServices.world=sceneServices.worldModule.new(optionalRead,codec,function()r
 sceneServices.vehicle=sceneServices.model.new({settings=function()return workspace.library.vehicle end,codec=codec,scan=sceneServices.world.scan,resolve=sceneServices.world.resolve,ownCar=sceneServices.world.ownCar,selectionStatus=sceneServices.world.status,
     driver=function(id)return sceneServices.readDriver and sceneServices.readDriver(id)end,
     currentTarget=function()return workspace.targets.target,workspace.targets.revision end,
-    selectTarget=function(target)return workspace:selectTarget(target)end,
+    selectTarget=function(target)
+        local ok,err=workspace:selectTarget(target)
+        if ok then workspace.selectedTarget=workspace.targets.target;hud.target=workspace.targets:view()end
+        return ok,err
+    end,
     profile=function()return workspace.library.profile end,service=function()return {unit=workspace.library.patrol_session.unit,station=workspace.library.patrol_session.station,crew=workspace.library.profile.name}end,
     equal=patrolSession.env.equal,patrol=function()return patrolSession.data.active end,start=startAutomatic,
     notice=function(message)studio:notify(message,'vehicle',false)end,
@@ -2968,11 +2972,11 @@ function main()
             not context().blocked then recoverUi(false)end
         recovery:healthy(now,cfg.recovery)
         if not started then
-            pushLog('v0.41.1: игровой цикл запущен.')
+            pushLog('v0.41.2: игровой цикл запущен.')
             started = true
         end
         if uiRendered and not drawReported then
-            pushLog('v0.41.1: окно отрисовано.')
+            pushLog('v0.41.2: окно отрисовано.')
             drawReported = true
         end
     end

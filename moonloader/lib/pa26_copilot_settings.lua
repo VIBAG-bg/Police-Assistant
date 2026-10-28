@@ -1,6 +1,7 @@
 -- Additive settings only. Templates are original RP, not quotations of the rules.
 local shared=require 'pa26_patrol_settings'
 local core=require 'pa26_core'
+local dispatch=require 'pa26_dispatch'
 local M={}
 M.booleans={{'pursuit_armed','Подозреваемые вооружены · ручная отметка'}, {'enabled','Подсказывать следующий шаг'}, {'hud','Карточка ситуации у HUD'}, {'always_show_on_duty','Карточка на службе в машине'},
  {'stationary_offer','Предложить доклад после остановки'}, {'exit_offer','Реагировать на выход водителя'},
@@ -10,19 +11,24 @@ M.booleans={{'pursuit_armed','Подозреваемые вооружены · �
  {'night_flashlight','Фонарик в ночной отыгровке'}, {'window_ooc_hint','Подсказка ответа новичку в /n'},
  {'backup_mark','Добавлять /mark в экстренный доклад'}, {'colleagues_enabled','Радар коллег'},
  {'uniforms_enabled','Учитывать форму ПД как подсказку'}, {'radio_cache','Запоминать коллег из подтверждённых форматов чата'},
- {'ghetto_guard','Напоминать о численности в опасном районе'}, {'combat_guard','Напоминать о тайзере при перестрелке'}}
+ {'ghetto_guard','Напоминать о численности в опасном районе'}, {'combat_guard','Напоминать о тайзере при перестрелке'},
+ {'dispatch_enabled','Вызовы и спецситуации'}, {'dispatch_rp_enabled','RP перед докладом о вызове'}, {'robbery_guard','Состав патруля перед выездом'}}
 M.numbers={{'find_cache_window_ms','Ожидание ответа /find, мс',1000,30000},{'raid_start_hour','Окно рейдов · начало по МСК',0,23},{'raid_end_hour','Окно рейдов · конец по МСК',0,23},{'scan_ms','Обновление радара, мс',100,5000},{'colleague_radius','Коллеги в радиусе, м',5,100},
  {'stop_distance','Дальность остановки, м',5,50},{'stop_ms','Время неподвижности для 10-55, мс',1000,10000},
  {'risk_stop_ms','Время неподвижности после погони, мс',1000,15000},{'risk_distance','Дальность 10-66, м',5,100},
  {'flee_distance','Отъезд для предложения погони, м',10,150},{'foot_distance','Отход водителя для пешей погони, м',5,50},
  {'toast_ms','Срок предложения, мс',1000,60000},{'warning_cooldown_ms','Интервал предупреждений, мс',1000,60000},
  {'warning_count','Предупреждений по Мануалу',1,10},{'ooc_warning_count','Минимум предупреждений OOC',1,10},
- {'combat_ms','Память о попадании, мс',1000,60000},{'min_officers','Сотрудников для подсказки об опасном районе',2,10}}
+ {'combat_ms','Память о попадании, мс',1000,60000},{'min_officers','Сотрудников для подсказки об опасном районе',2,10},
+ {'robbery_min_officers','Порог подсказки: ограбление бизнеса',2,10}}
 M.texts={{'count_legacy_phrases','Реплики мегафона, учитываемые как предупреждение · номера 1–8',64},{'stop_outcome','Итог остановки',240},{'select_plate','Известный по RP госномер',80},
  {'skin_ids','Форма ПД · ID через запятую',512},{'vehicle_models','Служебные машины · модели через запятую',256},
  {'danger_zones','Опасные районы · через запятую',1024},
  {'ghetto_warning','Напоминание об опасном районе',1024}, {'combat_warning','Напоминание о тайзере',1024},
- {'tire_zero','Счётчик: предупреждений ещё нет',512},{'tire_partial','Счётчик: минимум OOC',512},{'tire_done','Счётчик: все предупреждения',512}}
+ {'tire_zero','Счётчик: предупреждений ещё нет',512},{'tire_partial','Счётчик: минимум OOC',512},{'tire_done','Счётчик: все предупреждения',512},
+ {'lost_vehicle_fallback','Машина не выбрана: текст для «Потерян»',160},
+ {'robbery_warning','Предупреждение о составе на ограбление',2048},
+ {'dispatch_confirmation_note','Подтверждение RP-вызова',2048}, {'gas_confirmation_note','Подсказка перед требованием на АЗС',2048}}
 M.templates={{'call911','Вызов 9-1-1'},{'arrived','Прибытие и опрос граждан'},{'break_report','Перерыв · Код 7'},{'lost','Потерян · Код 4 АДАМ'},{'stop','Доклад 10-55'},{'pursuit','Доклад 10-57 VICTOR'},{'foot','Доклад 10-57 FOXTROT'},
  {'high_risk','Доклад 10-66'},{'combat','CODE 0 · попадание по офицеру'}, {'armed','Вооружённый водитель · без подтверждения стрельбы'},
  {'finish','Завершение ситуации'}, {'approach_day','Подход днём'}, {'approach_night','Подход ночью'},
@@ -31,14 +37,20 @@ M.templates={{'call911','Вызов 9-1-1'},{'arrived','Прибытие и оп
  {'risk_single','10-66 · один человек'}, {'risk_multi','10-66 · несколько человек'},
  {'wanted_rp','Ориентировка перед розыском'}, {'combat_rp','RP перед розыском за нападение'},
  {'backup_risk','Метка помощи при 10-66'}, {'backup_combat','Метка помощи при CODE 0'}}
+for _,row in ipairs(dispatch.templates)do M.templates[#M.templates+1]=row end
 M.variables={unit=true,station=true,crew=true,model=true,model_id=true,vehicle_id=true,vehicle_color=true,
  vehicle_description=true,vehicle_plate=true,occupants=true,occupants_text=true,driver_id=true,driver_name=true,
  tac=true,armed_text=true,stop_outcome=true,area=true,location=true,map_square=true,sector=true,direction=true,
  my_name=true,my_firstname=true,officers=true,min_officers=true,warnings=true,warning_count=true,ooc_warning_count=true}
 local legacyRadio={stop="{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.",pursuit="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}",foot="{local_tag}{unit}, подозреваемый покинул {model}, веду пешую погоню 10-57 FOXTROT в районе {area} ({map_square}), направление: {direction}, {tac}, Код 3!",high_risk="{local_tag}{unit}, провожу остановку повышенного риска 10-66 {vehicle_description}, {occupants_text}, район {area} ({map_square}), запрашиваю свободные экипажи по Код 3!",finish="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4."}
-M.variables.city=true
+M.variables.city=true;M.variables.dispatch_officers=true;M.variables.robbery_min_officers=true
 function M.defaults()
- local d={radio_templates_version=1,always_show_on_duty=true,pursuit_armed=false,enabled=true,hud=true,stationary_offer=true,exit_offer=true,approach_offer=true,flee_offer=true,high_risk_offer=true,
+ local d={dispatch_enabled=true,dispatch_rp_enabled=true,robbery_guard=true,robbery_min_officers=2,
+  lost_vehicle_fallback='преследуемому т/с',
+  robbery_warning='ВНИМАНИЕ! Пункты 3.1 / 10.4: на ограбление бизнеса нужен патруль минимум из {robbery_min_officers} сотрудников. Нарушение: Jail–Warn. PA оценивает состав в {dispatch_officers} чел. Подтвердите, что выезжаете с напарником; люди рядом или пассажиры сами по себе не подтверждают состав патруля.',
+  dispatch_confirmation_note='Подтверждайте фактически полученный RP-вызов. Место и курс в докладе берутся из текущего положения офицера; проверьте их в предпросмотре. Отыгровка не устанавливает серверную GPS-метку.',
+  gas_confirmation_note='Пункт 8.2: требование предъявляют на месте, пока ограбление АЗС продолжается. Предупреждение не разрешает автоматически открывать огонь: основания и ограничения применения силы проверяются отдельно. Пешком выберите доступный канал /s в настройках мегафона, если /m недоступен.',
+  radio_templates_version=1,always_show_on_duty=true,pursuit_armed=false,enabled=true,hud=true,stationary_offer=true,exit_offer=true,approach_offer=true,flee_offer=true,high_risk_offer=true,
   fast_wanted=true,taser_offer=true,adam_driver_mute_radio=true,night_flashlight=true,window_ooc_hint=true,backup_mark=false,
   colleagues_enabled=true,uniforms_enabled=true,radio_cache=true,ghetto_guard=true,combat_guard=true,
   find_cache_window_ms=10000,raid_start_hour=14,raid_end_hour=22,scan_ms=500,colleague_radius=50,stop_distance=25,stop_ms=1500,risk_stop_ms=2500,risk_distance=35,flee_distance=25,foot_distance=12,
@@ -77,6 +89,7 @@ function M.defaults()
    combat_rp='/me {gender:передал|передала} диспетчеру сведения о подтверждённом вооружённом нападении на офицера и {gender:запросил|запросила} розыск установленного нападавшего.',
    backup_risk='10-66 / CODE 3! Остановка повышенного риска {vehicle_description}, район {area} ({map_square})!',
    backup_combat='CODE 0! Нападение на офицера в районе {area} ({map_square}), нужна срочная помощь!'}}
+ for key,text in pairs(dispatch.defaults)do d.templates[key]=text end
  return d
 end
 function M.ids(s,lo,hi)
@@ -99,6 +112,7 @@ function M.validate(raw)
   for _,r in ipairs(M.templates)do local t=raw.templates[r[1]]
    if t~=nil then if type(t)~='string'or #t>4096 or not core.validUtf8(t)or t:gsub('\n',''):find('%c')or t==''then return nil,'Проверьте текст Copilot: '..r[2]end
     for k in core.stripGender(t):gmatch('{([^{}]+)}')do if not M.variables[k]and k~='local_tag'then return nil,'Неизвестная переменная Copilot: '..k end end
+    if dispatch.rpKeys[r[1]]and not dispatch.validRp(t)then return nil,'В RP вызова нужны отдельные строки /me, /do, /try или /todo.'end
     d.templates[r[1]]=t
    end
   end
@@ -106,6 +120,10 @@ function M.validate(raw)
  if raw.radio_templates_version~=nil and raw.radio_templates_version~=1 then return nil,'Неизвестная версия реплик Copilot.'end
  if raw.radio_templates_version==nil and type(raw.templates)=='table'then
   local stock=M.defaults().templates;for k,old in pairs(legacyRadio)do if raw.templates[k]==old then d.templates[k]=stock[k]end end
+ end
+ for _,key in ipairs({'robbery_warning','dispatch_confirmation_note','gas_confirmation_note'})do
+  local text=core.stripGender(d[key]):gsub('{([a-z_]+)}',function(k)return M.variables[k]and''or'{'end)
+  if text:find('[{}]')then return nil,'Неизвестная переменная в подсказке: '..key end
  end
  return d
 end

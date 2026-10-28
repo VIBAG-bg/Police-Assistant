@@ -300,14 +300,16 @@ function Show-PaProgressWindow {
     try{
         try{$viewLock=[IO.File]::Open((Join-Path $script:PaJob 'progress-view.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)}catch{return}
         $form=New-PaProgressForm;$timer=New-Object Windows.Forms.Timer;$timer.Interval=400
+        # Keep named helper lookup in this script, not a closure's dynamic module.
+        $script:PaProgressUi=@{form=$form;ready=(Join-Path $script:PaJob 'view.ready.json')}
         $paint={
+            $form=$script:PaProgressUi.form
             try{$v=Get-PaProgressView;$form.SetState($v.heading,$v.detail,$v.percent,$v.tone,$v.terminal,$v.safe,$v.version)}
             catch{$form.Detail.Text='Читаю сведения об установке. Пока не запускайте GTA.'}
-        }.GetNewClosure()
-        $ready=Join-Path $script:PaJob 'view.ready.json'
-        $form.Add_Shown({try{[IO.File]::WriteAllText($ready,('{"pid":'+$PID+'}'))}catch{}}.GetNewClosure())
+        }
+        $form.Add_Shown({try{[IO.File]::WriteAllText($script:PaProgressUi.ready,('{"pid":'+$PID+'}'))}catch{}})
         $timer.Add_Tick($paint);&$paint;$timer.Start();[Windows.Forms.Application]::Run($form)
-    }finally{if($timer){$timer.Stop();$timer.Dispose()};if($form){$form.Dispose()};if($viewLock){$viewLock.Dispose()}}
+    }finally{if($timer){$timer.Stop();$timer.Dispose()};if($form){$form.Dispose()};if($viewLock){$viewLock.Dispose()};$script:PaProgressUi=$null}
 }
 function Start-PaProgressWindow {
     if(-not $script:PaPresentation){return}

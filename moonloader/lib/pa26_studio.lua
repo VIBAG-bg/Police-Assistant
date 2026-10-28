@@ -1791,10 +1791,10 @@ function Studio:modalIntent(data)
         local p=self.vehicleConfirm
         local lines={p.target and p.description or p.copilot and'Ручной доклад по выбранному каналу рации.'or'Общее объявление для окружающих.',
             p.target and('Машина ['..p.target.id..'] · GTA модель '..p.target.model_id)or('Реплика: '..(p.label or'Мегафон')),'Y — ДА · N — НЕТ'}
-        if p.confirmationNote then lines[#lines+1]=p.confirmationNote end
+        if p.confirmationNote then table.insert(lines,1,p.confirmationNote)end
         for _,line in ipairs(p.prepared.lines)do lines[#lines+1]=line end
         lines[#lines+1]=p.demo and 'Демо: отправок на сервер нет.'or 'После ДА PA отправит показанные строки по очереди. Результат команды нужно проверить в игре.'
-        return {kind='vehicle',token=p.token,title=p.target and'Выполнить действие с выбранной машиной?'or p.copilot and'Передать доклад в рацию?'or'Передать общее объявление?',lines=lines}
+        return {kind='vehicle',token=p.token,title=p.confirmationTitle or(p.target and'Выполнить действие с выбранной машиной?'or p.copilot and'Передать доклад в рацию?'or'Передать общее объявление?'),lines=lines}
     end
     if self.patrolConfirm then
         local p=self.patrolConfirm

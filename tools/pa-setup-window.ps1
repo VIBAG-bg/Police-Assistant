@@ -84,7 +84,11 @@ function Show-PaSetupWindow {
     $form=New-PaSetupForm
     $form.Text='Police Assistant '+$paSetupManifest.release+' | Установка'
     $state=@{child=$null;job='';finished=$false;last=0;preflight=$null}
+    # Event scriptblocks keep this script's function scope. GetNewClosure creates
+    # a dynamic module which loses these helpers when launched with -File or &.
+    $script:PaSetupUi=@{form=$form;state=$state;refresh=$null}
     $refresh={
+        $form=$script:PaSetupUi.form;$state=$script:PaSetupUi.state
         if($state.child){return}
         try{
             $info=Get-PaSetupPreflight $form.PathBox.Text;$state.preflight=$info
@@ -93,27 +97,31 @@ function Show-PaSetupWindow {
             $form.Install.Text=if($info.missing){'Установить и докачать библиотеки'}else{'Установить PA'}
             $form.Footer.Text=if($info.running){'Закройте GTA, затем нажмите «Установить». Ни один файл игры пока не изменялся.'}else{'Настройки и бинды сохраняются. Перед записью создаются резервные копии.'}
         }catch{$state.preflight=$null;$form.Install.Enabled=$false;$form.Requirements.Text=Get-PaSetupExplanation $_.Exception.Message}
-    }.GetNewClosure()
+    }
+    $script:PaSetupUi.refresh=$refresh
     $form.PathBox.Add_TextChanged($refresh)
     $form.Browse.Add_Click({
+        $form=$script:PaSetupUi.form
         $picker=New-Object Windows.Forms.FolderBrowserDialog
         $picker.Description='Выберите папку GTA San Andreas или MoonLoader.';$picker.ShowNewFolderButton=$false
         if(Test-Path -LiteralPath $form.PathBox.Text){$picker.SelectedPath=$form.PathBox.Text}
         try{if($picker.ShowDialog($form) -eq [Windows.Forms.DialogResult]::OK){$form.PathBox.Text=$picker.SelectedPath}}finally{$picker.Dispose()}
-    }.GetNewClosure())
+    })
     $form.Install.Add_Click({
+        $form=$script:PaSetupUi.form;$state=$script:PaSetupUi.state
         if($state.child){return}
         try{
-            &$refresh
+            & $script:PaSetupUi.refresh
             if(-not $state.preflight -or $state.preflight.running){return}
             $state.job=Join-Path $paSetupSource ('installation-backups/ui-jobs/'+[guid]::NewGuid().ToString('N'))
             $state.child=Start-PaSetupChild $state.preflight.moonloader $state.job $DependencyCache $TestFailAfter $form.AuthorBinds.Checked $form.AuthorSettings.Checked
             $form.Current.Controls.Remove($form.AuthorPanel);$form.Current.Controls.Add($form.Footer,0,4);$form.BeginInstallation();$state.last=2
         }catch{[Windows.Forms.MessageBox]::Show($form,(Get-PaSetupExplanation $_.Exception.Message),'Установка не началась','OK','Error')|Out-Null}
-    }.GetNewClosure())
+    })
     $timer=New-Object Windows.Forms.Timer;$timer.Interval=400
     $timer.Add_Tick({
-        if(-not $state.child){&$refresh;return}
+        $form=$script:PaSetupUi.form;$state=$script:PaSetupUi.state
+        if(-not $state.child){& $script:PaSetupUi.refresh;return}
         if($state.finished){return}
         try{
             $row=Read-PaSetupJob $state.job
@@ -141,8 +149,8 @@ function Show-PaSetupWindow {
             $form.Detail.Text='Не удаётся прочитать состояние установки. Дождитесь завершения помощника. Код: '+$_.Exception.Message
             if($state.child.HasExited){$state.finished=$true;$form.SetState('UPDATE INTERRUPTED','Помощник завершился без проверенного результата. Сохраните логи из '+$state.job,$state.last,'red',$true,$false,$paSetupManifest.release)}
         }
-    }.GetNewClosure())
+    })
     if($InitialPath){$form.PathBox.Text=$InitialPath}else{$form.PathBox.Text=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Exsellent Launcher/game'}
-    try{$timer.Start();[Windows.Forms.Application]::Run($form)}finally{$timer.Stop();$timer.Dispose();$form.Dispose();if($state.child){$state.child.Dispose()}}
+    try{$timer.Start();[Windows.Forms.Application]::Run($form)}finally{$timer.Stop();$timer.Dispose();$form.Dispose();if($state.child){$state.child.Dispose()};$script:PaSetupUi=$null}
 }
 if(-not $Library){Show-PaSetupWindow}

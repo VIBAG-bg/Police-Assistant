@@ -137,7 +137,7 @@ scfg.enabled=true;patrol.state=model.copy(base);patrol.now=1000
 local proposal=assert(patrol:propose('start'));check(patrol:proposalValid(proposal))
 patrol.state.map_square='H-19';check(not patrol:proposalValid(proposal));proposal.started=true;check(patrol:proposalValid(proposal))
 -- Equivalent checks for vehicle and event flows, including a changing format.
-vcfg=vehicleSettings.defaults();vcfg.enabled=true;vcfg.require_patrol=false
+vcfg=vehicleSettings.defaults();vcfg.enabled=true;vcfg.require_patrol=false;vcfg.occupied_only=false -- Map consent cases use an abstract car.
 local car={id=1,handle=10,model_id=597,model_name='PoliceCar',color1=0,color2=1,distance=5}
 local vc=vehicle.new({settings=function()return vcfg end,codec=codec,equal=equal,ownCar=function()end,scan=function()return {car}end,resolve=function()return car end})
 vc:tick(model.copy(base),1000);assert(vc:selectNearest());local vp=assert(vc:propose('traffic_stop'))

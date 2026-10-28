@@ -13,7 +13,7 @@ for _,mutation in ipairs({'variable','channel','name','condition','count'})do
     elseif mutation=='name'then c.phrases[1].name=''elseif mutation=='condition'then c.phrases[1].condition='hidden'else c.phrases[9]={}end
     check(not prefs.validate(c),mutation)
 end
-cfg.enabled=true;cfg.megaphone_enabled=true;cfg.require_patrol=false
+cfg.enabled=true;cfg.megaphone_enabled=true;cfg.require_patrol=false;cfg.occupied_only=false -- Exercise phrase conditions independently of driver selection.
 local state={session='erp',ped=1,alive=true,focused=true,paused=false,blocked=false,onDuty=true,radioEnabled=true,demo=false,station='SFPS'}
 local car={id=1,handle=10,model_id=411,model_name='Infernus',color1=1,color2=0,distance=5}
 local plans={};local own

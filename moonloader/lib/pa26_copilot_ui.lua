@@ -6,6 +6,9 @@ function M.offer(s,callbacks,action)
  if p then s.vehicleConfirm=p else s:notify(err,'vehicle',false)end
 end
 function M.quick(s,ui,callbacks,offer)
+ s:settingsHeading(ui,'Вызовы и спецситуации (RP + Рация)')
+ ui.text('Ручная отыгровка полученного вызова: в машине используется терминал, пешком — КПК и рация. Затем идёт доклад. Проверьте место в предпросмотре: это текущие город, район, квадрат и курс офицера. Серверная GPS-метка не устанавливается.')
+ for _,r in ipairs(require('pa26_copilot').dispatchActions)do if s:button(r[2]..'##copilot-dispatch-'..r[1],ui)then if offer then offer(r[1])else M.offer(s,callbacks,r[1])end end end
  s:settingsHeading(ui,'Быстрые доклады')
  ui.text('Каждая кнопка открывает предпросмотр и ДА/НЕТ. Отправки без подтверждения нет. Тексты и канал меняются в «Трафик и погоня → Настройки и тексты». Перерыв — только доклад, без таймера.')
  for _,r in ipairs(require('pa26_copilot').quick)do if s:button(r[2]..'##copilot-quick-'..r[1],ui)then if offer then offer(r[1])else M.offer(s,callbacks,r[1])end end end
@@ -69,15 +72,21 @@ function M.draw(s,ui,data,callbacks)
    local n=im.new.int(cfg[r[1]]);if im.InputInt(r[2]..'##copilot-setting-'..r[1],n)then cfg[r[1]]=n[0]end
   end
   local delta=im.new.float(cfg.stationary_delta);if im.SliderFloat('Порог неподвижности, м##copilot-stationary',delta,.05,5)then cfg.stationary_delta=delta[0]end
-  for _,r in ipairs(prefs.texts)do cfg[r[1]]=s:field(r[2]..'##copilot-text-'..r[1],'copilot:text:'..r[1],cfg[r[1]],r[3]*2+1,true,64)end
+  for _,r in ipairs(prefs.texts)do
+   cfg[r[1]]=s:field(r[2]..'##copilot-text-'..r[1],'copilot:text:'..r[1],cfg[r[1]],r[3]*2+1,true,64)
+   if({robbery_warning=true,dispatch_confirmation_note=true,gas_confirmation_note=true})[r[1]]then
+    local preview,why=callbacks.copilotPreview(r[1],cfg);ui.text('Предпросмотр: '..tostring(preview or why))
+   end
+  end
   ui.text('В напоминании о районе: {officers}, {min_officers}; в счётчике: {warnings}, {warning_count}, {ooc_warning_count}.')
   local choices={};for _,r in ipairs(prefs.templates)do choices[#choices+1]=r end
   s.copilotTemplate=s:choice('Изменить реплику##copilot-template',s.copilotTemplate or'stop',choices,ui)
   local key=s.copilotTemplate
   cfg.templates[key]=s:field('Реплика##copilot-rp','copilot:rp:'..key,cfg.templates[key],8193,true,140)
-  ui.text('Для ориентировки перед розыском — строки /me, /do, /try или /todo. Для остальных реплик — текст без /команды; несколько строк допускаются. Род: {gender:передал|передала}.')
+  ui.text('Для RP розыска и вызовов — отдельные строки /me, /do, /try или /todo. У вызовов есть варианты в машине и пешком. Для докладов и требования на АЗС — текст без /команды; канал добавляется отдельно. Род: {gender:передал|передала}.')
   ui.text('Переменные: {unit}, {station}, {crew}, {model}, {vehicle_id}, {vehicle_color}, {vehicle_description}, {vehicle_plate}, {occupants_text}, {driver_id}, {driver_name}, {city}, {area}, {map_square}, {direction}, {tac}, {stop_outcome}, {armed_text}, {my_firstname}.')
   local text,err=callbacks.copilotPreview(key,cfg);ui.text('Предпросмотр: '..tostring(text or err))
+  ui.text('Состав на ограбление: порог подсказки по умолчанию 2 (п. 3.1 / 10.4). В предупреждении доступны {dispatch_officers}, {robbery_min_officers}. Число по радару/салону — оценка; реальный совместный выезд подтверждаете вы. Для всех подсказок доступны остальные переменные Copilot.')
   ui.text('Подсказки правил основаны на сохранённой базе от 25.10.2026. Счётчик предупреждений не является разрешением на огонь; форму, ситуацию и применимость исключений проверяет офицер.')
  end
  s.vehicleDraft=d;s:autoSettings('vehicle',{'vehicle'},d,'vehicleDraft');s:autosaveHint(ui,'vehicle');s:drawNotice(ui)

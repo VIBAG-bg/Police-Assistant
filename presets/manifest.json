@@ -1,7 +1,7 @@
 {
   "format": "police-assistant.author-presets",
   "schema": 1,
-  "version": "0.41.1",
+  "version": "0.41.2",
   "minimum_pa": "0.40.3",
   "files": {
     "pa-binds.json": {

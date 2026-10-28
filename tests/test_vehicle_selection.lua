@@ -21,7 +21,9 @@ local funcs={doesCharExist=function()return true end,getCharCoordinates=function
     isCarOnScreen=function()return true end,isLineOfSightClear=function()return true end,getDriverOfCar=function()return 1 end,
     getOffsetFromCarInWorldCoords=function()if not missing then return 0,1,0 end end,
     getActiveCameraCoordinates=function()if not missing then return 0,0,0 end end,
-    getActiveCameraPointAt=function()if not missing then return 0,backwardsCamera and -1 or 1,0 end end}
+    getActiveCameraPointAt=function()if not missing then return 0,backwardsCamera and -1 or 1,0 end end,
+    sampGetPlayerIdByCharHandle=function()return true,37 end,sampGetCharHandleBySampPlayerId=function()return true,1 end,
+    sampIsPlayerConnected=function()return true end,sampIsPlayerNpc=function()return false end,sampGetPlayerNickname=function()return'Driver_Name'end}
 local api=world.new(function(n,...)calls[n]=(calls[n]or 0)+1;if funcs[n]then return funcs[n](...)end end,codec,function()return 1 end)
 local function ids(rows)local t={};for _,r in ipairs(rows)do t[r.id]=true end;return t end
 local rows=api.scan(cfg);local found=ids(rows);check(found[10]and found[20]);check(not found[30]and not found[40]and not found[50]and not found[100])

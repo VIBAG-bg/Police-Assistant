@@ -22,7 +22,7 @@ jobs:
       - shell: powershell
         run: ./tests/test_update_legacy_paths.ps1
       - shell: powershell
-        run: ./tests/test_update_progress.ps1
+        run: ./tests/test_update_progress.ps1 -Render
       - shell: powershell
         run: ./tests/test_installer.ps1
       - shell: powershell
@@ -30,7 +30,9 @@ jobs:
       - shell: powershell
         run: ./tests/test_setup.ps1
       - shell: powershell
-        run: ./tests/test_setup_window.ps1
+        run: ./tests/test_setup_window.ps1 -Render
+      - shell: powershell
+        run: ./tests/test_setup_launch.ps1
       - shell: powershell
         run: ./tests/test_author_install.ps1
       - shell: powershell

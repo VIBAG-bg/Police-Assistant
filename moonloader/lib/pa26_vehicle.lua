@@ -7,6 +7,7 @@ local radio=require 'pa26_radio_text'
 local M={};local Vehicle={};Vehicle.__index=Vehicle
 local function same(a,b)return a and b and a.id==b.id and a.handle==b.handle and a.model_id==b.model_id and a.generation==b.generation end
 local function sceneSafe(s)return s and s.session and s.alive and s.focused and not s.paused and not s.blocked end
+function M.selectable(c,cfg)return c and(not cfg.occupied_only or core.validId(c.driver_id)and core.finite(c.driver_ped))end
 local function safe(s)return sceneSafe(s)and s.onDuty and s.radioEnabled end
 local function megaphone(action)return action=='megaphone'or tostring(action):match('^megaphone_%d+$')~=nil end
 function M.needsTarget(action,cfg)
@@ -59,6 +60,7 @@ function Vehicle:clearTarget(reason)
     local p=self.queued or self.intent
     if p and p.target then self:cancel(reason)end
     self.selected=nil;self.candidates={};self.phase=nil;self.scanAt=nil
+    self.syncedDriver=nil;self.syncedRevision=nil;self.driverSelectionRevision=nil
     if not p or p.target then self.message=reason end
 end
 function Vehicle:invalidate(id)
@@ -159,7 +161,7 @@ function Vehicle:refreshCandidates(cfg)
     local ok,rows=pcall(self.env.scan,cfg)
     if ok and type(rows)=='table'then
         for _,c in ipairs(rows)do local v=self:decorate(c)
-            if v and core.finite(v.distance)and v.distance>=0 then self.candidates[#self.candidates+1]=v end
+            if v and M.selectable(v,cfg)and core.finite(v.distance)and v.distance>=0 then self.candidates[#self.candidates+1]=v end
         end
     end
     local nearEmpty,nearOccupied=math.huge,math.huge
@@ -193,32 +195,41 @@ function Vehicle:syncDriverTarget(cfg)
     end
     local explicit=(self.selectionRevision or 0)~=(self.driverSelectionRevision or 0)
     self.driverSelectionRevision=self.selectionRevision or 0
-    local car=self.selected;if not car or not core.validId(car.driver_id)then return end
+    local car=self.selected;if not car then return end
     local target,revision=self.env.currentTarget();local old=self.syncedDriver
+    -- Retaining an already captured driver is separate from candidate scanning.
+    -- A parked car cannot become a new target, but an exited driver is still
+    -- the same person throughout the active stop/pursuit.
+    local exited=self.phase~=nil and car.driver_known==true and car.driver_id==nil and old~=nil
+    local id=exited and old.id or car.driver_id;if not core.validId(id)then return end
     local automatic=target and old and target.id==old.id and target.ped==old.ped and target.name==old.name and revision==self.syncedRevision
-    if not(explicit or not target and not old or automatic)then return end
-    local driver=self.env.driver(car.driver_id)
-    if not core.capturedTargetValid(driver)or car.driver_ped and driver.ped~=car.driver_ped or car.driver_name and driver.name~=car.driver_name then return end
+    if not(explicit or not target and(not old or self.phase~=nil)or automatic)then return end
+    local driver=self.env.driver(id)
+    if not core.capturedTargetValid(driver)then return end
+    if exited then
+        if driver.ped~=old.ped or driver.name~=old.name or old.generation~=nil and driver.generation~=old.generation then return end
+    elseif car.driver_ped and driver.ped~=car.driver_ped or car.driver_name and driver.name~=car.driver_name then return end
     if target and target.id==driver.id and target.ped==driver.ped and target.name==driver.name then
-        if explicit or automatic then self.syncedDriver={id=driver.id,ped=driver.ped,name=driver.name};self.syncedRevision=revision end
+        if explicit or automatic then self.syncedDriver=model.copy(driver);self.syncedRevision=revision end
         return
     end
     if self.env.selectTarget(driver)then
-        self.syncedDriver={id=driver.id,ped=driver.ped,name=driver.name}
+        self.syncedDriver=model.copy(driver)
         local _,fresh=self.env.currentTarget();self.syncedRevision=fresh
     end
 end
 function Vehicle:selectNearest(fresh)
     if fresh and #self.candidates==0 then self:refreshCandidates(self.env.settings())end
-    local c=self.candidates[1]
-    if not c then return nil,'Рядом нет видимой машины. Повернитесь к нужному автомобилю или измените дальность выбора.'end
+    local cfg=self.env.settings();local c
+    for _,row in ipairs(self.candidates)do if M.selectable(row,cfg)then c=row;break end end
+    if not c then return nil,cfg.occupied_only and'Рядом нет видимой машины с игроком за рулём. Повернитесь к ней или измените дальность.'or'Рядом нет видимой машины. Повернитесь к нужному автомобилю или измените дальность выбора.'end
     if not same(self.selected,c)then self:clearTarget('Выбрана другая машина.')end
     self.selected=model.copy(c);self.selectionRevision=(self.selectionRevision or 0)+1;return true
 end
 function Vehicle:selectCandidate(id)
     local cfg=self.env.settings()
     if not(cfg.enabled or cfg.megaphone_enabled)or not sceneSafe(self.state)then return nil,'Включите транспорт или мегафон; игра должна быть доступна.'end
-    for _,c in ipairs(self.candidates)do if c.id==id then
+    for _,c in ipairs(self.candidates)do if c.id==id and M.selectable(c,cfg)then
         if not same(self.selected,c)then self:clearTarget('Выбрана другая машина.')end
         self.selected=model.copy(c);self.selectionRevision=(self.selectionRevision or 0)+1;return true
     end end

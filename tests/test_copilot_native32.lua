@@ -25,6 +25,13 @@ for _,display in ipairs({{640,480},{800,600},{1024,768},{1152,864},{1366,768},{1
   im.Begin('copilot-native',nil,im.WindowFlags.NoSavedSettings);im.BeginChild('content',im.ImVec2(0,0),false)
   uiModule.draw(s,ui,data,cb);check(#stack==0,'Balanced content scopes');im.EndChild();im.End();im.Render();check(im.GetDrawData().Valid);frames=frames+1
  end end
+ -- Every new RP/radio editor is rendered with actual Cyrillic font metrics.
+ for _,entry in ipairs(require('pa26_dispatch').templates)do
+  s.copilotPage='settings';s.copilotTemplate=entry[1]
+  im.NewFrame();im.SetNextWindowPos(im.ImVec2(16,16),im.Cond.Always);im.SetNextWindowSize(im.ImVec2(display[1]-32,display[2]-32),im.Cond.Always)
+  im.Begin('dispatch-native',nil,im.WindowFlags.NoSavedSettings);im.BeginChild('content',im.ImVec2(0,0),false)
+  uiModule.draw(s,ui,data,cb);check(#stack==0,'Dispatch editor scopes');im.EndChild();im.End();im.Render();check(im.GetDrawData().Valid);frames=frames+1
+ end
  im.NewFrame()
  local hud=require('pa26_hud').new(core.widgetDefaults(),{decode=function(v)return v end});hud.settings.scale=.8
  local vv=model.copy(data.copilot);vv.visible=true;vv.duration=15;vv.cooldown=0
@@ -53,5 +60,10 @@ for _,display in ipairs({{640,480},{800,600},{1024,768},{1152,864},{1366,768},{1
  im.NewFrame();im.Begin('layout-check',nil,im.WindowFlags.NoSavedSettings)
  local layout=menu.confirmationLayout(im,{title='Подтвердить ориентировку и розыск?',lines=lines,titleFont=im.GetFont(),buttonFont=im.GetFont(),pageState={},columns=2,buttons={'ДА','НЕТ'}})
  check(layout.width<=display[1]-20,'Modal width');check(layout.height<=display[2]-20,'Modal height');im.End();im.Render();frames=frames+1
+ local cfg=require('pa26_copilot_settings').defaults();local dispatchLines={cfg.robbery_warning,cfg.dispatch_confirmation_note}
+ for line in(cfg.templates.dispatch_business_rp..'\n'..cfg.templates.robbery_business..'\n'):gmatch('(.-)\n')do dispatchLines[#dispatchLines+1]=line end
+ im.NewFrame();im.Begin('dispatch-modal-layout',nil,im.WindowFlags.NoSavedSettings)
+ local risk=menu.confirmationLayout(im,{title='Ограбление бизнеса · проверьте состав патруля',lines=dispatchLines,titleFont=im.GetFont(),buttonFont=im.GetFont(),pageState={},columns=2,buttons={'ДА','НЕТ'}})
+ check(risk.width<=display[1]-20,'Business warning width');check(risk.height<=display[2]-20,'Business warning paginates within screen');im.End();im.Render();frames=frames+1
 end
 im.DestroyContext(ctx);print('Copilot native32: '..checks..' checks; '..frames..' frames; seven screen sizes; patrol/traffic, SOS and Taser; no game writes.')

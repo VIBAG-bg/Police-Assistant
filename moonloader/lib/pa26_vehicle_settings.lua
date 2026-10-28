@@ -14,9 +14,9 @@ for i=1,M.phraseCount do M.keys[#M.keys+1]={'phrase_'..i..'_shortcut','Мега�
 local legacyRadio={traffic_stop_template="{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.",pursuit_template="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}",finish_template="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4."}
 function M.defaults()
     local out={radio_templates_version=1,enabled=true,require_patrol=false,megaphone_enabled=true,megaphone_require_patrol=false,megaphone_require_duty=true,
-        megaphone_require_radio=false,megaphone_wheel=true,radius=60,retain_distance=200,approach_distance=6,front_only=true,occupied_only=false,scan_ms=250,
+        megaphone_require_radio=false,megaphone_wheel=true,radius=60,retain_distance=200,approach_distance=6,front_only=true,occupied_only=true,scan_ms=250,
         selection_mode='auto',selection_ranking='direction',cone_angle=85,height_tolerance=15,close_radius=15,
-        sync_driver_target=true,occupied_priority=true,copilot_migrated=1,
+        sync_driver_target=true,occupied_priority=true,copilot_migrated=2,
         direction_enabled=true,manual_direction='',motion_ms=300,stationary_distance=.15,max_motion_distance=100,stationary='На месте',
         directions={'Север','Северо-восток','Восток','Юго-восток','Юг','Юго-запад','Запад','Северо-запад'},
         channel='/r',megaphone_channel='/m',confirmation_ms=30000,model_aliases={},color_aliases={},
@@ -61,7 +61,7 @@ function M.validate(raw)
     if not({auto=true,vehicle=true,camera=true,screen=true})[out.selection_mode]then return nil,'Проверьте режим выбора машины.'end
     if raw.selection_ranking~=nil then out.selection_ranking=raw.selection_ranking end
     if out.selection_ranking~='direction'and out.selection_ranking~='distance'then return nil,'Проверьте порядок машин в списке.'end
-    if raw.copilot_migrated~=nil and raw.copilot_migrated~=1 then return nil,'Неизвестная версия настроек выбора машины.'end
+    if raw.copilot_migrated~=nil and raw.copilot_migrated~=1 and raw.copilot_migrated~=2 then return nil,'Неизвестная версия настроек выбора машины.'end
     for _,r in ipairs({{'cone_angle',10,120},{'height_tolerance',0,30},{'close_radius',0,30}})do
         local n=raw[r[1]];if n==nil then n=out[r[1]]end
         if not shared.integer(n,r[2],r[3])then return nil,'Проверьте настройку выбора: '..r[1]end;out[r[1]]=n
@@ -85,9 +85,12 @@ function M.validate(raw)
         (raw.cone_angle==nil or raw.cone_angle==65)and(raw.height_tolerance==nil or raw.height_tolerance==0)and
         (raw.enabled==false and raw.require_patrol==true or raw.enabled==true and raw.require_patrol==false)
     if stock then
-        out.enabled=true;out.megaphone_enabled=true;out.require_patrol=false;out.occupied_only=false
+        out.enabled=true;out.megaphone_enabled=true;out.require_patrol=false;out.occupied_only=true
         out.radius=60;out.cone_angle=85;out.height_tolerance=15;out.retain_distance=math.max(out.retain_distance,out.radius)
     end
+    -- Requested one-time 0.41.2 reset of these two switches only. Every other
+    -- saved choice, including the radius, survives; marker 2 respects later OFF.
+    if raw.copilot_migrated==nil or raw.copilot_migrated==1 then out.occupied_only=true;out.sync_driver_target=true end
     if out.retain_distance<out.radius then return nil,'Дальность удержания должна быть не меньше дальности выбора.'end
     out.stationary_distance=raw.stationary_distance or out.stationary_distance
     if not core.finite(out.stationary_distance)or out.stationary_distance<.05 or out.stationary_distance>5 then return nil,'Порог движения: от 0.05 до 5 м.'end

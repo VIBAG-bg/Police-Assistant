@@ -71,14 +71,19 @@ if($Render){
  # Exercise the real selector, click and polling loop against the bounded fixture.
  $script:AutoSetupForm=New-PaSetupForm;$original=(Get-Command New-PaSetupForm).ScriptBlock
  function New-PaSetupForm {return $script:AutoSetupForm}
- $InitialPath=$game;$watch=New-Object Windows.Forms.Timer;$watch.Interval=300;$script:ticks=0;$script:uiStarted=$false;$script:uiSuccess=$false
+ $InitialPath=$game;$watch=New-Object Windows.Forms.Timer;$watch.Interval=300;$script:ticks=0;$script:uiStarted=$false;$script:uiSuccess=$false;$script:uiInvalidExplained=$false
  $watch.Add_Tick({
   $script:ticks++
+  if(-not $script:uiInvalidExplained){
+   $script:AutoSetupForm.PathBox.Text=$root
+   Check (-not $script:AutoSetupForm.Install.Enabled -and $script:AutoSetupForm.Requirements.Text.Contains('gta_sa.exe')) 'real TextChanged handler resolves error explanation in script scope'
+   $script:uiInvalidExplained=$true;$script:AutoSetupForm.PathBox.Text=$game
+  }
   if(-not $script:uiStarted -and $script:AutoSetupForm.Install.Enabled){$script:uiStarted=$true;$script:AutoSetupForm.Install.PerformClick()}
   if($script:AutoSetupForm.LastStage -ceq 'SUCCESS'){$script:uiSuccess=$true}
   if($script:uiSuccess -or $script:ticks -ge 120){$script:AutoSetupForm.Terminal=$true;$script:AutoSetupForm.Close();$watch.Stop()}
  })
- try{$watch.Start();Show-PaSetupWindow;Check $script:uiStarted 'real installer button starts child';Check $script:uiSuccess 'real timer reaches verified success'}finally{$watch.Stop();$watch.Dispose();Set-Item Function:New-PaSetupForm $original}
+ try{$watch.Start();Show-PaSetupWindow;Check $script:uiInvalidExplained 'invalid path explained without callback scope errors';Check $script:uiStarted 'real installer button starts child';Check $script:uiSuccess 'real timer reaches verified success'}finally{$watch.Stop();$watch.Dispose();Set-Item Function:New-PaSetupForm $original}
 }
 @{status='passed';checks=$checks;compatibility_matrix=@('Windows 7 SP1 prerequisites','Windows 10','Windows 11');windows7_vm_tested=$false;rendered=[bool]$Render;real_game_written=$false;sandbox=$root}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $PSScriptRoot 'SETUP_WINDOW_RESULTS.json') -Encoding UTF8
 Write-Output ('Setup window: '+$checks+' checks passed. Preview: '+$root)
