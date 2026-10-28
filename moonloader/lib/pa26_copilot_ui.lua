@@ -5,6 +5,11 @@ function M.offer(s,callbacks,action)
  local p,err=callbacks.copilotOffer(action)
  if p then s.vehicleConfirm=p else s:notify(err,'vehicle',false)end
 end
+function M.quick(s,ui,callbacks,offer)
+ s:settingsHeading(ui,'Быстрые доклады')
+ ui.text('Каждая кнопка открывает предпросмотр и ДА/НЕТ. Отправки без подтверждения нет. Тексты и канал меняются в «Трафик и погоня → Настройки и тексты». Перерыв — только доклад, без таймера.')
+ for _,r in ipairs(require('pa26_copilot').quick)do if s:button(r[2]..'##copilot-quick-'..r[1],ui)then if offer then offer(r[1])else M.offer(s,callbacks,r[1])end end end
+end
 function M.draw(s,ui,data,callbacks)
  local im=s.imgui;local v=data.copilot or{};local c=v.car;local values=v.values or{}
  s.currentNoticeScope='vehicle';s:settingsHeading(ui,'Трафик и погоня')
@@ -24,8 +29,12 @@ function M.draw(s,ui,data,callbacks)
    ui.text((values.vehicle_color or'Цвет неизвестен')..' · Гос. номер: '..(values.vehicle_plate or'не установлен'))
    ui.text((values.occupants_text or'Салон не определён')..' · Водитель: '..(v.driver and('ID '..v.driver.id)or'не установлен')..' · '..math.floor(c.distance)..' м')
    if c.armed or v.phase=='10-66'or v.phase=='Преследование'then ui.text('Повышенный риск · рассмотрите 10-66. Наличие оружия не подтверждает стрельбу.')end
-  else ui.text('Выберите видимую машину впереди. Выбор машины не меняет человека для обычного взаимодействия.')end
+  else ui.text('Выберите видимую машину. Если автовыбор водителя включён, его ID станет целью биндов и обычного взаимодействия.')end
   if s:button('Выбрать ближайшую впереди##copilot-select',ui)then local ok,err=callbacks.copilotSelect();if not ok then s:notify(err,'vehicle',false)end end
+  ui.text('Дальность захвата авто, м (5–150)');local radius=im.new.int(d.radius);im.PushItemWidth(-1)
+  if im.SliderInt('##copilot-radius',radius,5,150)then d.radius=radius[0];d.retain_distance=math.max(d.retain_distance,d.radius)end;im.PopItemWidth()
+  d.sync_driver_target=s:check('Водитель — цель биндов##copilot-sync-driver',d.sync_driver_target)
+  ui.text('Работает пешком и из машины, включая близкую видимую цель сбоку. Автовыбор не подменяет вручную выбранного человека при фоновом обновлении; повторный выбор машины привязывает её водителя заново.')
   local colleagues=v.colleagues or{};local roles={driver='Водитель ADAM',navigator='Штурман-координатор ADAM',solo='Одиночный LINCOLN'}
   ui.text('Маркировка: '..(values.unit or colleagues.autoCallsign or'—')..' · '..(roles[colleagues.ownCruiserRole]or'Пешком'))
   ui.text('Сотрудников ПД рядом: '..#(colleagues.nearbyOfficers or{})..' · экипажей: '..(colleagues.nearbyCruisers or 0))
@@ -41,6 +50,7 @@ function M.draw(s,ui,data,callbacks)
    s.vehicleDraft=d;s:autoSettings('vehicle',{'vehicle'},d,'vehicleDraft');s:flushAutosave(callbacks,true)
    if not s.autosaves.vehicle then M.offer(s,callbacks,action)else s:notify('Исправьте и сохраните настройки транспорта.','vehicle',false)end
   end
+  M.quick(s,ui,callbacks,offer)
   for _,r in ipairs(require('pa26_copilot').actions)do if s:button(r[2]..'##copilot-'..r[1],ui)then offer(r[1])end end
   if v.pinned and s:button((v.pinned=='pursuit_mark'and'Только /pt · без повторного /su'or v.pinned=='combat_wanted'and'Розыск 2.2 + /pt'or'Розыск 8.1 + /pt')..'##copilot-wanted',ui)then offer(v.pinned)end
   if v.phase then
@@ -66,7 +76,7 @@ function M.draw(s,ui,data,callbacks)
   local key=s.copilotTemplate
   cfg.templates[key]=s:field('Реплика##copilot-rp','copilot:rp:'..key,cfg.templates[key],8193,true,140)
   ui.text('Для ориентировки перед розыском — строки /me, /do, /try или /todo. Для остальных реплик — текст без /команды; несколько строк допускаются. Род: {gender:передал|передала}.')
-  ui.text('Переменные: {unit}, {station}, {crew}, {model}, {vehicle_id}, {vehicle_color}, {vehicle_description}, {vehicle_plate}, {occupants_text}, {driver_id}, {driver_name}, {area}, {map_square}, {direction}, {tac}, {stop_outcome}, {armed_text}, {my_firstname}.')
+  ui.text('Переменные: {unit}, {station}, {crew}, {model}, {vehicle_id}, {vehicle_color}, {vehicle_description}, {vehicle_plate}, {occupants_text}, {driver_id}, {driver_name}, {city}, {area}, {map_square}, {direction}, {tac}, {stop_outcome}, {armed_text}, {my_firstname}.')
   local text,err=callbacks.copilotPreview(key,cfg);ui.text('Предпросмотр: '..tostring(text or err))
   ui.text('Подсказки правил основаны на сохранённой базе от 25.10.2026. Счётчик предупреждений не является разрешением на огонь; форму, ситуацию и применимость исключений проверяет офицер.')
  end
@@ -79,11 +89,21 @@ function M.reserve(controller,im,hud,fonts,taserHeight)
  local io=im.GetIO();local r=hud:layout(io.DisplaySize.x,io.DisplaySize.y);if not r then return end
  local scale=math.max(.7,math.min(r.scale,1));local w=r.w;local wrap=w-24*scale
  local font=fonts.body or im.GetFont();local heading=fonts.heading or font
- local title=(controller.state and controller.state.demo and'ДЕМО · 'or'')..v.phase..' · '..(v.values and v.values.model or'Машина')..' ['..v.car.id..'] · '..string.format('%02d:%02d',math.floor(v.duration/60),v.duration%60)
- local text=(v.values and v.values.occupants_text or'')..'\n'..v.tireStatus
+ local values=v.values or{};local colleagues=v.colleagues or{}
+ local title=(controller.state and controller.state.demo and'ДЕМО · 'or'')..(v.statusTitle or v.phase or'ПАТРУЛЬ · КОД 4')
+ local roles={driver='водитель ADAM',navigator='штурман ADAM',solo='LINCOLN'}
+ local rows={
+  (values.unit or colleagues.autoCallsign or'1-L-1')..' · '..(roles[colleagues.ownCruiserRole]or'пешком'),
+  'Курс: '..(values.direction or'не определён')..' · '..(values.city or'город не определён'),
+  (values.area or'Район не определён')..' · '..(values.map_square or'квадрат неизвестен'),
+  'Экипаж: '..(values.crew or'одиночный')..' · рядом ПД: '..#(colleagues.nearbyOfficers or{})..', авто: '..(colleagues.nearbyCruisers or 0)}
+ if v.car then rows[#rows+1]=(values.model or'Машина')..' ['..tostring(v.car.id)..'] · '..(values.occupants_text or'салон не определён')..' · '..math.floor(v.car.distance or 0)..' м' end
+ local traffic=v.phase~=nil and v.car~=nil
+ if traffic then rows[#rows+1]=v.tireStatus or''end
+ local text=table.concat(rows,'\n')
  local th=heading:CalcTextSizeA(14*scale,100000,wrap,title).y;local bh=font:CalcTextSizeA(12*scale,100000,wrap,text).y
- local h=th+bh+94*scale;local base=taserHeight or 0
- controller.hudMetrics={view=v,w=w,wrap=wrap,h=h,scale=scale,title=title,text=text,titleH=th,bodyH=bh,body=font,heading=heading,offset=base>0 and base+8*scale or 0}
+ local h=th+bh+(traffic and 82 or 30)*scale;local base=taserHeight or 0
+ controller.hudMetrics={view=v,w=w,wrap=wrap,h=h,scale=scale,title=title,text=text,titleH=th,bodyH=bh,body=font,heading=heading,traffic=traffic,offset=base>0 and base+8*scale or 0}
  hud:setEquipmentHeight(controller.hudMetrics.offset+h)
 end
 function M.place(controller,im,hud,fonts)
@@ -97,9 +117,12 @@ function M.drawHud(controller,im)
  local s=m.scale;local list=im.GetForegroundDrawList();local vec=im.ImVec2;local io=im.GetIO()
  local function color(a,b,c,d)return im.ColorConvertFloat4ToU32(im.ImVec4(a,b,c,d or 1))end
  local white=color(.96,.98,1);local x,y=r.x+12*s,r.y+10*s
+ local accent=m.view.statusCode==0 and color(.95,.23,.25)or m.view.statusCode==3 and color(1,.67,.20)or color(.18,.72,.80)
  list:AddRectFilled(vec(r.x,r.y),vec(r.x+r.w,r.y+r.h),color(.025,.10,.18,.94),10*s)
+ list:AddRectFilled(vec(r.x,r.y),vec(r.x+4*s,r.y+r.h),accent,2*s)
  local function text(t,font,size,xx,yy)list:AddTextFontPtr(font,size*s,vec(xx,yy),white,t,nil,m.wrap)end
  text(m.title,m.heading,14,x,y);y=y+m.titleH+6*s;text(m.text,m.body,12,x,y);y=y+m.bodyH+5*s
+ if not m.traffic then return end
  local buttons={{'tire','/m +1'},{m.view.pinned or'high_risk',m.view.pinned=='pursuit_mark'and'Только /pt'or m.view.pinned and'Розыск + /pt'or'10-66'},{'finish','Завершить'}}
  local width=(m.wrap-8*s)/3
  for i,b in ipairs(buttons)do

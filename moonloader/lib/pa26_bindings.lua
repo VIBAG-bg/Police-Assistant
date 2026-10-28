@@ -276,7 +276,7 @@ function M.defaults(cfg)
     alerts=M.alertDefaults(),weapons=preferences.weaponDefaults(),taser=preferences.taserDefaults(),
     wanted_reminders={},nearby=nearbyModel.defaults(),map_grid=mapGrid.defaults(),rp_text=rpSettings.defaults(),assist=assistSettings.defaults(),vehicle=vehicleSettings.defaults(),operations=operationSettings.defaults(),procedures=procedureSettings.defaults(),identity=identitySettings.defaults(),patrol_session=patrolSettings.defaults(),patrol_events=eventSettings.defaults(),radio_guard=preferences.radioGuardDefaults(),weapon_warning=preferences.weaponWarningDefaults(),alert_shortcuts=M.alertShortcutDefaults(),
     settings={updates=updateSettings.defaults(),window_layout=windowLayout.defaults(),manual_chat=manualChat.defaults(),quick_key=0x7A,tips_key=0x7B,cancel_key=0x23,opacity=.86,compact=false,ask_screenshot_path=false,
-        retain_distance=40,retain_grace_ms=1500,keep_target_on_interior_change=true,aim_select_enabled=true,aim_select_control='mouse',aim_select_delay_ms=150,wheel_mode='categories',wheel_profile='compact',wheel_enabled=true,interaction_notices=true,accent_live_input=true,accent_skip_brackets=true,chat_dot_commands=true,manual_radio_prefix=true,cef_chat_support=true,cef_chat_diagnostics=true,cef_layout_indicator=true,wheel_names={}},
+        retain_distance=40,retain_grace_ms=1500,keep_target_on_interior_change=true,aim_select_enabled=true,aim_select_control='mouse',aim_select_delay_ms=150,wheel_mode='categories',wheel_profile='compact',wheel_enabled=true,interaction_notices=true,accent_live_input=true,accent_skip_brackets=true,chat_dot_commands=true,manual_radio_prefix=true,cef_chat_support=true,cef_chat_diagnostics=true,cef_layout_indicator=true,cef_chat_weapon_guard=true,cef_chat_weapon_lock=true,cef_chat_grace_ms=350,wheel_names={}},
     filters={},recruitment={min_age=18,min_level=3,min_lawfulness=0,land=true,water=false,air=false,weapon=true,medical=true}}
     local categories={introduce='Общение',documents='Документы',wanted='Проверки',frisk='Досмотр',cuff='Задержание',release='Задержание'}
     lib.settings.manual_actions=manualActions.defaults();lib.settings.wheel_child_limit=0;lib.settings.wheel_system_groups={}
@@ -470,7 +470,10 @@ function M.validate(raw, cfg)
     if aimControl==nil then aimControl='mouse'end
     if aimControl~='mouse'and aimControl~='game'then return nil,'Выберите управление выбором человека: ПКМ или прицеливание GTA.'end
     out.settings.aim_select_control=aimControl
-    for _,k in ipairs({'wheel_enabled','interaction_notices','keep_target_on_interior_change','accent_live_input','accent_skip_brackets','chat_dot_commands','manual_radio_prefix','cef_chat_support','cef_chat_diagnostics','cef_layout_indicator','aim_select_enabled'}) do
+    local grace=raw.settings.cef_chat_grace_ms or out.settings.cef_chat_grace_ms
+    if not core.finite(grace)or grace%1~=0 or grace<50 or grace>1000 then return nil,'Защита открытия чата: 50–1000 мс.'end
+    out.settings.cef_chat_grace_ms=grace
+    for _,k in ipairs({'wheel_enabled','interaction_notices','keep_target_on_interior_change','accent_live_input','accent_skip_brackets','chat_dot_commands','manual_radio_prefix','cef_chat_support','cef_chat_diagnostics','cef_layout_indicator','cef_chat_weapon_guard','cef_chat_weapon_lock','aim_select_enabled'}) do
         if raw.settings[k]~=nil then
             if type(raw.settings[k])~='boolean' then return nil,'Неверный переключатель: '..k end
             out.settings[k]=raw.settings[k]

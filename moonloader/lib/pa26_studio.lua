@@ -1484,6 +1484,15 @@ function Studio:drawProfile(ui,data,callbacks,part)
     if cefChanged then self:autoSettings('cef_chat',{'settings','cef_chat_support'},cef)end
     ui.text('При запуске проверяет подключение PA к CEF-чату и восстанавливает свой тег в HUD, если лаунчер его убрал. Проверка выполняется до ожидания SA-MP. Если страница чата уже успела загрузиться без PA, потребуется новый запуск игры. Серверные main.js и DLL не меняются.')
     ui.text('Связывает CEF-чат с командами PA, фильтрами и распознаванием служебных сообщений. Во время ввода игровые сочетания и отправка сценариев блокируются так же, как в стандартном чате.')
+    for _,r in ipairs({{'cef_chat_weapon_guard','Защита клавиш оружия'},
+        {'cef_chat_weapon_lock','Оружие при вводе чата'}})do
+        local value,changed=self:check(r[2]..'##'..r[1],copy.settings[r[1]])
+        if changed then self:autoSettings('cef_chat',{'settings',r[1]},value)end
+    end
+    local grace=self.imgui.new.int(copy.settings.cef_chat_grace_ms)
+    ui.text('Защита открытия CEF-чата, мс');self.imgui.PushItemWidth(-1)
+    if self.imgui.SliderInt('##cef-grace',grace,50,1000)then self:autoSettings('cef_chat',{'settings','cef_chat_grace_ms'},grace[0])end;self.imgui.PopItemWidth()
+    ui.text('Во время ввода цифры и буквы продолжают печататься, но не переключают оружие. Защита открытия закрывает промежуток до ответа CEF; по умолчанию 350 мс. Пример: «/su 123» остаётся текстом чата, оружие не меняется.')
     local layout,layoutChanged=self:check('Язык ввода рядом с полем чата##cef-layout',copy.settings.cef_layout_indicator)
     if layoutChanged then self:autoSettings('cef_chat',{'settings','cef_layout_indicator'},layout)end
     ui.text('Показывает текущую раскладку клавиатуры справа от поля CEF-чата: RU, EN, BG, UK и другие. Обновляется при смене языка. При закрытом чате или потере связи значок скрывается. Это отдельный индикатор, он не меняет текст и RP-акцент.')
@@ -1780,12 +1789,12 @@ function Studio:modalIntent(data)
     end
     if self.vehicleConfirm then
         local p=self.vehicleConfirm
-        local lines={p.target and p.description or'Общее объявление для окружающих.',
+        local lines={p.target and p.description or p.copilot and'Ручной доклад по выбранному каналу рации.'or'Общее объявление для окружающих.',
             p.target and('Машина ['..p.target.id..'] · GTA модель '..p.target.model_id)or('Реплика: '..(p.label or'Мегафон')),'Y — ДА · N — НЕТ'}
         if p.confirmationNote then lines[#lines+1]=p.confirmationNote end
         for _,line in ipairs(p.prepared.lines)do lines[#lines+1]=line end
         lines[#lines+1]=p.demo and 'Демо: отправок на сервер нет.'or 'После ДА PA отправит показанные строки по очереди. Результат команды нужно проверить в игре.'
-        return {kind='vehicle',token=p.token,title=p.target and'Выполнить действие с выбранной машиной?'or'Передать общее объявление?',lines=lines}
+        return {kind='vehicle',token=p.token,title=p.target and'Выполнить действие с выбранной машиной?'or p.copilot and'Передать доклад в рацию?'or'Передать общее объявление?',lines=lines}
     end
     if self.patrolConfirm then
         local p=self.patrolConfirm

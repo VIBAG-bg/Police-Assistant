@@ -42,7 +42,8 @@ foreach($kind in @('success','rollback')){
   Check $failed 'injected installer failure'
   Check ([IO.File]::ReadAllText((Join-Path $ml 'police_assistant_2026.lua')) -ceq 'OLD ENTRY') 'legacy installer restores original entry'
  }else{
-  Check ([IO.File]::ReadAllText((Join-Path $ml 'police_assistant_2026.lua')).Contains("script_version('0.41.0')")) 'legacy installer installs current version'
+  $expectedRelease=(Get-Content -LiteralPath (Join-Path $package 'INSTALL_MANIFEST.json') -Raw|ConvertFrom-Json).release
+  Check ([IO.File]::ReadAllText((Join-Path $ml 'police_assistant_2026.lua')).Contains("script_version('$expectedRelease')")) 'legacy installer installs current version'
   $line=$output|Where-Object {$_ -is [string] -and $_ -match ' Backup: (.+)$'}|Select-Object -Last 1
   Check ($line -match ' Backup: (.+)$') 'installer reports exact backup identity'
   $backup=$Matches[1];$map=@((Get-Content -LiteralPath (Join-Path $backup 'PERSONAL.json') -Raw|ConvertFrom-Json))

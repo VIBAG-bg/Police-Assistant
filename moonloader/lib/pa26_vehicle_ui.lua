@@ -12,7 +12,7 @@ function M.draw(studio,ui,data,callbacks)
     studio:settingsHeading(ui,'Трафик-стоп и преследование')
     if studio:button('Открыть реплики мегафона##vehicle-megaphone',ui)then callbacks.openAssist('megaphone')end
     if data.radioState then ui.text('Место: '..(require('pa26_map_grid').location(data.radioState)or 'не определено'))end
-    ui.text('Выбор машины не меняет выбранного человека. Перед докладом, отыгровкой или обращением в мегафон PA покажет текст и попросит подтверждение.')
+    ui.text('При включённом автовыборе водитель выбранной машины становится целью {select_id}. Фоновое обновление не заменяет вручную выбранного человека. Отправки требуют предпросмотра и подтверждения.')
     if view.selected then
         local values=vehicle.describe(view.selected,d,studio.lib.profile.gender)
         ui.text(values and values.vehicle_description or 'Описание не заполнено')
@@ -44,17 +44,17 @@ function M.draw(studio,ui,data,callbacks)
     if view.selection_status then ui.text(view.selection_status)end
     im.Separator();studio:settingsHeading(ui,'Настройки транспорта')
     for _,row in ipairs({{'enabled','Трафик-стоп и погоня'},{'require_patrol','Только в активном патруле'},
-        {'front_only','Экран и прямая видимость'},{'occupied_only','Только с водителем'},{'direction_enabled','Направление движения'}})do
+        {'front_only','Экран и прямая видимость'},{'occupied_only','Только непустые машины'},{'occupied_priority','Приоритет машин с людьми'},{'sync_driver_target','Водитель — цель биндов'},{'direction_enabled','Направление движения'}})do
         local v,edit=studio:check(row[2]..'##vehicle-'..row[1],d[row[1]]);if edit then d[row[1]]=v end
     end
-    d.selection_mode=studio:choice('Направление выбора##vehicle-selection-mode',d.selection_mode,{{'auto','Авто: машина, пешком — камера'},{'vehicle','Куда направлена моя машина'},{'camera','Куда смотрит камера'},{'screen','Только видимость на экране'}},ui)
+    d.selection_mode=studio:choice('Направление выбора##vehicle-selection-mode',d.selection_mode,{{'auto','Авто: перед машиной или камерой'},{'vehicle','Куда направлена моя машина'},{'camera','Куда смотрит камера'},{'screen','Только видимость на экране'}},ui)
     d.selection_ranking=studio:choice('В начале списка##vehicle-selection-ranking',d.selection_ranking,{{'direction','Ближе к выбранному направлению'},{'distance','Ближе ко мне'}},ui)
-    for _,r in ipairs({{'cone_angle','Отклонение в каждую сторону, градусы',10,120},{'height_tolerance','Перепад высоты, м · 0 без ограничения',0,30}})do
+    for _,r in ipairs({{'cone_angle','Отклонение в каждую сторону, градусы',10,120},{'height_tolerance','Перепад высоты, м · 0 без ограничения',0,30},{'close_radius','Близкая видимая машина без ограничения угла, м · 0 отключает',0,30}})do
         ui.text(r[2]);im.PushItemWidth(-1);ui.push(function()im.PopItemWidth()end)
         local value=im.new.int(d[r[1]]);if im.SliderInt('##vehicle-'..r[1],value,r[3],r[4])then d[r[1]]=value[0]end;ui.finish()
     end
-    ui.text('Автоматически выбирается направление собственной машины; пешком — направление камеры. Разворот камеры назад из машины не меняет конус. При заднем ходе конус всё равно смотрит перед капотом. Если направление недоступно, режим «Авто» оставляет видимость на экране и показывает причину; строгие режимы просят сменить режим. Фильтр высоты помогает исключить транспорт на эстакаде. Уже выбранная машина не заменяется другой автоматически.')
-    for _,row in ipairs({{'radius','Дальность выбора, м'},{'retain_distance','Дальность удержания, м'},{'approach_distance','Подойти к машине пешком, м'},
+    ui.text('Непустой считается и машина с одними пассажирами. Автовыбор привязывает водителя к {select_id}. В режиме «Авто» подходят машины перед капотом или камерой; близкая видимая машина доступна и сбоку. Дома закрывают обзор. Уже выбранная машина сама не заменяется. Высота исключает машины на другой эстакаде; 0 отключает этот фильтр.')
+    for _,row in ipairs({{'radius','Дальность выбора, м · 5–150'},{'retain_distance','Дальность удержания, м'},{'approach_distance','Подойти к машине пешком, м'},
         {'scan_ms','Обновление машин, мс'},{'motion_ms','Замер движения, мс'},
         {'max_motion_distance','Порог скачка координат, м'},{'confirmation_ms','Срок подтверждения, мс'}})do
         ui.text(row[2]);im.PushItemWidth(-1);ui.push(function()im.PopItemWidth()end)

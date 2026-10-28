@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.41.0')
+script_version('0.41.1')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -62,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.41.0' then
+if #missing > 0 or not core or core.VERSION ~= '0.41.1' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -250,12 +250,18 @@ sceneServices.mapSample=function()
         if core.finite(state.interior)and state.interior>0 then state.area='Interior '..state.interior
         elseif core.finite(state.x)and core.finite(state.y)and core.finite(state.z)then
             local key=optionalRead('getNameOfZone',state.x,state.y,state.z)
+            state.zoneKey=key
             local raw=type(key)=='string'and key:match('^[A-Za-z0-9_]+$')and optionalRead('getGxtText',key)or nil
             state.area=hudModule.zoneName(key,raw)
         end
     end
     local library=workspace and workspace.library
-    return state,sceneServices.mapGrid.values(library and library.map_grid or sceneServices.mapGrid.defaults(),library and library.profile or{},state.x,state.y,state.interior)
+    local values=sceneServices.mapGrid.values(library and library.map_grid or sceneServices.mapGrid.defaults(),library and library.profile or{},state.x,state.y,state.interior,state.z,state.zoneKey)
+    local session=sceneServices.citySession
+    if sceneServices.lastCity and(sceneServices.lastCity.session~=session or sceneServices.lastCity.ped~=PLAYER_PED or not state.connected)then sceneServices.lastCity=nil end
+    if values.city and state.interior==0 then sceneServices.lastCity={session=session,ped=PLAYER_PED,city=values.city}
+    elseif not values.city and state.interior and state.interior>0 and sceneServices.lastCity then values.city=sceneServices.lastCity.city end
+    return state,values
 end
 
 local function connectionKey()
@@ -273,7 +279,7 @@ local function context()
     if session then
         chat, dialog = optionalRead('sampIsChatInputActive'), optionalRead('sampIsDialogActive')
         if sceneServices.chatBridge then
-            local busy,cefChat,cefDialog=sceneServices.chatBridge:busy(optionalRead('getGameTimer')or 0)
+            local busy,cefChat,cefDialog=sceneServices.chatBridge:inputBusy(optionalRead('getGameTimer')or 0,workspace and workspace.library.settings.cef_chat_grace_ms)
             cefBusy=busy
             chat=chat~=false or cefChat;dialog=dialog~=false or cefDialog;otherCursor=busy
         end
@@ -561,6 +567,7 @@ workspace = workspaceModule.new({
         local values={my_id=hud.data.id and tostring(hud.data.id),my_nick=hud.data.nickname,area=hud.data.district}
         if localPedAvailable() then for key,value in pairs(pedValues(PLAYER_PED)) do values['my_'..key]=value end end
         local mapState,mapValues=sceneServices.mapSample();values.map_square=mapValues.map_square;values.area=mapState.area
+        values.city=mapValues.city
         values.location=sceneServices.mapGrid.location({area=values.area,map_square=values.map_square,map_grid=workspace.library.map_grid})
         if workspace.library.map_grid.auto_square then values.square=mapValues.square end
         return values
@@ -746,12 +753,16 @@ caseForms=caseFormsModule.new({gender=function()return workspace.library.profile
     end})
 sceneServices.world=sceneServices.worldModule.new(optionalRead,codec,function()return PLAYER_PED end)
 sceneServices.vehicle=sceneServices.model.new({settings=function()return workspace.library.vehicle end,codec=codec,scan=sceneServices.world.scan,resolve=sceneServices.world.resolve,ownCar=sceneServices.world.ownCar,selectionStatus=sceneServices.world.status,
+    driver=function(id)return sceneServices.readDriver and sceneServices.readDriver(id)end,
+    currentTarget=function()return workspace.targets.target,workspace.targets.revision end,
+    selectTarget=function(target)return workspace:selectTarget(target)end,
     profile=function()return workspace.library.profile end,service=function()return {unit=workspace.library.patrol_session.unit,station=workspace.library.patrol_session.station,crew=workspace.library.profile.name}end,
     equal=patrolSession.env.equal,patrol=function()return patrolSession.data.active end,start=startAutomatic,
+    notice=function(message)studio:notify(message,'vehicle',false)end,
     cancel=function(token,reason)local q=workspace.executor.queue;if q and q.plan.vehicleAction and q.plan.vehicleAction.token==token then workspace.executor:cancel(reason)end end})
 sceneServices.colleagues=require('pa26_colleagues').new({read=optionalRead,settings=function()return workspace.library.vehicle.copilot end,
     partners=function()return workspace.library.partners end,profile=function()return workspace.library.profile end,
-    crew=function()local a=patrolSession.data.active;return a and #(a.members or{})>1 or false end})
+    crew=function()local a=patrolSession.data.active;return a and #(a.crew or{})>0 or false end})
 sceneServices.readDriver=function(id)
     if not core.validId(id)or optionalRead('sampIsPlayerConnected',id)~=true or optionalRead('sampIsPlayerNpc',id)~=false then return end
     local ok,ped=optionalRead('sampGetCharHandleBySampPlayerId',id)
@@ -928,7 +939,7 @@ local studioCallbacks={
     evidenceArchiveAccept=function(p)return sceneServices.evidence:archive(p)end,
     evidenceRefresh=function()sceneServices.evidence.scanAt=nil end,
     copilotOffer=function(action)return sceneServices.copilot:propose(action)end,
-    copilotSelect=function()return sceneServices.vehicle:selectNearest()end,
+    copilotSelect=function()return sceneServices.vehicle:requestSelection()end,
     copilotPreview=function(action,cfg)
         return sceneServices.copilot:previewTemplate(action,cfg)
     end,
@@ -936,7 +947,7 @@ local studioCallbacks={
     vehicleOffer=function(action,nearest)return sceneServices.vehicle:propose(action,nearest)end,
     vehicleAccept=function(p)if p.copilot then return sceneServices.copilot:accept(p)end;return sceneServices.vehicle:accept(p)end,
     vehicleClear=function()sceneServices.vehicle:clearTarget('Выбор машины снят вами.')end,
-    vehicleSelect=function(id)return sceneServices.vehicle:selectCandidate(id)end,
+    vehicleSelect=function(id)return sceneServices.vehicle:requestSelection(id)end,
     vehiclePreview=function(action,draft)
         local targeted=sceneServices.model.needsTarget(action,draft)
         local c=targeted and(sceneServices.vehicle.selected or sceneServices.vehicle.candidates[1])or nil
@@ -2021,6 +2032,18 @@ local function prepareNativeChat()
     manualInputPrefix=owned
 end
 function onWindowMessage(message, wparam, lparam)
+    if workspace and sceneServices.chatBridge then
+        local settings=workspace.library.settings;local bridge=sceneServices.chatBridge
+        local allowed=settings.cef_chat_support and settings.cef_chat_weapon_guard and bridge.server~=nil and focused and not shutdown and
+            not ownUi()and not bridge:busy(studioClock)and optionalRead('sampIsChatInputActive')==false and optionalRead('sampIsDialogActive')==false
+        bridge:observeInput(message,wparam,studioClock,allowed)
+        local held=sceneServices.cefHeldWeaponKeys or{};sceneServices.cefHeldWeaponKeys=held
+        if settings.cef_chat_support and settings.cef_chat_weapon_guard and sceneServices.chatModule.weaponKey(message,wparam)and
+            (bridge:inputBusy(studioClock,settings.cef_chat_grace_ms)or message==0x101 and held[wparam])then
+            if type(consumeWindowMessage)=='function'then consumeWindowMessage(true,false)end
+            held[wparam]=message==0x100 or nil
+        end
+    end
     if message==0x100 and sceneServices.manual and sceneServices.manual.queue and(wparam==27 or wparam==workspace.library.settings.cancel_key)then sceneServices.manual:cancel('Отменено пользователем.')end
     confirmationInput:observeMenu(message,wparam,cfg.main.menu_key,lparam)
     if workspace and sceneServices.assistInput and(message==0x100 or message==0x104 or message==0x101 or message==0x105)then
@@ -2475,6 +2498,21 @@ local function updateGame()
     studioClock=now
     if sceneServices.chatBridge then sceneServices.chatBridge:tick(now)end
     local ctx = context()
+    sceneServices.citySession=ctx.session
+    if sceneServices.weaponSession~=ctx.session or sceneServices.weaponPed~=PLAYER_PED or not ctx.alive or not ctx.focused then
+        sceneServices.lastSafeWeapon=nil;sceneServices.cefHeldWeaponKeys={}
+        if sceneServices.chatBridge then sceneServices.chatBridge.openGraceAt=nil end
+    end
+    sceneServices.weaponSession=ctx.session;sceneServices.weaponPed=PLAYER_PED
+    if ctx.alive and ctx.focused and not ctx.paused then
+        local current=optionalRead('getCurrentCharWeapon',PLAYER_PED)
+        local input=ctx.chatActive or sceneServices.chatBridge and sceneServices.chatBridge:inputBusy(now,workspace.library.settings.cef_chat_grace_ms)
+        if input and workspace.library.settings.cef_chat_weapon_lock then
+            local previous=sceneServices.lastSafeWeapon
+            if core.finite(previous)and core.finite(current)and current~=previous and type(setCurrentCharWeapon)=='function'and
+                (previous==0 or optionalRead('hasCharGotWeapon',PLAYER_PED,previous)~=false)then optionalRead('setCurrentCharWeapon',PLAYER_PED,previous)end
+        elseif not ctx.blocked and core.finite(current)then sceneServices.lastSafeWeapon=current end
+    end
     knowledge:tick()
     knowledgeUi:tick(ctx.session,now,showWindow[0]and menu.section=='knowledge')
     sceneServices.authorPresets:tick()
@@ -2565,6 +2603,8 @@ local function updateGame()
     alertState.gender=workspace.library.profile.gender
     alertState.radioText={split_enabled=workspace.library.radio_guard.split_enabled,continuation=workspace.library.radio_guard.continuation,max_lines=workspace.library.radio_guard.max_lines}
     for _,key in ipairs({'local_tag','prison_tag','global_tag','callsign','city','department','rank'}) do alertState[key]=workspace.library.profile[key] end
+    alertState.city=sceneServices.mapValues.city or(workspace.library.profile.city~=''and workspace.library.profile.city or nil)
+    alertState.direction=workspace.library.vehicle.direction_enabled and(sceneServices.vehicle.directionValue or workspace.library.vehicle.stationary)or workspace.library.vehicle.manual_direction
     alertState.map_grid=workspace.library.map_grid
     alertState.map_square=sceneServices.mapValues and sceneServices.mapValues.map_square
     alertState.square=sceneServices.mapValues and sceneServices.mapValues.square or nil
@@ -2635,7 +2675,7 @@ local function updateGame()
         if patrolKey:match('^assist%-')then studioCallbacks.openAssist(patrolKey=='assist-megaphone-window'and'megaphone'or patrolKey:sub(8))end
         if patrolKey:match('^vehicle%-')then
             studioCallbacks.openAssist('traffic')
-            if patrolKey=='vehicle-select'then local ok,err=sceneServices.vehicle:selectNearest();if not ok then studio:notify(err,'vehicle',false)end
+            if patrolKey=='vehicle-select'then local ok,err=sceneServices.vehicle:requestSelection();if not ok then studio:notify(err,'vehicle',false)end
             elseif patrolKey=='vehicle-pursuit'then sceneServices.copilotUi.offer(studio,studioCallbacks,'pursuit')
             else require('pa26_vehicle_ui').offer(studio,studioCallbacks,'megaphone_'..patrolKey:match('(%d+)$'),false)end
         end
@@ -2676,6 +2716,8 @@ local function updateGame()
     patrolSession.readScene(alertState,now)
     sceneServices.colleagues:tick(alertState,now);alertState.colleagues=sceneServices.colleagues:view()
     local hour=optionalRead('getTimeOfDay');alertState.gameHour=core.finite(hour)and hour or nil;alertState.moscowTime=core.moscowTime()
+    alertState.patrolActive=patrolSession.data.active~=nil
+    alertState.patrolStatus=patrolSession.data.active and patrolSession.data.active.status or nil
     sceneServices.vehicle:tick(alertState,now)
     sceneServices.copilot:tick(alertState,now)
     alertState.taserCombatEnabled=workspace.library.vehicle.copilot.combat_guard;alertState.taserCombatMs=workspace.library.vehicle.copilot.combat_ms;alertState.taserCombatTemplate=workspace.library.vehicle.copilot.combat_warning
@@ -2820,7 +2862,7 @@ sceneServices.chatBridge=sceneServices.chatModule.new({fs=storage.fs,assetFs=req
         local filters={};for _,filter in ipairs(workspace.library.filters)do if filter.enabled then filters[#filters+1]=filter.prefix end end
         return{enabled=workspace.library.settings.cef_chat_support,accentEnabled=workspace.library.settings.accent_live_input,
             accent=bindingModel.accentPrefix(workspace.library.profile.accent),filters=filters,diagnostics=workspace.library.settings.cef_chat_diagnostics,
-            layoutIndicator=workspace.library.settings.cef_layout_indicator,
+            layoutIndicator=workspace.library.settings.cef_layout_indicator,weaponGuard=workspace.library.settings.cef_chat_weapon_guard,
             accent_skip_brackets=workspace.library.settings.accent_skip_brackets,chat_dot_commands=workspace.library.settings.chat_dot_commands,
             manual_radio_prefix=workspace.library.settings.manual_radio_prefix,local_tag=workspace.library.profile.local_tag,
             manual_chat=workspace.library.settings.manual_chat,rp_text=workspace.library.rp_text,nickname=hud.data.nickname}
@@ -2926,11 +2968,11 @@ function main()
             not context().blocked then recoverUi(false)end
         recovery:healthy(now,cfg.recovery)
         if not started then
-            pushLog('v0.41.0: игровой цикл запущен.')
+            pushLog('v0.41.1: игровой цикл запущен.')
             started = true
         end
         if uiRendered and not drawReported then
-            pushLog('v0.41.0: окно отрисовано.')
+            pushLog('v0.41.1: окно отрисовано.')
             drawReported = true
         end
     end

@@ -20,6 +20,12 @@ $paCefPolicy=Read-PaJson (Join-Path $paRelease 'UPDATE_CEF_BASELINE.json')
 foreach($row in $paInstall.cef_files){
  $name=$row.path;$source=Join-Path $paRelease ('cef\assets\hud\'+$name)
  if($paCefPolicy.hashes.$name -cne (Get-PaHash $source)){throw 'CEF changed: review universal update compatibility before release.'}
+ if($paCefPolicy.PSObject.Properties.Name -contains 'include_assets' -and $paCefPolicy.include_assets -eq $true){
+  if($row.sha256 -cne (Get-PaHash $source)){throw 'CEF install manifest mismatch.'}
+  $path='cef/assets/hud/'+$name
+  if(-not(Test-PaOwned $path)){throw 'Unowned CEF update entry.'}
+  $paFiles+=@{path=$path;sha256=$row.sha256;size=(Get-Item -LiteralPath $source).Length};$paSources[$path]=$source
+ }
 }
 $paContract=Read-PaJson (Join-Path $paRelease 'CEF_CONTRACT.json')
 $paManifest=@{product='police-assistant-2026';protocol=1;storage='pa26-split-json-1';version=$paInstall.release;cef_main_sha256=$paContract.hud_main_sha256;files=$paFiles}

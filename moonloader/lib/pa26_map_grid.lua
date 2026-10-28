@@ -5,7 +5,7 @@ local M={MAX_LABELS=512}
 local function copy(t)local n={};for k,v in pairs(t)do n[k]=v end;return n end
 local function integer(x,a,b)return core.finite(x)and x==math.floor(x)and x>=a and x<=b end
 function M.defaults()
-    return {enabled=true,radar=true,pause_map=true,hud=true,labels=true,axis_labels=true,highlight=true,auto_square=false,
+    return {enabled=true,radar=true,pause_map=true,hud=true,labels=true,axis_labels=true,highlight=true,auto_square=false,auto_city=true,
         report_area=true,location_template='{area}, квадрат {map_square}',
         west=-3000,north=3000,cell_size=250,columns=24,row_labels='ABCDEFGHIJKLMNOPQRSTUVWX',column_start=1,separator='-',
         font_size=12,line_width=1,line_alpha=.32,label_alpha=.88,min_label_px=50,theme='white'}
@@ -13,6 +13,7 @@ end
 function M.validate(raw)
     local out=M.defaults();if raw==nil then return out end
     if type(raw)~='table'then return nil,'Повреждены настройки квадратов карты.'end
+    if raw.auto_city~=nil then if type(raw.auto_city)~='boolean'then return nil,'Неверный переключатель города.'end;out.auto_city=raw.auto_city end
     for _,k in ipairs({'enabled','radar','pause_map','hud','labels','axis_labels','highlight','auto_square'})do
         if type(raw[k])~='boolean'then return nil,'Неверный переключатель карты: '..k end;out[k]=raw[k]
     end
@@ -55,11 +56,15 @@ function M.cell(s,x,y,interior)
     return {row=row,col=col,label=label,west=west+(col-1)*s.cell_size,east=west+col*s.cell_size,
         north=north-(row-1)*s.cell_size,south=north-row*s.cell_size}
 end
-function M.values(s,profile,x,y,interior)
+function M.values(s,profile,x,y,interior,z,zoneKey)
     local c=M.cell(s,x,y,interior)
     local square=profile and profile.square or ''
     if s and s.enabled and s.auto_square then square=c and c.label or nil end
-    return {map_square=c and c.label or nil,square=square,cell=c}
+    local city=profile and profile.city or''
+    if s and s.auto_city~=false or city==''then
+        city=interior==0 and require('pa26_hud').cityName(x,y,z,zoneKey)or nil
+    end
+    return {map_square=c and c.label or nil,square=square,cell=c,city=city}
 end
 -- {area} stays a district in binds. Only report renderers opt into enrichment;
 -- saved wording is never rewritten. Explicit square tokens avoid duplication.

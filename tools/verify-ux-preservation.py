@@ -37,7 +37,11 @@ old,new=snapshot(base),snapshot(ROOT)
 old_paths=leaves({'core_ini':old['ini'],'validated_library':old['library'],'new_binding_shape':old['new_binding']})
 new_paths=leaves({'core_ini':new['ini'],'validated_library':new['library'],'new_binding_shape':new['new_binding']})
 added={k:v for k,v in new_paths.items() if k not in old_paths}
-allowed=('validated_library.vehicle.copilot.','validated_library.settings.manual_actions.frisk_','validated_library.assist.evidence.')
+allowed=('validated_library.vehicle.copilot.','validated_library.settings.manual_actions.frisk_','validated_library.assist.evidence.',
+ 'validated_library.settings.cef_chat_weapon_','validated_library.settings.cef_chat_grace_ms',
+ 'validated_library.map_grid.auto_city','validated_library.vehicle.sync_driver_target','validated_library.vehicle.occupied_priority',
+ 'validated_library.vehicle.copilot_migrated','validated_library.vehicle.close_radius','validated_library.vehicle.radio_templates_version',
+ 'validated_library.patrol_session.radio_templates_version')
 for k in added:assert k.startswith(allowed) or k=='validated_library.settings.updates.show_progress_window','Unexpected setting: '+k
 assert {k:new_paths.get(k) for k in old_paths}==old_paths,'Existing config path/type changed'
 assert new['library']['settings']['updates']['show_progress_window'] is True
@@ -51,9 +55,9 @@ for key,row in old['bindPresets'].items():
     if expected.get('binding_id')==3:
         expected['text']=expected['text'].removesuffix('\n/wanted {id}')
     assert expected==new['bindPresets'][key],f'Binding RP preset changed: {key}'
-protected=['moonloader/lib/pa26_update_platform.lua','moonloader/lib/pa26_bindings.lua',
+protected=['moonloader/lib/pa26_update_platform.lua',
     'moonloader/resource/pa26/knowledge-base.json','moonloader/resource/pa26/knowledge-policy.json',
-    'cef/assets/hud/pa26-chat.js','cef/assets/hud/pa26-chat-endpoint.js']
+    'cef/assets/hud/pa26-chat-endpoint.js']
 old_ini=(base/'moonloader/config/police_assistant_2026.ini').read_bytes()
 new_ini=(ROOT/'moonloader/config/police_assistant_2026.ini').read_bytes()
 assert new_ini.replace(b'demo_mode=false',b'demo_mode=true')==old_ini,'INI changed beyond the requested fresh-install mode'

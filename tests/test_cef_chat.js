@@ -10,6 +10,7 @@ const chatText = {version:1,skipBrackets:true,dotCommands:true,keyboardMap:{к:'
 const endpoint = 'http://127.0.0.1:39001/' + 'a'.repeat(48) + '/exchange';
 const flush = () => new Promise(resolve => setImmediate(resolve));
 async function page(delayed=false) {
+  const observers=[], fieldListeners={};
   let now = 0, sequence = 0;
   const listeners = {}, callbacks = {}, sent = [], observed = [], requests = [], timers = new Map(),warnings=[];
   const panel = {classList: {contains: () => panel.open},open: true,children: [],
@@ -18,6 +19,7 @@ async function page(delayed=false) {
   const elements = {};
   const input = elements.chatInputField = {id:'chatInputField',value: '', selectionStart: 0, selectionEnd: 0, tagName: 'INPUT',
     getClientRects() {return this.collapsed ? [] : [{}];},
+    addEventListener(name,cb) {(fieldListeners[name] ||= []).push(cb);},
     selectionDirection: 'none', caretWrites: 0, parentElement: panel,
     setSelectionRange(start,end,direction) {this.caretWrites++;this.selectionStart=start;this.selectionEnd=end;this.selectionDirection=direction;}};
   elements.chatInput = panel;
@@ -30,11 +32,12 @@ async function page(delayed=false) {
         if(this.parentElement){const index=this.parentElement.children.indexOf(this);if(index>=0)this.parentElement.children.splice(index,1);}
         if(elements[this.id]===this)delete elements[this.id];this.isConnected=false;this.parentElement=null;
       }};},
-    addEventListener(name,cb) {(listeners[name] ||= []).push(cb);},
+    addEventListener(name,cb,capture) {cb.capture=!!capture;(listeners[name] ||= []).push(cb);},
     head: {appendChild(el) {if (el.onload) el.onload();}}};
   const root = {document, performance: {now: () => now}, Date: {now: () => now},Math: {random: () => 0.1234},
     getComputedStyle(el) {return {display: 'flex',visibility: 'visible',opacity: String(el.opacity ?? (el === panel && !panel.open ? 0 : 1))};},
     console: {warn(value) {warnings.push(value);}},
+    MutationObserver:class {constructor(cb){this.cb=cb;observers.push(this);}observe(target,options){this.target=target;this.options=options;this.live=true;}disconnect(){this.live=false;}},
     AbortController, setTimeout(cb,ms) {timers.set(++sequence,{cb,ms,at:now+ms});return sequence;},clearTimeout(id) {timers.delete(id);},
     setInterval(cb,ms) {timers.set(++sequence,{cb,ms,interval: true});return sequence;},
     cef: {on(name,cb) {callbacks[name] = cb;},emit(...args) {sent.push(args);},set_focus() {}},
@@ -52,12 +55,15 @@ async function page(delayed=false) {
   root.sendMessageToChat = text => {if(delayed)root.setTimeout(()=>root.cef.emit('HandleHudSendMessage',text),50);else root.cef.emit('HandleHudSendMessage',text);panel.open=false;};
   function fire(name,event={}) {
     event.target ||= input; event.key ||= '';
-    event.preventDefault=()=>event.prevented=true;event.stopImmediatePropagation=()=>event.stopped=true;
-    for(const cb of listeners[name]||[]) {cb(event);if(event.stopped)break;}
+    event.preventDefault=()=>event.prevented=true;event.stopImmediatePropagation=()=>event.stopped=true;event.stopPropagation=()=>event.bubbleStopped=true;
+    for(const cb of (listeners[name]||[]).filter(cb=>cb.capture)) {cb(event);if(event.stopped)break;}
+    if(!event.stopped && event.target===input)for(const cb of fieldListeners[name]||[]) {cb(event);if(event.stopped)break;}
+    if(!event.stopped && !event.bubbleStopped)for(const cb of (listeners[name]||[]).filter(cb=>!cb.capture)) {cb(event);if(event.stopped)break;}
     return event;
   }
   fire('DOMContentLoaded');api.endpoint(endpoint);await flush();
-  return {root,api,input,panel,sent,observed,requests,callbacks,fire,timers,warnings,elements,
+  return {root,api,input,panel,sent,observed,requests,callbacks,fire,timers,warnings,elements,observers,
+    mutate(){for(const o of observers)if(o.live)o.cb([{type:'attributes'}]);},
     type(text,cursor=text.length) {panel.open=true;input.value=text;input.selectionStart=input.selectionEnd=cursor;fire('input');},
     async config(value) {config={...config,...value};await api.exchange();await flush();},
     async exchange() {await api.exchange();await flush();},
@@ -299,6 +305,26 @@ async function page(delayed=false) {
   const staleBefore=p.sent.length;eq((await p.enter()).prevented,true);eq(p.sent.length,staleBefore);eq(p.input.value,words,'a lost bridge cannot send or truncate a previously prepared long message');
   p=await page();await p.config({chatText:{...chatText,manual}});p.type('/do '+words);p.offline(true);p.time(2500);
   eq((await p.enter()).prevented,true);eq(p.sent.length,0);eq(p.input.value,'/do '+words);
+  // Input mutations publish immediately, including the final state if an
+  // earlier request is still pending. Typed digits stay in the input element.
+  p=await page();eq(p.observers.length,1);eq(p.observers[0].target,p.panel);
+  eq(p.observers[0].options,{attributes:true,attributeFilter:['class','style','hidden']});
+  let observedInput=false;p.root.document.addEventListener('keydown',()=>{observedInput=true;},false);
+  p.type('Номер 123');
+  for(const key of ['0','1','9'])for(const type of ['keydown','keyup']) {
+    observedInput=false;const event=p.fire(type,{key,code:'Digit'+key});eq(event.bubbleStopped,true);eq(event.prevented,undefined);eq(observedInput,false);
+  }
+  for(const code of ['Numpad0','Numpad9'])eq(p.fire('keydown',{key:'Unidentified',code}).bubbleStopped,true);
+  eq(p.fire('keydown',{key:'a'}).bubbleStopped,undefined);eq(p.fire('keydown',{key:'1',target:{tagName:'INPUT'}}).bubbleStopped,undefined);
+  await p.config({weaponGuard:false});observedInput=false;eq(p.fire('keydown',{key:'1'}).bubbleStopped,undefined);eq(observedInput,true);
+  p.time(2200);eq(p.fire('keydown',{key:'1'}).bubbleStopped,undefined,'Explicit OFF survives an expired bridge reply');
+  await p.config({weaponGuard:true});p.panel.open=false;eq(p.fire('keydown',{key:'1'}).bubbleStopped,undefined);
+  let beforeMutation=p.requests.length;p.panel.open=true;p.mutate();await flush();eq(p.requests.length,beforeMutation+1);
+  eq(JSON.parse(p.requests.at(-1).options.body).chat,true);
+  beforeMutation=p.requests.length;p.panel.open=false;p.mutate();await flush();eq(p.requests.length,beforeMutation+1);eq(JSON.parse(p.requests.at(-1).options.body).chat,false);
+  beforeMutation=p.requests.length;p.fire('keydown',{key:'F6'});p.panel.open=true;p.runTimers(0);await flush();p.runTimers(0);await flush();
+  eq(p.requests.length>beforeMutation,true);eq(JSON.parse(p.requests.at(-1).options.body).chat,true);
+  p.api.stop();eq(p.observers[0].live,false);eq(p.fire('keydown',{key:'2'}).bubbleStopped,undefined);
   const fs=require('node:fs'),crypto=require('node:crypto');
   fs.writeFileSync(require('node:path').join(__dirname,'CEF_BROWSER_RESULTS.json'),JSON.stringify({status:'passed',checks,
     adapter_sha256:crypto.createHash('sha256').update(fs.readFileSync(require('node:path').join(__dirname,'../cef/assets/hud/pa26-chat.js'))).digest('hex'),

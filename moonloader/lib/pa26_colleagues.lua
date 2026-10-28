@@ -17,7 +17,7 @@ function M.callsign(profile,skin,occupants,crew)
  profile=profile or{};if type(profile.callsign)=='string'and profile.callsign~=''then return profile.callsign end
  if skin==285 then return'DAVID-1'end
  local dept=profile.department or'';local station=dept:find('LSPS',1,true)and'1'or dept:find('LVPS',1,true)and'3'or dept:find('SFPS',1,true)and'2'or nil
- local info=M.pdSkins[skin];station=station or(info and({LSPS='1',SFPS='2',LVPS='3'})[info.station])or'2'
+ local info=M.pdSkins[skin];station=station or((dept==''or dept=='EPD')and'1')or(info and({LSPS='1',SFPS='2',LVPS='3'})[info.station])or'1'
  return station..(((occupants or 1)>=2 or crew==true)and'-A-1'or'-L-1')
 end
 function M.new(env)return setmetatable({env=env,knownColleagues={},findNames={},snapshot={nearbyOfficers={},nearbyCruisers=0}},C)end
@@ -36,16 +36,26 @@ function C:observe(line)
   end
  end
 end
+function C:ownSnapshot(s)
+ local r=self.env.read;local car=s.inVehicle and r('storeCarCharIsInNoSave',s.ped)or nil
+ if car and r('doesVehicleExist',car)~=true then car=nil end
+ local mode,role,occupants=M.role(car~=nil,car and r('getDriverOfCar',car)==s.ped,car and r('getNumberOfPassengers',car))
+ local skin=r('getCharModel',s.ped);local profile=self.env.profile()or{}
+ local dept=profile.department;local station=type(dept)=='string'and dept~=''and dept~='EPD'and dept or'LSPS'
+ return{nearbyOfficers={},nearbyCruisers=0,ownCruiserRole=role,unitMode=mode,cruiserOccupants=occupants,skin=skin,
+  autoCallsign=M.callsign(profile,skin,occupants,self.env.crew and self.env.crew()),station=station}
+end
 function C:tick(s,now)
  self.now=now
  if s.session~=self.session or s.ped~=self.ped then self:reset();self.session=s.session;self.ped=s.ped end
- local cfg=self.env.settings();if not cfg.colleagues_enabled or not s.session or not s.alive or not s.onDuty then self.snapshot={nearbyOfficers={},nearbyCruisers=0};return end
+ local cfg=self.env.settings();if not s.session or not s.alive or not s.onDuty then self.snapshot={nearbyOfficers={},nearbyCruisers=0};return end
  local age=self.scanAt and core.elapsed(now,self.scanAt);if age and age<cfg.scan_ms then return end;self.scanAt=now
+ local own=self:ownSnapshot(s);if not cfg.colleagues_enabled then self.snapshot=own;return end
  local r=self.env.read;local x,y,z=r('getCharCoordinates',s.ped);if not core.finite(x)or not core.finite(y)or not core.finite(z)then self.snapshot={nearbyOfficers={},nearbyCruisers=0};return end
  local skins=require('pa26_copilot_settings').ids(cfg.skin_ids,0,65535)or{};local vehicles=require('pa26_copilot_settings').ids(cfg.vehicle_models,400,65535)or{}
  local buddies={};for _,p in ipairs(self.env.partners()or{})do local nick=p.name or p.nickname or p.nick;if type(nick)=='string'then buddies[nick:lower()]=true end end
  local function near(px,py,pz)return core.finite(px)and core.finite(py)and core.finite(pz)and math.sqrt((px-x)^2+(py-y)^2+(pz-z)^2)or math.huge end
- local seen,rows={},{};local count=0
+ local seen,rows={},{};local count=0;local recognized={[s.ped]=true}
  local localArea=r('getCharActiveInterior',s.ped)
  for _,ped in pairs(r('getAllChars')or{})do count=count+1;if count>2048 then break end
   if core.finite(ped)and ped~=s.ped and not seen[ped]then seen[ped]=true
@@ -55,6 +65,7 @@ function C:tick(s,now)
      if ok==true and core.validId(id)and back==true and handle==ped and r('sampIsPlayerConnected',id)==true and r('sampIsPlayerNpc',id)==false then
       local nick=r('sampGetPlayerNickname',id);local skin=r('getCharModel',ped)
       if type(nick)=='string'and #nick<=24 and(cfg.uniforms_enabled and skins[skin]or cfg.radio_cache and self.knownColleagues[nick:lower()]or buddies[nick:lower()])then
+       recognized[ped]=true
        rows[#rows+1]={id=id,name=nick,skin=skin,role_label=M.pdSkins[skin]and M.pdSkins[skin].label or'Коллега из чата / контактов',distance=distance}
       end
      end
@@ -66,18 +77,13 @@ function C:tick(s,now)
  local n=0;seen={};count=0
  for _,car in pairs(r('getAllVehicles')or{})do count=count+1;if count>2048 then break end
   if core.finite(car)and not seen[car]then seen[car]=true
-   if r('doesVehicleExist',car)==true and vehicles[r('getCarModel',car)]then
+   if r('doesVehicleExist',car)==true then
     local px,py,pz=r('getCarCoordinates',car);local driver=r('getDriverOfCar',car)
-    if near(px,py,pz)<=cfg.colleague_radius and core.finite(driver)and r('doesCharExist',driver)==true then n=n+1 end
+    if(vehicles[r('getCarModel',car)]or recognized[driver])and near(px,py,pz)<=cfg.colleague_radius and core.finite(driver)and r('doesCharExist',driver)==true then n=n+1 end
    end
   end
  end
- local car=s.inVehicle and r('storeCarCharIsInNoSave',s.ped)or nil
- local mode,role,occupants=M.role(car~=nil,car and r('getDriverOfCar',car)==s.ped,car and r('getNumberOfPassengers',car))
- local skin=r('getCharModel',s.ped);local profile=self.env.profile()or{}
- local info=M.pdSkins[skin];local station=profile.department~=''and profile.department or info and info.station~='EPD'and info.station or'SFPS'
- self.snapshot={nearbyOfficers=rows,nearbyCruisers=n,ownCruiserRole=role,unitMode=mode,cruiserOccupants=occupants,skin=skin,
-  autoCallsign=M.callsign(profile,skin,occupants,self.env.crew and self.env.crew()),station=station}
+ own.nearbyOfficers=rows;own.nearbyCruisers=n;self.snapshot=own
 end
 function C:view()return copy(self.snapshot)end
 function M.guard(cfg,zone,officers,pursuit)

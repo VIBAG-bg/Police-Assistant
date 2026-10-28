@@ -18,7 +18,7 @@ local cb={copilotPreview=function()return'Предпросмотр с сохра
 s.currentUi=ui;s.preferenceContext=true
 local checks,frames=0,0
 local function check(v,why)checks=checks+1;assert(v,why)end
-for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
+for _,display in ipairs({{640,480},{800,600},{1024,768},{1152,864},{1366,768},{1920,1080},{2560,1440}})do
  io.DisplaySize=im.ImVec2(display[1],display[2])
  for _,page in ipairs({'work','settings'})do for frame=1,3 do
   s.copilotPage=page;im.NewFrame();im.SetNextWindowPos(im.ImVec2(16,16),im.Cond.Always);im.SetNextWindowSize(im.ImVec2(display[1]-32,display[2]-32),im.Cond.Always)
@@ -34,10 +34,24 @@ for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
  check(controller.bounds,'Tactical card fits the HUD lane')
  local box=controller.bounds;check(box.x>=0 and box.y>=0 and box.x+box.w<=display[1]and box.y+box.h<=display[2],'HUD card within viewport')
  uiModule.drawHud(controller,im);im.Render();frames=frames+1
+ for _,phase in ipairs({'patrol','10-55','10-66','Преследование','10-57 FOXTROT'})do
+  im.NewFrame();hud:setEquipmentHeight(0);hud:setConfirmationHeight(68)
+  vv.phase=phase~='patrol'and phase or nil;vv.car=phase~='patrol'and model.copy(data.copilot.car)or nil
+  vv.statusTitle=phase=='patrol'and'ПАТРУЛЬ · КОД 4'or phase..' · КОД 3';vv.statusCode=phase=='patrol'and 4 or 3
+  vv.values={unit='1-A-3',city='Лос-Сантос',direction='Северо-восток',area='Район с длинным названием',map_square='H-17',crew='Иван Петров, Мария Иванова',model='Sultan',occupants_text='внутри двое'}
+  uiModule.reserve(controller,im,hud,fonts,62);uiModule.place(controller,im,hud,fonts)
+  local b=controller.bounds;check(b~=nil,'Patrol/traffic card plus Taser and SOS must fit '..display[1]..' '..phase)
+  check(b.x>=0 and b.y>=0 and b.x+b.w<=display[1]and b.y+b.h<=display[2],'Entire card within screen')
+  local lane=hud:attachmentLayout(im,fonts);check(lane and lane.confirmation and lane.equipment,'All attachments reserved')
+  check(b.y>=lane.confirmation.y+lane.confirmation.h or b.x+b.w<=lane.confirmation.x or b.x>=lane.confirmation.x+lane.confirmation.w,'No SOS overlap')
+  check(b.y>=lane.equipment.y+62,'No Taser overlap');check(controller.hudMetrics.traffic==(phase~='patrol'),'Traffic buttons only during traffic')
+  uiModule.drawHud(controller,im);im.Render();check(im.GetDrawData().Valid);frames=frames+1
+ end
+ hud:setConfirmationHeight(0)
  -- Full confirmation text is paginated, never internally scrolled.
  local lines={};for i=1,24 do lines[i]='Строка '..i..': длинное RP-сообщение и отдельное подтверждение действия с выбранным водителем.'end
  im.NewFrame();im.Begin('layout-check',nil,im.WindowFlags.NoSavedSettings)
  local layout=menu.confirmationLayout(im,{title='Подтвердить ориентировку и розыск?',lines=lines,titleFont=im.GetFont(),buttonFont=im.GetFont(),pageState={},columns=2,buttons={'ДА','НЕТ'}})
  check(layout.width<=display[1]-20,'Modal width');check(layout.height<=display[2]-20,'Modal height');im.End();im.Render();frames=frames+1
 end
-im.DestroyContext(ctx);print('Copilot native32: '..checks..' checks; '..frames..' frames; four screen sizes; no game writes.')
+im.DestroyContext(ctx);print('Copilot native32: '..checks..' checks; '..frames..' frames; seven screen sizes; patrol/traffic, SOS and Taser; no game writes.')

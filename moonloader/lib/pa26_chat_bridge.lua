@@ -85,6 +85,22 @@ function Bridge:busy(now)
     if not age or age>M.TTL then self:setStatus('waiting','heartbeat_lost');return false,false,false end
     return s.busy,s.chat,s.dialog
 end
+function Bridge:observeInput(message,key,now,allowed)
+    if message~=0x100 then return end
+    if key==0x0D or key==0x1B then self.openGraceAt=nil
+    elseif allowed and(key==0x75 or key==0x54)then self.openGraceAt=now end
+end
+function Bridge:inputBusy(now,graceMs)
+    local busy,chat,dialog=self:busy(now)
+    local age=self.openGraceAt and core.elapsed(now,self.openGraceAt)
+    local grace=age~=nil and age<(graceMs or 350)
+    if not grace then self.openGraceAt=nil end
+    return busy or grace,chat or grace,dialog
+end
+function M.weaponKey(message,key)
+    return(message==0x100 or message==0x101)and(type(key)=='number'and
+        (key>=0x30 and key<=0x39 or key>=0x60 and key<=0x69 or key==0x51 or key==0x45))or false
+end
 function Bridge:observe(text,source,now)
     local fresh={};local match
     for _,row in ipairs(self.seen)do
@@ -161,7 +177,7 @@ function Bridge:exchange(raw,now)
         if type(layout)~='string'or not layout:match('^[A-Z][A-Z][A-Z]?$')then layout=nil end
     end
     local response={schema=1,ack=page.ack,session=self.env.session and self.env.session()or nil,enabled=settings.enabled==true,accentEnabled=settings.accentEnabled==true,
-        layoutIndicator=settings.layoutIndicator==true,keyboardLayout=layout,chatText=chatText.policy(settings),
+        layoutIndicator=settings.layoutIndicator==true,weaponGuard=settings.weaponGuard~=false,keyboardLayout=layout,chatText=chatText.policy(settings),
         accent=settings.accent or'',filters=settings.filters or{},diagnostics=settings.diagnostics==true,localCommands={}}
     response.manualResult=call(self.env,'manualResult',page.manualResult and page.manualResult.key)or page.manualResult
     for name in pairs(self.commands)do response.localCommands[#response.localCommands+1]=name end;table.sort(response.localCommands)

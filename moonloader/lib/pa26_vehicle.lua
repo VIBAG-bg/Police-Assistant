@@ -51,6 +51,8 @@ function Vehicle:cancel(reason)
 end
 function Vehicle:reset(reason)
     self:cancel(reason);self.life=self.life+1;self.selected=nil;self.candidates={};self.phase=nil;self.motion=nil;self.own=nil;self.scanAt=nil
+    self.selectionRequest=nil
+    self.syncedDriver=nil;self.syncedRevision=nil;self.driverSelectionRevision=nil
 end
 function Vehicle:clearTarget(reason)
     self.targetLife=self.targetLife+1
@@ -90,9 +92,10 @@ function Vehicle:values(state,c)
     for k,v in pairs(self.env.service and self.env.service()or {})do if out[k]==nil or out[k]==''then out[k]=v end end
     out.direction=cfg.direction_enabled and(self.directionValue or cfg.stationary)or cfg.manual_direction
     local profile=self.env.profile and self.env.profile()or{};local nearby=out.colleagues or{}
-    if not out.unit or out.unit==''then out.unit=profile.callsign~=''and profile.callsign or nearby.autoCallsign or'2-L-1'end
-    if not out.station or out.station==''then out.station=nearby.station or'SFPS'end
+    if not out.unit or out.unit==''then out.unit=profile.callsign~=''and profile.callsign or nearby.autoCallsign or'1-L-1'end
+    if not out.station or out.station==''then out.station=nearby.station or'LSPS'end
     if not out.crew or out.crew==''then out.crew=profile.name~=''and profile.name or out.my_name or'Офицер'end
+    if not out.city or out.city==''then out.city=profile.city and profile.city~=''and profile.city or'не определён'end
     if c then local values,err=M.describe(c,cfg,out.gender);if not values then return nil,err end;for k,v in pairs(values)do out[k]=v end end
     return out
 end
@@ -151,18 +154,73 @@ function Vehicle:proposalValid(p)
     if(p.action=='approach'or p.action=='window')and(self.own or self.selected.distance>cfg.approach_distance)then return false end
     return self.selected.distance<=cfg.retain_distance
 end
-function Vehicle:selectNearest()
+function Vehicle:refreshCandidates(cfg)
+    self.scanAt=self.now;self.candidates={}
+    local ok,rows=pcall(self.env.scan,cfg)
+    if ok and type(rows)=='table'then
+        for _,c in ipairs(rows)do local v=self:decorate(c)
+            if v and core.finite(v.distance)and v.distance>=0 then self.candidates[#self.candidates+1]=v end
+        end
+    end
+    local nearEmpty,nearOccupied=math.huge,math.huge
+    for _,c in ipairs(self.candidates)do
+        if(c.occupants or 0)>0 then nearOccupied=math.min(nearOccupied,c.distance)else nearEmpty=math.min(nearEmpty,c.distance)end
+    end
+    local immediateEmpty=nearEmpty<8 and nearOccupied>25
+    local function tier(c)
+        if not cfg.occupied_priority then return 0 end
+        if immediateEmpty and(c.occupants or 0)==0 and c.distance<8 then return 0 end
+        return(c.occupants or 0)>0 and(immediateEmpty and 1 or 0)or 2
+    end
+    table.sort(self.candidates,function(a,b)
+        local ta,tb=tier(a),tier(b);if ta~=tb then return ta<tb end
+        local closeA,closeB=a.distance<=12,b.distance<=12
+        if closeA~=closeB then return closeA end
+        if closeA and a.distance~=b.distance then return a.distance<b.distance end
+        local aa,ab=core.finite(a.angle)and a.angle or 181,core.finite(b.angle)and b.angle or 181
+        if cfg.selection_ranking=='direction'and aa~=ab then return aa<ab end
+        if a.distance==b.distance then return a.id<b.id end;return a.distance<b.distance
+    end)
+end
+function Vehicle:requestSelection(id)
+    local cfg=self.env.settings()
+    if not(cfg.enabled or cfg.megaphone_enabled)or not sceneSafe(self.state)then return nil,'Включите транспорт или мегафон; игра должна быть доступна.'end
+    self.selectionRequest={id=id,life=self.life,session=self.state.session,at=self.now};return true
+end
+function Vehicle:syncDriverTarget(cfg)
+    if not cfg.sync_driver_target or not self.env.driver or not self.env.currentTarget or not self.env.selectTarget then
+        self.syncedDriver=nil;self.syncedRevision=nil;return
+    end
+    local explicit=(self.selectionRevision or 0)~=(self.driverSelectionRevision or 0)
+    self.driverSelectionRevision=self.selectionRevision or 0
+    local car=self.selected;if not car or not core.validId(car.driver_id)then return end
+    local target,revision=self.env.currentTarget();local old=self.syncedDriver
+    local automatic=target and old and target.id==old.id and target.ped==old.ped and target.name==old.name and revision==self.syncedRevision
+    if not(explicit or not target and not old or automatic)then return end
+    local driver=self.env.driver(car.driver_id)
+    if not core.capturedTargetValid(driver)or car.driver_ped and driver.ped~=car.driver_ped or car.driver_name and driver.name~=car.driver_name then return end
+    if target and target.id==driver.id and target.ped==driver.ped and target.name==driver.name then
+        if explicit or automatic then self.syncedDriver={id=driver.id,ped=driver.ped,name=driver.name};self.syncedRevision=revision end
+        return
+    end
+    if self.env.selectTarget(driver)then
+        self.syncedDriver={id=driver.id,ped=driver.ped,name=driver.name}
+        local _,fresh=self.env.currentTarget();self.syncedRevision=fresh
+    end
+end
+function Vehicle:selectNearest(fresh)
+    if fresh and #self.candidates==0 then self:refreshCandidates(self.env.settings())end
     local c=self.candidates[1]
     if not c then return nil,'Рядом нет видимой машины. Повернитесь к нужному автомобилю или измените дальность выбора.'end
     if not same(self.selected,c)then self:clearTarget('Выбрана другая машина.')end
-    self.selected=model.copy(c);return true
+    self.selected=model.copy(c);self.selectionRevision=(self.selectionRevision or 0)+1;return true
 end
 function Vehicle:selectCandidate(id)
     local cfg=self.env.settings()
     if not(cfg.enabled or cfg.megaphone_enabled)or not sceneSafe(self.state)then return nil,'Включите транспорт или мегафон; игра должна быть доступна.'end
     for _,c in ipairs(self.candidates)do if c.id==id then
         if not same(self.selected,c)then self:clearTarget('Выбрана другая машина.')end
-        self.selected=model.copy(c);return true
+        self.selected=model.copy(c);self.selectionRevision=(self.selectionRevision or 0)+1;return true
     end end
     return nil,'Машина больше не входит в список рядом.'
 end
@@ -219,19 +277,21 @@ function Vehicle:tick(state,now)
     self:direction(state,now,cfg)
     if not cfg.enabled and not cfg.megaphone_enabled then if self.selected or self.intent or self.queued then self:reset('Транспорт и мегафон отключены.')end;return end
     local scanAge=self.scanAt and core.elapsed(now,self.scanAt)
-    if not scanAge or scanAge>=cfg.scan_ms then
-        self.scanAt=now;self.candidates={}
-        for _,c in ipairs(self.env.scan(cfg)or {})do local v=self:decorate(c);if v then self.candidates[#self.candidates+1]=v end end
-        table.sort(self.candidates,function(a,b)
-            if cfg.selection_ranking=='direction'and(a.angle or 181)~=(b.angle or 181)then return(a.angle or 181)<(b.angle or 181)end
-            if a.distance==b.distance then return a.id<b.id end;return a.distance<b.distance
-        end)
+    if self.selectionRequest or not scanAge or scanAge>=cfg.scan_ms then
+        self:refreshCandidates(cfg)
         if self.selected then
             local current=self:decorate(self.env.resolve(self.selected,cfg))
             if not same(current,self.selected)or current.distance>cfg.retain_distance then self:clearTarget('Выбранная машина недоступна или слишком далеко.')
             else self.selected=current end
         end
     end
+    local selection=self.selectionRequest;self.selectionRequest=nil
+    if selection and selection.life==self.life and selection.session==state.session and(core.elapsed(now,selection.at)or math.huge)<2000 then
+        local ok,err
+        if selection.id then ok,err=self:selectCandidate(selection.id)else ok,err=self:selectNearest(true)end
+        if not ok then self.message=err;if self.env.notice then self.env.notice(err)end end
+    end
+    self:syncDriverTarget(cfg)
     local p=self.intent
     if p then
         if not self:proposalValid(p)then self:cancel('Подтверждение транспорта устарело.')

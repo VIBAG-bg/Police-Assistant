@@ -11,19 +11,21 @@ M.keys={{'select_shortcut','Выбрать машину и открыть ком
 M.phraseCount=8
 M.phraseConditions={{'any','Всегда'},{'vehicle','Из служебной машины'},{'foot','Пешком'},{'stop','Во время 10-55'},{'pursuit','Во время погони'}}
 for i=1,M.phraseCount do M.keys[#M.keys+1]={'phrase_'..i..'_shortcut','Мегафон · требование '..i}end
+local legacyRadio={traffic_stop_template="{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.",pursuit_template="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}",finish_template="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4."}
 function M.defaults()
-    local out={enabled=true,require_patrol=false,megaphone_enabled=true,megaphone_require_patrol=false,megaphone_require_duty=true,
-        megaphone_require_radio=false,megaphone_wheel=true,radius=40,retain_distance=200,approach_distance=6,front_only=true,occupied_only=true,scan_ms=250,
-        selection_mode='auto',selection_ranking='direction',cone_angle=65,height_tolerance=0,
+    local out={radio_templates_version=1,enabled=true,require_patrol=false,megaphone_enabled=true,megaphone_require_patrol=false,megaphone_require_duty=true,
+        megaphone_require_radio=false,megaphone_wheel=true,radius=60,retain_distance=200,approach_distance=6,front_only=true,occupied_only=false,scan_ms=250,
+        selection_mode='auto',selection_ranking='direction',cone_angle=85,height_tolerance=15,close_radius=15,
+        sync_driver_target=true,occupied_priority=true,copilot_migrated=1,
         direction_enabled=true,manual_direction='',motion_ms=300,stationary_distance=.15,max_motion_distance=100,stationary='На месте',
         directions={'Север','Северо-восток','Восток','Юго-восток','Юг','Юго-запад','Запад','Северо-запад'},
         channel='/r',megaphone_channel='/m',confirmation_ms=30000,model_aliases={},color_aliases={},
         pause_patrol_reports=true,pursuit_periodic=true,pursuit_confirmation=true,pursuit_interval_ms=60000,
-        traffic_stop_template='{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.',
-        pursuit_template='{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}',
+        traffic_stop_template="{local_tag}{unit}, провожу остановку {vehicle_description} в {city}, район {area} ({map_square}), направление: {direction}, {occupants_text}, Код 4.",
+        pursuit_template="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Двигаюсь на {direction}, {city}, район {area} ({map_square}), {tac}, Код 3.{armed_text}",
         pursuit_periodic_template='{local_tag}{unit}, продолжаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}.',
         megaphone_template='Водитель автомобиля {model}, говорит {station}. Немедленно остановитесь у обочины и выключите двигатель.',
-        finish_template='{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4.',
+        finish_template="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area} ({map_square}), {stop_outcome}, продолжаю патрулирование, Код 4.",
         approach_template='подойдя к машине, коснулся заднего фонаря и, держа руку у кобуры, направился к водителю.',
         window_template='Открыто ли окно со стороны водителя?',
         unknown_model='Модель не определена',unknown_color='Цвет не определён',color_separator=' / ',
@@ -59,11 +61,12 @@ function M.validate(raw)
     if not({auto=true,vehicle=true,camera=true,screen=true})[out.selection_mode]then return nil,'Проверьте режим выбора машины.'end
     if raw.selection_ranking~=nil then out.selection_ranking=raw.selection_ranking end
     if out.selection_ranking~='direction'and out.selection_ranking~='distance'then return nil,'Проверьте порядок машин в списке.'end
-    for _,r in ipairs({{'cone_angle',10,120},{'height_tolerance',0,30}})do
+    if raw.copilot_migrated~=nil and raw.copilot_migrated~=1 then return nil,'Неизвестная версия настроек выбора машины.'end
+    for _,r in ipairs({{'cone_angle',10,120},{'height_tolerance',0,30},{'close_radius',0,30}})do
         local n=raw[r[1]];if n==nil then n=out[r[1]]end
         if not shared.integer(n,r[2],r[3])then return nil,'Проверьте настройку выбора: '..r[1]end;out[r[1]]=n
     end
-    for _,k in ipairs({'enabled','require_patrol','front_only','occupied_only','direction_enabled','pause_patrol_reports','pursuit_periodic','pursuit_confirmation'})do
+    for _,k in ipairs({'enabled','require_patrol','front_only','occupied_only','sync_driver_target','occupied_priority','direction_enabled','pause_patrol_reports','pursuit_periodic','pursuit_confirmation'})do
         if raw[k]~=nil then if type(raw[k])~='boolean'then return nil,'Неверный переключатель: '..k end;out[k]=raw[k]end
     end
     -- The old transport switch remains authoritative for an old profile.
@@ -71,10 +74,19 @@ function M.validate(raw)
     for _,k in ipairs({'megaphone_enabled','megaphone_require_patrol','megaphone_require_duty','megaphone_require_radio','megaphone_wheel'})do
         if raw[k]~=nil then if type(raw[k])~='boolean'then return nil,'Неверный переключатель мегафона: '..k end;out[k]=raw[k]end
     end
-    for _,row in ipairs({{'radius',5,100},{'retain_distance',30,1000},{'approach_distance',2,15},{'scan_ms',100,2000},{'motion_ms',100,2000},
+    for _,row in ipairs({{'radius',5,150},{'retain_distance',30,1000},{'approach_distance',2,15},{'scan_ms',100,2000},{'motion_ms',100,2000},
         {'max_motion_distance',20,500},{'confirmation_ms',1000,60000},{'pursuit_interval_ms',1000,3600000}})do
         local n=raw[row[1]];if n==nil then n=out[row[1]]end
         if not shared.integer(n,row[2],row[3])then return nil,'Неверное значение: '..row[1]end;out[row[1]]=n
+    end
+    -- Upgrade only recognized stock profiles once. Custom ranges/conditions
+    -- remain authoritative; the marker makes later explicit OFF choices stick.
+    local stock=raw.copilot_migrated==nil and raw.occupied_only==true and(raw.radius==nil or raw.radius==40)and
+        (raw.cone_angle==nil or raw.cone_angle==65)and(raw.height_tolerance==nil or raw.height_tolerance==0)and
+        (raw.enabled==false and raw.require_patrol==true or raw.enabled==true and raw.require_patrol==false)
+    if stock then
+        out.enabled=true;out.megaphone_enabled=true;out.require_patrol=false;out.occupied_only=false
+        out.radius=60;out.cone_angle=85;out.height_tolerance=15;out.retain_distance=math.max(out.retain_distance,out.radius)
     end
     if out.retain_distance<out.radius then return nil,'Дальность удержания должна быть не меньше дальности выбора.'end
     out.stationary_distance=raw.stationary_distance or out.stationary_distance
@@ -133,6 +145,10 @@ function M.validate(raw)
             end
             out.phrases[i]={enabled=p.enabled,name=name,template=body,channel=p.channel,condition=p.condition,target=target}
         end
+    end
+    if raw.radio_templates_version~=nil and raw.radio_templates_version~=1 then return nil,'Неизвестная версия реплик рации.'end
+    if raw.radio_templates_version==nil then
+        local stock=M.defaults();for k,old in pairs(legacyRadio)do if raw[k]==old then out[k]=stock[k]end end
     end
     return out
 end

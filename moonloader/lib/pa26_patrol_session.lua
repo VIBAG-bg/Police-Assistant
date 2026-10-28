@@ -122,6 +122,10 @@ function Session:crewText(a)
 end
 function Session:values(s,a)
     local out=model.copy(s);if not a then return out end
+    local profile=self.env.profile()or{}
+    for key,fallback in pairs({city='не определён',direction='не определено',map_square='не определён',rank='сотрудник'})do
+        if out[key]==nil or out[key]==''then out[key]=profile[key]and profile[key]~=''and profile[key]or fallback end
+    end
     for _,k in ipairs({'officer','callsign','station','unit','vehicle','sector','post'})do out[k]=a[k]end
     out.crew,out.crew_count=self:crewText(a);out.crew_count=tostring(out.crew_count)
     local roles={a.officer};local callsigns={}

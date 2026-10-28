@@ -10,7 +10,7 @@ for degree=-180,180 do
     eq(found~=nil,math.abs(degree)<=65)
     if found then check(math.abs(found-math.abs(degree))<.00001)end
 end
-local cfg=settings.defaults();eq(cfg.height_tolerance,0,'Height filter is opt-in to preserve cars on SF hills');cfg.height_tolerance=8
+local cfg=settings.defaults();eq(cfg.height_tolerance,15,'Default tolerates hills while filtering other floors');cfg.height_tolerance=8;cfg.close_radius=0
 local own=100;local backwardsCamera=false;local missing=false
 local cars={[10]={x=1,y=15,z=0},[20]={x=0,y=25,z=0},[30]={x=0,y=-5,z=0},[40]={x=0,y=10,z=15},[50]={x=15,y=0,z=0},[100]=origin}
 local calls={}
@@ -26,14 +26,14 @@ local api=world.new(function(n,...)calls[n]=(calls[n]or 0)+1;if funcs[n]then ret
 local function ids(rows)local t={};for _,r in ipairs(rows)do t[r.id]=true end;return t end
 local rows=api.scan(cfg);local found=ids(rows);check(found[10]and found[20]);check(not found[30]and not found[40]and not found[50]and not found[100])
 eq(calls.getCharCoordinates,1,'One origin sample per scan')
-backwardsCamera=true;found=ids(api.scan(cfg));check(found[10]and not found[30],'Camera behind cannot reverse the vehicle cone')
+backwardsCamera=true;found=ids(api.scan(cfg));check(found[10]and found[30],'Auto accepts either cruiser or camera cone')
 cfg.selection_mode='camera';found=ids(api.scan(cfg));check(found[30]and not found[10],'Explicit camera cone follows camera')
 cfg.selection_mode='auto';own=nil;found=ids(api.scan(cfg));check(found[30]and not found[10],'On foot auto follows camera')
 cfg.selection_mode='vehicle';eq(#api.scan(cfg),0,'Strict vehicle mode needs a known own car')
 own=100;missing=true;eq(#api.scan(cfg),0,'Unknown direction cannot silently select in strict mode')
 cfg.selection_mode='auto';found=ids(api.scan(cfg));check(found[10]and found[30]);check(api.status():find('недоступно',1,true))
 cfg.selection_mode='screen';cfg.height_tolerance=0;found=ids(api.scan(cfg));check(found[40]);check(found[50])
-missing=false;cfg=settings.defaults();rows=api.scan(cfg)
+missing=false;backwardsCamera=false;cfg=settings.defaults();cfg.close_radius=0;rows=api.scan(cfg)
 -- Enable the optional height filter for the directional ranking example.
 cfg.height_tolerance=8;rows=api.scan(cfg)
 local state={session='test',ped=1,alive=true,focused=true,paused=false,onDuty=true,radioEnabled=true}

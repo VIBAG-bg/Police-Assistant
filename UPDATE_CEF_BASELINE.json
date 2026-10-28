@@ -1,9 +1,10 @@
 {
   "schema": 1,
-  "compatible_release": "0.40.0",
-  "policy": "CEF unchanged; universal update works with native-chat protocol-1 workers",
+  "compatible_release": "0.40.3",
+  "policy": "Reviewed adapter update; protocol-1 workers 0.40.3+ skip CEF on native installs and require the official HUD main hash on launcher installs.",
   "hashes": {
     "pa26-chat-endpoint.js": "dafae2adea0cd37d9aae06d45012279c0d4371af956e0b67d90468bb5647cfc8",
-    "pa26-chat.js": "d07aa5041cbf7f18b61b1643c1053cb5f33b7d9a10147b41385f4204da251fe8"
-  }
+    "pa26-chat.js": "929ce54731cf70863567304e69935005961b8f0eaf15fc4b4f39efaca93bbf48"
+  },
+  "include_assets": true
 }

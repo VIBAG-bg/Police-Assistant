@@ -4,15 +4,20 @@ local M={}
 function M.draw(studio,ui,data,callbacks)
     local im=studio.imgui;studio.currentNoticeScope='map_grid';studio.preferenceContext=true;studio.currentUi=ui
     local d=studio.mapGridDraft or model.copy(studio.lib.map_grid)
+    local state=data.mapState or {}
     local preview=grid.validate(d)or studio.lib.map_grid
     studio:settingsHeading(ui,'Квадраты карты')
     ui.text('Буква и номер обозначают клетку координатной сетки, например H-18. По умолчанию 24 × 24 клетки с шагом 250 игровых единиц. Это отдельная сетка PA, а не подтверждённая карта официальных секторов SFPS.')
     ui.text('Названия районов Doherty, Hashbury и другие уже берутся из GTA и показываются отдельно. Поддерживаются обычный чат и CEF: сетка сама ничего не отправляет.')
+    local autoCity,cityChanged=studio:check('Автозаполнение {city}##map-auto-city',d.auto_city)
+    if cityChanged then d.auto_city=autoCity end
+    local city=grid.values(d,studio.lib.profile,state and state.x,state and state.y,state and state.interior,state and state.z,state and state.zoneKey).city
+    ui.text('Предпросмотр {city}: '..(city and city~=''and city or'нет данных')..'. Определяются три города и пять округов. Ручной город в профиле сохраняется: выключите автозаполнение, чтобы использовать его. В интерьере берётся последнее известное место снаружи, если оно есть.')
     for _,r in ipairs({{'enabled','Включить квадраты карты'},{'radar','Сетка на радаре'},{'pause_map','Сетка на карте в паузе'},
         {'hud','Квадрат в HUD'},{'labels','Подписи клеток'},{'axis_labels','Индексы у краёв карты'},{'highlight','Выделять мою клетку'}})do
         local v,edit=studio:check(r[2]..'##map-'..r[1],d[r[1]]);if edit then d[r[1]]=v end
     end
-    local state=data.mapState or {};local live=grid.cell(preview,state.x,state.y,state.interior)
+    local live=grid.cell(preview,state.x,state.y,state.interior)
     ui.text('Текущий квадрат: '..(live and live.label or (state.interior and state.interior>0 and'в интерьере не определяется'or'нет доступных координат в границах сетки')))
     ui.text(data.mapAdapterStatus or'Проекция карты пока не проверена. Расчёт клетки работает отдельно от графического адаптера.')
     if type(callbacks.recheckMap)=='function'and studio:button('Проверить совместимость проекции снова##map-recheck',ui)then callbacks.recheckMap()end

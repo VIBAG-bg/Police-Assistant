@@ -2,7 +2,7 @@
 local shared=require 'pa26_patrol_settings'
 local core=require 'pa26_core'
 local M={}
-M.booleans={{'pursuit_armed','Подозреваемые вооружены · ручная отметка'}, {'enabled','Подсказывать следующий шаг'}, {'hud','Карточка ситуации у HUD'},
+M.booleans={{'pursuit_armed','Подозреваемые вооружены · ручная отметка'}, {'enabled','Подсказывать следующий шаг'}, {'hud','Карточка ситуации у HUD'}, {'always_show_on_duty','Карточка на службе в машине'},
  {'stationary_offer','Предложить доклад после остановки'}, {'exit_offer','Реагировать на выход водителя'},
  {'approach_offer','Предложить осмотр салона'}, {'flee_offer','Предложить погоню при отъезде'},
  {'high_risk_offer','Предложить 10-66 после погони'}, {'fast_wanted','Предлагать розыск и /pt отдельным шагом'}, {'taser_offer','Предлагать предупреждение тайзера при пешей погоне'},
@@ -23,7 +23,7 @@ M.texts={{'count_legacy_phrases','Реплики мегафона, учитыв�
  {'danger_zones','Опасные районы · через запятую',1024},
  {'ghetto_warning','Напоминание об опасном районе',1024}, {'combat_warning','Напоминание о тайзере',1024},
  {'tire_zero','Счётчик: предупреждений ещё нет',512},{'tire_partial','Счётчик: минимум OOC',512},{'tire_done','Счётчик: все предупреждения',512}}
-M.templates={{'stop','Доклад 10-55'},{'pursuit','Доклад 10-57 VICTOR'},{'foot','Доклад 10-57 FOXTROT'},
+M.templates={{'call911','Вызов 9-1-1'},{'arrived','Прибытие и опрос граждан'},{'break_report','Перерыв · Код 7'},{'lost','Потерян · Код 4 АДАМ'},{'stop','Доклад 10-55'},{'pursuit','Доклад 10-57 VICTOR'},{'foot','Доклад 10-57 FOXTROT'},
  {'high_risk','Доклад 10-66'},{'combat','CODE 0 · попадание по офицеру'}, {'armed','Вооружённый водитель · без подтверждения стрельбы'},
  {'finish','Завершение ситуации'}, {'approach_day','Подход днём'}, {'approach_night','Подход ночью'},
  {'taser_warning','Предупреждение тайзера при пешей погоне'}, {'window','Вопрос об осмотре'}, {'ooc_hint','Подсказка новичку'}, {'return_car','Вернуться в машину'},
@@ -35,8 +35,10 @@ M.variables={unit=true,station=true,crew=true,model=true,model_id=true,vehicle_i
  vehicle_description=true,vehicle_plate=true,occupants=true,occupants_text=true,driver_id=true,driver_name=true,
  tac=true,armed_text=true,stop_outcome=true,area=true,location=true,map_square=true,sector=true,direction=true,
  my_name=true,my_firstname=true,officers=true,min_officers=true,warnings=true,warning_count=true,ooc_warning_count=true}
+local legacyRadio={stop="{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.",pursuit="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}",foot="{local_tag}{unit}, подозреваемый покинул {model}, веду пешую погоню 10-57 FOXTROT в районе {area} ({map_square}), направление: {direction}, {tac}, Код 3!",high_risk="{local_tag}{unit}, провожу остановку повышенного риска 10-66 {vehicle_description}, {occupants_text}, район {area} ({map_square}), запрашиваю свободные экипажи по Код 3!",finish="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4."}
+M.variables.city=true
 function M.defaults()
- local d={pursuit_armed=false,enabled=true,hud=true,stationary_offer=true,exit_offer=true,approach_offer=true,flee_offer=true,high_risk_offer=true,
+ local d={radio_templates_version=1,always_show_on_duty=true,pursuit_armed=false,enabled=true,hud=true,stationary_offer=true,exit_offer=true,approach_offer=true,flee_offer=true,high_risk_offer=true,
   fast_wanted=true,taser_offer=true,adam_driver_mute_radio=true,night_flashlight=true,window_ooc_hint=true,backup_mark=false,
   colleagues_enabled=true,uniforms_enabled=true,radio_cache=true,ghetto_guard=true,combat_guard=true,
   find_cache_window_ms=10000,raid_start_hour=14,raid_end_hour=22,scan_ms=500,colleague_radius=50,stop_distance=25,stop_ms=1500,risk_stop_ms=2500,risk_distance=35,flee_distance=25,foot_distance=12,
@@ -50,13 +52,17 @@ function M.defaults()
   tire_partial='Предупреждения: {warnings}/{ooc_warning_count} OOC · {warnings}/{warning_count} Мануал. Проверьте прочие условия применения силы.',
   tire_done='Предупреждения выполнены: {warnings}/{warning_count}. Место, угрозу и разрешение на огонь проверяет офицер.',
   templates={
-   stop='{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.',
-   pursuit='{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}',
-   foot='{local_tag}{unit}, подозреваемый покинул {model}, веду пешую погоню 10-57 FOXTROT в районе {area} ({map_square}), направление: {direction}, {tac}, Код 3!',
-   high_risk='{local_tag}{unit}, провожу остановку повышенного риска 10-66 {vehicle_description}, {occupants_text}, район {area} ({map_square}), запрашиваю свободные экипажи по Код 3!',
+   lost="{local_tag}{unit}, по {vehicle_description} объявляю Код 4 АДАМ. Потерян в районе {area} ({map_square}), последний курс — {direction}.",
+   break_report="{local_tag}{unit}, {gender:взял|взяла} Код 7 (до 15 минут).",
+   arrived="{local_tag}{unit}, {gender:прибыл|прибыла} на место вызова в районе {area} ({map_square}), опрашиваю граждан, Код 4.",
+   call911="{local_tag}{unit}, работаю по последнему вызову в 9-1-1, направляюсь на {direction} в район {area} ({map_square}), Код 3.",
+   stop="{local_tag}{unit}, провожу остановку {vehicle_description} в {city}, район {area} ({map_square}), направление: {direction}, {occupants_text}, Код 4.",
+   pursuit="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Двигаюсь на {direction}, {city}, район {area} ({map_square}), {tac}, Код 3.{armed_text}",
+   foot="{local_tag}{unit}, подозреваемый покинул {model}, веду пешую погоню 10-57 FOXTROT в {city}, район {area} ({map_square}), двигаюсь на {direction}, {tac}, Код 3!{armed_text}",
+   high_risk="{local_tag}{unit}, провожу остановку повышенного риска 10-66 {vehicle_description}, {occupants_text}, нахожусь в {city}, район {area} ({map_square}), запрашиваю свободные экипажи, Код 3!",
    combat='{local_tag}{unit}, CODE 0! По офицеру открыт огонь! Район {area} ({map_square})! Требуется срочная поддержка всех юнитов!',
    armed='{local_tag}{unit}, водитель {vehicle_description} вооружён. Район {area} ({map_square}), запрашиваю поддержку, Код 3!',
-   finish='{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4.',
+   finish="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area} ({map_square}), {stop_outcome}, продолжаю патрулирование, Код 4.",
    approach_day='подходя к автомобилю, {gender:коснулся|коснулась} ладонью задней левой фары, оставив отпечаток, и {gender:осмотрел|осмотрела} салон.',
    approach_night='достав с пояса тактический фонарик, {gender:коснулся|коснулась} ладонью задней левой фары и {gender:посветил|посветила} лучом в салон автомобиля.',
    taser_warning='Гражданин, остановитесь и держите руки на виду! В случае неподчинения будет применён тайзер!',
@@ -96,6 +102,10 @@ function M.validate(raw)
     d.templates[r[1]]=t
    end
   end
+ end
+ if raw.radio_templates_version~=nil and raw.radio_templates_version~=1 then return nil,'Неизвестная версия реплик Copilot.'end
+ if raw.radio_templates_version==nil and type(raw.templates)=='table'then
+  local stock=M.defaults().templates;for k,old in pairs(legacyRadio)do if raw.templates[k]==old then d.templates[k]=stock[k]end end
  end
  return d
 end

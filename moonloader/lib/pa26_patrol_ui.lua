@@ -30,6 +30,7 @@ function M.draw(studio,ui,data,callbacks)
         if draft.restore_offer and studio:button('Восстановить патруль##patrol-restore',ui)then M.offer(studio,'restore',callbacks)end
         if studio:button('Закрыть сохранённый патруль##patrol-discard',ui)then M.offer(studio,'discard',callbacks)end
     elseif studio:button('Начать патруль##patrol-start',ui)then M.offer(studio,'start',callbacks)end
+    require('pa26_copilot_ui').quick(studio,ui,callbacks)
     studio:observeStatus('patrol_session',view.message,'patrol_session')
     studio:passiveWarning('patrol-save',view.saveError and('Не удалось сохранить сеанс: '..view.saveError),'patrol_session')
     im.Separator()

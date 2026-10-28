@@ -25,15 +25,16 @@ end
 M.actions={'start','resume','finish','crew'}
 M.shortcutNames={{'toggle_shortcut','Начать патруль / открыть патруль'},{'pause_shortcut','Пауза / продолжение патруля'},
     {'finish_shortcut','Завершить патруль'}}
+local legacyRadio={start_template="{local_tag}{unit}: начинаю патрулирование. Экипаж: {crew}. 10-20: {area}.",resume_template="{local_tag}{unit}: продолжаю патрулирование. Экипаж: {crew}. 10-20: {area}.",periodic_template="{local_tag}{unit}: продолжаю службу. Экипаж: {crew}. 10-20: {area}.",finish_template="{local_tag}{unit}: патрулирование завершено. Время на службе: {duration}."}
 function M.defaults()
-    local out={enabled=false,hud=true,restore_offer=true,pause_on_crew_change=true,periodic=true,reporter_self=true,
+    local out={radio_templates_version=1,enabled=false,hud=true,restore_offer=true,pause_on_crew_change=true,periodic=true,reporter_self=true,
         confirmation=true,interval_ms=600000,channel='/r',mode='police',station='',unit='',vehicle='',sector='',post='',
         bind_distance=60,crew={},
-        start_template='{local_tag}{unit}: начинаю патрулирование. Экипаж: {crew}. 10-20: {area}.',
-        resume_template='{local_tag}{unit}: продолжаю патрулирование. Экипаж: {crew}. 10-20: {area}.',
-        finish_template='{local_tag}{unit}: патрулирование завершено. Время на службе: {duration}.',
+        start_template="{local_tag}{rank} {officer}, выхожу на смену как {unit}, начинаю патрулирование в {city}, район {area} ({map_square}), двигаюсь на {direction}, Код 4, доступен.",
+        resume_template="{local_tag}{unit}, продолжаю патрулирование в {city}, район {area} ({map_square}), двигаюсь на {direction}. Экипаж: {crew}, Код 4, доступен.",
+        finish_template="{local_tag}{unit}, заканчиваю патрулирование в {city}, район {area} ({map_square}). Время на смене: {duration}, Код 4.",
         crew_template='{local_tag}{unit}: состав экипажа изменён. Экипаж: {crew}.',
-        periodic_template='{local_tag}{unit}: продолжаю службу. Экипаж: {crew}. 10-20: {area}.'}
+        periodic_template="{local_tag}{unit}, продолжаю патрулирование в {city}, район {area} ({map_square}), двигаюсь на {direction}. Экипаж: {crew}, Код 4, доступен."}
     for _,row in ipairs(M.shortcutNames)do out[row[1]]={key=0,ctrl=false,alt=false,shift=false}end
     return out
 end
@@ -68,6 +69,10 @@ function M.validate(raw)
             if not name or not role or role==''then return nil,'Проверьте имя и роль напарника.'end
             ids[r.contact_id]=true;out.crew[#out.crew+1]={contact_id=r.contact_id,ic_name=name,role=role}
         end
+    end
+    if raw.radio_templates_version~=nil and raw.radio_templates_version~=1 then return nil,'Неизвестная версия реплик рации.'end
+    if raw.radio_templates_version==nil then
+        local stock=M.defaults();for k,old in pairs(legacyRadio)do if raw[k]==old then out[k]=stock[k]end end
     end
     return out
 end

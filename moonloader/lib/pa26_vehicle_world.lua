@@ -39,8 +39,22 @@ function M.new(read,codec,ped)
         if distance>maximum then return end
         if visible then
             if read('isCarOnScreen',handle)~=true then return end
-            -- Ignore the vehicle itself in the line test, while buildings block it.
-            if read('isLineOfSightClear',lx,ly,lz+1,x,y,z+1,true,false,false,true,false,false,false)~=true then return end
+            -- Opcode 06BD takes six coordinates and five flags (11 total).
+            -- Body/roof rays from officer and camera avoid one-point occlusion.
+            local cx,cy,cz=read('getActiveCameraCoordinates')
+            local origins={{lx,ly,lz+1}}
+            if core.finite(cx)and core.finite(cy)and core.finite(cz)then origins[#origins+1]={cx,cy,cz}end
+            local clear,known=false,false
+            for _,p in ipairs(origins)do
+                for _,height in ipairs({1,1.8})do
+                    local hit=read('isLineOfSightClear',p[1],p[2],p[3],x,y,z+height,true,false,false,false,false)
+                    known=known or type(hit)=='boolean';if hit==true then clear=true;break end
+                end
+                if clear then break end
+            end
+            -- Only a missing LOS API may use the close on-screen fallback.
+            -- A known building obstruction is never converted into visibility.
+            if not clear and(known or distance>12)then return end
         end
         local a,b=read('getCarColours',handle)
         -- A GXT label may encode a modded font, rather than CP1251 or UTF-8.
@@ -62,15 +76,17 @@ function M.new(read,codec,ped)
     function api.scan(cfg)
         local lx,ly,lz,own=location();if not lx then api.lastStatus='Координаты недоступны.';return {}end
         local origin={x=lx,y=ly,z=lz,car=own}
-        local mode=cfg.selection_mode or 'auto';local forward,basis
+        local mode=cfg.selection_mode or 'auto';local forward,basis,carForward,camForward
+        local cx,cy,cz=read('getActiveCameraCoordinates');local tx,ty=read('getActiveCameraPointAt')
+        local camera=core.finite(cx)and core.finite(cy)and core.finite(cz)and{x=cx,y=cy,z=cz}or origin
+        if core.finite(cx)and core.finite(cy)and core.finite(tx)and core.finite(ty)and(tx-cx)^2+(ty-cy)^2>.0001 then camForward={x=tx-cx,y=ty-cy}end
         if (mode=='auto'or mode=='vehicle')and own then
             local x,y=read('getOffsetFromCarInWorldCoords',own,0,1,0)
             local ox,oy=read('getCarCoordinates',own)
-            if core.finite(x)and core.finite(y)and core.finite(ox)and core.finite(oy)and (x-ox)^2+(y-oy)^2>.0001 then forward={x=x-ox,y=y-oy};basis='транспорт'end
+            if core.finite(x)and core.finite(y)and core.finite(ox)and core.finite(oy)and (x-ox)^2+(y-oy)^2>.0001 then carForward={x=x-ox,y=y-oy};forward=carForward;basis='транспорт'end
         end
-        if not forward and(mode=='camera'or mode=='auto')then
-            local cx,cy=read('getActiveCameraCoordinates');local tx,ty=read('getActiveCameraPointAt')
-            if core.finite(cx)and core.finite(cy)and core.finite(tx)and core.finite(ty)and (tx-cx)^2+(ty-cy)^2>.0001 then forward={x=tx-cx,y=ty-cy};basis='камера'end
+        if mode=='camera'or mode=='auto'and not forward then
+            forward=camForward;if forward then basis='камера'end
         end
         if not forward and(mode=='vehicle'or mode=='camera')then api.lastStatus=mode=='vehicle'and'Направление машины недоступно. Сядьте в машину или выберите другой режим.'or'Направление камеры недоступно. Выберите режим «Экран».';return {}end
         api.lastStatus=forward and('Направление выбора: '..basis)or mode=='screen'and'Выбор по видимости на экране.'or'Направление недоступно; используется видимость на экране.'
@@ -81,11 +97,14 @@ function M.new(read,codec,ped)
             if core.finite(handle)and not seen[handle]then seen[handle]=true
                 local c=vehicle(handle,cfg.front_only,cfg.radius,origin)
                 if c then
-                    local maxHeight=cfg.height_tolerance or 8
-                    local angle=forward and M.angle(origin,forward,c,cfg.cone_angle or 65,maxHeight)or nil
-                    local eligible=(not forward or angle~=nil)and(maxHeight==0 or math.abs(c.z-lz)<=maxHeight)
-                    local driver=cfg.occupied_only and read('getDriverOfCar',handle)or nil
-                    if eligible and(not cfg.occupied_only or core.finite(driver)and read('doesCharExist',driver)==true)then c.angle=angle;c.selection_basis=basis or 'экран';out[#out+1]=c end
+                    local maxHeight=cfg.height_tolerance or 15
+                    local carAngle=carForward and M.angle(origin,carForward,c,cfg.cone_angle or 85,0)
+                    local camAngle=camForward and M.angle(camera,camForward,c,cfg.cone_angle or 85,0)
+                    local angle=mode=='auto'and(carAngle and camAngle and math.min(carAngle,camAngle)or carAngle or camAngle)or
+                        mode=='vehicle'and carAngle or mode=='camera'and camAngle or nil
+                    local close=c.distance<=(cfg.close_radius or 15)and read('isCarOnScreen',handle)==true
+                    local eligible=(mode=='screen'or not forward or angle~=nil or close)and(maxHeight==0 or math.abs(c.z-lz)<=maxHeight)
+                    if eligible and(not cfg.occupied_only or c.occupants>0)then c.angle=angle or 0;c.selection_basis=basis or 'экран';out[#out+1]=c end
                 end
             end
         end

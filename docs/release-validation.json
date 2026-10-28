@@ -1,23 +1,140 @@
 {
-  "release": "0.41.0",
+  "release": "0.41.1",
   "status": "validated_for_release",
-  "base_release": "0.40.4",
-  "source_base": "d8c16367d37240dd973d66020993992a8cb19122",
-  "includes_hotfix_0404": true,
+  "base_release": "0.41.0",
+  "source_base": "7c979278dddcf422149271d72340ed159fecf21e",
   "game_started": false,
   "real_game_written": false,
   "github_published": false,
-  "lua_groups": 155,
-  "lua_checks": 8790533,
-  "syntax_files": 267,
-  "cef_browser_checks": 482,
+  "lua_groups": 156,
+  "lua_checks": 8864652,
+  "syntax_files": 268,
+  "cef_browser_checks": 519,
+  "cef_native32_checks": 108,
+  "native32": [
+    {
+      "test": "test_author_native32.lua",
+      "status": "passed",
+      "checks": 10
+    },
+    {
+      "test": "test_copilot_native32.lua",
+      "status": "passed",
+      "checks": 357,
+      "frames": 91
+    },
+    {
+      "test": "test_dependencies_native32.lua",
+      "status": "passed",
+      "checks": 7
+    },
+    {
+      "test": "test_editor_native32.lua",
+      "status": "passed",
+      "checks": 60,
+      "frames": 41
+    },
+    {
+      "test": "test_extra_popups_native32.lua",
+      "status": "passed",
+      "checks": 23
+    },
+    {
+      "test": "test_hotfix0404_native32.lua",
+      "status": "passed",
+      "checks": 478,
+      "frames": 177
+    },
+    {
+      "test": "test_keyboard_layout_native32.lua",
+      "status": "passed",
+      "checks": 12
+    },
+    {
+      "test": "test_map_native32.lua",
+      "status": "passed",
+      "checks": 2015,
+      "frames": 144
+    },
+    {
+      "test": "test_pd_native32.lua",
+      "status": "passed",
+      "checks": 3381,
+      "frames": 254
+    },
+    {
+      "test": "test_screens_native32.lua",
+      "status": "passed"
+    },
+    {
+      "test": "test_scroll_native32.lua",
+      "status": "passed",
+      "checks": 123
+    },
+    {
+      "test": "test_updater_native32.lua",
+      "status": "passed",
+      "checks": 13
+    },
+    {
+      "test": "test_user_files_native32.lua",
+      "status": "passed",
+      "checks": 535,
+      "frames": 96
+    },
+    {
+      "test": "test_ux040_native32.lua",
+      "status": "passed",
+      "checks": 3590,
+      "frames": 256
+    },
+    {
+      "test": "test_wanted_native32.lua",
+      "status": "passed",
+      "checks": 13890,
+      "frames": 1273
+    },
+    {
+      "test": "test_windows_native32.lua",
+      "status": "passed",
+      "checks": 202
+    }
+  ],
+  "copilot_hud_resolutions": [
+    [
+      640,
+      480
+    ],
+    [
+      800,
+      600
+    ],
+    [
+      1024,
+      768
+    ],
+    [
+      1152,
+      864
+    ],
+    [
+      1366,
+      768
+    ],
+    [
+      1920,
+      1080
+    ],
+    [
+      2560,
+      1440
+    ]
+  ],
+  "hud_with_sos_and_taser": true,
   "worker_checks": 148,
-  "update_progress_checks": 53,
   "legacy_windows_path_checks": 224,
   "legacy_installer_path_checks": 35,
-  "legacy_path_policy": "Windows PowerShell 5.1, legacy .NET path switches in isolated child processes; registry unchanged",
-  "nested_personal_backups_preserved": true,
-  "old_mirrored_journal_recovery": true,
+  "update_progress_checks": 53,
   "installer_rollback_after": [
     1,
     37,
@@ -34,80 +151,65 @@
   "setup_checks": 101,
   "setup_window_checks": 28,
   "installer_presets_checks": 29,
-  "preserved_configuration_paths": 1175,
-  "fresh_demo_default": false,
-  "existing_demo_preference_preserved": true,
-  "native32": {
-    "copilot": {
-      "checks": 64,
-      "frames": 32
+  "update_compatibility": [
+    {
+      "environment": "native",
+      "preserved_files": 6,
+      "files": 100,
+      "worker": "0.40.3",
+      "personal_backups_preserved": true
     },
-    "hotfix0404": {
-      "checks": 478,
-      "frames": 177,
-      "resolutions": [
-        [
-          640,
-          480
-        ],
-        [
-          1152,
-          864
-        ],
-        [
-          1366,
-          768
-        ],
-        [
-          1920,
-          1080
-        ],
-        [
-          2560,
-          1440
-        ]
-      ],
-      "window_sizes": [
-        "70%",
-        "full"
-      ],
-      "font_sizes": [
-        16,
-        24
-      ]
+    {
+      "environment": "launcher",
+      "preserved_files": 8,
+      "files": 102,
+      "worker": "0.40.3",
+      "personal_backups_preserved": true
     },
-    "exchange": {
-      "checks": 535,
-      "frames": 96
+    {
+      "environment": "incompatible-cef",
+      "personal_preserved": true,
+      "expected_rejection": "cef_incompatible",
+      "worker": "0.40.3"
     },
-    "editor": {
-      "checks": 60,
-      "frames": 41
+    {
+      "environment": "native",
+      "preserved_files": 6,
+      "files": 100,
+      "worker": "0.41.0",
+      "personal_backups_preserved": true
     },
-    "screens_file_io": "passed in isolated directory"
-  },
-  "old_worker_transition": [
-    "native",
-    "launcher"
+    {
+      "environment": "launcher",
+      "preserved_files": 8,
+      "files": 102,
+      "worker": "0.41.0",
+      "personal_backups_preserved": true
+    },
+    {
+      "environment": "incompatible-cef",
+      "personal_preserved": true,
+      "expected_rejection": "cef_incompatible",
+      "worker": "0.41.0"
+    }
   ],
-  "old_worker_versions": [
-    "0.40.3",
-    "0.40.4 (byte-identical helper)"
-  ],
-  "old_worker_path_error_requires_full_installer_once": true,
-  "update_program_files": 100,
-  "update_package_sha256": "39d8e387f1346e7403fe81c21b0849b680dd4c122f867de46aa9ef7439e7c20d",
-  "manifest_sha256": "c409d9d0007175c3a2d827015e55c5fb563638b0fc096dc4bf542e0bb5b98da3",
+  "update_program_files": 102,
+  "update_package_sha256": "a1d8bb0949262aa48f386e296d2b477eae99cf3c175c2ed6ff075d40a6886bc2",
+  "manifest_sha256": "fc7035a5f6da1c75bfecb2adbc5e7aa2388b972b60d23f2989d30519002576f0",
   "worker_sha256": "ec160838d1f19d7952685ae96040b2c5b52c895afb766e4a11fac27d5dd9c3f9",
-  "program_updater_changed": true,
-  "cef_unchanged": true,
+  "program_updater_changed": false,
+  "cef_adapter_changed": true,
+  "cef_update_requires_official_hud_hash": true,
+  "minimum_reviewed_old_worker": "0.40.3",
+  "preserved_configuration_paths": 1175,
+  "base_actions_variables_and_binds_preserved": true,
   "author_binds": 83,
-  "author_payloads_unchanged_since_0404": true,
+  "author_payloads_unchanged_since_0410": true,
   "frozen_platform_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
   "standard_notes": 2,
   "public_profile_and_contacts": false,
-  "windows7_vm_tested": false,
   "forum_snapshot": "2026-10-25",
   "forum_recrawl_performed": false,
-  "notes": "Current merged runtime passed all listed local gates. Native32 uses installed x86 ImGui without GTA. Legacy path tests reproduce old mirrored-backup failure and verify short indexed backups, nested personal copies, old-journal recovery and rollback. Existing old workers can install on compatible paths; a worker already failing on long paths needs the full installer once. Publication and GitHub Actions are verified separately."
+  "windows7_vm_tested": false,
+  "notes": "All local gates passed on this runtime. Native x86/ImGui and the real HUD send function were tested without GTA or server sends. Installation, rollback and old-worker transitions use isolated fixtures. Actual GTA and CEF gameplay acceptance remains unverified. Publication and GitHub Actions are checked separately."
 }

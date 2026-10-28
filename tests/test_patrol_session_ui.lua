@@ -7,6 +7,9 @@ end
 local function click(s,label)s.click=label;s.render();eq(s.click,nil,'Not visible: '..label);healthy(s)end
 local function setup(demo)
     local lib=model.defaults(core.defaults());lib.patrol_session.enabled=true;lib.patrol_session.unit='A-1'
+    -- Existing queue assertions use a one-line user template. The urgent suite
+    -- separately covers the new default and its multi-part radio delivery.
+    for key,text in pairs({start='{local_tag}{unit}: начинаю патрулирование. Экипаж: {crew}. 10-20: {area}.',resume='{local_tag}{unit}: продолжаю патрулирование. Экипаж: {crew}. 10-20: {area}.',periodic='{local_tag}{unit}: продолжаю службу. Экипаж: {crew}. 10-20: {area}.',finish='{local_tag}{unit}: патрулирование завершено. Время на службе: {duration}.'})do lib.patrol_session[key..'_template']=text end
     lib.patrol_session.interval_ms=60000;lib.patrol_session.confirmation=false
     lib.profile.name='Victor Auditore';lib.profile.callsign='A-1';lib.alerts.on_duty=true
     lib.alerts.patrol.enabled=true -- Old and new producers must not both run.

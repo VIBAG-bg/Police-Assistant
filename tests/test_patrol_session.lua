@@ -9,6 +9,11 @@ local function equal(a,b)
 end
 local function fixture()
     local s={now=1000,cfg=settings.defaults(),profile={name='Victor Auditore',callsign='A-1'},contacts={},players={},plans={},cancels={}}
+    -- Keep the original short RP fixture for state/queue count assertions.
+    s.cfg.start_template='{local_tag}{unit}: начинаю патрулирование. Экипаж: {crew}. 10-20: {area}.'
+    s.cfg.resume_template='{local_tag}{unit}: продолжаю патрулирование. Экипаж: {crew}. 10-20: {area}.'
+    s.cfg.periodic_template='{local_tag}{unit}: продолжаю службу. Экипаж: {crew}. 10-20: {area}.'
+    s.cfg.finish_template='{local_tag}{unit}: патрулирование завершено. Время на службе: {duration}.'
     s.cfg.enabled=true;s.cfg.unit='A-1';s.cfg.interval_ms=60000
     s.state={session='erp:7777',ped=1,local_nick='Victor_Auditore',alive=true,demo=false,onDuty=true,radioEnabled=true,
         focused=true,paused=false,blocked=false,typing=false,recording=false,editingHud=false,draggingHud=false,

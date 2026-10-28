@@ -25,7 +25,8 @@ with zipfile.ZipFile(copy) as z:
     assert all('/config/' not in p.lower() for p in names)
     um=json.loads(z.read('pa26-update.json'))
     assert um['version']==m['release']
-    assert len(um['files'])==len(m['files'])-1
+    policy=json.loads((ROOT/'UPDATE_CEF_BASELINE.json').read_text('utf-8-sig'))
+    assert len(um['files'])==len(m['files'])-1+(len(m['cef_files']) if policy.get('include_assets') else 0)
     assert len(names)==len(um['files'])+1
     for row in um['files']:
         data=z.read(row['path'])

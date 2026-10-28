@@ -142,7 +142,9 @@ function Workspace:snapshot(binding,request)
     if profile.name~='' then values.my_name,values.my_firstname,values.my_lastname=names(profile.name) end
     for _,key in ipairs({'local_tag','global_tag','prison_tag','department','rank','accent'}) do values[key]=profile[key] end
     values.my_mark=profile.callsign
-    for _,key in ipairs({'my_plate','select_plate','closest_plate','city'}) do if profile[key]~='' then values[key]=profile[key] end end
+    for _,key in ipairs({'my_plate','select_plate','closest_plate'}) do if profile[key]~='' then values[key]=profile[key] end end
+    if self.library.map_grid.auto_city==false and profile.city~=''then values.city=profile.city
+    elseif not values.city and profile.city~=''then values.city=profile.city end
     if not self.library.map_grid.auto_square and profile.square~=''then values.square=profile.square end
     local date=profile.timezone=='local' and os.date('*t') or os.date('!*t',os.time()+(profile.timezone=='moscow' and 10800 or 0))
     for _,pair in ipairs({{'s','sec'},{'m','min'},{'h','hour'},{'D','day'},{'M','month'}}) do values[pair[1]]=string.format('%02d',date[pair[2]]) end

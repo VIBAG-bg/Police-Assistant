@@ -2,6 +2,26 @@
 local core = require 'pa26_core'
 local M = {WIDTH = 272, HEIGHT = 174, HEADER = 24}
 
+-- Administrative rectangles from this client's GTA SA data/info.zon.
+-- These are coordinate facts, not police jurisdictions or server sectors.
+local cityBounds={
+    {'Лос-Сантос',44.6147,-2892.97,2997.06,-768.027},
+    {'Лас-Вентурас',869.461,596.349,2997.06,2993.87},
+    {'Боун-Каунти',-480.539,596.349,869.461,2993.87},
+    {'Тьерра-Робада',-2997.47,1659.68,-480.539,2993.87},
+    {'Тьерра-Робада',-1213.91,596.349,-480.539,1659.68},
+    {'Сан-Фиерро',-2997.47,-1115.58,-1213.91,1659.68},
+    {'Ред-Каунти',-1213.91,-768.027,2997.06,596.349},
+    {'Флинт-Каунти',-1213.91,-2892.97,44.6147,-768.027},
+    {'Уэтстоун',-2997.47,-2892.97,-1213.91,-1115.58}}
+function M.cityName(x,y,z,zoneKey)
+    if not core.finite(x)or not core.finite(y)or z~=nil and not core.finite(z)then return nil end
+    local key=type(zoneKey)=='string'and zoneKey:upper():gsub('%d+[A-Z]?$','')or''
+    -- Airport/Foster Valley subzones extend beyond the broad SF rectangle.
+    if(key=='SFAIR'or key=='SILLY')and x>=-3000 and x<=-900 and y>=-1300 and y<=600 then return'Сан-Фиерро'end
+    for _,r in ipairs(cityBounds)do if x>=r[2]and x<r[4]and y>=r[3]and y<r[5]then return r[1]end end
+end
+
 -- Zone keys are native GTA labels, not text encoded for the game's font atlas.
 -- English place names are facts verified against this client's zone/GXT data.
 -- Prefer these names even when a localized GXT happens to look like valid UTF-8.

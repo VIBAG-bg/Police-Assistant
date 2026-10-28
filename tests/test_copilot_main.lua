@@ -17,8 +17,11 @@ isLineOfSightClear=function()check(not s.rendererContext);return true end
 s.step();s.commands.pa26();s.step();if s.frames[1].condition()then s.commands.pa26();s.step()end
 s.physicalDown={[0x12]=true,[0x37]=true};s.step();s.physicalDown={};s.step()
 eq(s.workspace.studio.assistPage,'traffic');check(s.frames[4].condition());check(not s.frames[1].condition());check(s.vehicleController.selected);eq(#s.sent,0)
+s.click='Вызов 9-1-1 · Код 3##copilot-quick-call911';s.render();eq(s.click,nil);check(s.workspace.studio.vehicleConfirm.carFree);eq(#s.sent,0)
+s.click='ДА##confirm-yes';s.render();for _=1,8 do s.step(1600)end;check(#s.sent>0);check(not s.copilot.phase,'Manual radio report does not start traffic')
+local radioBefore=#s.sent
 s.physicalDown={[0x12]=true,[0x38]=true};s.step();s.physicalDown={};s.step();check(s.workspace.studio.vehicleConfirm);check(s.workspace.studio.vehicleConfirm.copilot)
-eq(#s.sent,0);s.click='ДА##confirm-yes';s.render()
+eq(#s.sent,radioBefore);s.click='ДА##confirm-yes';s.render()
 for _=1,8 do s.step(1600)end
 eq(s.copilot.phase,'Преследование');eq(s.copilot.pinned,'fast_wanted');check(not s.workspace.studio.caseConfirm)
 local prior=#s.sent;s.click='Розыск 8.1 + /pt##copilot-wanted';s.render();eq(s.click,nil);check(s.workspace.studio.vehicleConfirm);eq(#s.sent,prior)
