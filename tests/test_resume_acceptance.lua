@@ -51,4 +51,4 @@ eq(k.data.offenses[1].notes,raw.offenses[1].notes);eq(k.personal.notes['offenses
 local catalog=require 'pa26_wanted_catalog'
 for _,r in ipairs(catalog.rows)do check(k.byKey[r.knowledge_key])end
 local wanted=0;for _,r in ipairs(k.data.commands)do if r.command=='/wanted'then wanted=wanted+1 end end;eq(wanted,1)
-k:activate(k.data);eq(#k.records,1370,'Repeated activation must not duplicate observed cards')
+k:activate(k.data);eq(#k.records,1613,'Repeated activation must not duplicate observed cards')

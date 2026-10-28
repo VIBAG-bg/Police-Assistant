@@ -7,7 +7,7 @@ local function contains(s,text)
     for _,line in ipairs(s.drawnText)do if line:find(text,1,true)then return true end end
     return false
 end
-local s=fixture();s.step();s.page('knowledge');check(contains(s,TEST_JSON_DECODE(TEST_KNOWLEDGE_JSON).catalog_version))
+local s=fixture();s.step();s.page('knowledge');eq(s.knowledgeUi.knowledge.data.catalog_version,TEST_JSON_DECODE(TEST_KNOWLEDGE_JSON).catalog_version);check(contains(s,'Найдено:'))
 check(not contains(s,'База недоступна'));eq(#s.sent,0)
 -- Native close button is icon-only and closing does not cancel an independent bind.
 local icon=false;for _,b in ipairs(s.buttonCalls)do if b.label=='##main-close'then icon=true end;check(b.label~='×##main-close')end

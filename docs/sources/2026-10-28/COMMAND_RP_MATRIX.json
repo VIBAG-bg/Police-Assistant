@@ -1,0 +1,217 @@
+{
+  "source": "user-sources-2026-10-28/commands-rp-matrix.md",
+  "rows": 51,
+  "unique_commands": 50,
+  "rp_required": 21,
+  "rp_not_required": 29,
+  "duplicates": {
+    "/undivision": 2
+  },
+  "classification_differences": [],
+  "indexed_not_in_supplied_matrix": [
+    "/wanted"
+  ],
+  "normalized_rows": [
+    {
+      "command": "/invite",
+      "rp_required": true
+    },
+    {
+      "command": "/uninvite",
+      "rp_required": true
+    },
+    {
+      "command": "/fmenu",
+      "rp_required": false
+    },
+    {
+      "command": "/fmission",
+      "rp_required": false
+    },
+    {
+      "command": "/r",
+      "rp_required": false
+    },
+    {
+      "command": "/rn",
+      "rp_required": false
+    },
+    {
+      "command": "/f",
+      "rp_required": false
+    },
+    {
+      "command": "/fn",
+      "rp_required": false
+    },
+    {
+      "command": "/su",
+      "rp_required": true
+    },
+    {
+      "command": "/clear",
+      "rp_required": true
+    },
+    {
+      "command": "/cuff",
+      "rp_required": true
+    },
+    {
+      "command": "/uncuff",
+      "rp_required": true
+    },
+    {
+      "command": "/arrest",
+      "rp_required": true
+    },
+    {
+      "command": "/push",
+      "rp_required": true
+    },
+    {
+      "command": "/m",
+      "rp_required": false
+    },
+    {
+      "command": "/find",
+      "rp_required": false
+    },
+    {
+      "command": "/takelic",
+      "rp_required": true
+    },
+    {
+      "command": "/skip",
+      "rp_required": true
+    },
+    {
+      "command": "/unskip",
+      "rp_required": false
+    },
+    {
+      "command": "/ud",
+      "rp_required": false
+    },
+    {
+      "command": "/frisk",
+      "rp_required": true
+    },
+    {
+      "command": "/take",
+      "rp_required": true
+    },
+    {
+      "command": "/fwarn",
+      "rp_required": true
+    },
+    {
+      "command": "/unfwarn",
+      "rp_required": true
+    },
+    {
+      "command": "/unmask",
+      "rp_required": true
+    },
+    {
+      "command": "/fwarnoff",
+      "rp_required": false
+    },
+    {
+      "command": "/d",
+      "rp_required": false
+    },
+    {
+      "command": "/taser",
+      "rp_required": false
+    },
+    {
+      "command": "/division",
+      "rp_required": false
+    },
+    {
+      "command": "/undivision",
+      "rp_required": false
+    },
+    {
+      "command": "/black",
+      "rp_required": false
+    },
+    {
+      "command": "/unblack",
+      "rp_required": false
+    },
+    {
+      "command": "/blackcheck",
+      "rp_required": false
+    },
+    {
+      "command": "/pt",
+      "rp_required": false
+    },
+    {
+      "command": "/mark",
+      "rp_required": false
+    },
+    {
+      "command": "/unpt",
+      "rp_required": false
+    },
+    {
+      "command": "/break",
+      "rp_required": true
+    },
+    {
+      "command": "/hold",
+      "rp_required": true
+    },
+    {
+      "command": "/unhold",
+      "rp_required": true
+    },
+    {
+      "command": "/setmark",
+      "rp_required": true
+    },
+    {
+      "command": "/lmenu",
+      "rp_required": false
+    },
+    {
+      "command": "/gnews",
+      "rp_required": false
+    },
+    {
+      "command": "/setskin",
+      "rp_required": true
+    },
+    {
+      "command": "/rang",
+      "rp_required": false
+    },
+    {
+      "command": "/showall",
+      "rp_required": false
+    },
+    {
+      "command": "/uninviteoff",
+      "rp_required": true
+    },
+    {
+      "command": "/newleader",
+      "rp_required": false
+    },
+    {
+      "command": "/l",
+      "rp_required": false
+    },
+    {
+      "command": "/addvacancy",
+      "rp_required": false
+    },
+    {
+      "command": "/editdivision",
+      "rp_required": false
+    }
+  ],
+  "scope": "RP requirement only. Header-formatted /invite is data. Absence is not exemption; command arguments, ranks, distance, effects and success replies are not verified by this table."
+}

@@ -30,6 +30,17 @@ function M.colors(c,cfg)
     local a,b=color(c.color1),color(c.color2)
     return a==b and a or a..cfg.color_separator..b,a,b
 end
+-- A user-selected RP convention, not a server registration lookup.
+function M.plate(c,cfg)
+    cfg=cfg or {};c=c or {}
+    if type(cfg.select_plate)=='string'and cfg.select_plate:match('%S')then return cfg.select_plate end
+    if cfg.auto_plate~=false and core.finite(c.id)and c.id%1==0 and c.id>=0 and c.id<=65535 then
+        local digits=cfg.plate_digits or 3;local prefix=cfg.plate_prefix or'SA-'
+        if not core.finite(digits)or digits%1~=0 or digits<1 or digits>6 or type(prefix)~='string'or #prefix>32 or not core.validUtf8(prefix)or prefix:find('%c')then return 'проверьте настройки номера'end
+        return prefix..string.format('%0'..tostring(digits)..'d',c.id)
+    end
+    return 'не указан'
+end
 function M.describe(c,cfg,gender)
     local name=cfg.model_aliases[tostring(c.model_id)]or c.model_name or cfg.unknown_model
     local color,a,b=M.colors(c,cfg)
@@ -37,7 +48,7 @@ function M.describe(c,cfg,gender)
     local cp=cfg.copilot or{}
     values.occupants=tostring(c.occupants or 1);values.occupants_text=({[0]='салон пуст',[1]='внутри один',[2]='внутри двое',[3]='внутри трое',[4]='внутри четверо'})[c.occupants or 1]or('внутри '..tostring(c.occupants)..' чел.')
     values.driver_id=c.driver_id and tostring(c.driver_id)or'';values.driver_name=c.driver_name and c.driver_name:gsub('_',' ')or'Водитель'
-    values.vehicle_plate=cp.select_plate and cp.select_plate~=''and cp.select_plate or c.plate or'не установлен'
+    values.vehicle_plate=M.plate(c,cp)
     values.tac=cp.tac_channel or'TAC 1';values.stop_outcome=cp.stop_outcome or'проведена беседа';values.armed_text=(c.armed or cp.pursuit_armed)and' Подозреваемые вооружены!'or''
     local missing
     local description=core.expandGender(cfg.description_template,gender):gsub('{([a-z_]+)}',function(k)if not values[k]then missing=k;return ''end;return values[k]end)

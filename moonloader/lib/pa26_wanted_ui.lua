@@ -116,6 +116,9 @@ function M.form(s,ui,data,cb,cfg)
             ui.text(prefs.oocNotes[f.ooc_reason]or '')
             ui.text('Это не IC-обвинение. Маска сама по себе не разрешает OOC-звёзды. Для /pt и Alcatraz они запрещены. После смерти в той же ситуации и для личных целей выдача запрещена.')
             question(s,f,ui,'Номер телефона известен вашему персонажу по RP?','phone_known')
+            question(s,f,ui,'Проверили, что телефон сейчас включён?','phone_active')
+            question(s,f,ui,'До этих технических звёзд у человека уже был IC-розыск?','prior_ic_stars')
+            ui.text('Если IC-розыск уже есть или его состояние неизвестно, не добавляйте технические звёзды через эту ветку. Откройте пеленгацию отдельно; существующие IC-звёзды снимать нельзя.')
             if f.phone_known=='yes'then field(s,f,'IC-номер телефона','phone_number',512);field(s,f,'Откуда известен номер по RP','phone_source',512)end
             f.ooc_ack=s:check('Проверил RP-пеленгацию, телефон включён, сниму звёзды сразу после неё##wanted-ooc-ack',f.ooc_ack)
         else
@@ -173,7 +176,7 @@ function M.form(s,ui,data,cb,cfg)
 end
 function M.review(s,ui,data,cb)
     s:settingsHeading(ui,'Проверки OOC-звёзд')
-    ui.text('Это ваши локальные задачи, а не подтверждение сервера. Они сохраняются после перезапуска. Старый ID может принадлежать другому игроку; эти кнопки не выбирают цель и не отправляют /clear.')
+    ui.text('Это локальные проверки результата, они сохраняются после перезапуска. Каждая команда пеленгации и снятия имеет RP и отдельное ДА. Старый ID не используется автоматически; при другом подключении цепочка заблокирована. После отправки /clear подтвердите фактическое снятие в игре.')
     local rows=data.caseForms and data.caseForms.reminders or {}
     if #rows==0 then ui.text('Незавершённых проверок нет.')end
     for _,r in ipairs(rows)do
@@ -181,7 +184,21 @@ function M.review(s,ui,data,cb)
         ui.text(r.reason..' · выбранный уровень: '..r.stars)
         ui.text(r.context);ui.text('Сервер при записи: '..r.session)
         ui.text(r.status=='issued'and 'Выдачу вы отметили вручную.'or 'Проверьте, были ли звёзды действительно выданы. Команда могла завершиться ошибкой или окно могло быть закрыто.')
-        if r.status~='issued'and s:button('Звёзды выданы · отметить вручную##wanted-issued-'..r.token,ui)then cb.caseReminder(r.token,'issued')end
+        if r.status=='check'and s:button('Звёзды выданы · отметить вручную##wanted-issued-'..r.token,ui)then cb.caseReminder(r.token,'issued')end
+        if r.status=='issued'or r.status=='located'then
+            s.chainChecks=s.chainChecks or{}
+            local label=r.status=='issued'and'Телефон сейчас включён, IC-номер и источник проверены'or'Сейчас только временные OOC-звёзды: других IC-звёзд нет; пеленгация завершена'
+            s.chainChecks[r.token]=s:check(label..'##chain-check-'..r.token,s.chainChecks[r.token]==true)
+            if cb.caseChain and s:button((r.status=='issued'and'RP + /setmark · предпросмотр'or'RP + /clear · предпросмотр')..'##chain-send-'..r.token,ui)then
+                local p,err=cb.caseChain(r.token,r.status=='issued'and'mark'or'clear',s.chainChecks[r.token])
+                s.chainChecks[r.token]=false
+                if p then s.caseConfirm=p else s:notify(err,'procedures',false)end
+            end
+        end
+        if r.status=='mark_sent'then
+            ui.text('Запрос /setmark передан. Это ещё не подтверждение местоположения.')
+            if s:button('Результат пеленгации получен в игре##chain-located-'..r.token,ui)then cb.caseReminder(r.token,'located')end
+        elseif r.status=='clear_sent'then ui.text('/clear передан. Проверьте серверный результат: напоминание останется до вашей отметки о снятии.')end
         if s:button('Звёзды сняты / не выдавались##wanted-resolved-'..r.token,ui)then cb.caseReminder(r.token,'resolved')end
     end
 end

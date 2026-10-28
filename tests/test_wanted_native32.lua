@@ -78,7 +78,7 @@ local function form(page)
     f.life_ack=true;f.passport_seen='no';f.mask='no';f.appearance='синяя куртка, известные приметы';f.reason_id='08.01';f.facts='Законное требование в текущей ситуации.'
     if page=='passport'then f.passport_seen='yes';f.ic_name='John Smith';f.passport_number='12345'
     elseif page=='mask'or page=='mask_passport'then f.mask='yes';f.face_before='yes';if page=='mask_passport'then f.passport_seen='yes';f.ic_name='John Smith'end
-    elseif page=='ooc'or page=='phone'then f.mode='ooc';f.ooc_ack=true;f.ooc_reason='tracking';f.phone_known='yes';f.phone_number='555123';f.phone_source='Владелец сообщил по RP.'
+    elseif page=='ooc'or page=='phone'then f.mode='ooc';f.ooc_ack=true;f.ooc_reason='tracking';f.phone_active='yes';f.prior_ic_stars='no';f.phone_known='yes';f.phone_number='555123';f.phone_source='Владелец сообщил по RP.'
     elseif page=='basis'then f.stage='basis'
     elseif page=='appearance_choice'or page=='appearance_input'then f.stage=page
     elseif page=='preview'or page=='final'then f.stage='preview';f.inVehicle=true;state.inVehicle=true;c:tick(state,1000)end

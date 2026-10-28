@@ -19,7 +19,7 @@ local function fixture(command)
     function s.tick(dt)s.now=s.now+(dt or 0);c:tick(s.state,s.now)end
     function s.form()
         local f=assert(c:begin('mark'));f.basis='проверенное основание'
-        f.phone_known='yes';f.phone_number='555-0100';f.phone_source='Сообщён в IC-разговоре';return f
+        f.phone_active='yes';f.phone_known='yes';f.phone_number='555-0100';f.phone_source='Сообщён в IC-разговоре';return f
     end
     s.tick();return c,s
 end
@@ -35,7 +35,7 @@ f.phone_source='';check(not c:branch(f));f.phone_source='Разговор';f.pho
 f.phone_number='555-0100';f.passport_seen='no';f.mask='yes';f.face_before='no';eq(c:branch(f),'ic','Phone provenance is separate from passport and face')
 f.mode='ooc';check(not c:branch(f));f.ooc_ack=true;eq(c:branch(f),'ooc')
 f.phone_known='no';f.phone_number='';f.phone_source='';check(not c:preview(f),'OOC never bypasses RP phone provenance')
-f.phone_known='yes';f.phone_number='555-0100';f.phone_source='Разговор';p=assert(c:preview(f));check(not table.concat(p.lines,'\n'):find('Player_Name',1,true))
+f.phone_active='yes';f.phone_known='yes';f.phone_number='555-0100';f.phone_source='Разговор';p=assert(c:preview(f));check(not table.concat(p.lines,'\n'):find('Player_Name',1,true))
 s.cfg.allow_ooc=false;check(not c:preview(f))
 -- Phone as RP evidence and the technical command target are separate variables.
 for _,cmd in ipairs({'/setmark {id}','/setmark {phone_number}','/setmark'})do
@@ -50,7 +50,7 @@ end
 c,s=fixture('/setmark {id}')
 s.identity={record={stamp=1,nonce=2,version=3,target=s.target,passport_seen='unknown',mask='unknown',face_before='unknown',
     phone_known='yes',phone_number='555-0100',phone_source='IC-карточка'}}
-f=assert(c:begin('mark'));eq(f.phone_number,'555-0100');eq(f.phone_source,'IC-карточка');eq(c:branch(f),'ic')
+f=assert(c:begin('mark'));eq(f.phone_number,'555-0100');eq(f.phone_source,'IC-карточка');check(not c:branch(f),'Saved phone evidence does not prove the phone is on now');f.phone_active='yes';eq(c:branch(f),'ic')
 s.identity.record.version=4;check(not c:preview(f))
 c,s=fixture('/setmark {id}');f=s.form();local b=assert(c:draft(f,21));check(model.validateBinding(b))
 check(not b.enabled);check(b.target_required);check(b.script:find('/setmark {id}',1,true))

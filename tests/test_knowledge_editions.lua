@@ -1,14 +1,14 @@
 local knowledge=require 'pa26_knowledge'
 local model=require 'pa26_bindings'
 local raw=TEST_JSON_DECODE(TEST_KNOWLEDGE_JSON)
-check(#TEST_KNOWLEDGE_JSON<=1024*1024,'Runtime knowledge must fit the bounded JSON reader')
+check(#TEST_KNOWLEDGE_JSON<=knowledge.MAX_BYTES,'Runtime knowledge must fit the bounded JSON reader')
 local k=knowledge.new();k:activate(assert(knowledge.validate(model.copy(raw))))
 local function joined(lines)
     local values={};for _,line in ipairs(lines)do values[#values+1]=line.label..' '..line.text end
     return table.concat(values,'\n')
 end
-eq(#raw.sources,93);eq(#raw.articles,987)
-eq(#raw.rules,111);eq(raw.catalog_version,'erp-20261025-epd-fbi-reviewed')
+eq(#raw.sources,94);eq(#raw.articles,1073)
+eq(#raw.rules,212);eq(raw.catalog_version,'erp-20261028-normative-0420')
 eq(raw.forum_update.public_pages_read,189);eq(raw.forum_update.password_boundaries,4)
 for _,sid in ipairs({'355','358'})do eq(k.sources[sid].verification_status,'needs_review');eq(k.sources[sid].interpretation_status,'previous_snapshot_only')end
 local ooc=k.byKey['rules:wanted_ooc'].item
@@ -24,7 +24,7 @@ local archived,current=0,0
 for _,row in ipairs(k.records)do if row.group=='articles'then
     if k:isArchived(row)then archived=archived+1 else current=current+1 end
 end end
-eq(archived,107);eq(current,880)
+eq(archived,196);eq(current,877)
 for _,key in ipairs({'articles:police:28','articles:prison:14'})do
     local row=k.byKey[key];check(row,key);check(k:isArchived(row));eq(knowledge.status(row),'Архивная редакция')
     eq(knowledge.tone(row),'muted');check(joined(k:detail(row)):find('Архивная редакция',1,true))
@@ -42,7 +42,7 @@ check(k.byKey['articles:police:26'].title:find('Физическая сила',1
 check(k.sources['96'].kind=='archived_law'and k.sources['96'].superseded_by=='604')
 check(k.sources['174'].kind=='archived_law'and k.sources['174'].superseded_by=='603')
 local rights=k.byKey['drafts:rights'];eq(rights.item.origin,'forum_recommendation')
-eq(rights.item.verification_status,'conflict_pending');eq(knowledge.tone(rights),'warning')
+eq(rights.item.verification_status,'historical_source_index');check(k:isArchived(rights));eq(knowledge.tone(rights),'muted');check(k.byKey['drafts:rights_manual_20261028'])
 check(rights.item.source_recommended_text:find('Вы задержаны по подозрению',1,true))
 check(joined(k:detail(rights)):find('MANUAL 210',1,true));check(rights.item.legal_basis[4]:find('ст. 30',1,true))
 for _,rule in ipairs(raw.rules)do

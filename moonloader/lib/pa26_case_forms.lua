@@ -6,6 +6,7 @@ local shared=require 'pa26_patrol_settings'
 local prefs=require 'pa26_procedure_settings'
 local catalog=require 'pa26_wanted_catalog'
 local M={};local Forms={};Forms.__index=Forms
+local function accountKind(kind)return kind=='wanted'or kind=='mark'or kind=='clear'end
 function M.enabled(cfg,kind)
     if kind=='wanted'or kind=='wanted_list'then return cfg.wanted_assistant_enabled and cfg.wanted_enabled end
     return cfg.enabled and cfg[kind..'_enabled']
@@ -15,22 +16,22 @@ local function safe(s)
         s.blocked==false and not s.recording and not s.editingHud and not s.draggingHud
 end
 function M.new(env)return setmetatable({env=env,serial=0,offerSerial=0,consumed=0,life=1,
-    reminders=model.copy(env.reminders and env.reminders()or {}),reminderDue={}},Forms)end
+    runToken=tostring(os.time())..':'..tostring({}),reminders=model.copy(env.reminders and env.reminders()or {}),reminderDue={}},Forms)end
 function Forms:begin(kind,explicitWanted)
     local cfg=self.env.settings();local target,stamp=self.env.target()
-    if kind=='wanted'and self.env.wantedTarget then target=explicitWanted or self.env.wantedTarget();stamp=nil end
+    if accountKind(kind)and self.env.wantedTarget then target=explicitWanted or self.env.wantedTarget();stamp=nil end
     if not prefs.names[kind]then return nil,'Неизвестная процедура.'end
     if not M.enabled(cfg,kind)then return nil,'Включите эту форму в её настройках.'end
     if not safe(self.state)then return nil,'Закройте игровой ввод и дождитесь доступной игровой сцены.'end
-    local valid=kind=='wanted'and self.env.validWantedTarget or self.env.validTarget
+    local valid=accountKind(kind)and self.env.validWantedTarget or self.env.validTarget
     if kind~='wanted_list'and(not target or not valid(target,stamp))then
-        return nil,kind=='wanted'and self.env.validWantedTarget and 'Укажите /su ID подключённого игрока либо выберите человека рядом.'or 'Сначала выберите доступного человека рядом.'
+        return nil,(kind=='wanted'or kind=='mark')and self.env.validWantedTarget and 'Укажите ID подключённого игрока либо выберите человека рядом.'or 'Сначала выберите доступного человека рядом.'
     end
     if (kind=='wanted'or kind=='wanted_list')and type(self.state.inVehicle)~='boolean'then return nil,'Не удалось определить, находитесь ли вы в машине. Создайте форму после обновления сцены.'end
     if kind=='wanted_list'then target=nil;stamp=nil end
     self.serial=self.serial+1
     local r
-    if kind=='wanted'and self.env.wantedIdentity then r=self.env.wantedIdentity(target)
+    if accountKind(kind)and self.env.wantedIdentity then r=self.env.wantedIdentity(target)
     else r=self.env.identity();r=r and r.record
         if r and(not target or r.stamp~=stamp or r.target.id~=target.id or r.target.name~=target.name or r.target.ped~=target.ped)then r=nil end
     end
@@ -40,7 +41,8 @@ function Forms:begin(kind,explicitWanted)
         ic_name=r and r.ic_name or '',passport_number=r and r.passport_number or '',appearance=r and r.appearance or '',
         phone_known=r and r.phone_known or 'unknown',phone_number=r and r.phone_number or '',phone_source=r and r.phone_source or '',
         identity_nonce=r and r.nonce,identity_version=r and r.version,passport_source=r and r.passport_source,article='',part='',basis='',amount='',ooc_ack=false,
-        reason_id='',reason_group='01',facts='',ooc_reason='tracking',life_ack=false,inVehicle=self.state.inVehicle}
+        reason_id='',reason_group='01',facts='',ooc_reason='tracking',life_ack=false,inVehicle=self.state.inVehicle,
+        phone_active='unknown',prior_ic_stars='unknown',clear_ic_safe=false}
     if kind=='wanted_list'then f.stage='preview'end
     if kind=='wanted'then
         -- A previous identity note cannot certify uninterrupted sight in this
@@ -53,12 +55,12 @@ end
 function Forms:validForm(f,committed)
     if not f or f.life~=self.life or not committed and f.id<=self.consumed or not safe(self.state)or f.session~=self.state.session or f.ped~=self.state.ped or
         f.demo~=self.state.demo or f.localId~=self.state.localId or f.local_nick~=self.state.local_nick or
-        f.kind~='wanted_list'and not (f.kind=='wanted'and self.env.validWantedTarget or self.env.validTarget)(f.target,f.stamp)then return false end
+        f.kind~='wanted_list'and not (accountKind(f.kind)and self.env.validWantedTarget or self.env.validTarget)(f.target,f.stamp)then return false end
     local cfg=self.env.settings();if not M.enabled(cfg,f.kind)then return false end
     if (f.kind=='wanted'or f.kind=='wanted_list')and f.inVehicle~=self.state.inVehicle then return false end
     if f.identity_nonce then
         local r
-        if f.kind=='wanted'and self.env.wantedIdentity then r=self.env.wantedIdentity(f.target)
+        if accountKind(f.kind)and self.env.wantedIdentity then r=self.env.wantedIdentity(f.target)
         else r=self.env.identity();r=r and r.record end
         if not r or r.nonce~=f.identity_nonce or r.version~=f.identity_version then return false end
     end
@@ -96,11 +98,21 @@ function Forms:branch(f)
     if not self:validForm(f)then return nil,'Выбор человека, сведения или игровая сцена изменились. Создайте форму заново.'end
     local cfg=self.env.settings()
     if f.kind=='wanted_list'then return 'list'end
+    if f.kind=='clear'then
+        local r=self:reminder(f.chain_token)
+        if not r or r.status~='located'or r.prior_ic_stars~='no'or not f.clear_ic_safe or
+            r.player_id~=f.target.id or r.player_name~=f.target.name or r.generation~=f.target.generation or r.session~=tostring(self.state.session)then
+            return nil,'Снятие заблокировано: подтвердите результат пеленгации и отсутствие иных IC-звёзд. Старая запись не должна стирать розыск.'
+        end
+        return 'chain'
+    end
     if f.kind=='wanted'and cfg.wanted_require_life_ack and f.life_ack~=true then return nil,'Подтвердите, что основание относится к текущей ситуации после вашей последней смерти.'end
     if f.mode=='ooc'then
         if f.kind=='fine'or not cfg.allow_ooc then return nil,'OOC-ветка отключена.'end
         if f.ooc_ack~=true then return nil,'Подтвердите выбор отдельной OOC-процедуры. Она не устанавливает IC-личность или источник данных.'end
         if f.kind=='wanted'or f.kind=='mark'then
+            if f.phone_active~='yes'then return nil,'Проверьте в игре, что телефон включён.'end
+            if f.kind=='wanted'and f.prior_ic_stars~='no'then return nil,'До технических звёзд проверьте исходный IC-розыск. При существующих IC-звёздах используйте пеленгацию без технического /su и не снимайте их через эту цепочку.'end
             if f.kind=='wanted'and f.ooc_reason~='tracking'then return nil,'По действующей редакции OOC-звёзды разрешены только для RP-пеленгации через /setmark; /pt и Alcatraz исключены.'end
             if f.phone_known~='yes'or not shared.text(f.phone_number,120)or f.phone_number:match('^%s*$')or
                 not shared.text(f.phone_source,120)or f.phone_source:match('^%s*$')then
@@ -111,6 +123,7 @@ function Forms:branch(f)
     end
     if f.mode~='ic'then return nil,'Выберите IC или OOC.'end
     if f.kind=='mark'then
+        if f.phone_active~='yes'then return nil,'Проверьте, что известный IC-телефон включён.'end
         if f.phone_known~='yes'then return nil,'Уточните, известен ли номер вашему персонажу. SA:MP ID не является IC-телефоном.'end
         for _,key in ipairs({'phone_number','phone_source'})do
             local value=shared.text(f[key],120)
@@ -188,7 +201,7 @@ function Forms:values(f)
         return values
     end
     local amount=''
-    if f.kind~='mark'then
+    if f.kind~='mark'and f.kind~='clear'then
         amount=shared.text(f.amount,9)
         if not amount or not amount:match('^%d+$')or tonumber(amount)<1 or tonumber(amount)>999999999 then return nil,'Введите целое положительное значение вручную. Проверенной таблицы звёзд/сумм пока нет.'end
         amount=tostring(tonumber(amount))
@@ -318,7 +331,7 @@ function Forms:validPlan(plan)
     if not p or not plan.caseProcedure or p.token~=plan.caseProcedure.token or not safe(self.state)or self.state.typing or self.state.modal then return false end
     -- Accepted forms are consumed, but the frozen target/evidence still validate.
     local valid=self:proposalValid(p,true)
-    if p.kind=='wanted'and p.form.target and p.form.target.account then
+    if accountKind(p.kind)and p.form.target and p.form.target.account then
         valid=valid and plan.target==nil and plan.wantedSubject and self.env.equal(plan.wantedSubject,p.form.target)
     end
     return valid and table.concat(plan.wire,'\0')==table.concat(p.planWire or p.wire,'\0')or false
@@ -353,20 +366,30 @@ function Forms:tick(state,now)
             p.planWire=model.copy(sendWire)
             -- The wanted subject is validated by this controller's frozen
             -- online-account contract, independently of physical interaction.
-            local account=p.kind=='wanted'and p.form.target and p.form.target.account==true
+            local account=accountKind(p.kind)and p.form.target and p.form.target.account==true
             local plan={binding=b,requirements={target=p.kind~='wanted_list'and not account,closest=false},target=not account and model.copy(p.form.target)or nil,
                 wantedSubject=account and model.copy(p.form.target)or nil,session=p.session,createdAt=now,demo=p.demo,
                 has_command=p.phase~='prepare',steps=steps,lines=sendLines,wire=sendWire,rpSignature=p.rpSignature,textSignature=p.textSignature,
                 automatic={kind='case_procedure'},caseProcedure={token=p.token,rpCount=p.rpCount}}
+            -- Persist a possible OOC obligation before transmitting /su. A crash
+            -- after send must leave a check, even when issuance is unconfirmed.
+            if p.kind=='wanted'and p.form.mode=='ooc'and p.phase=='command'and not p.demo and self.env.saveReminders then
+                self:recordCommand(p);self:flush()
+                if self.remindersDirty then
+                    self.queued=nil;self.message='Не удалось сохранить проверку OOC-звёзд. Команда не отправлена; проверьте сохранение перед повтором.'
+                    if self.env.notice then self.env.notice(self.message)end;return
+                end
+            end
             local ok,err=self.env.start(plan)
             self.consumed=math.max(self.consumed,p.form.id)
             if not ok then self.queued=nil;self.message='Процедура не запущена: '..tostring(err)..' Создайте новую форму.'end
         end
     end
 end
-function Forms:onExecution(kind,q)
+function Forms:onExecution(kind,q,line)
     local p=self.queued;local mark=q and q.plan and q.plan.caseProcedure
     if not p or not mark or mark.token~=p.token then return end
+    if kind=='sent_line'and p.phase~='prepare'and line==p.lines[#p.lines]then self:recordCommand(p)end
     if kind=='completed'then
         self.queued=nil;self.message='Строки переданы клиенту. Результат процедуры должен подтвердить сервер.'
         if p.phase=='prepare'then
@@ -377,24 +400,49 @@ function Forms:onExecution(kind,q)
             self.awaitingCommand=final;self.message='Отыгровка завершена. Команда ждёт отдельного ДА/НЕТ.';return
         end
         if p.kind=='wanted'or p.kind=='wanted_list'then self.message='Команда передана клиенту. Результат выдачи или открытия списка проверьте на сервере.'end
-        if p.kind=='wanted'and p.form.mode=='ooc'and not p.demo then
+        self:recordCommand(p)
+    elseif kind=='cancelled'then self.queued=nil;self.message='Процедура остановлена. Оставшиеся строки не отправятся; автоматического повтора нет.'end
+end
+function Forms:recordCommand(p)
+    if p.recorded or p.demo then return end
+    p.recorded=true
+    if p.kind=='wanted'and p.form.mode=='ooc'then
             local created=self.env.wall and self.env.wall()or os.time()
             local token='wanted:'..created..':'..self.life..':'..p.token
             while self:reminder(token)do token=token..':1'end
             self.reminders[#self.reminders+1]={token=token,player_id=p.form.target.id,player_name=p.form.target.name,session=tostring(p.session),
-                reason=p.values.basis,context=prefs.oocNotes[p.form.ooc_reason],stars=tonumber(p.values.amount),created=created,status='check'}
+                reason=p.values.basis,context=prefs.oocNotes[p.form.ooc_reason],stars=tonumber(p.values.amount),created=created,status='check',
+                generation=p.form.target.generation,phone_number=p.form.phone_number,phone_source=p.form.phone_source,prior_ic_stars=p.form.prior_ic_stars,
+                actor_life=self.life,actor_run=self.runToken}
             self.reminderDue[token]=self.now+p.cfg.wanted_reminder_delay_ms;self.remindersDirty=true
-        end
-    elseif kind=='cancelled'then self.queued=nil;self.message='Процедура остановлена. Оставшиеся строки не отправятся; автоматического повтора нет.'end
+    elseif p.form.chain_token then
+        local r=self:reminder(p.form.chain_token)
+        if r then r.status=p.kind=='clear'and'clear_sent'or'mark_sent';self.remindersDirty=true end
+    end
 end
 function Forms:reminder(token)for _,r in ipairs(self.reminders)do if r.token==token then return r end end end
 function Forms:changeReminder(token,action)
     local r=self:reminder(token);if not r then return false end
-    if action=='issued'then r.status='issued'
+    if action=='issued'and r.status=='check'then r.status='issued'
+    elseif action=='located'and r.status=='mark_sent'then r.status='located'
     elseif action=='resolved'then
         for i,v in ipairs(self.reminders)do if v==r then table.remove(self.reminders,i);break end end;self.reminderDue[token]=nil
     else return false end
     self.remindersDirty=true;return true
+end
+function Forms:chainOffer(token,kind,ack)
+    local r=self:reminder(token)
+    if not r or (kind~='mark'and kind~='clear')or ack~=true then return nil,'Сначала проверьте условие этой операции.'end
+    if kind=='mark'and r.status~='issued'or kind=='clear'and r.status~='located'then return nil,'Сначала подтвердите предыдущий результат в игре.'end
+    local target={account=true,id=r.player_id,name=r.player_name,generation=r.generation}
+    if r.actor_life~=self.life or r.actor_run~=self.runToken or r.session~=tostring(self.state and self.state.session)or not r.generation or not self.env.validWantedTarget or not self.env.validWantedTarget(target)then
+        return nil,'Запись относится к прежнему подключению или ID. Проверьте человека вручную; автоматическая цепочка для старого аккаунта заблокирована. Напоминание сохранено.'
+    end
+    local f,err=self:begin(kind,target);if not f then return nil,err end
+    f.chain_token=token;f.phone_known='yes';f.phone_number=r.phone_number or'';f.phone_source=r.phone_source or''
+    f.phone_active='yes';f.prior_ic_stars=r.prior_ic_stars;f.clear_ic_safe=kind=='clear'and ack
+    f.basis='RP-пеленгация по известному IC-телефону';f.stage='preview'
+    return self:offer(f)
 end
 function Forms:flush()
     if not self.remindersDirty or not self.env.saveReminders then return end

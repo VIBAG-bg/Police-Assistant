@@ -16,7 +16,7 @@ local old=data.personalDefaults();old.view=nil;eq(assert(data.validatePersonal(o
 old.view={reset_enabled=true,reset_minutes=0};check(not data.validatePersonal(old))
 local function healthy(s)check(not s.hasLog('Ошибка интерфейса'),table.concat(s.logs,'\n'));eq(#s.scopes,0);eq(#s.sent,0)end
 local function click(s,label)s.click=label;s.render();eq(s.click,nil,label);healthy(s)end
-local s=fixture({alerts=true});s.step();s.page('knowledge')
+local s=fixture({alerts=true});s.step();s.page('knowledge');require('support.knowledge_reader').filters(s)
 local combos={};local original=s.imgui.BeginCombo
 s.imgui.BeginCombo=function(id,preview)combos[id]=preview;return original(id,preview)end
 s.drawnText={};s.childCalls={};s.render()
@@ -30,7 +30,7 @@ end
 check(pinned and items);check(bit.band(pinned.flags,s.imgui.WindowFlags.NoScrollWithMouse)~=0);eq(items.parent,'##kb-list')
 local sizes,faces={},{};local renderText=s.imgui.TextUnformatted
 s.imgui.TextUnformatted=function(text)sizes[text]=s.imgui.GetFontSize();faces[text]=tostring(s.imgui.GetFont());return renderText(text)end
-s.render();check(faces['ПОИСК: слово, номер статьи или команда']);eq(faces['Раздел'],faces['ПОИСК: слово, номер статьи или команда']);eq(faces['Раздел'],faces['Ведомство']);eq(faces['Раздел'],faces['Статус'])
+s.render();local searchFace=faces['ПОИСК: слово, номер статьи или команда']or faces['Поиск'];check(searchFace);eq(faces['Раздел'],searchFace);eq(faces['Раздел'],faces['Ведомство']);eq(faces['Раздел'],faces['Статус'])
 s.combo='##kb-choice-Раздел';click(s,'Команды##kb-choice-Разделcommands');s.combo=nil;s.render();eq(combos['##kb-choice-Раздел'],'Команды')
 click(s,'Данные##kb-mode');s.toggle='Сбрасывать раздел после выхода из базы##kb-reset-enabled';s.intEdits={['Минуты после выхода##kb-reset-minutes']=7};s.render();s.step()
 local personal=decodeJson(s.files['moonloader\\config\\police_assistant_2026_knowledge_personal.json'])

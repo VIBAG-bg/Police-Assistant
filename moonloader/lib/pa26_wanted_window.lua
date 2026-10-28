@@ -25,6 +25,17 @@ function M.draw(s,ui,data,cb)
     local narrow=im.GetWindowSize().y<650
     if f.stage~='identity'then s.wantedIdentityPage=nil;s.wantedPassportEditor=nil end
     if f.stage=='identity'then
+        if s.wantedIdentityPage=='tracking_phone'then
+            question(s,f,ui,'Проверили, что телефон сейчас включён?','phone_active')
+            ui.text('Проверяется фактическое состояние телефона; один известный номер этого не подтверждает.')
+            if s:button('Далее · исходный розыск##tracking-prior',ui)then s.wantedIdentityPage='tracking_stars'end
+            return
+        elseif s.wantedIdentityPage=='tracking_stars'then
+            question(s,f,ui,'До этих технических звёзд у человека уже был IC-розыск?','prior_ic_stars')
+            ui.text('Если IC-звёзды уже были или это неизвестно, используйте пеленгацию отдельно без технического /su. Существующий IC-розыск снимать нельзя.')
+            if s:button('Готово · к условиям##tracking-checks-back',ui)then s.wantedIdentityPage=narrow and'details'or nil end
+            return
+        end
         if s.wantedIdentityPage=='phone'then
             ui.text('Телефон для RP-пеленгации /setmark')
             question(s,f,ui,'Номер телефона известен вашему персонажу по RP?','phone_known')
@@ -57,6 +68,7 @@ function M.draw(s,ui,data,cb)
                 ui.text(prefs.oocNotes[f.ooc_reason]or '')
                 ui.text(f.phone_known=='yes'and f.phone_number~=''and ('IC-телефон: '..f.phone_number)or 'IC-телефон пока не указан.')
                 if s:button('Телефон для RP-пеленгации##wanted-phone-edit',ui)then s.wantedIdentityPage='phone'end
+                if s:button('Проверить включение телефона и исходный розыск##tracking-checks',ui)then s.wantedIdentityPage='tracking_phone'end
                 f.ooc_ack=s:check('Телефон включён; RP-пеленгация; звёзды сниму сразу##wanted-ooc-ack',f.ooc_ack)
             else
                 if f.mask=='yes'then question(s,f,ui,'Вы установили личность по лицу или паспорту ДО маски и НЕ теряли человека из виду?','face_before')end

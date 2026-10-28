@@ -4,7 +4,7 @@ local model=require 'pa26_bindings'
 local store=require 'pa26_library'
 local binder=require 'pa26_binder'
 local editModule=require 'pa26_knowledge_edits'
-local M={MAX_BYTES=1024*1024,SCHEMA=1}
+local M={MAX_BYTES=4*1024*1024,SCHEMA=1}
 local Knowledge={};Knowledge.__index=Knowledge
 M.groups={{'offenses','Нарушения'},{'commands','Команды'},{'rules','Правила'},
     {'scenario_catalog','Процедуры'},{'articles','Все статьи'},{'radio','Рация'},
@@ -49,8 +49,14 @@ function M.validate(raw)
             ids[item.id]=true
             for _,name in ipairs({'reference','command','meaning','criterion','text','design','notes','note','resolution','requirement',
                 'verification_status','interpretation_status','reviewed_on','source_reviewed_on','read_on','group','type','qualification',
-                'origin','source_recommended_text','legal_disclaimer','binder_variant_note','local_text','local_source_url'}) do
-                if item[name]~=nil and not clean(item[name],12000,true) then return nil,'Повреждено поле '..name end
+                'origin','source_recommended_text','legal_disclaimer','binder_variant_note','local_text','local_source_url','brief','order','exceptions','operation_id','topic'}) do
+                if item[name]~=nil and not clean(item[name],name=='text'and 64000 or 12000,true) then return nil,'Повреждено поле '..name end
+            end
+            if item.article~=nil and(type(item.article)~='string'or not item.article:match('^%d+%.?%d*$'))then return nil,'Номер статьи должен сохранять дробную часть.'end
+            for _,n in ipairs({'manual_volume','occurrence'})do if item[n]~=nil and(not core.finite(item[n])or item[n]%1~=0 or item[n]<1 or item[n]>100)then return nil,'Неверное вхождение пункта Мануала.'end end
+            if item.operation_id~=nil then
+                if item.operation_id~=item.id or not item.id:match('^operation:[a-z_]+$')or not clean(item.brief,12000,true)or not clean(item.order,12000,true)or not clean(item.exceptions,12000,true)then return nil,'Повреждена оперативная карточка.'end
+                if not({road=true,rights=true,wanted=true,radio=true,force=true,law=true})[item.topic]then return nil,'Неверная тема оперативной карточки.'end
             end
             for _,name in ipairs({'aliases','departments','commands','source_ids','application_conditions','legal_basis','game_reasons'}) do
                 if item[name]~=nil then
@@ -113,7 +119,7 @@ function M.validate(raw)
     end
     return raw
 end
-function M.personalDefaults() return {schema_version=1,department='EPD',favorites={},recent={},notes={},mappings={},view={reset_enabled=true,reset_minutes=10}} end
+function M.personalDefaults() return {schema_version=1,department='EPD',favorites={},recent={},notes={},mappings={},view={reset_enabled=true,reset_minutes=10,catalog_mode='current'}} end
 function M.validatePersonal(raw)
     if type(raw)~='table' or raw.schema_version~=1 or not ({EPD=true,FBI=true,Alcatraz=true})[raw.department] or
         not model.array(raw.favorites,500) or not model.array(raw.recent,40) or type(raw.notes)~='table' or
@@ -122,7 +128,8 @@ function M.validatePersonal(raw)
     if type(view)~='table'or type(view.reset_enabled)~='boolean'or not core.finite(view.reset_minutes)or
         view.reset_minutes~=math.floor(view.reset_minutes)or view.reset_minutes<1 or view.reset_minutes>1440 then return nil,'Интервал сброса раздела: от 1 до 1440 минут.'end
     local out={schema_version=1,department=raw.department,favorites={},recent={},notes={},mappings={},
-        view={reset_enabled=view.reset_enabled,reset_minutes=view.reset_minutes}}
+        view={reset_enabled=view.reset_enabled,reset_minutes=view.reset_minutes,catalog_mode=view.catalog_mode or'current'}}
+    if out.view.catalog_mode~='current'and out.view.catalog_mode~='all'then return nil,'Выберите режим базы: актуальное или все записи.'end
     for _,key in ipairs({'favorites','recent'}) do
         local seen={}
         for _,id in ipairs(raw[key]) do
@@ -161,9 +168,9 @@ function M.new(options)
         personal=M.personalDefaults(),records={},byKey={},sources={},revision=0,cache={},loaded=false,policies={},edits=edits},Knowledge)
 end
 function Knowledge:read(path,validate)
-    local ok,text=pcall(self.fs.read,path)
+    local ok,text=pcall(self.fs.read,path,M.MAX_BYTES)
     if not ok or not text then return nil,'Файл не найден или недоступен.' end
-    return store.decode(text,self.json,validate)
+    return store.decode(text,self.json,validate,M.MAX_BYTES)
 end
 local function refs(item)
     local out={}
@@ -199,7 +206,7 @@ function Knowledge:activate(data)
         local edit=self.edits:inspect(key,item,self.sources);item=edit.item
         local row={key=key,group=group,item=item,title=title(item),refs=refs(item),departments={},edit=edit}
         local text={row.title,item.id,item.reference or '',item.command or '',item.meaning or '',item.criterion or '',
-            item.text or '',item.design or '',item.notes or '',item.note or '',item.resolution or '',item.local_text or ''}
+            item.text or '',item.design or '',item.notes or '',item.note or '',item.resolution or '',item.local_text or '',item.brief or'',item.order or'',item.exceptions or''}
         for _,v in ipairs(item.aliases or {}) do text[#text+1]=v end
         for _,v in ipairs(item.departments or {}) do row.departments[v]=true end
         if group=='sources' then row.departments[item.group or '']=true end
@@ -297,7 +304,7 @@ function Knowledge:department(value)
     self.personal.department=value;self:changed();return true
 end
 function Knowledge:viewSettings(enabled,minutes)
-    local copy=model.copy(self.personal);copy.view={reset_enabled=enabled,reset_minutes=minutes}
+    local copy=model.copy(self.personal);copy.view.reset_enabled=enabled;copy.view.reset_minutes=minutes
     local valid,err=M.validatePersonal(copy);if not valid then return nil,err end
     self.personal=valid;self:changed();return true
 end
@@ -342,13 +349,13 @@ function Knowledge:tick()
         local data,err=self:read(path,M.validate)
         self.candidate=data;self.candidateSource=action=='preview_bundle'and'bundle'or'import';self.operationError=err
     elseif action=='apply_import' and self.candidate then
-        local candidate=self.candidate;local ok,err=store.save(self.path,candidate,self.json,M.validate,self.fs)
+        local candidate=self.candidate;local ok,err=store.save(self.path,candidate,self.json,M.validate,self.fs,M.MAX_BYTES)
         if ok then self:activate(candidate);self.candidate=nil;self.loadNote='Обновлена локальная база.' end
         self.operationError=err
     elseif action=='rollback' then
         local prior,err=self:read(self.path..'.bak',M.validate)
         if prior then
-            local ok;ok,err=store.save(self.path,prior,self.json,M.validate,self.fs)
+            local ok;ok,err=store.save(self.path,prior,self.json,M.validate,self.fs,M.MAX_BYTES)
             if ok then self:activate(prior);self.loadNote='Возвращена предыдущая база.' end
         end
         self.operationError=err
@@ -403,7 +410,7 @@ end
 function Knowledge:search(query,filters)
     filters=filters or {};query=folded(query):sub(1,1024)
     local key=table.concat({query,filters.group or '',filters.department or '',filters.status or '',tostring(filters.rp or ''),
-        tostring(filters.favorite),tostring(filters.recent)},'\0')
+        tostring(filters.favorite),tostring(filters.recent),filters.mode or'',filters.topic or'',tostring(filters.home)},'\0')
     if self.cache[key] then return self.cache[key] end
     local tokens={};for t in query:gmatch('%S+') do tokens[#tokens+1]=t end
     local recent={};for n,id in ipairs(self.personal.recent) do recent[id]=n end
@@ -411,6 +418,9 @@ function Knowledge:search(query,filters)
     for _,r in ipairs(self.records) do
         local broad=not r.departments.EPD and not r.departments.FBI and not r.departments.Alcatraz
         local ok=(not filters.group or filters.group=='all' or r.group==filters.group) and
+            (not filters.home or r.item.operation_id~=nil)and
+            (filters.mode~='current'or not self:isArchived(r)and r.group~='gaps')and
+            (not filters.topic or filters.topic=='all'or self:topic(r,filters.topic))and
             (not filters.department or filters.department=='all' or broad or r.departments[filters.department]) and
             (not filters.favorite or self:isFavorite(r.key)) and (not filters.recent or recent[r.key]) and
             (filters.rp==nil or (r.group=='commands' and r.item.rp_required==filters.rp))
@@ -429,6 +439,7 @@ function Knowledge:search(query,filters)
             local exact=query~='' and (r.titleSearch==query or folded(r.item.reference)==query or folded(r.item.id)==query)
             local score=exact and 100 or (query~='' and r.titleSearch:find(query,1,true) and 20 or 0)
             if r.group~='articles' then score=score+2 end
+            if query==''and r.item.operation_id then score=score+30 end
             if r.departments[self.personal.department]then score=score+.5 end
             result[#result+1]={row=r,score=score,recency=recent[r.key] or 999}
         end
@@ -437,7 +448,7 @@ function Knowledge:search(query,filters)
         if filters.recent and a.recency~=b.recency then return a.recency<b.recency end
         if a.score~=b.score then return a.score>b.score end
         if a.row.group==b.row.group then
-            local ac,an=a.row.item.id:match('^([^:]+):(%d+)$');local bc,bn=b.row.item.id:match('^([^:]+):(%d+)$')
+            local ac,an=a.row.item.id:match('^([^:]+):(%d+%.?%d*)$');local bc,bn=b.row.item.id:match('^([^:]+):(%d+%.?%d*)$')
             if ac and bc and ac==bc and tonumber(an)~=tonumber(bn)then return tonumber(an)<tonumber(bn)end
         end
         return a.row.key<b.row.key
@@ -464,6 +475,14 @@ function Knowledge:isArchived(row)
     end
     return false
 end
+function Knowledge:topic(row,topic)
+    local i=row.item;if i.topic then return i.topic==topic end
+    if topic=='law'then return row.group=='articles'or row.group=='sources'end
+    if topic=='radio'then return row.group=='radio'or i.command and({['/r']=true,['/rn']=true,['/f']=true,['/fn']=true,['/d']=true,['/l']=true})[i.command]or false end
+    local tokens=({road={'останов','транспорт','штраф','10-55','пдд'},rights={'задерж','адвокат','миранд','права','обыск'},wanted={'розыск','пеленг','/su','/setmark','/clear'},force={'оруж','тайзер','силы','10-66','колёс'}})[topic]or{}
+    for _,token in ipairs(tokens)do if row.search:find(folded(token),1,true)then return true end end
+    return false
+end
 function Knowledge:detail(row,department)
     local i=row.item;local lines={}
     local function add(label,value) if value~=nil and value~='' then lines[#lines+1]={label=label,text=tostring(value)} end end
@@ -487,9 +506,10 @@ function Knowledge:detail(row,department)
         add('Правило',i.text)
     elseif row.group=='scenario_catalog' then add('Процедура',i.design);add('Статус','Это пример для подготовки сценария, а не готовая автоматическая команда.')
     elseif row.group=='articles' then
-        add('Закон',i.law_label);add('Статус','В базе есть номер и заголовок. Условия и санкция ещё не разобраны. Откройте источник перед применением.')
+        add('Закон',i.law_label);add('Статус',i.origin=='user_supplied_verbatim'and'Полный переданный текст статьи · актуальность подтверждена пользователем 28.10.2026; квалификацию проверяет офицер.'or'В базе есть номер и заголовок. Условия и санкция ещё не разобраны. Откройте источник перед применением.')
+        add('Точный текст источника',i.text);add('Редакция',i.notes)
         local card=self.byKey['offenses:'..i.id];if card then add('Карточка','Для этой статьи есть разобранная карточка в разделе «Нарушения».') end
-    elseif row.group=='radio' then add('Значение',i.meaning)
+    elseif row.group=='radio' then add('Значение',i.meaning);add('Происхождение',i.origin)
     elseif row.group=='drafts' then
         if i.origin=='forum_recommendation' then
             add('Текст из темы форума',i.source_recommended_text)

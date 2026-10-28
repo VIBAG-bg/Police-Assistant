@@ -9,7 +9,12 @@ local function savedState(s)
     check(s.files[path], 'No edits file: '..table.concat(s.drawnText,'\n')..'\n'..table.concat(s.logs,'\n'))
     return TEST_JSON_DECODE(s.files[path])
 end
-local function click(s,label)s.click=label;fresh(s);eq(s.click,nil,label..' was not clickable');fresh(s)end
+local reader=require 'support.knowledge_reader'
+local function click(s,label)
+ if label~='ОК##warning-ok'then reader.ack(s)end
+ if label=='Создать карточку##kb-new'then reader.newCard(s);fresh(s);return end
+ s.click=label;fresh(s);eq(s.click,nil,label..' was not clickable');fresh(s)
+end
 local index=knowledge.new();index:activate(assert(knowledge.validate(TEST_JSON_DECODE(TEST_KNOWLEDGE_JSON))))
 local function rowLabel(key)
     local r=index.byKey[key];local ref=r.item.reference or r.item.command or(r.group=='radio'and r.item.id or'')
@@ -17,7 +22,7 @@ local function rowLabel(key)
     return title..'\n'..knowledge.status(r)..'##kb-row-'..key
 end
 local function openRule(s)
-    s.page('knowledge');s.combo='##kb-choice-Раздел';click(s,'Правила##kb-choice-Разделrules');s.combo=nil
+    s.page('knowledge');reader.filters(s);reader.all(s);s.combo='##kb-choice-Раздел';click(s,'Правила##kb-choice-Разделrules');s.combo=nil
     s.edits={['##kb-search']='Основание проверки документов'};fresh(s);s.edits={}
     click(s,rowLabel('rules:document_basis'));fresh(s)
 end
@@ -98,7 +103,7 @@ for _,dimensions in ipairs({{760,600},{1200,800},{2560,1440}})do
 end
 -- Structured sanctions and RP steps remain editable without JSON or nested child scrollbars.
 local function openEntry(s,group,key,query)
-    s.page('knowledge');local label
+    s.page('knowledge');reader.filters(s);reader.all(s);local label
     for _,g in ipairs(knowledge.groups)do if g[1]==group then label=g[2]end end
     s.combo='##kb-choice-Раздел';click(s,label..'##kb-choice-Раздел'..group);s.combo=nil
     s.edits={['##kb-search']=query};fresh(s);s.edits={};click(s,rowLabel(key));click(s,'Редактировать карточку##kb-edit')

@@ -19,16 +19,17 @@ function M.draw(studio,ui,data,callbacks)
     elseif studio.casePage=='ooc'then wantedUi.review(studio,ui,data,callbacks)
     elseif studio.casePage=='settings'then
         for _,row in ipairs({{'enabled','Включить ручные формы'},{'wanted_enabled','Форма розыска'},{'fine_enabled','Форма штрафа'},
-            {'mark_enabled','Форма пеленгации'},{'allow_ooc','Отдельные OOC-ветки розыска и метки'},{'fine_unmasked','Для штрафа требовать открытое лицо'}})do
+            {'mark_enabled','Форма пеленгации'},{'clear_enabled','Помощь со снятием технических OOC-звёзд после пеленгации'},{'allow_ooc','Отдельные OOC-ветки розыска и метки'},{'fine_unmasked','Для штрафа требовать открытое лицо'}})do
             local v,changed=studio:check(row[2]..'##case-setting-'..row[1],cfg[row[1]]);if changed then cfg[row[1]]=v end
         end
         local delay=im.new.int(cfg.delay_ms)
         if im.InputInt('Пауза между шагами, мс##case-delay',delay)then cfg.delay_ms=delay[0]end
         ui.text('От 1000 до 10000 мс. Между сообщениями также действует общий интервал PA. Перед отправкой процедуры всегда нужно подтверждение.')
-        if studio.caseSettingsKind~='fine'and studio.caseSettingsKind~='mark'then studio.caseSettingsKind='fine'end
+        if studio.caseSettingsKind~='fine'and studio.caseSettingsKind~='mark'and studio.caseSettingsKind~='clear'then studio.caseSettingsKind='fine'end
         studio.caseSettingsKind=studio:choice('Настраиваемая процедура##case-settings-kind',studio.caseSettingsKind,
-            {{'fine','Штраф'},{'mark','Пеленгация'}},ui)
+            {{'fine','Штраф'},{'mark','Пеленгация'},{'clear','Снятие технических OOC-звёзд'}},ui)
         for _,kind in ipairs({studio.caseSettingsKind})do
+            if kind~='clear'then
             studio:settingsHeading(ui,'Быстрый доступ')
             cfg[kind..'_label']=studio:field('Название действия в меню##case-label-'..kind,'case:label:'..kind,cfg[kind..'_label'],512)
             for _,row in ipairs({{'wheel','В радиальном меню'},{'quick','В быстром списке'}})do
@@ -40,7 +41,9 @@ function M.draw(studio,ui,data,callbacks)
                 cfg[kind..'_shortcut']={key=0,ctrl=false,alt=false,shift=false}
             end
             ui.text('Кнопка меню только открывает форму. Тексты других процедур сохраняются; перед отправкой заново проверьте выбранного человека и сведения.')
+            end
             studio:settingsHeading(ui,'Команда · '..preferences.names[kind])
+            if kind=='clear'then ui.text('Точный синтаксис /clear проверьте на сервере. Используйте {id}. PA предложит RP и команду только в незавершённой цепочке пеленгации, после проверки отсутствия других IC-звёзд. Отправка не закрывает напоминание о результате.')end
             ui.text(kind=='mark'and 'Команда изначально пуста. Проверьте /setmark в игре: её технические аргументы не следует выводить из IC-номера. Используйте {id} или {phone_number}, если именно они нужны. Если команда без аргументов открывает диалог, выберите цель в нём вручную: PA этот диалог не заполняет.'or 'Начальное значение пустое. Скопируйте полный синтаксис своего сервера после проверки /help. Используйте {id}, {amount}, {basis}; при необходимости {article} и {part}. Здесь не задаются суммы и звёзды по умолчанию.')
             cfg[kind..'_command']=studio:field('Точная команда сервера##case-command-'..kind,'case:command:'..kind,cfg[kind..'_command'],1024)
             ui.text('Предпросмотр команды: '..(cfg[kind..'_command']==''and 'команда пока не задана'or callbacks.caseTemplatePreview(cfg[kind..'_command'],studio.caseForm)))
@@ -61,6 +64,12 @@ function M.draw(studio,ui,data,callbacks)
         if changed then M.select(studio,kind)else studio.caseKind=kind end
         if kind=='wanted'or kind=='wanted_list'then wantedUi.form(studio,ui,data,callbacks,cfg)
         else
+        if kind=='mark'and callbacks.caseRemoteTarget then
+            studio.markRemoteId=studio:field('ID подключённого человека · можно в другом городе##mark-account','mark:account',studio.markRemoteId or'',12)
+            if studio:button('Открыть пеленгацию для этого ID##mark-account-open',ui)then
+                local ok,err=callbacks.caseRemoteTarget(tonumber(studio.markRemoteId));if not ok then notify(studio,err)end
+            end
+        end
         if studio:button('Новая форма##case-new',ui)then
             local f,err=callbacks.caseBegin(studio.caseKind)
             if f then
@@ -90,6 +99,7 @@ function M.draw(studio,ui,data,callbacks)
                     f.ooc_ack=studio:check('Понимаю, что выбираю отдельную OOC-механику##case-ooc-ack',f.ooc_ack)
                 end
                 if f.kind=='mark'then
+                    question('Телефон сейчас включён?', 'phone_active')
                     question('Номер известен вашему персонажу?', 'phone_known')
                     field('Известный IC-номер телефона','phone_number',512,false)
                     field('Откуда персонажу известен номер','phone_source',512,false)

@@ -4,7 +4,7 @@ local knowledge=require 'pa26_knowledge'
 local model=require 'pa26_bindings'
 local function has(s,text) return table.concat(s.drawnText,'\n'):find(text,1,true)~=nil end
 -- The close icon never creates a tooltip, even from a small header area.
-local s=fixture();s.step();s.page('knowledge')
+local s=fixture();s.step();s.page('knowledge');require('support.knowledge_reader').all(s)
 s.hover='##main-close';s.tooltipCalls={};s.drawnText={};s.render()
 eq(#s.tooltipCalls,0);check(not has(s,'Закрыть окно ·'));eq(#s.scopes,0)
 -- A real click on every reader tab must leave Data immediately; query/selection survive.
@@ -13,10 +13,10 @@ for _,label in ipairs({'Всё','Избранное','Недавние'})do
     s.edits={['##kb-search']='Миранда'};s.render();s.edits={}
     s.click='Данные##kb-mode';s.drawnText={};s.render();check(has(s,'Проверить файл импорта'))
     s.click=label..'##kb-mode';s.drawnText={};s.render();eq(s.click,nil)
-    check(has(s,'ПОИСК: слово'));check(not has(s,'Проверить файл импорта'));eq(#s.scopes,0)
+    check(has(s,'ПОИСК: слово')or has(s,'Поиск'));check(not has(s,'Проверить файл импорта'));eq(#s.scopes,0)
 end
 -- Explicit line breaks and wrapped words are individually centred and fit the button.
-s=fixture();s.step();s.page('knowledge')
+s=fixture();s.step();s.page('knowledge');require('support.knowledge_reader').all(s)
 local function paintLabel(text,width,height)
     s.drawnLabels={};s.buttonCalls={}
     local im=s.imgui or require 'mimgui'
@@ -66,7 +66,7 @@ end
 -- Preserve the supplied forum recommendation; the new MANUAL requirement is a separate source update.
 local raw=TEST_JSON_DECODE(TEST_KNOWLEDGE_JSON);local k=knowledge.new();k:activate(assert(knowledge.validate(raw)))
 local rights=k.byKey['drafts:rights'];check(rights);eq(rights.item.origin,'forum_recommendation')
-eq(knowledge.status(rights),'Есть расхождение')
+eq(knowledge.status(rights),'Архивная редакция')
 local quote=rights.item.source_recommended_text
 check(quote:find('Вы задержаны по подозрению в [кратко указать причину].',1,true))
 check(quote:find('или иными незаконными методами запрещено.',1,true))
@@ -85,7 +85,7 @@ check(fields['Правовое основание']:find('ст. 20 ч. 2',1,true
 check(fields['Как применяется название «Миранда»']:find('не закрепляет классический американский текст',1,true))
 check(not fields['Происхождение']);eq(raw.semantic_review.full_catalog_review_complete,false)
 local broken=model.copy(raw);broken.drafts[1].application_conditions={42};eq(knowledge.validate(broken),nil)
-s=fixture();s.step();s.page('knowledge')
+s=fixture();s.step();s.page('knowledge');require('support.knowledge_reader').all(s)
 s.combo='##kb-choice-Раздел';s.click='RP-тексты##kb-choice-Разделdrafts';s.render();s.combo=nil
 s.edits={['##kb-search']='Миранда'};s.render();s.edits={}
 s.click=rights.title..'\n'..knowledge.status(rights)..'##kb-row-'..rights.key;s.render();s.render()

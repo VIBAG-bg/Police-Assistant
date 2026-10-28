@@ -2,7 +2,7 @@ local M=require 'pa26_knowledge'
 local model=require 'pa26_bindings'
 local raw=TEST_JSON_DECODE(TEST_KNOWLEDGE_JSON)
 local data,err=M.validate(raw);check(data~=nil,err)
-eq(#data.offenses,41);eq(#data.articles,987);eq(#data.commands,51)
+eq(#data.offenses,41);eq(#data.articles,1073);eq(#data.commands,51)
 local files,failed={},false
 local fs={exists=function(p)return files[p]~=nil end,read=function(p)return files[p]end,
     write=function(p,v)if failed then return nil end;files[p]=v;return true end,
@@ -12,7 +12,7 @@ local now=0
 files.bundle=TEST_KNOWLEDGE_JSON;files.policy=TEST_KNOWLEDGE_POLICY_JSON
 local options={json={encode=function(v)return TEST_JSON_ENCODE(v)end,decode=function(v)return TEST_JSON_DECODE(v)end},fs=fs,path='active',bundle='bundle',
     policyPath='policy',personalPath='kb_personal.json',now=function()return now end}
-local k=M.new(options);check(k:load());eq(#k.records,1370)
+local k=M.new(options);check(k:load());eq(#k.records,1613)
 for _,r in ipairs(k.records)do
     check(type(r.key)=='string');check(type(M.status(r))=='string')
     for _,l in ipairs(k:detail(r))do check(type(l.text)=='string');check(type(l.label)=='string')end
@@ -20,14 +20,14 @@ for _,r in ipairs(k.records)do
 end
 local all=k:search('',{group='offenses'});eq(#all,41)
 local results=k:search('УБИЛ',{group='offenses'});check(#results>0);eq(results[1].item.id,'UK:39')
-eq(#k:search('/invite',{group='commands'}),1);eq(#k:search('10-66',{group='radio'}),1)
+eq(#k:search('/invite',{group='commands'}),1);eq(#k:search('10-66',{group='radio',mode='current'}),1);eq(#k:search('10-66',{group='radio',mode='all'}),2)
 eq(#k:search('  Ук  СТ. 39 ',{group='offenses'}),1)
 eq(#k:search('%s',{group='offenses'}),0,'query must be literal, not a Lua pattern')
 eq(#k:search('нападение',{group='commands'}),0)
 check(k:search('',{group='commands',rp=true})[1].item.rp_required)
 eq(#k:search('',{group='commands',rp=true}),21);eq(#k:search('',{group='commands',rp=false}),30)
 check(#k:search('',{department='EPD'})<#k.records)
-eq(#k:search('',{status='index'}),987)
+eq(#k:search('',{status='index'}),1073)
 local row=k.byKey['offenses:UK:39'];check(row)
 check(k:favorite(row.key));eq(#k:search('',{favorite=true}),1)
 k:opened(row.key);k:opened('commands:command:invite');eq(#k.personal.recent,2)

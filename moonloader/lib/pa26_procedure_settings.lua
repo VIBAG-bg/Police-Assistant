@@ -4,7 +4,7 @@ local core=require 'pa26_core'
 local M={}
 M.variables={id=true,amount=true,basis=true,article=true,part=true,ic_name=true,passport_number=true,appearance=true,phone_number=true,phone_source=true,
     device=true,game_reason=true,game_group=true,game_stars=true,game_category=true,game_item=true,ooc_purpose=true,facts=true}
-M.names={wanted='Розыск',wanted_list='Список преступников',fine='Штраф',mark='Пеленгация'}
+M.names={wanted='Розыск',wanted_list='Список преступников',fine='Штраф',mark='Пеленгация',clear='Снять технические OOC-звёзды'}
 M.oocReasons={{'tracking','Только RP-пеленгация через /setmark · 6.9–6.17'}}
 M.oocNotes={tracking='Только для /setmark: известный по RP номер, включённый телефон и отыгранная пеленгация. Снять OOC-звёзды сразу после завершения. Для /pt, Alcatraz и других механик OOC-звёзды запрещены (6.9–6.17, редакция 21.10.2026).'}
 M.rpFields={{'wanted_passport_rp','Розыск · установленное имя из паспорта'},{'wanted_appearance_rp','Розыск · известные приметы'},
@@ -14,6 +14,7 @@ M.rpFields={{'wanted_passport_rp','Розыск · установленное и
     {'wanted_ooc_rp','Функциональные OOC-звёзды'},{'wanted_car_intro_rp','Розыск в машине · начало'},
     {'wanted_foot_intro_rp','Розыск пешком · начало'},{'wanted_list_rp','Просмотр списка преступников'},{'fine_passport_rp','Штраф · паспортные данные'},
     {'fine_appearance_rp','Штраф · данные без паспорта'},{'mark_ic_rp','Пеленгация · известный IC-номер'},{'mark_ooc_rp','Пеленгация · отдельная OOC-процедура'}}
+M.rpFields[#M.rpFields+1]={'clear_chain_rp','Снятие технических OOC-звёзд после пеленгации'}
 function M.defaults()
     local out={enabled=false,wanted_enabled=true,fine_enabled=true,mark_enabled=true,allow_ooc=true,fine_unmasked=true,delay_ms=1500,
         wanted_assistant_enabled=true,wanted_intercept=true,wanted_require_life_ack=true,
@@ -37,7 +38,9 @@ function M.defaults()
         fine_appearance_rp="/me {gender:уточнил|уточнила} установочные данные нарушителя и {gender:оформил|оформила} бланк постановления о штрафе.",
         mark_ic_rp='/me ввёл известный номер {phone_number} в бортовой терминал и отправил запрос.\n/do На экране терминала отображается запрос на определение местоположения.',
         mark_ooc_rp='/me открыв служебный терминал, отправил запрос на определение местоположения.\n/do Запрос передан; на экране терминала отображается ожидание ответа.'}
-    for _,kind in ipairs({'wanted','fine','mark'})do
+    out.clear_enabled=true;out.clear_command='';out.clear_verified=false;out.clear_source=''
+    out.clear_chain_rp='/me {gender:открыл|открыла} служебный терминал и {gender:снял|сняла} временную техническую отметку после завершения пеленгации.\n/do В запросе указано снятие только временных OOC-звёзд; результат необходимо проверить по базе.'
+    for _,kind in ipairs({'wanted','fine','mark','clear'})do
         out[kind..'_wheel']=true;out[kind..'_quick']=true;out[kind..'_label']=M.names[kind]
         out[kind..'_shortcut']={key=0,ctrl=false,alt=false,shift=false}
     end
@@ -52,8 +55,10 @@ function M.command(raw,kind,verified)
     if not v then return nil,'Команда должна быть одной строкой.'end
     if v==''then return not verified and ''or nil,'Сначала укажите точную команду из /help.'end
     local head=v:match('^/([a-z][a-z0-9_]*)%s')or v:match('^/([a-z][a-z0-9_]*)$')
-    if not head or head:match('^pa26')or kind=='wanted'and head~='su'or kind=='mark'and head~='setmark'or not placeholders(v)then return nil,'Проверьте имя серверной команды и переменные.'end
-    if kind=='mark'then
+    if not head or head:match('^pa26')or kind=='wanted'and head~='su'or kind=='mark'and head~='setmark'or kind=='clear'and head~='clear'or not placeholders(v)then return nil,'Проверьте имя серверной команды и переменные.'end
+    if kind=='clear'then
+        if not v:find('{id}',1,true)then return nil,'Для снятия розыска нужен {id}, без постоянного ID.'end
+    elseif kind=='mark'then
         local args=v:match('^/%S+%s+(.+)$')
         if args and not v:find('{id}',1,true)and not v:find('{phone_number}',1,true)then
             return nil,'Для цели используйте {id} или {phone_number}, без постоянного ID / номера. Если команда открывает диалог без аргументов, оставьте только её имя.'
@@ -77,7 +82,7 @@ end
 function M.validate(raw)
     local out=M.defaults();if raw==nil then return out end
     if type(raw)~='table'then return nil,'Неверные настройки процедур.'end
-    for _,k in ipairs({'enabled','wanted_enabled','fine_enabled','mark_enabled','allow_ooc','fine_unmasked','wanted_verified','fine_verified','mark_verified',
+    for _,k in ipairs({'enabled','wanted_enabled','fine_enabled','mark_enabled','clear_enabled','clear_verified','allow_ooc','fine_unmasked','wanted_verified','fine_verified','mark_verified',
         'wanted_assistant_enabled','wanted_intercept','wanted_require_life_ack','wanted_reminder_enabled','wanted_allow_remote','wanted_autofill_passport','wanted_id_as_passport','wanted_suggest_ooc','wanted_each_trait'})do
         if raw[k]~=nil then if type(raw[k])~='boolean'then return nil,'Неверный переключатель процедуры.'end;out[k]=raw[k]end
     end
@@ -107,7 +112,7 @@ function M.validate(raw)
         return nil,'Укажите заголовок и текст напоминания об OOC-звёздах; допускаются обычные переносы строк.'
     end
     out.wanted_reminder_text=reminder
-    for _,kind in ipairs({'wanted','fine','mark'})do
+    for _,kind in ipairs({'wanted','fine','mark','clear'})do
         for _,flag in ipairs({'wheel','quick'})do
             local key=kind..'_'..flag
             if raw[key]~=nil then if type(raw[key])~='boolean'then return nil,'Неверная видимость процедуры.'end;out[key]=raw[key]end
@@ -140,7 +145,12 @@ function M.validateReminders(raw)
             not shared.integer(r.player_id,0,1003)or not shared.text(r.player_name,120)or r.player_name==''or
             not shared.text(r.session,240)or not shared.text(r.reason,240)or not shared.text(r.context,900)or
             not shared.integer(r.stars,1,6)or not shared.integer(r.created,0,9007199254740991)or
-            (r.status~='check'and r.status~='issued')then return nil,'Повреждена запись проверки OOC-звёзд.'end
+            not({check=true,issued=true,mark_sent=true,located=true,clear_sent=true})[r.status]then return nil,'Повреждена запись проверки OOC-звёзд.'end
+        for _,key in ipairs({'phone_number','phone_source'})do if r[key]~=nil and not shared.text(r[key],120)then return nil,'Повреждены данные телефона проверки.'end end
+        if r.generation~=nil and not shared.integer(r.generation,0,9007199254740991)then return nil,'Повреждено поколение аккаунта.'end
+        if r.actor_life~=nil and not shared.integer(r.actor_life,1,9007199254740991)then return nil,'Повреждён номер жизни проверки.'end
+        if r.actor_run~=nil and not shared.text(r.actor_run,120)then return nil,'Повреждён идентификатор проверки.'end
+        if r.prior_ic_stars~=nil and not({yes=true,no=true,unknown=true})[r.prior_ic_stars]then return nil,'Повреждена отметка исходного розыска.'end
         seen[r.token]=true;out[i]=shared.copy(r)
     end
     for k in pairs(raw)do if type(k)~='number'or k%1~=0 or k<1 or k>#raw then return nil,'Неверный список проверки OOC-звёзд.'end end

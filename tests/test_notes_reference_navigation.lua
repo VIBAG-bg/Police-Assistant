@@ -87,10 +87,10 @@ s=fixture();s.step()
 local fonts={};local renderText=s.imgui.TextUnformatted
 s.imgui.TextUnformatted=function(text)fonts[text]=tostring(s.imgui.GetFont());return renderText(text)end
 for _,page in ipairs({'knowledge','hints','binds','stats'})do s.page(page);healthy(s)end
-for _,title in ipairs({'ПОИСК: слово, номер статьи или команда','ПОИСК: памятки','ПОИСК: бинды','ПОИСК: журнал'})do
+for _,title in ipairs({'Поиск','ПОИСК: памятки','ПОИСК: бинды','ПОИСК: журнал'})do
     check(fonts[title],title)
 end
-eq(fonts['ПОИСК: слово, номер статьи или команда'],fonts['Раздел'])
+s.page('knowledge');require('support.knowledge_reader').filters(s);s.render();eq(fonts['Поиск'],fonts['Раздел'])
 s.page('hints');s.edits={['Поиск памяток##tips']='несуществующая памятка'};s.buttonCalls={};s.render();s.edits={}
 for _,b in ipairs(s.buttonCalls)do check(b.label~='Как пользоваться биндами##note1')end
 healthy(s)

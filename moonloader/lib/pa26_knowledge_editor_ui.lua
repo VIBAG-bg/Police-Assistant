@@ -70,7 +70,7 @@ function M.result(v)
     local messages={save='Карточка сохранена.',reset='Личная версия удалена. Исходная база сохранена.',resolve='Сравнение завершено.',
         export='Мои карточки экспортированы. Путь указан ниже в «Данных».',preview_import='Файл личных карточек прочитан.',import='Личные карточки импортированы.'}
     v.editNotice={text=r.ok and messages[r.request.kind]or(r.error or'Действие не выполнено.'),started=v.knowledge.now(),error=not r.ok}
-    if not r.ok then v:warning('action-result',v.editNotice.text,true)end
+    v:warning('action-result',v.editNotice.text,true);v.editNotice=nil
 end
 local function textField(v,ui,e,field,size,multi,hint)
     local current=e.draft[field]

@@ -66,7 +66,7 @@ c,s=fixture();s.state.inVehicle=true;s.tick();f=s.form();p=c:preview(f);check(p.
 c,s=fixture();f=s.form();f.mode='ooc';check(not c:preview(f));f.ooc_ack=true
 for _,retired in ipairs({'invalid','pt','arrest','dm'})do f.ooc_reason=retired;check(not c:preview(f),'Retired OOC purpose must be blocked: '..retired)end
 f.ooc_reason='tracking';check(not c:preview(f),'IC phone/source required even after explicit acknowledgement')
-f.phone_known='yes';f.phone_number='555123';f.phone_source='Паспорт и разговор в текущей ситуации.'
+f.phone_active='yes';f.prior_ic_stars='no';f.phone_known='yes';f.phone_number='555123';f.phone_source='Паспорт и разговор в текущей ситуации.'
 for _,key in ipairs({'phone_number','phone_source'})do
     local saved=f[key]
     for _,bad in ipairs({'','   ','bad\n/r spam'})do f[key]=bad;check(not c:preview(f),'Invalid tracking evidence must be blocked')end
@@ -82,7 +82,7 @@ s.tick(s.cfg.wanted_reminder_delay_ms);local candidates=c:candidates();eq(#candi
 c:shownReminder(token);check(c:decideReminder(token,false));eq(#c:candidates(),0);s.tick(s.cfg.wanted_reminder_snooze_ms);eq(#c:candidates(),1)
 c:shownReminder(token);s.tick(251);check(not c:decideReminder(token,true),'No stale clicks');c:shownReminder(token);check(c:decideReminder(token,true));check(c.reviewReminders)
 check(c:changeReminder(token,'resolved'));c:flush();eq(#s.saved,0);eq(#s.plans,2,'Reminder actions never send commands')
-c,s=fixture();s.state.demo=true;s.tick();f=s.form();f.mode='ooc';f.ooc_ack=true;f.phone_known='yes';f.phone_number='555123';f.phone_source='Назван владельцем по RP.';p=s.prepare(f);s.finish(p);eq(#c.reminders,0,'Demo does not create real obligations')
+c,s=fixture();s.state.demo=true;s.tick();f=s.form();f.mode='ooc';f.ooc_ack=true;f.phone_active='yes';f.prior_ic_stars='no';f.phone_known='yes';f.phone_number='555123';f.phone_source='Назван владельцем по RP.';p=s.prepare(f);s.finish(p);eq(#c.reminders,0,'Demo does not create real obligations')
 local cfg=prefs.defaults();cfg.wanted_direct_command='/su {id} {amount} {basis}';check(not prefs.validate(cfg))
 cfg=prefs.defaults();cfg.wanted_command='/su {id} {amount} {basis}';cfg.wanted_verified=true;cfg.wanted_source='Legacy personal syntax';check(prefs.validate(cfg),'Preserve a legacy field without using it')
 local lib=model.defaults(require('pa26_core').defaults());lib.wanted_reminders=s.saved;check(model.validate(lib));lib.wanted_reminders={{token='bad'}};check(not model.validate(lib))

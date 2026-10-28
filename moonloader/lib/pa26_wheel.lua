@@ -18,6 +18,25 @@ M.systemRows={{'sos','SOS'},{'shots','Shots fired'},{'code0','CODE 0'},{'assist-
     {'patrol-open','Патруль · открыть'},{'patrol-pause','Патруль · пауза'},{'patrol-resume','Патруль · продолжить'},
     {'patrol-finish','Патруль · завершить'},{'procedure-wanted','Помощник розыска'},{'procedure-wanted_list','Список преступников'},
     {'procedure-fine','Штраф'},{'procedure-mark','Пеленгация'}}
+M.copilotRows={{'stop_order','Остановить авто','service','car'},{'stop','Доклад 10-55','service','car'},
+ {'pursuit','10-57 VICTOR','service','car'},{'high_risk','10-66','detention','car'},
+ {'approach','Осмотр салона','documents','foot'},{'foot','10-57 FOXTROT','detention','foot'},
+ {'documents','Проверка документов','documents','foot'},{'explain_stop','Причина остановки','documents','both'},
+ {'explain_detention','Основание и права','detention','foot'},{'rights','Адвокат и звонок','detention','foot'}}
+for _,r in ipairs(M.copilotRows)do M.systemRows[#M.systemRows+1]={'copilot-'..r[1],r[2]}end
+M.systemRows[#M.systemRows+1]={'copilot-pursuit_mark','Розыск / метка погони'}
+function M.context(s)
+    if not s then return 'none'end
+    if s.inVehicle==true then return 'car'end
+    if s.inVehicle==false then return 'foot'end
+    local phase=s.copilot and s.copilot.phase
+    return phase=='Преследование'and'car'or(phase=='10-57 FOXTROT'or phase=='10-55'or phase=='10-66')and'foot'or'none'
+end
+function M.contextRevision(s)
+    local c=s and s.copilot or{};local codes={none=0,car=1,foot=2}
+    local pin=({fast_wanted=1,combat_wanted=2,pursuit_mark=3})[c.pinned or'']or 0
+    return (codes[M.context(s)]or 0)*10+pin
+end
 local aliases={['гражданин']='citizen',['общение']='citizen',['документы']='documents',
     ['задержание']='detention',['наручники']='detention',['миранда']='detention',['арест']='detention',
     ['досмотр']='frisk',['обыск']='frisk',['проверки']='wanted',['розыск']='wanted',['штрафы']='wanted',['розыск и штрафы']='wanted',
@@ -104,6 +123,17 @@ function M.build(lib,revision,includeAlerts,serviceState)
         out.byId[b.id]=item; local cat=out.byCategory[item.category]
         cat.items[#cat.items+1]=item
     end end
+    -- Operational actions have their own feature gate, independent of SOS.
+    local cp=lib.vehicle and lib.vehicle.copilot
+    if lib.vehicle and lib.vehicle.enabled and cp and cp.enabled and serviceState and serviceState.onDuty then
+        local context=M.context(serviceState);local v=serviceState.copilot or{}
+        for _,r in ipairs(M.copilotRows)do if r[4]==context or r[4]=='both'and context~='none'then
+            if (r[1]~='approach'and r[1]~='foot'or v.car)then
+                place({kind='copilot',id='copilot-'..r[1],action=r[1],category=r[3],name=r[2],needsTarget=false})
+            end
+        end end
+        if v.pinned and v.car then place({kind='copilot',id='copilot-pursuit_mark',action=v.pinned,category='wanted',name=v.pinned=='pursuit_mark'and'Только /pt'or'Розыск + /pt',needsTarget=false})end
+    end
     return out
 end
 function M.entries(cat)
@@ -119,7 +149,7 @@ function M.available(catalog,route,demo,target)
     local cat=catalog.byCategory[route.category]
     if route.kind=='more' then local entries=cat and M.entries(cat);return entries~=nil and entries[#entries].kind=='more'end
     if route.kind=='settings' then return cat~=nil and #cat.items==0 end
-    if route.kind=='alert'or route.kind=='patrol'or route.kind=='procedure'or route.kind=='assist'then
+    if route.kind=='alert'or route.kind=='patrol'or route.kind=='procedure'or route.kind=='assist'or route.kind=='copilot'then
         local item=catalog.bySystem and catalog.bySystem[route.id]
         if type(item)~='table'or item.kind~=route.kind or item.category~=route.category then return false,'Действие недоступно.' end
         return not item.disabled,item.disabled and item.reason or nil

@@ -19,6 +19,7 @@ local function form(s)
     eq(s.workspace.studio.caseForm.stage,'identity','A nickname or ID does not supply an IC phone')
     click(s,'ОК##warning-ok');s.render()
     click(s,'Да##Номер известен вашему персонажу?##case-phone_knownyes')
+    click(s,'Да##Телефон сейчас включён?##case-phone_activeyes')
     edit(s,{['##Известный IC-номер телефона##case-phone_number']='555-0100',
         ['##Откуда персонажу известен номер##case-phone_source']='Сказал в IC-разговоре'})
     click(s,'Далее · основание##case-next')
@@ -37,9 +38,9 @@ eq(#s.sent,3);check(s.sent[1].line:match('^/me '));check(s.sent[1].line:find('55
 check(s.sent[2].line:match('^/do '));eq(s.sent[3].line,'/setmark 37');healthy(s)
 -- There is no automatic /su alongside a marker operation.
 for _,row in ipairs(s.sent)do check(not row.line:match('^/su '))end
--- Changing the selected person during the RP sequence cancels its remaining tail.
+-- Clearing physical interaction does not retarget a frozen remote-account form.
 s=setup(true);form(s);click(s,'Подтвердить выполнение##case-send');click(s,'ДА##confirm-yes');s.step();eq(#s.sent,1)
-s.workspace:clearTarget();s.step(2000);eq(#s.sent,1);check(not s.workspace.executor.queue)
+s.workspace:clearTarget();for _=1,45 do s.step(100)end;eq(#s.sent,3);eq(s.sent[3].line,'/setmark 37');check(not s.workspace.executor.queue)
 -- Separate OOC form still requires acknowledgement and a stated basis.
 s=setup(true);click(s,'Новая форма##case-new')
 click(s,'OOC · отдельная процедура##Ветка пеленгации##case-modeooc')
@@ -49,6 +50,7 @@ s.toggle='Понимаю, что выбираю отдельную OOC-меха�
 eq(s.workspace.studio.caseForm.stage,'identity','OOC acknowledgement does not invent an IC phone')
 click(s,'ОК##warning-ok');s.render()
 click(s,'Да##Номер известен вашему персонажу?##case-phone_knownyes')
+    click(s,'Да##Телефон сейчас включён?##case-phone_activeyes')
 edit(s,{['##Известный IC-номер телефона##case-phone_number']='555-0100',
     ['##Откуда персонажу известен номер##case-phone_source']='Сообщён по RP'})
 click(s,'Далее · основание##case-next')

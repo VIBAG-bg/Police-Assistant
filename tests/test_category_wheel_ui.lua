@@ -5,6 +5,7 @@ local function fixture(options)
     -- This group exercises ordinary custom binds; the new assistant routes have
     -- their own production-default tests in case_ui and procedure_access.
     options.library.procedures.wanted_assistant_enabled=false
+    options.library.vehicle.copilot.enabled=false -- Separate normative0420 group covers context actions.
     return support(options)
 end
 local wheel=require 'pa26_wheel'

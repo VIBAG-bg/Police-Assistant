@@ -1,0 +1,1473 @@
+{
+  "release": "0.42.0",
+  "checked_utc": "2026-10-28T20:50:13.831180+00:00",
+  "status": "passed",
+  "full_lua": {
+    "groups": 158,
+    "checks": 9126007,
+    "syntax_files": 276,
+    "runtime": "LuaJIT 2.1 (lupa.luajit21)",
+    "report_sha256": "ab7d68c2352f71f601afa3bac0407e7155f07e7e2c8fcc6122ee9550bf326d13",
+    "results": [
+      {
+        "test": "test_core.lua",
+        "checks": 194,
+        "status": "passed"
+      },
+      {
+        "test": "test_config.lua",
+        "checks": 66,
+        "status": "passed"
+      },
+      {
+        "test": "test_runtime.lua",
+        "checks": 173,
+        "status": "passed"
+      },
+      {
+        "test": "test_bindings.lua",
+        "checks": 103,
+        "status": "passed"
+      },
+      {
+        "test": "test_library.lua",
+        "checks": 28,
+        "status": "passed"
+      },
+      {
+        "test": "test_smoke.lua",
+        "checks": 246323,
+        "status": "passed"
+      },
+      {
+        "test": "test_hud.lua",
+        "checks": 91,
+        "status": "passed"
+      },
+      {
+        "test": "test_menu.lua",
+        "checks": 59431,
+        "status": "passed"
+      },
+      {
+        "test": "test_targeting.lua",
+        "checks": 154874,
+        "status": "passed"
+      },
+      {
+        "test": "test_studio.lua",
+        "checks": 53766,
+        "status": "passed"
+      },
+      {
+        "test": "test_interaction.lua",
+        "checks": 154614,
+        "status": "passed"
+      },
+      {
+        "test": "test_binding_ux.lua",
+        "checks": 109003,
+        "status": "passed"
+      },
+      {
+        "test": "test_editor_access.lua",
+        "checks": 182735,
+        "status": "passed"
+      },
+      {
+        "test": "test_variables.lua",
+        "checks": 400,
+        "status": "passed"
+      },
+      {
+        "test": "test_settings_tabs.lua",
+        "checks": 136272,
+        "status": "passed"
+      },
+      {
+        "test": "test_accent.lua",
+        "checks": 129841,
+        "status": "passed"
+      },
+      {
+        "test": "test_draft_lifecycle.lua",
+        "checks": 262719,
+        "status": "passed"
+      },
+      {
+        "test": "test_window_layout.lua",
+        "checks": 48483,
+        "status": "passed"
+      },
+      {
+        "test": "test_step_editor.lua",
+        "checks": 143708,
+        "status": "passed"
+      },
+      {
+        "test": "test_notices.lua",
+        "checks": 28918,
+        "status": "passed"
+      },
+      {
+        "test": "test_target_notices.lua",
+        "checks": 31045,
+        "status": "passed"
+      },
+      {
+        "test": "test_binder_controls.lua",
+        "checks": 195908,
+        "status": "passed"
+      },
+      {
+        "test": "test_binding_dialogs.lua",
+        "checks": 86041,
+        "status": "passed"
+      },
+      {
+        "test": "test_shortcut_dialog.lua",
+        "checks": 231679,
+        "status": "passed"
+      },
+      {
+        "test": "test_gui_key_capture.lua",
+        "checks": 385559,
+        "status": "passed"
+      },
+      {
+        "test": "test_category_wheel.lua",
+        "checks": 2209,
+        "status": "passed"
+      },
+      {
+        "test": "test_category_wheel_ui.lua",
+        "checks": 250658,
+        "status": "passed"
+      },
+      {
+        "test": "test_alerts.lua",
+        "checks": 313,
+        "status": "passed"
+      },
+      {
+        "test": "test_alerts_ui.lua",
+        "checks": 182522,
+        "status": "passed"
+      },
+      {
+        "test": "test_confirmation_input.lua",
+        "checks": 22,
+        "status": "passed"
+      },
+      {
+        "test": "test_service_preferences.lua",
+        "checks": 52,
+        "status": "passed"
+      },
+      {
+        "test": "test_patrol.lua",
+        "checks": 56,
+        "status": "passed"
+      },
+      {
+        "test": "test_weapon_roleplay.lua",
+        "checks": 85,
+        "status": "passed"
+      },
+      {
+        "test": "test_taser.lua",
+        "checks": 181,
+        "status": "passed"
+      },
+      {
+        "test": "test_critical_reports.lua",
+        "checks": 49,
+        "status": "passed"
+      },
+      {
+        "test": "test_service_ui.lua",
+        "checks": 144687,
+        "status": "passed"
+      },
+      {
+        "test": "test_radio_guard.lua",
+        "checks": 127,
+        "status": "passed"
+      },
+      {
+        "test": "test_weapon_warning.lua",
+        "checks": 83,
+        "status": "passed"
+      },
+      {
+        "test": "test_service_notifications.lua",
+        "checks": 55,
+        "status": "passed"
+      },
+      {
+        "test": "test_notification_ui.lua",
+        "checks": 351582,
+        "status": "passed"
+      },
+      {
+        "test": "test_chat_input.lua",
+        "checks": 3801,
+        "status": "passed"
+      },
+      {
+        "test": "test_quick_alert_keys.lua",
+        "checks": 41749,
+        "status": "passed"
+      },
+      {
+        "test": "test_autosave.lua",
+        "checks": 64418,
+        "status": "passed"
+      },
+      {
+        "test": "test_wheel_labels.lua",
+        "checks": 111614,
+        "status": "passed"
+      },
+      {
+        "test": "test_knowledge.lua",
+        "checks": 16043,
+        "status": "passed"
+      },
+      {
+        "test": "test_knowledge_forms.lua",
+        "checks": 151,
+        "status": "passed"
+      },
+      {
+        "test": "test_knowledge_ui.lua",
+        "checks": 44287,
+        "status": "passed"
+      },
+      {
+        "test": "test_knowledge_updates_ui.lua",
+        "checks": 110971,
+        "status": "passed"
+      },
+      {
+        "test": "test_ui_content_regressions.lua",
+        "checks": 74862,
+        "status": "passed"
+      },
+      {
+        "test": "test_knowledge_edits.lua",
+        "checks": 108,
+        "status": "passed"
+      },
+      {
+        "test": "test_knowledge_editor_ui.lua",
+        "checks": 304386,
+        "status": "passed"
+      },
+      {
+        "test": "test_aim_warning_layout.lua",
+        "checks": 1028370,
+        "status": "passed"
+      },
+      {
+        "test": "test_choice_controls.lua",
+        "checks": 24640,
+        "status": "passed"
+      },
+      {
+        "test": "test_native_chat_live.lua",
+        "checks": 8701,
+        "status": "passed"
+      },
+      {
+        "test": "test_reader_notes_ux.lua",
+        "checks": 28173,
+        "status": "passed"
+      },
+      {
+        "test": "test_chat_bridge.lua",
+        "checks": 58,
+        "status": "passed"
+      },
+      {
+        "test": "test_cef_integration.lua",
+        "checks": 23977,
+        "status": "passed"
+      },
+      {
+        "test": "test_chat_bridge_startup.lua",
+        "checks": 10089,
+        "status": "passed"
+      },
+      {
+        "test": "test_keyboard_layout.lua",
+        "checks": 11019,
+        "status": "passed"
+      },
+      {
+        "test": "test_aim_selection.lua",
+        "checks": 47827,
+        "status": "passed"
+      },
+      {
+        "test": "test_chat_text.lua",
+        "checks": 26577,
+        "status": "passed"
+      },
+      {
+        "test": "test_feedback.lua",
+        "checks": 73425,
+        "status": "passed"
+      },
+      {
+        "test": "test_helpers_shortcut.lua",
+        "checks": 28640,
+        "status": "passed"
+      },
+      {
+        "test": "test_scroll_bounds.lua",
+        "checks": 12761,
+        "status": "passed"
+      },
+      {
+        "test": "test_vehicle_names.lua",
+        "checks": 1089,
+        "status": "passed"
+      },
+      {
+        "test": "test_general_megaphone.lua",
+        "checks": 87,
+        "status": "passed"
+      },
+      {
+        "test": "test_general_megaphone_ui.lua",
+        "checks": 56571,
+        "status": "passed"
+      },
+      {
+        "test": "test_menu_key.lua",
+        "checks": 7655,
+        "status": "passed"
+      },
+      {
+        "test": "test_notes_reference_navigation.lua",
+        "checks": 94748,
+        "status": "passed"
+      },
+      {
+        "test": "test_ui_recovery.lua",
+        "checks": 78362,
+        "status": "passed"
+      },
+      {
+        "test": "test_recovery_guard.lua",
+        "checks": 67,
+        "status": "passed"
+      },
+      {
+        "test": "test_patrol_session.lua",
+        "checks": 232,
+        "status": "passed"
+      },
+      {
+        "test": "test_patrol_session_ui.lua",
+        "checks": 221771,
+        "status": "passed"
+      },
+      {
+        "test": "test_patrol_events.lua",
+        "checks": 190,
+        "status": "passed"
+      },
+      {
+        "test": "test_patrol_event_ui.lua",
+        "checks": 121149,
+        "status": "passed"
+      },
+      {
+        "test": "test_identity.lua",
+        "checks": 117,
+        "status": "passed"
+      },
+      {
+        "test": "test_identity_ui.lua",
+        "checks": 54529,
+        "status": "passed"
+      },
+      {
+        "test": "test_case_forms.lua",
+        "checks": 46,
+        "status": "passed"
+      },
+      {
+        "test": "test_case_ui.lua",
+        "checks": 255684,
+        "status": "passed"
+      },
+      {
+        "test": "test_mark_forms.lua",
+        "checks": 87,
+        "status": "passed"
+      },
+      {
+        "test": "test_mark_ui.lua",
+        "checks": 260029,
+        "status": "passed"
+      },
+      {
+        "test": "test_patrol_notices.lua",
+        "checks": 102,
+        "status": "passed"
+      },
+      {
+        "test": "test_patrol_notice_ui.lua",
+        "checks": 71178,
+        "status": "passed"
+      },
+      {
+        "test": "test_operations.lua",
+        "checks": 1179,
+        "status": "passed"
+      },
+      {
+        "test": "test_operations_ui.lua",
+        "checks": 108156,
+        "status": "passed"
+      },
+      {
+        "test": "test_radio_codes.lua",
+        "checks": 103851,
+        "status": "passed"
+      },
+      {
+        "test": "test_followups.lua",
+        "checks": 19019,
+        "status": "passed"
+      },
+      {
+        "test": "test_radio_patrol_context.lua",
+        "checks": 25295,
+        "status": "passed"
+      },
+      {
+        "test": "test_procedure_access.lua",
+        "checks": 73191,
+        "status": "passed"
+      },
+      {
+        "test": "test_knowledge_departments.lua",
+        "checks": 55345,
+        "status": "passed"
+      },
+      {
+        "test": "test_force_followup.lua",
+        "checks": 35577,
+        "status": "passed"
+      },
+      {
+        "test": "test_vehicle.lua",
+        "checks": 82,
+        "status": "passed"
+      },
+      {
+        "test": "test_vehicle_world.lua",
+        "checks": 17,
+        "status": "passed"
+      },
+      {
+        "test": "test_live_passport.lua",
+        "checks": 39,
+        "status": "passed"
+      },
+      {
+        "test": "test_command_taser.lua",
+        "checks": 46,
+        "status": "passed"
+      },
+      {
+        "test": "test_weapon_holster.lua",
+        "checks": 21,
+        "status": "passed"
+      },
+      {
+        "test": "test_radio_segments.lua",
+        "checks": 33,
+        "status": "passed"
+      },
+      {
+        "test": "test_live_service_ui.lua",
+        "checks": 89291,
+        "status": "passed"
+      },
+      {
+        "test": "test_knowledge_editions.lua",
+        "checks": 130,
+        "status": "passed"
+      },
+      {
+        "test": "test_assist_settings.lua",
+        "checks": 51,
+        "status": "passed"
+      },
+      {
+        "test": "test_evidence.lua",
+        "checks": 67,
+        "status": "passed"
+      },
+      {
+        "test": "test_evidence_files.lua",
+        "checks": 10,
+        "status": "passed"
+      },
+      {
+        "test": "test_assist_ui.lua",
+        "checks": 84034,
+        "status": "passed"
+      },
+      {
+        "test": "test_megaphone.lua",
+        "checks": 25,
+        "status": "passed"
+      },
+      {
+        "test": "test_megaphone_ui.lua",
+        "checks": 31448,
+        "status": "passed"
+      },
+      {
+        "test": "test_interaction_preferences.lua",
+        "checks": 9770,
+        "status": "passed"
+      },
+      {
+        "test": "test_rp_text.lua",
+        "checks": 1212,
+        "status": "passed"
+      },
+      {
+        "test": "test_rp_integration.lua",
+        "checks": 27,
+        "status": "passed"
+      },
+      {
+        "test": "test_rp_ui.lua",
+        "checks": 31157,
+        "status": "passed"
+      },
+      {
+        "test": "test_server_commands.lua",
+        "checks": 8652,
+        "status": "passed"
+      },
+      {
+        "test": "test_russian_text.lua",
+        "checks": 4781,
+        "status": "passed"
+      },
+      {
+        "test": "test_rp_presets_ui.lua",
+        "checks": 73682,
+        "status": "passed"
+      },
+      {
+        "test": "test_map_locations.lua",
+        "checks": 40325,
+        "status": "passed"
+      },
+      {
+        "test": "test_nearby.lua",
+        "checks": 30261,
+        "status": "passed"
+      },
+      {
+        "test": "test_vehicle_selection.lua",
+        "checks": 8231,
+        "status": "passed"
+      },
+      {
+        "test": "test_wanted_forms.lua",
+        "checks": 888,
+        "status": "passed"
+      },
+      {
+        "test": "test_user_files.lua",
+        "checks": 1329,
+        "status": "passed"
+      },
+      {
+        "test": "test_user_files_ui.lua",
+        "checks": 63689,
+        "status": "passed"
+      },
+      {
+        "test": "test_resume_acceptance.lua",
+        "checks": 17809,
+        "status": "passed"
+      },
+      {
+        "test": "test_wanted_accounts.lua",
+        "checks": 28,
+        "status": "passed"
+      },
+      {
+        "test": "test_wanted_remote.lua",
+        "checks": 318301,
+        "status": "passed"
+      },
+      {
+        "test": "test_wanted_passport_memory.lua",
+        "checks": 27,
+        "status": "passed"
+      },
+      {
+        "test": "test_wanted_todo.lua",
+        "checks": 72,
+        "status": "passed"
+      },
+      {
+        "test": "test_hotfix0404.lua",
+        "checks": 16414,
+        "status": "passed"
+      },
+      {
+        "test": "test_cef_assets.lua",
+        "checks": 114,
+        "status": "passed"
+      },
+      {
+        "test": "test_hud_close.lua",
+        "checks": 16173,
+        "status": "passed"
+      },
+      {
+        "test": "test_manual_radio.lua",
+        "checks": 22563,
+        "status": "passed"
+      },
+      {
+        "test": "test_text_segments.lua",
+        "checks": 475,
+        "status": "passed"
+      },
+      {
+        "test": "test_action_preferences.lua",
+        "checks": 39415,
+        "status": "passed"
+      },
+      {
+        "test": "test_window_drag.lua",
+        "checks": 78,
+        "status": "passed"
+      },
+      {
+        "test": "test_passport_formats.lua",
+        "checks": 6236,
+        "status": "passed"
+      },
+      {
+        "test": "test_navigation_guard.lua",
+        "checks": 56971,
+        "status": "passed"
+      },
+      {
+        "test": "test_map_grid.lua",
+        "checks": 6738,
+        "status": "passed"
+      },
+      {
+        "test": "test_map_adapter.lua",
+        "checks": 94,
+        "status": "passed"
+      },
+      {
+        "test": "test_map_integration.lua",
+        "checks": 16419,
+        "status": "passed"
+      },
+      {
+        "test": "test_manual_chat.lua",
+        "checks": 1441,
+        "status": "passed"
+      },
+      {
+        "test": "test_window_persistence.lua",
+        "checks": 3949,
+        "status": "passed"
+      },
+      {
+        "test": "test_wanted_detached.lua",
+        "checks": 54503,
+        "status": "passed"
+      },
+      {
+        "test": "test_manual_live.lua",
+        "checks": 17921,
+        "status": "passed"
+      },
+      {
+        "test": "test_editor0370.lua",
+        "checks": 54262,
+        "status": "passed"
+      },
+      {
+        "test": "test_manual_channels.lua",
+        "checks": 10793,
+        "status": "passed"
+      },
+      {
+        "test": "test_interior_selection.lua",
+        "checks": 188827,
+        "status": "passed"
+      },
+      {
+        "test": "test_timing0372.lua",
+        "checks": 7199,
+        "status": "passed"
+      },
+      {
+        "test": "test_updater.lua",
+        "checks": 8133,
+        "status": "passed"
+      },
+      {
+        "test": "test_manual_actions.lua",
+        "checks": 170524,
+        "status": "passed"
+      },
+      {
+        "test": "test_wheel_custom.lua",
+        "checks": 3280,
+        "status": "passed"
+      },
+      {
+        "test": "test_startup040.lua",
+        "checks": 69,
+        "status": "passed"
+      },
+      {
+        "test": "test_gender040.lua",
+        "checks": 96,
+        "status": "passed"
+      },
+      {
+        "test": "test_ux040.lua",
+        "checks": 73298,
+        "status": "passed"
+      },
+      {
+        "test": "test_author_presets.lua",
+        "checks": 359,
+        "status": "passed"
+      },
+      {
+        "test": "test_colleagues.lua",
+        "checks": 83,
+        "status": "passed"
+      },
+      {
+        "test": "test_copilot_traffic.lua",
+        "checks": 243,
+        "status": "passed"
+      },
+      {
+        "test": "test_evidence_screens.lua",
+        "checks": 25,
+        "status": "passed"
+      },
+      {
+        "test": "test_copilot_refinements.lua",
+        "checks": 50142,
+        "status": "passed"
+      },
+      {
+        "test": "test_copilot_main.lua",
+        "checks": 66750,
+        "status": "passed"
+      },
+      {
+        "test": "test_urgent0411.lua",
+        "checks": 6111,
+        "status": "passed"
+      },
+      {
+        "test": "test_dispatch0412.lua",
+        "checks": 91167,
+        "status": "passed"
+      },
+      {
+        "test": "test_normative0420.lua",
+        "checks": 2999,
+        "status": "passed"
+      }
+    ]
+  },
+  "additional_gates": [
+    {
+      "report": "NORMATIVE0420_NATIVE32_RESULTS.json",
+      "report_sha256": "1ba4019594535e033ac5e27829f29f7dfba37b4d7d6ad199521719c9f3af91dc",
+      "status": "passed",
+      "checks": 7180,
+      "frames": 672,
+      "resolutions": 7,
+      "window_fractions": [
+        0.7,
+        1
+      ],
+      "fonts": [
+        16,
+        24
+      ]
+    },
+    {
+      "report": "WANTED_NATIVE32_RESULTS.json",
+      "report_sha256": "62ffb3025ab29a6bba404c6a8e8af4b354d2767094ba9690fc54610a3ba46c79",
+      "status": "passed",
+      "checks": 14274,
+      "frames": 1278,
+      "resolutions": 4,
+      "min_window_width": 300,
+      "modal_frames": 192
+    },
+    {
+      "report": "WINDOW_NATIVE32_RESULTS.json",
+      "report_sha256": "544ba9941001eed9ab86552b206f73b5d9d3fd3ba69a41967dd5a1462c816743",
+      "screen_sizes": [
+        [
+          640,
+          480
+        ],
+        [
+          1366,
+          768
+        ],
+        [
+          1920,
+          1080
+        ],
+        [
+          2560,
+          1440
+        ]
+      ],
+      "status": "passed",
+      "checks": 202
+    },
+    {
+      "report": "USER_FILES_NATIVE32_RESULTS.json",
+      "report_sha256": "71bfc08bb30a720e23827ab418843e731a837aba77f54b76ecc960553fe411e2",
+      "status": "passed",
+      "checks": 535,
+      "frames": 96,
+      "resolutions": 4,
+      "min_window_width": 300
+    },
+    {
+      "report": "PD_NATIVE32_RESULTS.json",
+      "report_sha256": "875b01dcb39fe5c5de2bae9c0baa7767c472821ad3854d2e32146a25e2ae8095",
+      "status": "passed",
+      "checks": 3382,
+      "frames": 254,
+      "resolutions": 4,
+      "min_window_width": 300
+    },
+    {
+      "report": "MAP_NATIVE32_RESULTS.json",
+      "report_sha256": "5b202d01168c67069f3276df6b2face76b32bc4af92b4958c63161e2909035e6",
+      "status": "passed",
+      "checks": 2015,
+      "frames": 144,
+      "resolutions": 4,
+      "min_window_width": 300
+    },
+    {
+      "report": "EDITOR_NATIVE32_RESULTS.json",
+      "report_sha256": "08468d1745db8569ed7fe4b3fa4acce7d784dee83e914d97aaff1c8547ad8b52",
+      "status": "passed",
+      "checks": 60,
+      "frames": 41
+    },
+    {
+      "report": "EXTRA_POPUPS_NATIVE32_RESULTS.json",
+      "report_sha256": "570fcd336d1a5496cb36632b47fb58d31e17aafec145eaae12e9def1c2846e49",
+      "status": "passed",
+      "checks": 23
+    },
+    {
+      "report": "KEYBOARD_NATIVE32_RESULTS.json",
+      "report_sha256": "5b78df3a11ba3a8faaf6ef63c3694eee845adc8cb6c4320faeb553979540de45",
+      "checks": 12,
+      "status": "passed"
+    },
+    {
+      "report": "SCROLL_NATIVE32_RESULTS.json",
+      "report_sha256": "5444308494c4832af347c8abb4961769a42784f56faa2f1be63f8099bd6461fb",
+      "checks": 123,
+      "status": "passed"
+    },
+    {
+      "report": "CEF_BROWSER_RESULTS.json",
+      "report_sha256": "a4101a704674822fb100c18d057127b9aae22ac2449a67cd1ff7805bd712490c",
+      "status": "passed",
+      "checks": 519
+    },
+    {
+      "report": "CEF_NATIVE32_RESULTS.json",
+      "report_sha256": "b37b6beb70eab5647e17749d0870bdfa2a034f31d3f61be81d0a7d1ec84d787b",
+      "status": "passed",
+      "checks": 108,
+      "real_x86_luajit": true,
+      "real_installed_luasocket": true,
+      "real_loopback_http": true,
+      "real_hud_send_function_in_isolated_v8": true,
+      "chat_field_is_test_double": true,
+      "layout_packet_values_are_test_doubles": true
+    },
+    {
+      "report": "UPDATER_NATIVE32_RESULTS.json",
+      "report_sha256": "0ac8b5bbc1e0d9058498622c1b77539131dd45dc44c52959fc25bc8b4513914d",
+      "status": "passed",
+      "checks": 13,
+      "frames": 9
+    },
+    {
+      "report": "UPDATER_WORKER_RESULTS.json",
+      "report_sha256": "a3d3f02103c350f0f65fd71ceab7a94533c8a94c31d26510c072bda0fdfbf0a0",
+      "personal_edits_preserved": true,
+      "real_package_round_trip": true,
+      "durable_recovery": true,
+      "unicode_personal_names": true,
+      "backup_and_rollback": true,
+      "active_job_recovery": true,
+      "status": "passed",
+      "checks": 148
+    },
+    {
+      "report": "UPDATE_LEGACY_PATH_RESULTS.json",
+      "report_sha256": "f40a9a71a259d773feb49b4e5940e583e35f504528a3a0de1973aa9115062c4d",
+      "legacy_dotnet_path_policy": true,
+      "rollback": true,
+      "nested_personal_backups": true,
+      "status": "passed",
+      "unicode": true,
+      "checks": 224
+    },
+    {
+      "report": "UPDATE_PROGRESS_RESULTS.json",
+      "report_sha256": "09e3644fe25bd740d190ba8c3689be80ce76661427e8435fd6a66878ec8d6f43",
+      "status": "passed",
+      "checks": 58
+    },
+    {
+      "report": "INSTALLER_RESULTS.json",
+      "report_sha256": "de10473973a4c8ad90bfe1307d997533803e62047147e27a16eded6daf25b643",
+      "status": "passed",
+      "native_install": true,
+      "cef_install": true,
+      "idempotent_patch": true,
+      "preserved_personal_files": true,
+      "personal_backups": true,
+      "verify_only_readonly": true,
+      "rollback_after": [
+        1,
+        37,
+        89,
+        91,
+        92,
+        93,
+        94,
+        97,
+        98,
+        102,
+        103,
+        104
+      ]
+    },
+    {
+      "report": "INSTALLER_LEGACY_PATH_RESULTS.json",
+      "report_sha256": "67f695f2fe5687c63b652caccdf5354483717a8cf54d09e23c921753df5ec2c9",
+      "legacy_dotnet_path_policy": true,
+      "checks": 35,
+      "rollback": true,
+      "status": "passed"
+    },
+    {
+      "report": "SETUP_RESULTS.json",
+      "report_sha256": "55c620bbcef2b4c1cc8f9a485721de447d9830ea0d76f0bc9012c12b78780bb6",
+      "status": "passed",
+      "official_archives": true,
+      "checks": 124
+    },
+    {
+      "report": "SETUP_WINDOW_RESULTS.json",
+      "report_sha256": "f2344d7a5cf02f7b0e2fd2f611675625072f9cc61577e67c5661e1d77ebba365",
+      "compatibility_matrix": [
+        "Windows 7 SP1 prerequisites",
+        "Windows 10",
+        "Windows 11"
+      ],
+      "checks": 34,
+      "windows7_vm_tested": false,
+      "rendered": true,
+      "status": "passed"
+    },
+    {
+      "report": "SETUP_LAUNCH_RESULTS.json",
+      "report_sha256": "1f102fc22a9d12f14449163472def84e028e08b40f859e474064f56904ee11de",
+      "checks": 9,
+      "windows7_vm_tested": false,
+      "status": "passed"
+    },
+    {
+      "report": "AUTHOR_INSTALL_RESULTS.json",
+      "report_sha256": "204e5413dcfa7f096ac3f207f0e5a6fd37621c752d66eff374c8b176c7390e9b",
+      "status": "passed",
+      "source_notes_not_read": true,
+      "checks": 29
+    },
+    {
+      "report": "PRESERVATION0420.json",
+      "report_sha256": "1257ce979785cdf9aff2fdce301fe648c536a8726f044e04ad41d170bd6eda2c",
+      "status": "passed",
+      "legacy_leaf_checks": 2466,
+      "cases": [
+        "stock_0412",
+        "custom_profile_notes_templates_disabled_features_wheel"
+      ],
+      "loader_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
+      "cef_unchanged": true,
+      "presets_unchanged": true
+    }
+  ],
+  "install_manifest_sha256": "799be5618ccd074b2e0c6a27fb5dbd4403d8ad21d14c2b3b06d7371cbb4ab583",
+  "runtime_files": [
+    {
+      "path": "config\\police_assistant_2026.ini",
+      "sha256": "1dd761cc68a439b8a27923dd5fbd0dc27c7713457006c0397c4410ff93b6316c"
+    },
+    {
+      "path": "lib\\pa26_alerts.lua",
+      "sha256": "f6a58de9163614919c161bc28d733639f56de0ed085e9e7846580a49eb3214bf"
+    },
+    {
+      "path": "lib\\pa26_assist_settings.lua",
+      "sha256": "093666773ee210b25b4c4b42a3bb311ad698fd0731ac7508628486b1b0e46370"
+    },
+    {
+      "path": "lib\\pa26_assist_ui.lua",
+      "sha256": "64833df8a28d6bc21dadb28b4d411dff465c7bcfcee8b85ad01587c1398e4128"
+    },
+    {
+      "path": "lib\\pa26_author_controller.lua",
+      "sha256": "53d68b2faaae8fbde8f54643360c66d6f191059e47cb21bc8f047c07d347a6e7"
+    },
+    {
+      "path": "lib\\pa26_author_io.lua",
+      "sha256": "163e7c2f9ab82c1be88762667e6ef81237e3ef0fb6c2863c66e25866bb1a9d6a"
+    },
+    {
+      "path": "lib\\pa26_author_presets.lua",
+      "sha256": "f659b3522c37b2495b0fadf599c0d5450a53188a61a162e6c8925ea3fb7ec9a8"
+    },
+    {
+      "path": "lib\\pa26_author_store.lua",
+      "sha256": "16fd5748a43081aaefa348dc7595da69a18c851582d468cde94a8d2e1decee5d"
+    },
+    {
+      "path": "lib\\pa26_binder.lua",
+      "sha256": "9f7153afc690443a67bad9bb030e4ff1d139bed0614e3a8348d8d9fc9d2f9e6b"
+    },
+    {
+      "path": "lib\\pa26_bindings.lua",
+      "sha256": "27c8913ee28e9bf963706d19bddb5b3fac6bbcdeeba5a75ae0e2c1c18aff2f64"
+    },
+    {
+      "path": "lib\\pa26_case_forms.lua",
+      "sha256": "454574f292a62bf465601ac0b665ef9bbd6246ee934b8d32876becea7616f314"
+    },
+    {
+      "path": "lib\\pa26_case_ui.lua",
+      "sha256": "2dbe0c9c925f8f074bf04e4a582c3b27457da593dbf615c34e491f1a9f605d59"
+    },
+    {
+      "path": "lib\\pa26_cef_assets.lua",
+      "sha256": "beacfa48f593527010189f3d8599a5f5b5b874e42001ac62891c288dd5695fdd"
+    },
+    {
+      "path": "lib\\pa26_chat_bridge.lua",
+      "sha256": "1edb26f9c3b5f8d42b32092e82e703749569fdb9c512f9f587cbd2b6958b2028"
+    },
+    {
+      "path": "lib\\pa26_chat_text.lua",
+      "sha256": "e8d49ff6ff3e8746e042dbff9dd2e5c24fc8d6e76b08dcf81fb09122c664c9da"
+    },
+    {
+      "path": "lib\\pa26_colleagues.lua",
+      "sha256": "167054f8a4b64117483d2dc911df324dc44f6a1a533dcefe0de0d81fe103934e"
+    },
+    {
+      "path": "lib\\pa26_config.lua",
+      "sha256": "3d802f28a77fe0fed9422c23635e3b20383c4ef2c797d37d776cfa3795eb0214"
+    },
+    {
+      "path": "lib\\pa26_copilot.lua",
+      "sha256": "a0a58addcb55943ff6a1736b792a28503652ecff5ccca42712b2f89cfc017ed3"
+    },
+    {
+      "path": "lib\\pa26_copilot_settings.lua",
+      "sha256": "1dda4ff1e7bedb805a6ddc3019e10e8ba4b5b73559dc276bf65401cd7b379f3e"
+    },
+    {
+      "path": "lib\\pa26_copilot_ui.lua",
+      "sha256": "fd1d0d553755dc82799cbacd2964839a5d69139dec66239de561716a19bade50"
+    },
+    {
+      "path": "lib\\pa26_core.lua",
+      "sha256": "db7d84040db768e5e4d98c62e2afc20a80107b729a6ba1059699c69ade4b0445"
+    },
+    {
+      "path": "lib\\pa26_dispatch.lua",
+      "sha256": "7300b2d79c82d4d0b6a4fdb0e91d950a8569e06a39c284dbb9e18db5331a2494"
+    },
+    {
+      "path": "lib\\pa26_evidence.lua",
+      "sha256": "e6f6c1abafdd2b85948f68eb8064008337e427d53301b95efe7bc71cc7d6eda3"
+    },
+    {
+      "path": "lib\\pa26_evidence_files.lua",
+      "sha256": "a67f1cdf6545f998535f36e9df774da9be3c1133264cebb580dcc3691cde2e15"
+    },
+    {
+      "path": "lib\\pa26_executor.lua",
+      "sha256": "a5d153cf752a45b831b2145d270eeba622a07c14080f98dc91347f2d7ed923dc"
+    },
+    {
+      "path": "lib\\pa26_feedback.lua",
+      "sha256": "af4586eafd5a324914dfd4e1a7a6894146e99b28db3e6923aec4423e0eb1851f"
+    },
+    {
+      "path": "lib\\pa26_hud.lua",
+      "sha256": "38cb82b91049833728f5c861732759924f0a86a91798808bca121eb40d805878"
+    },
+    {
+      "path": "lib\\pa26_identity.lua",
+      "sha256": "816fd203f799abcf59ea86a4039480af4fc9728f9648a0834c889cdc47a7d15c"
+    },
+    {
+      "path": "lib\\pa26_identity_ui.lua",
+      "sha256": "8b35cfae8dd7cb138e2f200107b04398c55e1b4b1976119b15a14bb6ac78b5f7"
+    },
+    {
+      "path": "lib\\pa26_input.lua",
+      "sha256": "f5bff44064e5c164713d89372f0d6335cd440af8f635994ce079bef70586e8d5"
+    },
+    {
+      "path": "lib\\pa26_interface_settings.lua",
+      "sha256": "7435e0f0a4a4dba1a084e043eaa2413c518151d8f11318d99aef7c70956f2619"
+    },
+    {
+      "path": "lib\\pa26_journal.lua",
+      "sha256": "fad9de40518214912ae05930d05eb17e6fad428c3925e330b7dd1beedb86f440"
+    },
+    {
+      "path": "lib\\pa26_keyboard_layout.lua",
+      "sha256": "afc67dfd57abf17aa2a4dbd4d09287584001a0177408471a600f16366d744a0c"
+    },
+    {
+      "path": "lib\\pa26_knowledge.lua",
+      "sha256": "20c52e26ad24ac6ec6555d48fbf81b564fa54ebe99d4a4ce9654cd47c9c8c181"
+    },
+    {
+      "path": "lib\\pa26_knowledge_editor_ui.lua",
+      "sha256": "70deeaaa3ab077c3a703bd4eca06ed9ca8bd98c3341fedc07c1086f2236653e0"
+    },
+    {
+      "path": "lib\\pa26_knowledge_edits.lua",
+      "sha256": "8671d4497c63dac1d077dae34b780d6afdfa09c1272a03516806fa79d92596d3"
+    },
+    {
+      "path": "lib\\pa26_knowledge_ui.lua",
+      "sha256": "e3babdc29ea4393eb0e29628a7263e4aef63ab6be994fb122ea86c41d38e7b6f"
+    },
+    {
+      "path": "lib\\pa26_library.lua",
+      "sha256": "68c00692e2474664ab97d2637294932e9e9fd6db28636e71cdb6ec1f40bd95eb"
+    },
+    {
+      "path": "lib\\pa26_manual_actions.lua",
+      "sha256": "27105f2d1aa9fafef27e69954648271935ba04207b613288538224906ed1377a"
+    },
+    {
+      "path": "lib\\pa26_manual_chat.lua",
+      "sha256": "1a38d09e8c9c36e217e88b83717bf3fb69e098ec2fbbca409ba6c8c5befbb2a2"
+    },
+    {
+      "path": "lib\\pa26_map_adapter.lua",
+      "sha256": "ad2cb3a1da78229c3fec7ea702083e5913c9726851704494ee0853e7263d625b"
+    },
+    {
+      "path": "lib\\pa26_map_grid.lua",
+      "sha256": "c83384f229baaa761e8dd023e975c5d501acf0e9d8c1be872c8198db8e2b5622"
+    },
+    {
+      "path": "lib\\pa26_map_ui.lua",
+      "sha256": "a7dd61ae8698ec1976268346ee249d2589a0b2d60bf584784b3b87faa406b974"
+    },
+    {
+      "path": "lib\\pa26_menu.lua",
+      "sha256": "a2e568c562b8a9703c2068cd7084179451bf7de60207b7e0e45f68083cb52b7b"
+    },
+    {
+      "path": "lib\\pa26_nearby.lua",
+      "sha256": "00142835deefa020566bbdab6c4aa89d0569022917b7f93747cf6be3d68fa8e4"
+    },
+    {
+      "path": "lib\\pa26_notifications.lua",
+      "sha256": "ad5917cb8db4691d6e97e73f402aace05b8546c798a60cc907dc68dc9ba54078"
+    },
+    {
+      "path": "lib\\pa26_operation_settings.lua",
+      "sha256": "fddabe07355dc539122d899fcada029256e8f5f6a31a4a93e74f9f24c4d7f030"
+    },
+    {
+      "path": "lib\\pa26_operation_ui.lua",
+      "sha256": "8ffd09ad692a7cf937295da7ac1b4b2e9ad3df69da3aefd4ae6ab62ce66e829d"
+    },
+    {
+      "path": "lib\\pa26_operations.lua",
+      "sha256": "6f93331ca455ecc5e018c9e4de458e234ddae3e2992f85820f7cf320558703cb"
+    },
+    {
+      "path": "lib\\pa26_patrol.lua",
+      "sha256": "a0972ad0163b83f8ba2fb929e132f1d023b06c8a6c5af5ccabaac4f8b34653d2"
+    },
+    {
+      "path": "lib\\pa26_patrol_event_settings.lua",
+      "sha256": "fd91f0443d72048d684b1336206afc850411d167f537d432711bf303c090ee48"
+    },
+    {
+      "path": "lib\\pa26_patrol_event_ui.lua",
+      "sha256": "63bfebb99527671f26d0bfd96d4ebf9aede94c5d1798c5b2c60841f72ec6b68e"
+    },
+    {
+      "path": "lib\\pa26_patrol_events.lua",
+      "sha256": "bec84e7fb61480583341fcd3596e32c172d25b9e9656e2003dbcf1c1e77dbd76"
+    },
+    {
+      "path": "lib\\pa26_patrol_session.lua",
+      "sha256": "f380792e5d2467dce1670ca4eb03009121d5afde78b78f2f9cba40bc4fbf4f27"
+    },
+    {
+      "path": "lib\\pa26_patrol_settings.lua",
+      "sha256": "89cec91c454cd538181082a7d181ab443ee72d025f507f28ba532b9e7c8c84af"
+    },
+    {
+      "path": "lib\\pa26_patrol_ui.lua",
+      "sha256": "6712adc4389b08459ca75f4cc59fcbc7dfd284f92e075c5e05cbc4113ad9f05c"
+    },
+    {
+      "path": "lib\\pa26_preferences.lua",
+      "sha256": "fb0e4e4d8c460bce9cf0f93211bb2c34c415e10a1fe428ac26d4fea5fe18be02"
+    },
+    {
+      "path": "lib\\pa26_procedure_settings.lua",
+      "sha256": "cafa1992bb2c0ba0a8c56b76c1cfcce850fdf4e12797ddd53b6c703852a21557"
+    },
+    {
+      "path": "lib\\pa26_radio_guard.lua",
+      "sha256": "61cc458f05839d331c8921abb7b247087cb58a5a8392286c8de2363619b3e640"
+    },
+    {
+      "path": "lib\\pa26_radio_text.lua",
+      "sha256": "390c587abb825a9aa53b681946c9b37a75f308ae34a655232f2a344d3dc220a3"
+    },
+    {
+      "path": "lib\\pa26_recovery.lua",
+      "sha256": "b570ae4fde87280cc43b23bc9b9a8bab8c53a640c1172b6e9aa0bb215cd5a7e0"
+    },
+    {
+      "path": "lib\\pa26_rp_presets.lua",
+      "sha256": "7583d4219d7794debbf54bba40c27f3bd50989827d4b9b59e742fd6cd4cb19e4"
+    },
+    {
+      "path": "lib\\pa26_rp_settings.lua",
+      "sha256": "db8578b8f0ec1c2344e6c6be36f873885bb231a90485823375f35370f9db5616"
+    },
+    {
+      "path": "lib\\pa26_rp_text.lua",
+      "sha256": "cd6023006df794bf870e0c62f0fb47c2d8b0034fc25f62fbac6a34883ffce92f"
+    },
+    {
+      "path": "lib\\pa26_rp_ui.lua",
+      "sha256": "9732524a20dc618b4beeb2b8a400ae208ac5c42d4f1954c3c116054c4a234d4e"
+    },
+    {
+      "path": "lib\\pa26_runtime.lua",
+      "sha256": "3b2661a70ab4f4857c9d4c00eb70175211a9cb651c6aea4ed5391811caba1bbc"
+    },
+    {
+      "path": "lib\\pa26_screens.lua",
+      "sha256": "429a43d0e834e9b5e1df2701e291878e523ad5b38df63ec886a923fa1a85387a"
+    },
+    {
+      "path": "lib\\pa26_server_commands.lua",
+      "sha256": "a685ea4bf7c5671d18e069be2e176fcfbf60c357b6aad0aa32de911dec4bc0f9"
+    },
+    {
+      "path": "lib\\pa26_settings_ui.lua",
+      "sha256": "8ce38aca6a9aaec594a830905b59a12c682ff551e24d21b67661ac75c4e8b215"
+    },
+    {
+      "path": "lib\\pa26_startup.lua",
+      "sha256": "8849b400b2caaa94e6c60883c6c306543b8cd0b66e6168c08562f9e89f5bd145"
+    },
+    {
+      "path": "lib\\pa26_studio.lua",
+      "sha256": "fafe38a9cfdf39125ed8a580981855e1cd4b7ad5b18e2f379b40bb677161321a"
+    },
+    {
+      "path": "lib\\pa26_target.lua",
+      "sha256": "b03fd9bcb6a25144ecbe756d7ff64ec97b364bff6aad4a7ca6f2d79a6ad2a1ad"
+    },
+    {
+      "path": "lib\\pa26_taser.lua",
+      "sha256": "98ddb616c5cc6bf466a97b29a143f3b7717fec1fbd6ef8dd7cbf1fe5a55f15a3"
+    },
+    {
+      "path": "lib\\pa26_text_editor.lua",
+      "sha256": "a2cb4c5e032972a9fc0c5f337ade44d0f14e1637b11c07926d776e081f6d9671"
+    },
+    {
+      "path": "lib\\pa26_training.lua",
+      "sha256": "a650d014e23eda4d31e316eb17fb7770c3c6e6011adf0d25d195a39f462e7acf"
+    },
+    {
+      "path": "lib\\pa26_update_platform.lua",
+      "sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f"
+    },
+    {
+      "path": "lib\\pa26_update_ui.lua",
+      "sha256": "be879f8e30c2a8c9080c01237aa5f97801dc0da2ed74ddb19770701e6c1af61d"
+    },
+    {
+      "path": "lib\\pa26_updater.lua",
+      "sha256": "d2f624791f7b945ee3ac880b5e1ce76c48143925fc0d4a50cbeb9dc867640542"
+    },
+    {
+      "path": "lib\\pa26_user_files.lua",
+      "sha256": "d524071894bd1b34d5ffcf85405458b81621d0e08d11d6054681994433adcaea"
+    },
+    {
+      "path": "lib\\pa26_vehicle.lua",
+      "sha256": "6370c48b364908a306743bb3fe5dd56868ad636c6f4a2ad74afe669e5a78f100"
+    },
+    {
+      "path": "lib\\pa26_vehicle_names.lua",
+      "sha256": "5bac957cfde6c77bbbd2c31dae96aa6b645bbd746c6dabdc2db33d981ccde780"
+    },
+    {
+      "path": "lib\\pa26_vehicle_palette.lua",
+      "sha256": "140e71bb7681559fa6a361e6b55b03b2f1708783577efdc64897923dab3de461"
+    },
+    {
+      "path": "lib\\pa26_vehicle_settings.lua",
+      "sha256": "5f77732941c62d7cf6da11e1b4d2f4ec00c8a3b4639ddac7d9a9747a0d699e14"
+    },
+    {
+      "path": "lib\\pa26_vehicle_ui.lua",
+      "sha256": "5bcc5ae97a9a2167a74d7ffa40ebdbf9c5d27e135145750502fe507c1e5a41f0"
+    },
+    {
+      "path": "lib\\pa26_vehicle_world.lua",
+      "sha256": "cbdff78004838eb1056b3c44e8b9d317ffde798646bfc50049e81ff28e6927e5"
+    },
+    {
+      "path": "lib\\pa26_wanted_accounts.lua",
+      "sha256": "3aaa2c8680e099ab973a775ac89fc6d484b2cce699159dc5d9b97ab069f3cb32"
+    },
+    {
+      "path": "lib\\pa26_wanted_catalog.lua",
+      "sha256": "4982e972159d0d8788e8e323cc05c64e6ba4f8bffe4ab0daa8a255d2928001c4"
+    },
+    {
+      "path": "lib\\pa26_wanted_ui.lua",
+      "sha256": "3a9c0e96b2deee3f2443950eb79e546de9651efc30d5eff56fb59493a18c399c"
+    },
+    {
+      "path": "lib\\pa26_wanted_window.lua",
+      "sha256": "317c178a9576e48039790eab56632f73f28c320ce05b53e607494db908fb48f1"
+    },
+    {
+      "path": "lib\\pa26_weapon_warning.lua",
+      "sha256": "624f45e7d4bdce9be1967370941166b08e7f2b5fe96a9b61a62249e3e3312c93"
+    },
+    {
+      "path": "lib\\pa26_weapons.lua",
+      "sha256": "bdafcd76821e14da47a94f83422fb56a23e7e1ad01adc6254919ca0a428c0c3d"
+    },
+    {
+      "path": "lib\\pa26_wheel.lua",
+      "sha256": "ed69bae0e4430a53d60a80ad48c0d7f4a31a8a0b1be9dad10620c621444bbc99"
+    },
+    {
+      "path": "lib\\pa26_window_layout.lua",
+      "sha256": "81616e80c4ae66e42ee029eb181c5184d6ae18e4d1095c7808e67d1847b467eb"
+    },
+    {
+      "path": "lib\\pa26_workspace.lua",
+      "sha256": "eef0579d305ae1356264dd27deafb5f07d7c27aa6d226607de47738aa23d5f0a"
+    },
+    {
+      "path": "pa26_guard.lua",
+      "sha256": "477d56d14bbec74b8b157248d6c801d7c23f6a2bd59ba4f2a8a2f0d3da93b6ec"
+    },
+    {
+      "path": "police_assistant_2026.lua",
+      "sha256": "193064c489a6b24bdc5f96669aa7c457045aa990ecab3babd11fb7b1ce835f13"
+    },
+    {
+      "path": "resource\\pa26\\banner-bmw-lamborghini.png",
+      "sha256": "b4de9b2c3a96629a45c44c3f68ed3148df31f1f0d7659b441d2b295b3413ee3e"
+    },
+    {
+      "path": "resource\\pa26\\knowledge-base.json",
+      "sha256": "3bf0a22031ff4d5662322b63845d9f86ced7073beaf26074547314f96b969544"
+    },
+    {
+      "path": "resource\\pa26\\knowledge-policy.json",
+      "sha256": "c96c06ca3611ff03f2214c6cebd8efafa77deb98bb546c4a9d11e78506efa75b"
+    },
+    {
+      "path": "resource\\pa26\\sidebar-police-assistant.png",
+      "sha256": "3418da5d97498c5a55a1f65046216f2f4035089bc24a5ca386fe7776b957eae1"
+    },
+    {
+      "path": "resource\\pa26\\updater\\pa26-update.ps1",
+      "sha256": "4045a42f86e3c18860fa5518a9d92d290fff3c7d931243284b5de3ceda899a22"
+    },
+    {
+      "path": "resource\\pa26\\wanted-catalog.json",
+      "sha256": "9939d2496f87cfa281faa6ae1dd13e6069f514946a4f11137e6f4b27d55de55a"
+    },
+    {
+      "path": "lib\\pa26_operational.lua",
+      "sha256": "793c363ce9c8d2d8d80e20a3b27018a988ea286ba3e8ab210efeaaf85eee88b2"
+    },
+    {
+      "path": "lib\\pa26_operational_ui.lua",
+      "sha256": "2ad1ea934f443cea5093369d4c347570b38ce4548a986602b15d85e0e29afcba"
+    },
+    {
+      "path": "lib\\pa26_detention_timers.lua",
+      "sha256": "a29d025953b028657feff9cbdb4f7698ab42fc51a390fd1dcfe01e44ddbf90be"
+    }
+  ],
+  "gta_launched": false,
+  "game_server_contacted": false,
+  "local_game_updated": false,
+  "windows7_vm_tested": false,
+  "limits": [
+    "CPU-rendered native ImGui and isolated fixtures do not establish server behavior.",
+    "Windows 7 prerequisites and legacy path policy tested; no Windows 7 virtual machine.",
+    "Sources are user-supplied 2026-10-28 texts; no new complete forum crawl claimed."
+  ]
+}

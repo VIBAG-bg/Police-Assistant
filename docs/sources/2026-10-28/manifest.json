@@ -1,0 +1,148 @@
+{
+  "supplied_on": "2026-10-28",
+  "currency_basis": "User identifies these supplied texts as current on 2026-10-28; this is not an independent publication-date verification.",
+  "scope": "Immutable research copies; not a production knowledge-base import or release.",
+  "documents": [
+    {
+      "key": "police",
+      "title": "Закон о полиции",
+      "file": "police.txt",
+      "origin_kind": "attachment",
+      "bytes": 47476,
+      "chars": 26285,
+      "lines": 345,
+      "sha256": "0bd304541cae3f0dd6886116015a34f13b5be1d697fec18316b478d10e45482f"
+    },
+    {
+      "key": "criminal",
+      "title": "Уголовный кодекс",
+      "file": "criminal.txt",
+      "origin_kind": "attachment",
+      "bytes": 69982,
+      "chars": 38384,
+      "lines": 647,
+      "sha256": "61d90ecdc5635b8be551e69af76101e029218db6d0fc2be619661c96c7d2f5b3"
+    },
+    {
+      "key": "labor",
+      "title": "Трудовой кодекс",
+      "file": "labor.txt",
+      "origin_kind": "attachment",
+      "bytes": 58011,
+      "chars": 31788,
+      "lines": 533,
+      "sha256": "056a26af390828a43adaa2a21452426fd8fafa754e8a3ba3ccd0e8ecbd59fc27"
+    },
+    {
+      "key": "fbi",
+      "title": "Закон о ФБР",
+      "file": "fbi.txt",
+      "origin_kind": "attachment",
+      "bytes": 43779,
+      "chars": 23970,
+      "lines": 334,
+      "sha256": "545d896a78502696b928ec56ab3880463320c01178d3d14d65001e5f7d72459a"
+    },
+    {
+      "key": "prison",
+      "title": "Закон о пенитенциарной системе",
+      "file": "prison.txt",
+      "origin_kind": "attachment",
+      "bytes": 32165,
+      "chars": 17886,
+      "lines": 305,
+      "sha256": "59143ebab847ca1097e0e0991a69d3324ed435be753da487c000a9029261acee"
+    },
+    {
+      "key": "administrative",
+      "title": "Административный кодекс",
+      "file": "administrative.txt",
+      "origin_kind": "attachment",
+      "bytes": 67299,
+      "chars": 37504,
+      "lines": 972,
+      "sha256": "75ee8dd21d24d02f4b95e66e2f5f0b528592afe2df867b9b187684f62c84c55a"
+    },
+    {
+      "key": "rules",
+      "title": "Единый регламент и правила EPD/FBI",
+      "file": "rules.txt",
+      "origin_kind": "attachment",
+      "bytes": 48983,
+      "chars": 27937,
+      "lines": 216,
+      "sha256": "212524009ea5cc8bdb301ac31f39912cf946148ffdc4cd46597daa3b8a404740"
+    },
+    {
+      "key": "manual1",
+      "title": "Мануал Гуерры. Том 1. Политика департамента",
+      "file": "manual1.txt",
+      "origin_kind": "attachment",
+      "bytes": 51522,
+      "chars": 27961,
+      "lines": 130,
+      "sha256": "37b7e16d676bfb0380bd90eea086a6d685cbdf88cb7f372d0be3fc7e6f91e99e"
+    },
+    {
+      "key": "manual2",
+      "title": "Мануал Гуерры. Том 2. Организация и функции",
+      "file": "manual2.txt",
+      "origin_kind": "attachment",
+      "bytes": 9218,
+      "chars": 5813,
+      "lines": 85,
+      "sha256": "bac1f771a1098b87bc13941cca05249cd2b0a9c08a84bc396459073dea2d5c0d"
+    },
+    {
+      "key": "manual3",
+      "title": "Мануал Гуерры. Том 3. Управление и униформа",
+      "file": "manual3.txt",
+      "origin_kind": "attachment",
+      "bytes": 13249,
+      "chars": 7352,
+      "lines": 74,
+      "sha256": "dde01f564065e5d06feb23b71e304315d36af9c7f3c4631a648b532aaffc9713"
+    },
+    {
+      "key": "manual4",
+      "title": "Мануал Гуерры. Том 4. Регламент процедур",
+      "file": "manual4.txt",
+      "origin_kind": "attachment",
+      "bytes": 57092,
+      "chars": 31348,
+      "lines": 221,
+      "sha256": "504d8731b709c03c5b24b952de169d16f72f731b8ae7b604b6e8a0d9191a7c4a"
+    },
+    {
+      "key": "manual4-radio",
+      "title": "Мануал Гуерры. Том 4. Радио, коды и маркировки — раскрытое дополнение",
+      "file": "manual4-radio.txt",
+      "origin_kind": "attachment",
+      "bytes": 10828,
+      "chars": 6388,
+      "lines": 107,
+      "sha256": "d114ed26690f437d847b1da2feb3a0418e7c0a34a9c59b275df9683ca1e3eb28"
+    },
+    {
+      "key": "constitution",
+      "title": "Конституция Республики Exsellent — полный переданный текст",
+      "file": "constitution.txt",
+      "origin_kind": "attachment",
+      "bytes": 187073,
+      "chars": 102091,
+      "lines": 725,
+      "sha256": "7765b650623e602e69898e3f3aa68984197e8a4ddbf78b138ec10a5963de8cf7"
+    },
+    {
+      "key": "commands-rp-matrix",
+      "title": "Раздел XI. RP-матрица команд — таблица из сообщения пользователя",
+      "file": "commands-rp-matrix.md",
+      "origin_kind": "inline_user_message",
+      "provenance": "User message on 2026-10-28 supplying the missing Section XI table; line order and duplicate /undivision retained.",
+      "bytes": 2205,
+      "chars": 1715,
+      "lines": 56,
+      "sha256": "bf0e186c5c37d4f6366ebdc097ffe2c83c193a57271bc1135f4197d2a94a5d4a"
+    }
+  ]
+}

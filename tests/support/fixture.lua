@@ -388,6 +388,11 @@ local function fixture(options)
     end
     imgui.SetColumnWidth = function(_,width) check(width>0) end
     imgui.NextColumn = function() renderer() end
+    imgui.CollapsingHeader=function(label)
+        renderer();s.openHeaders=s.openHeaders or{}
+        if s.click==label then s.click=nil;s.openHeaders[label]=not s.openHeaders[label]end
+        return s.openHeaders[label]==true
+    end
     imgui.SetScrollY=function(value)renderer();check(value==0);s.scrollResets=(s.scrollResets or 0)+1 end
     imgui.CaptureMouseFromApp = function(value) renderer(); check(type(value)=='boolean'); s.captureMouse=value end
     imgui.InputTextFlags={CallbackAlways=256,ReadOnly=16384}
@@ -534,6 +539,11 @@ local function fixture(options)
         end,
     } end
     package.preload.pa26_library=function() local value=dofile('moonloader/lib/pa26_library.lua'); value.fs=memoryFs; return value end
+    package.preload.pa26_knowledge_ui=function()
+        local value=dofile('moonloader/lib/pa26_knowledge_ui.lua');local original=value.new
+        value.new=function(...)local v=original(...);s.knowledgeUi=v;return v end
+        return value
+    end
     package.loaded.pa26_chat_bridge=nil
     package.preload.pa26_chat_bridge=function()
         local value=dofile('moonloader/lib/pa26_chat_bridge.lua')

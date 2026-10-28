@@ -41,6 +41,11 @@ click(tracking,'Телефон для RP-пеленгации##wanted-phone-edit
 click(tracking,'Да##Номер телефона известен вашему персонажу по RP?##wanted-phone_knownyes')
 tracking.edits={['##IC-номер телефона##wanted-phone_number']='555123',['##Откуда известен номер по RP##wanted-phone_source']='Назван по RP'};tracking.render();tracking.edits={}
 click(tracking,'Готово · к условиям##wanted-phone-edit-back')
+click(tracking,'Проверить включение телефона и исходный розыск##tracking-checks')
+click(tracking,'Да##Проверили, что телефон сейчас включён?##wanted-phone_activeyes')
+click(tracking,'Далее · исходный розыск##tracking-prior')
+click(tracking,'Нет##До этих технических звёзд у человека уже был IC-розыск?##wanted-prior_ic_starsno')
+click(tracking,'Готово · к условиям##tracking-checks-back')
 click(tracking,'Далее · причина розыска##wanted-next');eq(tf.stage,'basis')
 eq(tf.phone_number,'555123');eq(tf.ooc_reason,'tracking');eq(#tracking.sent,0)
 onScriptTerminate(tracking.script)

@@ -24,7 +24,7 @@ s.click='Применить базу##kb-apply';s.render();s.click='ДА##kb-con
 s.step();eq(TEST_JSON_DECODE(s.files['moonloader\\config\\police_assistant_2026_knowledge.json']).catalog_version,'test-native-next')
 eq(#s.sent,0);eq(#s.scopes,0);check(not s.hasLog('Ошибка интерфейса'))
 -- Every category has a native detail card, including a conflict and a source.
-s=fixture();s.step();s.page('knowledge')
+s=fixture();s.step();s.page('knowledge');require('support.knowledge_reader').all(s);require('support.knowledge_reader').filters(s)
 local index=M.new();index:activate(assert(M.validate(TEST_JSON_DECODE(TEST_KNOWLEDGE_JSON))))
 for _,group in ipairs(M.groups)do
     s.combo='##kb-choice-Раздел';s.click=group[2]..'##kb-choice-Раздел'..group[1];s.render();s.combo=nil;s.render()
@@ -37,14 +37,14 @@ for _,group in ipairs(M.groups)do
 end
 eq(#s.sent,0)
 -- Knowledge links open the assistant; old amount/article drafts are not made.
-s=fixture({demo=false});s.step();s.commands.pa26select('37');s.step();s.page('knowledge')
+s=fixture({demo=false});s.step();s.commands.pa26select('37');s.step();require('support.knowledge_reader').ack(s);s.page('knowledge')
 s.edits={['##kb-search']='УБИЛ'};s.render();s.edits={}
 s.click='УК ст. 39 · Убийство\nРазобран источник##kb-row-offenses:UK:39';s.render();s.render()
 local count=#s.workspace.library.bindings
 s.click='Розыск##kb-action';s.render();eq(s.click,nil);s.render()
-check(has(s,'Введите /su ID'));eq(#s.sent,0);eq(#s.workspace.library.bindings,count)
-s.click='Новая форма##case-new';s.render();eq(s.click,nil)
-local form=s.workspace.studio.caseForm;check(form);eq(form.stage,'identity');eq(form.target.id,37)
+eq(#s.sent,0);eq(#s.workspace.library.bindings,count)
+local form=s.workspace.studio.caseForm;check(form,'Ground handoff opens a fresh identity form');check(not s.hasLog('Ошибка интерфейса'));eq(form.stage,'identity');eq(form.target.id,37)
+eq(form.article,'УК ст. 39');eq(form.basis,'УК ст. 39')
 check(not form.life_ack);eq(form.passport_seen,'unknown');check(not form.ic_name or form.ic_name=='')
 -- A specific observed game card suggests only its reason, with fresh identity.
 s.page('knowledge');s.edits={['##kb-search']='01.01'};s.render();s.edits={}

@@ -109,6 +109,24 @@ function View:switchMode(mode)
     if favorite~=self.favorite or recent~=self.recent then self.page=1 end
     self.favorite,self.recent=favorite,recent
 end
+function View:drawHome(ui)
+    local k=self.knowledge;local im=self.im
+    local current=(k.personal.view.catalog_mode or'current')=='current'
+    local width=math.max(1,(im.GetContentRegionAvail().x-8)/2)
+    if self:button(ui,(current and'Актуальное'or'Все записи')..'##kb-current-mode',width,30)then
+        k.personal.view.catalog_mode=current and'all'or'current';k:changed();self.page=1
+    end
+    im.SameLine(0,8)
+    local choices={{'all','Все темы'}};for _,row in ipairs(require('pa26_operational').topics)do choices[#choices+1]=row end
+    local topic=self.topic or'all';local label='Все темы';for _,r in ipairs(choices)do if r[1]==topic then label=r[2]end end
+    im.PushItemWidth(-1);ui.push(function()im.PopItemWidth()end)
+    if im.BeginCombo('##kb-topic',label)then
+        ui.push(function()im.EndCombo()end)
+        for _,r in ipairs(choices)do if im.Selectable(r[2]..'##kb-topic-'..r[1],r[1]==topic)then self.topic=r[1];self.page=1;self.selected=nil;self.showCard=false end end
+        ui.finish()
+    end
+    ui.finish()
+end
 function View:drawList(ui,rows)
     local im=self.im
     local pages=math.max(1,math.ceil(#rows/20));self.page=math.max(1,math.min(self.page,pages))
@@ -222,8 +240,17 @@ function View:drawCard(ui,callbacks)
     if actual.edit.entry then
         if self:button(ui,(actual.edit.status=='custom'and'Удалить мою карточку'or'Убрать мою правку')..'##kb-edit-reset')then self.confirm={kind='reset_card',key=actual.key}end
     end
-    for _,line in ipairs(k:detail(row,self.department))do
-        im.Dummy(im.ImVec2(0,4));self:muted(ui,line.label);ui.text(line.text)
+    if row.item.operation_id then
+        local card=row.item;ui.text(card.brief)
+        local choices={};for line in(card.order..'\n'):gmatch('(.-)\n')do if line~=''then choices[#choices+1]={tostring(#choices+1),line}end end
+        self.operationSteps=self.operationSteps or{}
+        self.operationSteps[row.key]=self:choice(ui,'Текущий шаг · отметка для себя',self.operationSteps[row.key]or'1',choices)
+        if callbacks.openOperational and self:button(ui,'Открыть действия, основания и предпросмотр##kb-operation')then callbacks.openOperational(card.topic)end
+        if im.CollapsingHeader('Порядок и исключения##kb-operation-details')then ui.text(card.order);self:muted(ui,'Исключения и ограничения','warning');ui.text(card.exceptions)end
+    else
+        for _,line in ipairs(k:detail(row,self.department))do
+            im.Dummy(im.ImVec2(0,4));self:muted(ui,line.label);ui.text(line.text)
+        end
     end
     if callbacks.openWanted and not self.sourceOnly then
         local gameId=row.item.id:match('^game_wanted_(%d%d_%d%d)$')
@@ -237,13 +264,14 @@ function View:drawCard(ui,callbacks)
     if row.group=='articles'and k.byKey['offenses:'..row.item.id]then
         if self:button(ui,'Открыть разобранную карточку##kb-offense')then self:select('offenses:'..row.item.id);return end
     end
-    if not self.sourceOnly and(row.group=='offenses' or row.group=='articles')and actual.edit.status~='conflict'and actual.edit.status~='collision'then
+    if not self.sourceOnly and not k:isArchived(row)and(row.group=='offenses' or row.group=='articles')and actual.edit.status~='conflict'and actual.edit.status~='collision'then
         if row.group=='articles'then self:muted(ui,'Это только указатель. Перед процедурой самостоятельно проверьте состав и санкцию в источнике.','warning')end
         local w=math.max(1,(im.GetContentRegionAvail().x-10)/2)
         for n,entry in ipairs({{'wanted','Розыск'},{'fine','Штраф'}})do
             if n>1 then im.SameLine(0,10)end
             if self:button(ui,entry[2]..'##kb-action',w)then
-                if entry[1]=='wanted'and callbacks.openWanted then callbacks.openWanted()
+                if callbacks.openCaseGround then callbacks.openCaseGround(entry[1],row.item.reference or row.title)
+                elseif entry[1]=='wanted'and callbacks.openWanted then callbacks.openWanted()
                 else
                 local values=k.personal.mappings[row.key]or{}
                 self.form={kind=entry[1],identity='passport',ic_name='',part='',reason='',stars=values.stars or '',fine=values.fine or '',command='',masked=false,face_known=false,ooc_ack=false}
@@ -264,6 +292,7 @@ function View:drawCard(ui,callbacks)
 end
 function View:drawMaintenance(ui)
     local im=self.im;local k=self.knowledge
+    if self:button(ui,'Создать личную карточку##kb-new-compact')then editorUi.leave(self,{kind='new',group='rules'});self.maintenance=false end
     self:heading(ui,'Просмотр базы')
     local view=k.personal.view or{reset_enabled=true,reset_minutes=10}
     local enabled=im.new.bool(view.reset_enabled)
@@ -306,7 +335,8 @@ function View:draw(ui,callbacks)
         self.form=nil;self.formError=nil;self.page=1
         if not k.byKey[self.selected]then self.selected=nil;self.showCard=false end
     end
-    self:muted(ui,k.personal.department..' в приоритете · '..k.data.catalog_version)
+    self.compactView=im.GetContentRegionAvail().y<420
+    if not self.compactView then self:muted(ui,k.personal.department..' в приоритете · '..k.data.catalog_version)end
     if self.editNotice then
         if self.editNotice.error and self:warning('edit-notice',self.editNotice.text)then
         elseif (core.elapsed(k.now(),self.editNotice.started)or 0)<7000 then self:muted(ui,self.editNotice.text,self.editNotice.error and'warning'or'good')
@@ -327,15 +357,25 @@ function View:draw(ui,callbacks)
         child(self,ui,'##kb-maintenance',0,math.max(1,im.GetContentRegionAvail().y),function()self:drawMaintenance(ui)end)
         return
     end
-    if self:button(ui,'Создать карточку##kb-new')then
+    self:drawHome(ui)
+    if not self.compactView and self:button(ui,'Создать карточку##kb-new')then
         local group=self.group
         if group=='all'or group=='sources'or group=='patrol'then group='rules'end
         editorUi.leave(self,{kind='new',group=group})
     end
-    local query,queryChanged=self:field(ui,'Поиск: слово, номер статьи или команда','search',self.query,1025)
+    if self.compactView then
+        self:heading(ui,'Поиск')
+        if self:button(ui,'Фильтры##kb-filters-compact',85,30)then self.showFilters=not self.showFilters end
+        im.SameLine(0,8)
+    end
+    local query,queryChanged=self:field(ui,self.compactView and''or'Поиск: слово, номер статьи или команда','search',self.query,1025)
     self.query=query
     local changed=queryChanged
-    im.Columns(3,'##kb-filters',false);ui.push(function()im.Columns(1)end)
+    local changedFilters=not self.compactView and self:button(ui,(self.showFilters and'Скрыть' or'Показать')..' фильтры и статусы##kb-filters-toggle')
+    if changedFilters then self.showFilters=not self.showFilters end
+    if self.showFilters then
+    local filterColumns=im.GetContentRegionAvail().x>=700 and 3 or 1
+    if filterColumns>1 then im.Columns(filterColumns,'##kb-filters',false);ui.push(function()im.Columns(1)end)end
     local groups={{'all','Все разделы'}};for _,g in ipairs(dataModule.groups)do groups[#groups+1]=g end
     local group,gc=self:choice(ui,'Раздел',self.group,groups);self.group=group;changed=changed or gc;im.NextColumn()
     local dep,dc=self:choice(ui,'Ведомство',self.department,{{'all','Все'},{'EPD','EPD'},{'FBI','FBI'},{'Alcatraz','Alcatraz'}})
@@ -345,13 +385,15 @@ function View:draw(ui,callbacks)
     if self.group=='commands'then choices[#choices+1]={'rp_required','RP нужно'};choices[#choices+1]={'rp_free','RP не нужно'}end
     if gc then self.status='all' end
     local status,sc=self:choice(ui,'Статус',self.status,choices)
-    self.status=status;changed=changed or sc;im.NextColumn();ui.finish()
+    self.status=status;changed=changed or sc;im.NextColumn();if filterColumns>1 then ui.finish()end
+    end
     if changed then self.page=1 end
     if k.personalError or k.personalWarning then
         self:muted(ui,k.personalError or k.personalWarning,'warning')
         if self:button(ui,'Повторить сохранение личных данных##kb-retry')then k.personalError=nil;k:flush()end
     end
-    local rows=k:search(self.query,{group=self.group,department=self.department,status=self.status,favorite=self.favorite,recent=self.recent})
+    local home=self.query==''and self.group=='all'and not self.favorite and not self.recent and(self.topic==nil or self.topic=='all')and k.personal.view.catalog_mode=='current'
+    local rows=k:search(self.query,{group=self.group,department=self.department,status=self.status,favorite=self.favorite,recent=self.recent,mode=k.personal.view.catalog_mode,topic=self.topic,home=home})
     if changed and self.selected and not self.editor and not self.review and not self.form then
         local found=false;for _,row in ipairs(rows)do if row.key==self.selected then found=true;break end end
         if not found then self.selected=nil;self.showCard=false;self.sourceOnly=false end

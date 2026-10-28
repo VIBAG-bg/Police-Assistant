@@ -70,6 +70,7 @@ local actual=k.byKey[key]
 s.click=actual.title..'\n'..knowledge.status(actual)..'##kb-row-'..key;s.render();s.render();eq(s.click,nil)
 s.click='Редактировать карточку##kb-edit';s.render();s.render();eq(s.click,nil)
 s.click='Пояснения для EPD, FBI и Alcatraz##kb-edit-departments';s.render();eq(s.click,nil)
+require('support.knowledge_reader').filters(s)
 s.edits={['##kb-edit-department-EPD']='Моё отдельное пояснение EPD'};s.render();s.edits={}
 s.click='Alcatraz##kb-choice-ВедомствоAlcatraz';s.render();eq(s.click,nil)
 check(table.concat(s.drawnText,'\n'):find('Моя версия карточки',1,true),'filter must retain the open editor')
@@ -83,6 +84,7 @@ s=fixture();s.step();s.page('knowledge')
 local academy=k.byKey['rules:fbi_academy']
 s.edits={['##kb-search']=academy.title};s.render();s.edits={};s.render()
 s.click=academy.title..'\n'..knowledge.status(academy)..'##kb-row-'..academy.key;s.render();s.render();eq(s.click,nil)
+require('support.knowledge_reader').filters(s)
 s.drawnText={};s.click='EPD##kb-choice-ВедомствоEPD';s.render();eq(s.click,nil)
 local visible=table.concat(s.drawnText,'\n');check(visible:find('Выберите запись слева',1,true));check(not visible:find('Пункт 8.4',1,true))
 eq(#s.sent,0);eq(#s.scopes,0)

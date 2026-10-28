@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.41.2')
+script_version('0.42.0')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -62,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.41.2' then
+if #missing > 0 or not core or core.VERSION ~= '0.42.0' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -599,7 +599,7 @@ workspace = workspaceModule.new({
         if sceneServices.evidence then sceneServices.evidence:onExecution(kind,q)end
         if sceneServices.copilot then sceneServices.copilot:onExecution(kind,q,line)end
         if sceneServices.vehicle then sceneServices.vehicle:onExecution(kind,q)end
-        if caseForms then caseForms:onExecution(kind,q)end
+        if caseForms then caseForms:onExecution(kind,q,line)end
         if patrolEvents then patrolEvents:onExecution(kind,q)end
         if patrolSession then patrolSession:onExecution(kind,q)end
         if alerts then alerts:onExecution(kind,q) end
@@ -738,6 +738,7 @@ identity=identityModule.new({settings=function()return workspace.library.identit
         for _,target in ipairs(nearbyVisible(distance))do if target.name==name then return target end end
     end})
 caseForms=caseFormsModule.new({gender=function()return workspace.library.profile.gender end,settings=function()return workspace.library.procedures end,codec=codec,equal=patrolSession.env.equal,
+    notice=function(text)if studio then studio:notify(text,'procedures',false)end end,
     reminders=function()return workspace.library.wanted_reminders end,wall=function()return os.time()end,
     saveReminders=function(rows)local copy=bindingModel.copy(workspace.library);copy.wanted_reminders=rows;return workspace:save(copy)end,
     target=function()return bindingModel.copy(workspace.selectedTarget),workspace.targets.revision end,
@@ -783,6 +784,11 @@ sceneServices.copilot=require('pa26_copilot').new({vehicle=sceneServices.vehicle
     notice=function(message)if sceneServices.userWarning then sceneServices.userWarning(message)end end,
     cancel=function(token,reason)local q=workspace.executor.queue;if q and q.plan.copilotAction and q.plan.copilotAction.token==token then workspace.executor:cancel(reason)end end})
 sceneServices.copilotUi=require 'pa26_copilot_ui'
+sceneServices.detentionTimers=require('pa26_detention_timers').new({
+    settings=function()return workspace.library.vehicle.copilot end,
+    target=function()return sceneServices.wantedAccounts:current(workspace.selectedTarget)end,
+    valid=function(t)return sceneServices.wantedAccounts:valid(t)end,
+    notice=function(text)studio:notify(text,'vehicle',false)end})
 sceneServices.files=sceneServices.filesModule.new()
 sceneServices.evidence=sceneServices.evidenceModule.new({settings=function()return workspace.library.assist.evidence end,
     feedback=function(message)if sceneServices.userWarning then sceneServices.userWarning(message)end end,
@@ -885,8 +891,8 @@ env.startBinding=function(index,target)
     if target then workspace:selectTarget(target) end
     return workspace:request({kind='prepare',id=id,target=target,start=true,returnTo='quick'})
 end
-env.wheelCatalog=function() local state=bindingModel.copy(alerts.state or {});state.patrolSession=patrolSession:view();return wheelModel.build(workspace.library,workspace.libraryRevision*1000000+patrolSession.revision,true,state) end
-env.wheelRevision=function() return workspace.libraryRevision*1000000+patrolSession.revision end
+env.wheelCatalog=function() local state=bindingModel.copy(alerts.state or {});state.patrolSession=patrolSession:view();state.copilot=sceneServices.copilot:view();return wheelModel.build(workspace.library,env.wheelRevision(),true,state) end
+env.wheelRevision=function() local state=bindingModel.copy(alerts.state or{});state.copilot=sceneServices.copilot:view();return workspace.libraryRevision*100000000+patrolSession.revision*100+wheelModel.contextRevision(state) end
 env.acquire=function(distance)
     local aimed=optionalRead('getCharPlayerIsTargeting',PLAYER_HANDLE)
     local target,reason
@@ -908,7 +914,7 @@ local function studioData()
         nearby=sceneServices.nearby:view(),mapState=sceneServices.mapState,mapAdapterStatus=sceneServices.mapAdapter:message(),
         textFiltersAvailable=workspace.chatFiltersAvailable or(sceneServices.chatBridge and workspace.library.settings.cef_chat_support and sceneServices.chatBridge.status=='connected'),
         target=workspace.selectedTarget,targetState=workspace.targets:view(),queued=workspace.executor.queue,
-        localNickname=hud.data.nickname,rpSettings=workspace.library.rp_text,evidence=sceneServices.evidence:view(),vehicle=sceneServices.vehicle:view(),copilot=sceneServices.copilot:view(),operations=workspace.operations:view(),radioState=alerts.state,patrol=patrol:view(),patrolSession=patrolSession:view(patrol:view()),patrolEvents=patrolEvents:view(),identity=identity:view(),caseForms=caseForms:view(),taser=taser:view(),codec=codec,autoReport=radioGuard:view()}
+        localNickname=hud.data.nickname,rpSettings=workspace.library.rp_text,evidence=sceneServices.evidence:view(),vehicle=sceneServices.vehicle:view(),copilot=sceneServices.copilot:view(),detentionTimers=sceneServices.detentionTimers:view(),operations=workspace.operations:view(),radioState=alerts.state,patrol=patrol:view(),patrolSession=patrolSession:view(patrol:view()),patrolEvents=patrolEvents:view(),identity=identity:view(),caseForms=caseForms:view(),taser=taser:view(),codec=codec,autoReport=radioGuard:view()}
 end
 local function cancelManualActions(reason)
     if sceneServices.manualActions then sceneServices.manualActions:cancel()end
@@ -920,7 +926,8 @@ local function cancelManualActions(reason)
     if patrolSession.intent or patrolSession.queued then patrolSession:cancelQueued(reason)end
     if patrolEvents.intent or patrolEvents.queued then patrolEvents:cancelReport(reason)end
 end
-local studioCallbacks={
+local studioCallbacks
+studioCallbacks={
     manualFriskMode=function(token,mode)return sceneServices.manualActions:friskMode(token,mode)end,
     setDemoMode=function(value)if type(value)=='boolean'then sceneServices.requestDemoMode=value end end,
     authorPresetAccept=function()return sceneServices.authorPresets:accept()end,
@@ -975,6 +982,21 @@ local studioCallbacks={
         else openWorkspace('addons');menu.tool='procedures'end
         studio:selectProcedure(kind);studio.casePage='form';studio.wantedBasisDetails=nil;studio.wantedIdentityPage=nil
     end,
+    detentionAction=function(action)return sceneServices.detentionTimers:request(action)end,
+    caseRemoteTarget=function(id)
+        if not core.validId(id)then return nil,'Введите целый ID подключённого человека.'end
+        local s=alerts.state or{};sceneServices.caseTargetInput={id=id,session=s.session,at=studioClock,epoch=sceneServices.chatEpoch};return true
+    end,
+    groundHandoff=function(ground,kind)
+        return studio:requestNavigation(function()
+            local f,err=caseForms:begin(kind)
+            if not f then studio:notify(err,'procedures',false);return end
+            f.article=ground.article or'';f.part=ground.part or'';f.basis=ground.basis or'';f.facts=ground.basis or''
+            if kind=='wanted'and ground.game then f.reason_id=ground.game;f.reason_group=ground.game:sub(1,2)end
+            studioCallbacks.openProcedures(kind);studio.caseForm=f
+            studio.caseStoredForms=studio.caseStoredForms or{};studio.caseStoredForms[kind]=f
+        end,'открыть новую форму с выбранным основанием')
+    end,
     caseBegin=function(kind)return caseForms:begin(kind)end,caseBranch=function(form)return caseForms:branch(form)end,
     caseNext=function(form)return caseForms:next(form)end,casePreview=function(form)return caseForms:preview(form)end,
     caseFillWanted=function(form)return caseForms:fillWanted(form)end,
@@ -983,6 +1005,7 @@ local studioCallbacks={
     caseSuggestOoc=function(form)return caseForms:oocSuggested(form)end,caseChooseOoc=function(form)return caseForms:chooseOoc(form)end,
     caseOffer=function(form)return caseForms:offer(form)end,caseAccept=function(p)return caseForms:accept(p)end,
     caseReminder=function(token,action)return caseForms:changeReminder(token,action)end,
+    caseChain=function(token,kind,ack)return caseForms:chainOffer(token,kind,ack)end,
     openWantedKnowledge=function(key)
         return studio:requestNavigation(function()openWorkspace('knowledge');knowledgeUi:select(key)end,'открыть карточку причины розыска')
     end,
@@ -1094,6 +1117,10 @@ for _,name in ipairs({'openAssist','openQuick','openTips'})do
     end
 end
 local knowledgeCallbacks={codec=codec,nextBindingId=function()return workspace.library.next_id end,
+    openCaseGround=function(kind,reference)return studioCallbacks.groundHandoff({article=reference,basis=reference},kind)end,
+    openOperational=function(topic)
+        studioCallbacks.openAssist('traffic');studio.copilotPage=topic=='rights'and'rights'or'grounds'
+    end,
     openWanted=function(reason)
         studio.wantedSuggestedReason=reason
         studioCallbacks.openProcedures('wanted')
@@ -1111,6 +1138,16 @@ local knowledgeCallbacks={codec=codec,nextBindingId=function()return workspace.l
         return true
     end}
 env.wheelNavigate=function(route,profile,target)
+    if route.kind=='copilot'then
+        local state=bindingModel.copy(alerts.state or{});state.copilot=sceneServices.copilot:view()
+        local catalog=wheelModel.build(workspace.library,env.wheelRevision(),false,state)
+        local item=catalog and catalog.bySystem[route.id]
+        if not item or item.kind~='copilot'then return false end
+        studioCallbacks.openAssist('traffic')
+        if item.action=='rights'then studio.copilotPage='rights'
+        else sceneServices.copilotUi.offer(studio,studioCallbacks,item.action)end
+        return true
+    end
     if route.kind=='assist'then
         if route.id~='assist-megaphone'or not workspace.library.vehicle.megaphone_wheel then return false end
         studioCallbacks.openAssist('megaphone');return true
@@ -2740,9 +2777,20 @@ local function updateGame()
     alertState=sceneServices.vehicle:values(alertState)
     sceneServices.wantedAccounts:tick(alertState,workspace.selectedTarget,{studio.caseForm,
         caseForms.intent and caseForms.intent.form or false,caseForms.queued and caseForms.queued.form or false,
-        caseForms.awaitingCommand and caseForms.awaitingCommand.form or false})
+        caseForms.awaitingCommand and caseForms.awaitingCommand.form or false,sceneServices.detentionTimers.case or false})
     identity:tick(alertState,workspace.selectedTarget,workspace.targets.revision,now)
     caseForms:tick(alertState,now)
+    sceneServices.detentionTimers:tick(alertState,now)
+    if sceneServices.caseTargetInput then
+        local p=sceneServices.caseTargetInput;sceneServices.caseTargetInput=nil
+        local age=core.elapsed(now,p.at)
+        if age and age<=5000 and p.session==alertState.session and p.epoch==sceneServices.chatEpoch and not alertState.typing and not alertState.blocked and alertState.alive and alertState.focused then
+            local target,err=sceneServices.wantedAccounts:select(p.id)
+            local f;if target then f,err=caseForms:begin('mark',target)end
+            if f then studio:selectProcedure('mark');studio.caseForm=f;studio.caseStoredForms.mark=f
+            else studio:notify(err or'Не удалось выбрать аккаунт.','procedures',false)end
+        else studio:notify('Выбор ID устарел. Повторите его в доступной игровой сцене.','procedures',false)end
+    end
     if studio.cancelledCaseToken then caseForms:cancelCommandConfirmation(studio.cancelledCaseToken);studio.cancelledCaseToken=nil end
     caseForms:flush()
     if not hasUiModal()then
@@ -2972,11 +3020,11 @@ function main()
             not context().blocked then recoverUi(false)end
         recovery:healthy(now,cfg.recovery)
         if not started then
-            pushLog('v0.41.2: игровой цикл запущен.')
+            pushLog('v0.42.0: игровой цикл запущен.')
             started = true
         end
         if uiRendered and not drawReported then
-            pushLog('v0.41.2: окно отрисовано.')
+            pushLog('v0.42.0: окно отрисовано.')
             drawReported = true
         end
     end
