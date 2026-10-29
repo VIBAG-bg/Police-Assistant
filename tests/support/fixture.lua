@@ -460,6 +460,7 @@ local function fixture(options)
     imgui.CloseCurrentPopup=function() renderer(); s.popup=nil; s.modalOpen=false end
     imgui.BeginCombo=function(label) renderer(); if blockedByModal() then return false end; if s.combo==label then beginScope('combo'); return true end; return false end
     imgui.EndCombo=function() endScope('combo') end
+    imgui.IsMouseDown=function(button)renderer();return s.io.MouseDown[button]==true end
     imgui.IsMouseClicked = function(button) renderer(); return s.mouseClicks and s.mouseClicks[button]==true or false end
     s.textures, s.textureLoads, s.textureReleases, s.imageDraws = {},0,0,{}
     imgui.CreateTextureFromFile = function(path)
@@ -720,7 +721,7 @@ local function fixture(options)
         eq(game, true); eq(scripts, false)
         s.consumed = s.consumed + 1; s.messageConsumed = true
     end
-    local scriptObject = {}
+    local scriptObject={unload=function()s.unloadCalls=(s.unloadCalls or 0)+1 end}
     thisScript = function() return scriptObject end
     wait = function(delay)
         check(delay == 0 or delay == 100)
@@ -781,7 +782,7 @@ local function fixture(options)
     local workspaceModule=require 'pa26_workspace';local originalWorkspaceNew=workspaceModule.new
     workspaceModule.new=function(...)local a=originalWorkspaceNew(...);s.workspace=a;return a end
     local runtimeModule=require 'pa26_runtime'; local originalRuntimeNew=runtimeModule.new
-    if options.categoryWheel then runtimeModule.new=function(...) local r=originalRuntimeNew(...);s.runtime=r;return r end end
+    runtimeModule.new=function(...)local r=originalRuntimeNew(...);s.runtime=r;return r end
     local evidenceModule=require 'pa26_evidence';local originalEvidenceNew=evidenceModule.new
     evidenceModule.new=function(...)local a=originalEvidenceNew(...);s.evidence=a;return a end
     local filesModule=require 'pa26_evidence_files';local originalFilesNew=filesModule.new

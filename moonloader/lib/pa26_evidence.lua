@@ -50,9 +50,10 @@ function Evidence:record(status,path,details)
     self.active=nil;self.queued=nil;self.intent=nil;self.checkRequest=nil;self.autoPath=nil;self.sample=nil;self.recordAttempted=false
 end
 function Evidence:cancel(reason)
-    local p=self.queued;self:record('cancelled','',reason or 'Отменено пользователем.')
+    local had=self.active~=nil or self.queued~=nil or self.intent~=nil or self.archiveRequest~=nil
+    local p=self.queued;self:record('cancelled','',reason or 'Отменено пользователем.');self.archiveRequest=nil
     if p and self.env.cancel then self.env.cancel(p.token,reason)end
-    self.life=self.life+1;self.message=reason or 'Фиксация отменена.'
+    self.life=self.life+1;if had then self.message=reason or 'Фиксация отменена.'end
 end
 function Evidence:onExecution(kind,q)
     local p=self.queued;if not p or not q.plan.evidenceAction or q.plan.evidenceAction.token~=p.token then return end

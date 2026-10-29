@@ -53,16 +53,25 @@ function M.settings(s,ui,cfg,cb)
 end
 function M.reasonPicker(s,ui,f,cb,options)
     options=options or{};local pageSize=options.perPage or 4
-    local groups={};for _,r in ipairs(catalog.groups)do groups[#groups+1]={r.id,r.id..' · '..r.title}end
-    f.reason_group=s:choice('Раздел преступления##wanted-group',f.reason_group,groups,ui)
+    local groups={{'all','Все разделы (все статьи)'}};for _,r in ipairs(catalog.groups)do groups[#groups+1]={r.id,r.id..' · '..r.title}end
+    f.reason_group=s:choice('Раздел преступления##wanted-group',f.reason_group or'all',groups,ui)
     s.wantedSearch=s:field('Поиск · можно оставить пустым##wanted-search','wanted:search',s.wantedSearch or '',512)
     local query=model.casefold(s.wantedSearch):gsub('ё','е'):match('^%s*(.-)%s*$')
     local rows={}
     for _,r in ipairs(catalog.rows)do
         local text=model.casefold(r.group_title..' '..r.title..' '..r.id..' '..table.concat(r.refs,' ')):gsub('ё','е')
-        if query~=''and text:find(query,1,true)or query==''and r.group==f.reason_group then rows[#rows+1]=r end
+        if query~=''and text:find(query,1,true)or query==''and(f.reason_group=='all'or r.group==f.reason_group) then rows[#rows+1]=r end
     end
     if query~=''then ui.text('Найдено: '..#rows..'. Поиск по всем разделам; выбор причины не отправляет команду.')end
+    if options.adaptive then
+        local im=s.imgui;local width=math.max(1,im.GetContentRegionAvail().x-28);local font=s.buttonFont or im.GetFont();local size=tonumber(font.FontSize)
+        local function height(t)return require('pa26_menu').labelLayout(font,size,width,t).height+26 end
+        local reserve=height('Подробности основания и факты')+height('Проверить отыгровку и команду')+height('Назад · сведения')+96
+        local rowHeight=52
+        for _,r in ipairs(rows)do rowHeight=math.max(rowHeight,height('Выбрано · '..r.id..' · '..r.title..' · '..r.stars..' ур.'))end
+        pageSize=math.max(2,math.min(8,math.floor((im.GetContentRegionAvail().y-reserve)/rowHeight)))
+    end
+    s.wantedMatchedCount=#rows;s.wantedPerPage=pageSize
     s.wantedPage=s.wantedPage or 1
     local signature=f.reason_group..'\0'..query
     if s.wantedPageSignature~=signature then s.wantedPage=1;s.wantedPageSignature=signature end

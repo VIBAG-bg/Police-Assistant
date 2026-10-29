@@ -444,9 +444,18 @@ function Hud:refresh(session, now)
     end
 end
 
+function Hud:preparePatrolStatus(font)
+    local status=self.patrol and self.patrol.visible and self.patrol.status or''
+    if self.patrolStatusText==status and self.patrolStatusFont==font then return end
+    self.patrolStatusText=status;self.patrolStatusFont=font
+    local rows=require('pa26_menu').labelLayout(font,13,254,status).lines
+    local visible={};for i=1,math.min(#rows,12)do visible[i]=rows[i].text end
+    if #rows>12 then visible[12]='Продолжение — в журнале PA.'end
+    self.patrolStatusRows=visible;self.patrolExtraHeight=math.max(0,(#visible-1)*16)
+end
 function Hud:layout(width, height)
     if not core.finite(width) or not core.finite(height) or width <= 0 or height <= 0 then return nil end
-    local baseHeight=M.HEIGHT+(self.mapSquare and 28 or 0)+(self.patrol and self.patrol.visible and(self.patrol.crew and 80 or 58)or 0)
+    local baseHeight=M.HEIGHT+(self.mapSquare and 28 or 0)+(self.patrol and self.patrol.visible and((self.patrol.crew and 80 or 58)+(self.patrolExtraHeight or 0))or 0)
     local scale = math.min(self.settings.scale, (width - 4) / M.WIDTH, (height - 4) / baseHeight)
     if scale < 0.45 then return nil end
     local w, h = M.WIDTH * scale, baseHeight * scale
@@ -498,6 +507,7 @@ function Hud:draw(imgui, bodyFont, headingFont)
         self.bounds=nil;self:stopInteraction();return
     end
     local io = imgui.GetIO()
+    self:preparePatrolStatus(bodyFont or imgui.GetFont())
     local r = self:layout(io.DisplaySize.x, io.DisplaySize.y)
     self.bounds = r
     if not r then self.drag = nil; return end
@@ -573,9 +583,10 @@ function Hud:draw(imgui, bodyFont, headingFont)
     if self.patrol and self.patrol.visible then
         list:AddLine(vec(x+9*s,y+(174+mapOffset)*s),vec(x+w-9*s,y+(174+mapOffset)*s),color(.40,.62,.78,.25),s)
         line(self.patrol.label..(self.patrol.crew and ''or ' · рация'),headingFont,14,180+mapOffset,false,254)
-        line(self.patrol.status,bodyFont,13,201+mapOffset,false,254)
-        if self.patrol.crew then line(self.patrol.crew,bodyFont,13,222+mapOffset,false,254)end
-        local barY=(self.patrol.crew and 247 or 225)+mapOffset
+        for n,text in ipairs(self.patrolStatusRows or{self.patrol.status})do line(text,bodyFont,13,201+mapOffset+(n-1)*16,false,254)end
+        local extra=self.patrolExtraHeight or 0
+        if self.patrol.crew then line(self.patrol.crew,bodyFont,13,222+mapOffset+extra,false,254)end
+        local barY=(self.patrol.crew and 247 or 225)+mapOffset+extra
         list:AddRectFilled(vec(x+9*s,y+barY*s),vec(x+w-9*s,y+(barY+3)*s),color(.12,.24,.34,.8),2*s)
         list:AddRectFilled(vec(x+9*s,y+barY*s),vec(x+9*s+(w-18*s)*self.patrol.progress,y+(barY+3)*s),color(.24,.62,.86,.95),2*s)
     end

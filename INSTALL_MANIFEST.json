@@ -1,5 +1,5 @@
 {
-  "release": "0.42.2",
+  "release": "0.42.3",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -39,11 +39,11 @@
     },
     {
       "path": "lib\\pa26_bindings.lua",
-      "sha256": "27c8913ee28e9bf963706d19bddb5b3fac6bbcdeeba5a75ae0e2c1c18aff2f64"
+      "sha256": "df2b158965e8910ee452cd40b5e9063067ff67d027b325ea41e39f3625dd84cb"
     },
     {
       "path": "lib\\pa26_case_forms.lua",
-      "sha256": "7a0e48a5f715b506bbd7ec0b9bc4b576d662921a41cb6cb7dc7356805b61c5a0"
+      "sha256": "53a8e822eddc964552495e62c4cb07c7b093ebfb25e2853730f5b725ae719beb"
     },
     {
       "path": "lib\\pa26_case_ui.lua",
@@ -83,7 +83,11 @@
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "e72267c612286a80ba12ebca8de6d76522be2615f8bb5d9825e96fe23082ff09"
+      "sha256": "8cdbce1bdb1a709cedb6fd36db84e6ebe037f0a415c3b35d7935ab5ba7518f13"
+    },
+    {
+      "path": "lib\\pa26_detention_timers.lua",
+      "sha256": "a29d025953b028657feff9cbdb4f7698ab42fc51a390fd1dcfe01e44ddbf90be"
     },
     {
       "path": "lib\\pa26_dispatch.lua",
@@ -91,7 +95,7 @@
     },
     {
       "path": "lib\\pa26_evidence.lua",
-      "sha256": "e6f6c1abafdd2b85948f68eb8064008337e427d53301b95efe7bc71cc7d6eda3"
+      "sha256": "8fc4aad01ef7e7e5ac0459f942ee3befab24ea797489ca4a6eb352bbd1b83e95"
     },
     {
       "path": "lib\\pa26_evidence_files.lua",
@@ -106,8 +110,16 @@
       "sha256": "af4586eafd5a324914dfd4e1a7a6894146e99b28db3e6923aec4423e0eb1851f"
     },
     {
+      "path": "lib\\pa26_fine_window.lua",
+      "sha256": "a0c64621e10becc15f34b61723ede7a284c20432321e6d51746e0ec8fd024a6e"
+    },
+    {
+      "path": "lib\\pa26_ground_window.lua",
+      "sha256": "505d19d7d21189bf00e33375545bdb951317d60f5ab8a5032338b506d51bcfee"
+    },
+    {
       "path": "lib\\pa26_hud.lua",
-      "sha256": "38cb82b91049833728f5c861732759924f0a86a91798808bca121eb40d805878"
+      "sha256": "8a91f9a7a1c06ed73cf9ea4b2f043d9272e3a258296900775e302cd2a640d853"
     },
     {
       "path": "lib\\pa26_identity.lua",
@@ -154,6 +166,10 @@
       "sha256": "68c00692e2474664ab97d2637294932e9e9fd6db28636e71cdb6ec1f40bd95eb"
     },
     {
+      "path": "lib\\pa26_local_life.lua",
+      "sha256": "dbad9dc534706e91036d784f0c126cf1c676357594ddd535efdf319d3c0c6d3a"
+    },
+    {
       "path": "lib\\pa26_manual_actions.lua",
       "sha256": "ff4f0723e9a53083de6fd814009146a2cd28bcc64b237f729e078147d7eb71af"
     },
@@ -174,8 +190,12 @@
       "sha256": "a7dd61ae8698ec1976268346ee249d2589a0b2d60bf584784b3b87faa406b974"
     },
     {
+      "path": "lib\\pa26_mark_window.lua",
+      "sha256": "7e6338f0de80ba9f6ee39ab7de78a3b01bc16fc702d2bb7a425c32e753b3d224"
+    },
+    {
       "path": "lib\\pa26_menu.lua",
-      "sha256": "fa8d847c62108c1667718b54501880831b81b6bc77700aa8e76d8e0d7a5d2bc7"
+      "sha256": "a93c2a55a7dad7ef54cf48e0f3813aa968389e7598fe6e80b7533d37f70aafde"
     },
     {
       "path": "lib\\pa26_nearby.lua",
@@ -194,12 +214,20 @@
       "sha256": "8ffd09ad692a7cf937295da7ac1b4b2e9ad3df69da3aefd4ae6ab62ce66e829d"
     },
     {
+      "path": "lib\\pa26_operational.lua",
+      "sha256": "3911c40d75901e16d8d4fa3b88c92200ddc48ec82a44142927182d2f4af8abaf"
+    },
+    {
+      "path": "lib\\pa26_operational_ui.lua",
+      "sha256": "2ad1ea934f443cea5093369d4c347570b38ce4548a986602b15d85e0e29afcba"
+    },
+    {
       "path": "lib\\pa26_operations.lua",
       "sha256": "6f93331ca455ecc5e018c9e4de458e234ddae3e2992f85820f7cf320558703cb"
     },
     {
       "path": "lib\\pa26_patrol.lua",
-      "sha256": "214665f0948b2721435ae57813bc3cbed9f9e9898ff6e7e6fbf886d1c60e86c6"
+      "sha256": "63acb06f6ae686ae75d4b56789f42a5a996b662c0033a40962ba2df749fe5f30"
     },
     {
       "path": "lib\\pa26_patrol_event_settings.lua",
@@ -230,8 +258,20 @@
       "sha256": "ec4af2e02abeb01f2d4c03d3e9c33837a781b65f6312ce91cbde2cde43b9538c"
     },
     {
+      "path": "lib\\pa26_procedure_flow.lua",
+      "sha256": "481d903c38b1def203d0215dc52f3ade9d508a9380e4b7f37d3baa972012c91c"
+    },
+    {
+      "path": "lib\\pa26_procedure_input.lua",
+      "sha256": "c718fc30207a51ea5363af7e4bf8d2ad0357c9a76dc5e2b86dcfb5cd861af82f"
+    },
+    {
       "path": "lib\\pa26_procedure_settings.lua",
       "sha256": "56d28d4e80c47818e0f42e003ad553f5fa995684e6dc95ff0a4d4d3db578c88e"
+    },
+    {
+      "path": "lib\\pa26_procedure_window.lua",
+      "sha256": "f78934d80d412d2ba34cd8647c715564708519cd3b1a2a53024947664bbcd33a"
     },
     {
       "path": "lib\\pa26_radio_guard.lua",
@@ -263,7 +303,11 @@
     },
     {
       "path": "lib\\pa26_runtime.lua",
-      "sha256": "3b2661a70ab4f4857c9d4c00eb70175211a9cb651c6aea4ed5391811caba1bbc"
+      "sha256": "790b0d06a8ed2b0a91960bce5ad62531a7d0854190a094e8d94563aa1e45e930"
+    },
+    {
+      "path": "lib\\pa26_sanctions.lua",
+      "sha256": "537107802c8bf541201c69eaa51532c5cabb8001d1256197562dcaa2b3768705"
     },
     {
       "path": "lib\\pa26_screens.lua",
@@ -278,12 +322,16 @@
       "sha256": "8ce38aca6a9aaec594a830905b59a12c682ff551e24d21b67661ac75c4e8b215"
     },
     {
+      "path": "lib\\pa26_shutdown.lua",
+      "sha256": "fdde870e1247dc4601cfda304b297cd66932d1a0c5fdc014bb12536d235a8815"
+    },
+    {
       "path": "lib\\pa26_startup.lua",
       "sha256": "8849b400b2caaa94e6c60883c6c306543b8cd0b66e6168c08562f9e89f5bd145"
     },
     {
       "path": "lib\\pa26_studio.lua",
-      "sha256": "3c158f7f7d49f98a91b7adf053c4bab4b9dec9cc06524eaca00c7e5db8f68f4f"
+      "sha256": "51c4b6f5f33d15b7a82799a92329f82b763c3afcb387d6a8659548077ff9df50"
     },
     {
       "path": "lib\\pa26_target.lua",
@@ -319,7 +367,7 @@
     },
     {
       "path": "lib\\pa26_vehicle.lua",
-      "sha256": "5b367685158999f1d75bba14ae2ce36195c0b83d6b3a4d4b9a87eea52aed178c"
+      "sha256": "e2ca80ae464f8afa1dcb70c49486644f083221d1b11c4f8dfd2d457a1e89b7fe"
     },
     {
       "path": "lib\\pa26_vehicle_names.lua",
@@ -332,6 +380,10 @@
     {
       "path": "lib\\pa26_vehicle_settings.lua",
       "sha256": "455ccf9d06432a295af443185f84100a7fd27215fa915f2a7817831ba803379b"
+    },
+    {
+      "path": "lib\\pa26_vehicle_types.lua",
+      "sha256": "694414a5dedb9d0719afb962cb4941abd9715734829340c5f2f828f6ec7d24d2"
     },
     {
       "path": "lib\\pa26_vehicle_ui.lua",
@@ -351,11 +403,11 @@
     },
     {
       "path": "lib\\pa26_wanted_ui.lua",
-      "sha256": "3a9c0e96b2deee3f2443950eb79e546de9651efc30d5eff56fb59493a18c399c"
+      "sha256": "496a8ac36ca7e009ebd0e2bad327ba249bc01283128b5432aebe62bb7b07189f"
     },
     {
       "path": "lib\\pa26_wanted_window.lua",
-      "sha256": "317c178a9576e48039790eab56632f73f28c320ce05b53e607494db908fb48f1"
+      "sha256": "a7374396d944c4624c3d0e96fd6fa4b29473569bb29d51069c8f661c94e8aa0b"
     },
     {
       "path": "lib\\pa26_weapon_warning.lua",
@@ -367,7 +419,15 @@
     },
     {
       "path": "lib\\pa26_wheel.lua",
-      "sha256": "51f4647c7f25008a4ebc5aaf1e1358095912bde42b5f29372adbbf435e2544eb"
+      "sha256": "a46ceaf56020d7cfca008a847c956606cb297c9f626034dec7b8629a26b900f2"
+    },
+    {
+      "path": "lib\\pa26_wheel_edit.lua",
+      "sha256": "0b16903012fca2112f9b6d77d40f86b84dbb2005caf3f67ac86770b71126563e"
+    },
+    {
+      "path": "lib\\pa26_wheel_order.lua",
+      "sha256": "96572fdc2487e73fdce7cbc45ab90eb29b894f7eb13ba9ed519f7aab71521b70"
     },
     {
       "path": "lib\\pa26_window_layout.lua",
@@ -383,7 +443,7 @@
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "128ccdadb63cc529811d18406ead556e6c3244ca80959765a61ac69250f6d650"
+      "sha256": "fd8b58d8ac0aa07bd1289eb54af12fe083dee2e01185fcc465515a7417092aa3"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",
@@ -408,54 +468,6 @@
     {
       "path": "resource\\pa26\\wanted-catalog.json",
       "sha256": "9939d2496f87cfa281faa6ae1dd13e6069f514946a4f11137e6f4b27d55de55a"
-    },
-    {
-      "path": "lib\\pa26_operational.lua",
-      "sha256": "3911c40d75901e16d8d4fa3b88c92200ddc48ec82a44142927182d2f4af8abaf"
-    },
-    {
-      "path": "lib\\pa26_operational_ui.lua",
-      "sha256": "2ad1ea934f443cea5093369d4c347570b38ce4548a986602b15d85e0e29afcba"
-    },
-    {
-      "path": "lib\\pa26_detention_timers.lua",
-      "sha256": "a29d025953b028657feff9cbdb4f7698ab42fc51a390fd1dcfe01e44ddbf90be"
-    },
-    {
-      "path": "lib\\pa26_vehicle_types.lua",
-      "sha256": "694414a5dedb9d0719afb962cb4941abd9715734829340c5f2f828f6ec7d24d2"
-    },
-    {
-      "path": "lib\\pa26_local_life.lua",
-      "sha256": "dbad9dc534706e91036d784f0c126cf1c676357594ddd535efdf319d3c0c6d3a"
-    },
-    {
-      "path": "lib\\pa26_sanctions.lua",
-      "sha256": "537107802c8bf541201c69eaa51532c5cabb8001d1256197562dcaa2b3768705"
-    },
-    {
-      "path": "lib\\pa26_procedure_input.lua",
-      "sha256": "c718fc30207a51ea5363af7e4bf8d2ad0357c9a76dc5e2b86dcfb5cd861af82f"
-    },
-    {
-      "path": "lib\\pa26_procedure_window.lua",
-      "sha256": "f78934d80d412d2ba34cd8647c715564708519cd3b1a2a53024947664bbcd33a"
-    },
-    {
-      "path": "lib\\pa26_fine_window.lua",
-      "sha256": "a0c64621e10becc15f34b61723ede7a284c20432321e6d51746e0ec8fd024a6e"
-    },
-    {
-      "path": "lib\\pa26_mark_window.lua",
-      "sha256": "7e6338f0de80ba9f6ee39ab7de78a3b01bc16fc702d2bb7a425c32e753b3d224"
-    },
-    {
-      "path": "lib\\pa26_ground_window.lua",
-      "sha256": "505d19d7d21189bf00e33375545bdb951317d60f5ab8a5032338b506d51bcfee"
-    },
-    {
-      "path": "lib\\pa26_procedure_flow.lua",
-      "sha256": "481d903c38b1def203d0215dc52f3ade9d508a9380e4b7f37d3baa972012c91c"
     }
   ],
   "cef_files": [

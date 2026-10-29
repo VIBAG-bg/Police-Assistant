@@ -10,7 +10,16 @@ end
 function M.new(env)return setmetatable({env=env,remaining=nil,active=false,cycle=0},Patrol)end
 function Patrol:reset()
     if self.currentKey and self.env.drop then self.env.drop(self.currentKey)end
-    self.cycle=self.cycle+1;self.currentKey=nil;self.state=nil;self.anchor=nil;self.lastNow=nil;self.remaining=nil;self.active=false;self.signature=nil;self.phase='off'
+    self.cycle=self.cycle+1;self.currentKey=nil;self.state=nil;self.anchor=nil;self.lastNow=nil;self.remaining=nil;self.active=false;self.signature=nil;self.phase='off';self.error=nil;self.loggedError=nil
+end
+function Patrol:problem(reason,cfg,stage)
+    local raw=type(reason)=='string'and reason~=''and reason or'Подготовка доклада не удалась: обработчик не передал причину.'
+    if not core.validUtf8(raw)then raw='Причина получена в неподдерживаемой кодировке; проверьте журнал PA.'end
+    self.error=raw:gsub('%c',' '):gsub('%s+',' '):match('^%s*(.-)%s*$')
+    local detail='Периодический доклад: '..raw..' [режим='..tostring(cfg.mode)..'; канал='..tostring(cfg[cfg.mode..'_channel'])..
+        '; интервал='..tostring(cfg[cfg.mode..'_interval_ms'])..' мс; этап='..tostring(stage)..']'
+    if detail~=self.loggedError and self.env.log then pcall(self.env.log,detail)end
+    self.loggedError=detail
 end
 function Patrol:tick(state,now)
     local cfg=self.env.settings();local kind=cfg.mode;local interval=cfg[kind..'_interval_ms']
@@ -24,7 +33,7 @@ function Patrol:tick(state,now)
         (anchor.ped~=state.ped and not(state.local_nick and state.local_nick~=''and state.local_nick==anchor.local_nick))
     if changed then
         if self.currentKey and self.env.drop then self.env.drop(self.currentKey)end
-        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil
+        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.error=nil;self.loggedError=nil
     end
     -- Input postpones delivery, not the clock. Focus/pause and stalls do not
     -- invent elapsed time or create a catch-up burst.
@@ -38,11 +47,13 @@ function Patrol:tick(state,now)
         local phase,err=self.env.preview(key,cfg,self.remaining)
         if phase=='cancelled' or phase=='invalid' or phase=='unavailable' or phase=='sent' or phase=='handed'then
             if self.env.retire then self.env.retire(key)end
-            self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.phase='countdown';self.error=err
+            self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.phase='countdown'
+            if phase=='invalid'or phase=='unavailable'then self:problem(err,cfg,phase)
+            else self.error=nil;self.loggedError=nil end
             return
         end
-        if phase=='confirm'then self.phase='confirmation';return end
-        if phase=='queued'then self.phase='sending';return end
+        if phase=='confirm'then self.phase='confirmation';self.error=nil;self.loggedError=nil;return end
+        if phase=='queued'then self.phase='sending';self.error=nil;self.loggedError=nil;return end
     end
     local pending=self.env.pending and self.env.pending()
     if pending and pending.kind==kind then self.phase='confirmation';return end
@@ -59,8 +70,8 @@ function Patrol:tick(state,now)
         -- Invalid/missing text is displayed and retried no more than once per
         -- interval, rather than flooding chat/logs every frame.
         if self.env.retire then self.env.retire(key)end
-        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.error=err or 'Доклад не подготовлен.';self.phase='error'
-        if self.env.log then self.env.log('Периодический доклад: '..self.error) end
+        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.phase='error'
+        self:problem(err,cfg,'dispatch')
     end
 end
 function Patrol:view()
@@ -72,12 +83,12 @@ function Patrol:view()
     local remaining=warning and math.max(self.remaining,warning.lead)or self.remaining
     local status=phase=='confirmation' and 'Подтвердите доклад · Y / N' or phase=='paused' and 'Доклад: таймер на паузе' or
         phase=='waiting' and 'Доклад ожидает свободную очередь' or phase=='sending' and 'Передача доклада…' or
-        self.error and 'Проверьте настройки доклада' or 'До доклада: '..string.format('%02d:%02d',math.floor(self.remaining/60000),math.ceil(self.remaining/1000)%60)
+        self.error and('Проверьте настройки доклада ('..self.error..')') or 'До доклада: '..string.format('%02d:%02d',math.floor(self.remaining/60000),math.ceil(self.remaining/1000)%60)
     local seconds=math.max(0,math.ceil(remaining/1000))
     if phase=='countdown' and not self.error then status=string.format('До доклада: %02d:%02d',math.floor(seconds/60),seconds%60)end
     if phase=='prewarning'then status='Доклад: ожидает предупреждения/очереди'end
     return {visible=true,label=label,status=status,remaining=remaining,interval=self.interval,
-        progress=math.max(0,math.min(1,1-self.remaining/self.interval)),phase=phase}
+        progress=math.max(0,math.min(1,1-self.remaining/self.interval)),phase=phase,error=self.error}
 end
 M.safe=safe;M.canTick=canTick
 return M

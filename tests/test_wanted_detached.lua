@@ -11,7 +11,7 @@ local function setup(demo)
 end
 for _,demo in ipairs({false,true})do
     local s,f=setup(demo)
-    s.toggle='Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';s.render()
+    s.toggle='##Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';s.render()
     click(s,'Нет##На подозреваемом полная RP-маска (/mask + аксессуар на лице)?##wanted-maskno')
     click(s,'Да##Вы видели паспорт этого человека?##wanted-passport_seenyes')
     click(s,'Далее · причина розыска##wanted-next');eq(f.stage,'basis');eq(f.ic_name,'Player Name');eq(f.passport_number,'37')
@@ -31,10 +31,10 @@ end
 -- The actual detached window exposes the tracking evidence editor; a general
 -- OOC acknowledgement cannot bypass a missing IC telephone.
 local tracking,tf=setup(false)
-tracking.toggle='Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';tracking.render()
+tracking.toggle='##Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack';tracking.render()
 click(tracking,'OOC · только для пеленгации /setmark##Ветка розыска##wanted-modeooc')
 if tracking.windows['Police Assistant · Розыск##pa26-wanted'].height<650 then click(tracking,'Далее · уточнение сведений##wanted-identity-details')end
-tracking.toggle='Телефон включён; RP-пеленгация; звёзды сниму сразу##wanted-ooc-ack';tracking.render()
+tracking.toggle='##Телефон включён; RP-пеленгация; звёзды сниму сразу##wanted-ooc-ack';tracking.render()
 click(tracking,'Далее · причина розыска##wanted-next');eq(tf.stage,'identity')
 click(tracking,'ОК##warning-ok');tracking.render()
 click(tracking,'Телефон для RP-пеленгации##wanted-phone-edit')

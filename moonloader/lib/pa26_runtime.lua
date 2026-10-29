@@ -145,6 +145,7 @@ function Runtime:setBindingChoice(route,drawnAt)
     wheel.drawnAt=drawnAt
 end
 function Runtime:commitBindingWheel(clicked)
+    if self.wheel and self.wheel.editConsumed then self.wheel=nil;return false end
     local now=self:refresh(); local wheel=self.wheel; self.wheel=nil
     if not now or not wheel or not wheel.catalog then return false end
     local route=clicked or wheel.choice
@@ -189,6 +190,7 @@ function Runtime:preview(index, entry)
 end
 
 function Runtime:commitWheel(clickedIndex)
+    if self.wheel and self.wheel.editConsumed then self.wheel=nil;return false end
     if self.wheel and self.wheel.catalog then return self:commitBindingWheel(clickedIndex) end
     local now = self:refresh()
     local wheel = self.wheel

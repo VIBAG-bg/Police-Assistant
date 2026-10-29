@@ -1,4 +1,4 @@
--- Dedicated PA window: same procedure state machine, bounded pages, no scrolling.
+-- Dedicated PA window: bounded adaptive pages inside a padded accessible viewport.
 local prefs=require 'pa26_procedure_settings'
 local catalog=require 'pa26_wanted_catalog'
 local wanted=require 'pa26_wanted_ui'
@@ -54,7 +54,7 @@ function M.draw(s,ui,data,cb)
         end
         local details=narrow and s.wantedIdentityPage=='details'
         if not details then
-            if cfg.wanted_require_life_ack then f.life_ack=s:check('Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack',f.life_ack)end
+            if cfg.wanted_require_life_ack then f.life_ack=require('pa26_procedure_window').check(s,ui,'Основание получено в текущей игровой жизни · не использую сведения до смерти / RK##wanted-life-ack',f.life_ack)end
             if cfg.allow_ooc then f.mode=s:choice('Ветка розыска##wanted-mode',f.mode,{{'ic','IC · по паспорту или приметам'},{'ooc','OOC · только для пеленгации /setmark'}},ui)end
             if f.mode=='ic'then
                 question(s,f,ui,'На подозреваемом полная RP-маска (/mask + аксессуар на лице)?','mask')
@@ -69,7 +69,7 @@ function M.draw(s,ui,data,cb)
                 ui.text(f.phone_known=='yes'and f.phone_number~=''and ('IC-телефон: '..f.phone_number)or 'IC-телефон пока не указан.')
                 if s:button('Телефон для RP-пеленгации##wanted-phone-edit',ui)then s.wantedIdentityPage='phone'end
                 if s:button('Проверить включение телефона и исходный розыск##tracking-checks',ui)then s.wantedIdentityPage='tracking_phone'end
-                f.ooc_ack=s:check('Телефон включён; RP-пеленгация; звёзды сниму сразу##wanted-ooc-ack',f.ooc_ack)
+                f.ooc_ack=require('pa26_procedure_window').check(s,ui,'Телефон включён; RP-пеленгация; звёзды сниму сразу##wanted-ooc-ack',f.ooc_ack)
             else
                 if f.mask=='yes'then question(s,f,ui,'Вы установили личность по лицу или паспорту ДО маски и НЕ теряли человека из виду?','face_before')end
                 if f.passport_seen=='yes'then
@@ -105,7 +105,7 @@ function M.draw(s,ui,data,cb)
             f.facts=s:field('Факты ситуации##wanted-facts','wanted-form:'..f.id..':facts',f.facts or'',2048,true,64)
             if s:button('Назад · выбор причины##wanted-basis-details-back',ui)then s.wantedBasisDetails=nil end
         else
-            wanted.reasonPicker(s,ui,f,cb,{compact=true,perPage=narrow and 2 or 4})
+            wanted.reasonPicker(s,ui,f,cb,{compact=true,adaptive=true})
             if s:button('Подробности основания и факты##wanted-basis-details',ui)then s.wantedBasisDetails=true end
             if s:button('Проверить отыгровку и команду##wanted-preview',ui)then local ok,why=cb.caseNext(f);s.wantedPreviewPage=1;if not ok then notify(s,why)end end
             if s:button('Назад · сведения##wanted-back-identity',ui)then f.stage='identity'end

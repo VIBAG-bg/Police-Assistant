@@ -279,7 +279,7 @@ function M.defaults(cfg)
         retain_distance=40,retain_grace_ms=1500,keep_target_on_interior_change=true,aim_select_enabled=true,aim_select_control='mouse',aim_select_delay_ms=150,wheel_mode='categories',wheel_profile='compact',wheel_enabled=true,interaction_notices=true,accent_live_input=true,accent_skip_brackets=true,chat_dot_commands=true,manual_radio_prefix=true,cef_chat_support=true,cef_chat_diagnostics=true,cef_layout_indicator=true,cef_chat_weapon_guard=true,cef_chat_weapon_lock=true,cef_chat_grace_ms=350,wheel_names={}},
     filters={},recruitment={min_age=18,min_level=3,min_lawfulness=0,land=true,water=false,air=false,weapon=true,medical=true}}
     local categories={introduce='Общение',documents='Документы',wanted='Проверки',frisk='Досмотр',cuff='Задержание',release='Задержание'}
-    lib.settings.manual_actions=manualActions.defaults();lib.settings.wheel_child_limit=0;lib.settings.wheel_system_groups={}
+    lib.settings.manual_actions=manualActions.defaults();lib.settings.wheel_child_limit=0;lib.settings.wheel_system_groups={};lib.settings.wheel_order={};lib.settings.wheel_edit_enabled=true;lib.settings.shutdown_message='Police Assistant полностью отключён до перезахода в игру.'
     local female={introduce='остановившись рядом, достала служебное удостоверение и раскрыла его перед собеседником.',
         documents='оглянувшись по сторонам, обратилась к собеседнику с просьбой предъявить паспорт.',
         wanted='сверив известные сведения, внесла данные в служебный терминал и открыла форму поиска.',
@@ -459,11 +459,19 @@ function M.validate(raw, cfg)
     local systemGroups=raw.settings.wheel_system_groups or{}
     if type(systemGroups)~='table'then return nil,'Неверные секции встроенных действий.'end
     local validSystems={};for _,r in ipairs(require('pa26_wheel').systemRows)do validSystems[r[1]]=true end
-    local validGroups={citizen=true,documents=true,detention=true,frisk=true,wanted=true,service=true,leadership=true,custom=true}
+    local validGroups={disabled=true,citizen=true,documents=true,detention=true,frisk=true,wanted=true,service=true,leadership=true,custom=true}
     for id,group in pairs(systemGroups)do
         if not validSystems[id]or not validGroups[group]then return nil,'Неизвестное действие или секция колеса.'end
         out.settings.wheel_system_groups[id]=group
     end
+    out.settings.wheel_order,alertError=require('pa26_wheel_order').validate(raw.settings.wheel_order)
+    if not out.settings.wheel_order then return nil,alertError end
+    local editEnabled=raw.settings.wheel_edit_enabled;if editEnabled==nil then editEnabled=true end
+    if type(editEnabled)~='boolean'then return nil,'Неверный переключатель перестановки колеса.'end
+    out.settings.wheel_edit_enabled=editEnabled
+    local shutdownMessage=raw.settings.shutdown_message or 'Police Assistant полностью отключён до перезахода в игру.'
+    if type(shutdownMessage)~='string'or #shutdownMessage>1024 or not core.validUtf8(shutdownMessage)or shutdownMessage:find('%c')then return nil,'Неверное локальное уведомление о выключении.'end
+    out.settings.shutdown_message=shutdownMessage
     out.settings.manual_actions,alertError=manualActions.validate(raw.settings.manual_actions)
     if not out.settings.manual_actions then return nil,alertError end
     local aimControl=raw.settings.aim_select_control

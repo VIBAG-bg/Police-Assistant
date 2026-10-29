@@ -58,8 +58,13 @@ function M.categoryChoices(names)
     for _,id in ipairs(M.profiles.full)do out[#out+1]={id,M.categoryName(id,names)}end
     return out
 end
+function M.systemCategoryChoices(names)
+    local out={{'disabled','Отключено (не показывать в колесе)'},{'auto','По умолчанию'}}
+    for _,id in ipairs(M.profiles.full)do out[#out+1]={id,M.categoryName(id,names)}end;return out
+end
 function M.systemGroup(lib,id,fallback)
     local groups=lib.settings.wheel_system_groups or{}
+    if groups[id]=='disabled'then return'disabled'end
     return M.groupFor({wheel_group=groups[id]or fallback,category=''},lib.settings.wheel_profile or'compact')
 end
 function M.procedureItems(lib)
@@ -87,6 +92,7 @@ function M.build(lib,revision,includeAlerts,serviceState)
     end
     local function place(item)
         item.category=M.systemGroup(lib,item.id,item.category)
+        if item.category=='disabled'then return end
         out.bySystem[item.id]=item;out.byCategory[item.category].items[#out.byCategory[item.category].items+1]=item
     end
     if includeAlerts and lib.alerts and lib.alerts.enabled and lib.alerts.on_duty then
@@ -134,6 +140,9 @@ function M.build(lib,revision,includeAlerts,serviceState)
         end end
         if v.pinned and v.car then place({kind='copilot',id='copilot-pursuit_mark',action=v.pinned,category='wanted',name=v.pinned=='pursuit_mark'and'Только /pt'or'Розыск + /pt',needsTarget=false})end
     end
+    local order=require 'pa26_wheel_order';local stored=lib.settings.wheel_order or{}
+    order.sort(out.categories,stored.root,function(c)return c.id end)
+    for _,cat in ipairs(out.categories)do order.sort(cat.items,stored[cat.id],order.key)end
     return out
 end
 function M.entries(cat)
@@ -264,6 +273,27 @@ function M.shortLabel(text)
     local short=table.concat(chars,'',1,39):gsub('%s+%S*$','')
     return short..'…'
 end
+function M.editHit(catalog,layout,nav,dx,dy)
+ local root=M.rootAt(layout,dx,dy)
+ if root then local c=catalog.categories[root];return{ring='root',category='root',index=root,key=c.id,name=c.name}end
+ local radius=math.sqrt(dx*dx+dy*dy)
+ if radius<layout.childInner or radius>layout.outer or not nav.active then return end
+ local c=catalog.categories[nav.active];if not c then return end
+ local entries=M.entries(c);local arc=M.arc(layout,nav.active,#entries);local delta=relative(angle(dx,dy),arc.center)
+ if delta< -arc.span/2 or delta>=arc.span/2 then return end
+ local pos=(delta+arc.span/2)/arc.step;if math.min(pos%1,1-pos%1)<.045 then return end
+ local i=math.floor(pos)+1;local e=entries[i]
+ if not e or not e.id then return end
+ return{ring='child',category=c.id,index=i,key=require('pa26_wheel_order').key(e),name=e.name}
+end
+function M.outline(list,vec,cx,cy,inner,outer,a,b,color,width)
+ local segments=math.max(5,math.ceil((b-a)*22))
+ for _,r in ipairs({inner+3,outer-3})do for i=0,segments-1 do
+  local x=a+(b-a)*i/segments;local y=a+(b-a)*(i+1)/segments
+  list:AddLine(vec(cx+math.cos(x)*r,cy+math.sin(x)*r),vec(cx+math.cos(y)*r,cy+math.sin(y)*r),color,width)
+ end end
+ for _,v in ipairs({a,b})do list:AddLine(vec(cx+math.cos(v)*inner,cy+math.sin(v)*inner),vec(cx+math.cos(v)*outer,cy+math.sin(v)*outer),color,width)end
+end
 function M.draw(im,layout,catalog,nav,info,fonts)
     local list,vec=im.GetWindowDrawList(),im.ImVec2
     local scale=layout.scale
@@ -293,6 +323,9 @@ function M.draw(im,layout,catalog,nav,info,fonts)
         local active=nav.active==i; local pending=nav.candidate==i
         sector(layout.inner,layout.rootOuter,first,last,
             active and color(.12,.42,.64,.84) or pending and color(.12,.31,.47,.78) or color(.035,.14,.23,.65))
+        for n,e in ipairs({nav.editSource or false,nav.editTarget or false})do if e and e.ring=='root'and e.key==cat.id then
+            M.outline(list,vec,layout.cx,layout.cy,layout.inner,layout.rootOuter,first,last,n==1 and color(.25,1,.65,1)or color(1,.8,.25,1),3*scale)
+        end end
         local middle=(first+last)/2; local radius=(layout.inner+layout.rootOuter)/2
         local size,extent,text,wrap=M.fitLabel(body,cat.label,18,layout.count==4 and 118 or layout.count==6 and 96 or 76,
             82,176,middle,layout.step)
@@ -315,6 +348,13 @@ function M.draw(im,layout,catalog,nav,info,fonts)
                 layout.cy+math.sin(middle)*radius-extent.y*scale/2),available and white or muted,text,nil,wrap*scale)
         end
     end
+    for n,e in ipairs({nav.editSource or false,nav.editTarget or false})do
+        if e and e.ring=='child'and active and e.category==active.id then
+            local entries=M.entries(active);local arc=M.arc(layout,nav.active,#entries)
+            M.outline(list,vec,layout.cx,layout.cy,layout.childInner,layout.outer,arc.first+(e.index-1)*arc.step,arc.first+e.index*arc.step,
+                n==1 and color(.25,1,.65,1)or color(1,.8,.25,1),3*scale)
+        end
+    end
     list:AddCircleFilled(vec(layout.cx,layout.cy),layout.inner-3*scale,color(.035,.10,.16,.84),80)
     list:AddCircle(vec(layout.cx,layout.cy),layout.inner-3*scale,color(.29,.57,.75,.23),80,1.2*scale)
     centered('Police Assistant',fonts.heading,20,layout.cx,layout.top+24*scale,600)
@@ -322,7 +362,9 @@ function M.draw(im,layout,catalog,nav,info,fonts)
     centered(info.demo and 'Демо-игрок' or info.nickname or 'Свои действия',fonts.body,14,layout.cx,layout.cy+20*scale,138,muted)
     local status=nav.reason or nav.choice and (nav.choice.kind=='binding' and catalog.byId[nav.choice.id].name or nav.choice.name) or
         active and (active.name..' · '..#active.items..' действий') or 'Наведите на категорию'
-    centered(status,fonts.body,16,layout.cx,layout.top+684*scale,650)
+    if nav.editSource then status='Перемещение: «'..M.shortLabel(nav.editSource.name:gsub('\n',' '))..'» → отпустите ЛКМ'end
+    centered(status,fonts.body,16,layout.cx,layout.top+676*scale,650)
+    if info.editEnabled then centered('Ctrl + ЛКМ по сектору — перетащить и поменять местами',fonts.small,12,layout.cx,layout.top+703*scale,700,muted)end
     centered('К центру — назад · '..info.key..' отпустить или кликнуть — выбрать · Esc — отмена',fonts.small,14,
         layout.cx,layout.top+723*scale,700,muted)
 end

@@ -27,7 +27,9 @@ end
 for _,label in ipairs({'Список команд','Список клавиш','Список функций','Список переменных'}) do
     s.click=label..'##footer'; s.render(); s.render(); eq(s.click,nil); check(s.frames[1].condition())
 end
-s.page('home'); s.click='Завершить работу##home'; s.render()
+s.page('home');s.click='Отключить PA##home';s.render();check(s.workspace.studio.shutdownConfirm)
+s.click='НЕТ — отмена##confirm-no';s.render();check(not s.workspace.studio.shutdownConfirm)
+s.commands.pa26();s.step()
 check(not s.frames[1].condition()); check(s.frames[3].condition(),'closing main must preserve independent HUD')
 eq(#s.sent,0); check(s.inputDisabled()); check(s.keyMessage(0x49,true))
 s.commands.pa26hud(); s.step(); check(not s.frames[3].condition())

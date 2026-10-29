@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.42.2')
+script_version('0.42.3')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -62,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.42.2' then
+if #missing > 0 or not core or core.VERSION ~= '0.42.3' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -966,6 +966,7 @@ local function cancelManualActions(reason)
 end
 local studioCallbacks
 studioCallbacks={
+    requestShutdown=function()sceneServices.shutdownRequested=true;return true end,
     manualFriskMode=function(token,mode)return sceneServices.manualActions:friskMode(token,mode)end,
     setDemoMode=function(value)if type(value)=='boolean'then sceneServices.requestDemoMode=value end end,
     authorPresetAccept=function()return sceneServices.authorPresets:accept()end,
@@ -1270,9 +1271,17 @@ env.startWheelBinding=function(item,target)
     return ok
 end
 
+sceneServices.hasManualActivity=function()
+    local e,v,c=sceneServices.evidence,sceneServices.vehicle,sceneServices.copilot
+    local a=sceneServices.manualActions
+    return e.active or e.intent or e.queued or e.archiveRequest or v.intent or v.queued or c.intent or c.queued or
+        a and(a.pending or a.approved)or workspace.operations.intent or workspace.operations.offer or
+        caseForms.intent or caseForms.queued or caseForms.awaitingCommand or
+        patrolSession.intent or patrolSession.queued or patrolEvents.intent or patrolEvents.queued
+end
 local function closeForInput(reason, keepAutoOpen)
     sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;sceneServices.hideProcedureWindows()
-    cancelManualActions(reason)
+    if sceneServices.hasManualActivity()then cancelManualActions(reason)end
     runtime:cancel(reason)
     workspace:cancel(reason)
     showWindow[0],showQuick[0],showTips[0] = false,false,false
@@ -1714,7 +1723,7 @@ local function drawMain()
             selectAction = function(index) selectedAction = index end,
             close = closePanels,
             guardNavigation=function(action,label)return studio:requestNavigation(action,label)end,
-            finishWork = function()studio:requestNavigation(function()closeForInput('Текущая работа помощника завершена.');workspace:clearTarget('manual')end,'завершить работу помощника')end,
+            finishWork=function()studio:requestNavigation(function()studio.shutdownConfirm=true end,'отключить Police Assistant')end,
         }, {heading = menuHeadingFont, brand = menuBrandFont, button = menuButtonFont, small = menuSmallFont, compact = menuCompactFont})
         studio:drawModal(ui,studioData(),studioCallbacks)
         knowledgeUi:drawModal(ui)
@@ -1769,6 +1778,40 @@ end, function() safeDraw(beforeUiFrame) end, function() safeDraw(drawMain) end)
 windowFrame.LockPlayer, windowFrame.HideCursor = false, false
 subscriptions[#subscriptions + 1] = windowFrame
 
+sceneServices.wheelEditInput=function(io,wheel,hit,blocked)
+ if workspace.library.settings.wheel_edit_enabled==false then return false end
+ local ctrl=io.KeyCtrl==true;local down=imgui.IsMouseDown and imgui.IsMouseDown(0)or io.MouseDown[0]==true
+ local previous=wheel.editMouseDown;wheel.editMouseDown=down
+ local intent=require('pa26_wheel_edit').update(wheel,hit,{ctrl=ctrl,down=down,clicked=imgui.IsMouseClicked(0),
+    released=previous==true and not down,blocked=blocked,now=studioClock},workspace.libraryRevision)
+ if intent then wheel.pendingEdit=intent end
+ if ctrl or wheel.editConsumed then wheel.choice=nil;pendingWheelClick=nil;return true end
+ return false
+end
+sceneServices.processWheelEdit=function()
+ local w=runtime.wheel;local p=w and w.pendingEdit;if not p then return end;w.pendingEdit=nil
+ local age=core.elapsed(studioClock,p.at);local ctx=context()
+ if p.revision~=workspace.libraryRevision or not age or age>1500 or not focused or ctx.blocked or ctx.paused or hasUiModal()then return end
+ local lib=bindingModel.copy(workspace.library);local source,target=p.source,p.target
+ if source.ring=='classic'then
+  if lib.settings.wheel_mode~='classic'or source.index<1 or source.index>6 or target.index<1 or target.index>6 then return end
+  lib.wheel[source.index],lib.wheel[target.index]=lib.wheel[target.index],lib.wheel[source.index]
+ else
+  if not w.catalog or w.catalog.revision~=env.wheelRevision()or source.category~=target.category then return end
+  local group=source.ring=='root'and'root'or source.category;local visible={}
+  if source.ring=='root'then for _,cat in ipairs(w.catalog.categories)do visible[#visible+1]=cat.id end
+  else local cat=w.catalog.byCategory[group];if not cat then return end
+   for _,item in ipairs(cat.items)do visible[#visible+1]=require('pa26_wheel_order').key(item)end
+  end
+  local values=require('pa26_wheel_order').swap(lib.settings.wheel_order[group],visible,source.key,target.key)
+  if not values then return end;lib.settings.wheel_order[group]=values
+ end
+ local active=w.catalog and w.nav.active and w.catalog.categories[w.nav.active].id
+ local ok,why=workspace:save(lib)
+ if not ok then studio:notify('Порядок не сохранён: '..tostring(why),'options',false);return end
+ if w.catalog then w.catalog=env.wheelCatalog();w.nav={};for i,c in ipairs(w.catalog.categories)do if c.id==active then w.nav.active=i end end end
+ w.choice=nil;w.editConsumed=true
+end
 local function drawCategoryWheel(io,wheel)
     local layout=wheelModel.layout(io.DisplaySize.x,io.DisplaySize.y,#wheel.catalog.categories)
     if not layout then runtime:cancel('Экран слишком мал для колеса.'); return end
@@ -1780,6 +1823,9 @@ local function drawCategoryWheel(io,wheel)
     local overWidget=(not alerts.suppressHud and hud:overWidget(imgui)) or hud.drag~=nil or alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)or sceneServices.copilotUi.over(sceneServices.copilot,imgui)
     local route=wheelModel.hover(wheel.nav,wheel.catalog,layout,io.MousePos.x-layout.cx,io.MousePos.y-layout.cy,
         studioClock,overWidget,wheel.demo,wheel.target)
+    if wheel.drag and wheel.drag.ring=='child'then for i,c in ipairs(wheel.catalog.categories)do if c.id==wheel.drag.category then wheel.nav.active=i end end end
+    local editing=sceneServices.wheelEditInput(io,wheel,wheelModel.editHit(wheel.catalog,layout,wheel.nav,io.MousePos.x-layout.cx,io.MousePos.y-layout.cy),overWidget)
+    if editing then route=nil end
     runtime:setBindingChoice(route,studioClock)
     local nickname=wheel.target and wheel.target.name
     if nickname and not core.validUtf8(nickname) then
@@ -1791,7 +1837,7 @@ local function drawCategoryWheel(io,wheel)
     local list=imgui.GetWindowDrawList(); local flags=list.Flags
     if core.finite(flags) then list.Flags=bit.band(flags,bit.bnot(2)); pushScope(function() list.Flags=flags end) end
     wheelModel.draw(imgui,layout,wheel.catalog,wheel.nav,{demo=wheel.demo,target=wheel.target,nickname=nickname,
-        key=bindingModel.keyName(cfg.main.radial_key)},
+        key=bindingModel.keyName(cfg.main.radial_key),editEnabled=workspace.library.settings.wheel_edit_enabled~=false},
         {heading=menuHeadingFont,button=wheelLabelFont,body=menuBodyFont,small=menuSmallFont,id=wheelIdFont})
     if core.finite(flags) then endScope() end
     if route and imgui.IsMouseClicked(0) and not overWidget then pendingWheelClick=bindingModel.copy(route) end
@@ -1821,6 +1867,10 @@ local function drawWheel()
     local ready = wheel.demo or wheel.target ~= nil
     local choice = ready and not overWidget and core.radialAction(io.MousePos.x - cx, io.MousePos.y - cy, inner, outer) or nil
     if choice then local b=bindingModel.find(workspace.library,workspace.library.wheel[choice]); if not b or not b.enabled then choice=nil end end
+    local editIndex=core.radialAction(io.MousePos.x-cx,io.MousePos.y-cy,inner,outer)
+    local editBinding=editIndex and bindingModel.find(workspace.library,workspace.library.wheel[editIndex])
+    local hit=editIndex and{ring='classic',category='classic',index=editIndex,key=tostring(editIndex),name=editBinding and editBinding.name or'Пустой сектор'}
+    if sceneServices.wheelEditInput(io,wheel,hit,overWidget)then choice=nil end
     runtime:setChoice(choice)
     local function color(r, g, b, a) return imgui.ColorConvertFloat4ToU32(imgui.ImVec4(r, g, b, a or 1)) end
     local white, muted = color(1, 1, 1, 1), color(.67, .77, .85, 1)
@@ -1883,7 +1933,13 @@ local function drawWheel()
     centered(idText, wheelIdFont or menuHeadingFont, 32, cx, cy - 22 * scale, white, 170)
     centered(nickname, menuBodyFont, 18, cx, cy + 18 * scale, muted, 156)
     if choice then local b=bindingModel.find(workspace.library,workspace.library.wheel[choice]); if b then centered(b.name,menuSmallFont,14,cx,cy+49*scale,muted,146) end end
-    centered('Выбор действия мышью', menuButtonFont, 20, cx, top + 584 * scale, white, 550)
+    for n,e in ipairs({wheel.nav.editSource or false,wheel.nav.editTarget or false})do if e then
+        for slot,index in ipairs(core.wheelSlots)do if index==e.index then local a=-math.pi/2+(slot-1)*math.pi/3
+            wheelModel.outline(draw,vec,cx,cy,inner,outer,a,a+math.pi/3,n==1 and color(.25,1,.65,1)or color(1,.8,.25,1),3*scale)
+        end end
+    end end
+    centered(wheel.drag and('Перемещение: «'..wheelModel.shortLabel(wheel.drag.name:gsub('\n',' '))..'»')or'Выбор действия мышью',menuButtonFont,18,cx,top+574*scale,white,550)
+    if workspace.library.settings.wheel_edit_enabled~=false then centered('Ctrl + ЛКМ — перетащить сектор и поменять местами',menuSmallFont,12,cx,top+600*scale,muted,550)end
     local hint = not ready and 'Отпустите X, наведите центр камеры на игрока рядом и повторите.' or
         (wheel.demo and 'ДЕМО: отправки нет. X — выбор, Esc — отмена.' or 'X — выбор, Esc — отмена. Цель закреплена.')
     centered(hint, menuSmallFont, 14, cx, top + 618 * scale, muted, 552)
@@ -1915,7 +1971,7 @@ local function drawWorkspaceWindows()
             studio:requestNavigation(function()flag[0]=false;studio:flushAutosave(studioCallbacks,true)end,'закрыть дополнительное окно PA')
         end
         pushScope(function() imgui.End() end)
-        if visible then menu:resizeWindow(imgui,ui,key);if key=='wanted'then body()else menuModule.scrollBody(imgui,ui,'workspace-content##'..key,body)end;studio:drawModal(ui,studioData(),studioCallbacks)end
+        if visible then menu:resizeWindow(imgui,ui,key);menuModule.scrollBody(imgui,ui,'workspace-content##'..key,body,key=='wanted'and 12 or 0);studio:drawModal(ui,studioData(),studioCallbacks)end
         endScope()
     end
     if showQuick[0] then window('Police Assistant · Быстрое меню##pa26-quick',showQuick,'quick',function() studio:drawQuick(ui,studioData(),studioCallbacks) end) end
@@ -2011,16 +2067,16 @@ local function cleanup()
     pcall(knowledge.flush,knowledge)
     pcall(patrolSession.save,patrolSession,true)
     pcall(patrolEvents.save,patrolEvents,true)
-    workspace.operations:interrupt('PA завершил работу. Результат команды не установлен.')
+    pcall(workspace.operations.interrupt,workspace.operations,'PA завершил работу. Результат команды не установлен.')
     pcall(workspace.operations.save,workspace.operations,true)
     pcall(hud.savePending,hud,optionalRead('getGameTimer')or 0,true)
     shutdown = true
-    if sceneServices.chatBridge then sceneServices.chatBridge:close()end
-    closeForInput('Скрипт остановлен.')
-    if workspace.journal.dirty then workspace:saveJournal() end
-    menu:releaseAssets(imgui, false)
-    for _, sub in ipairs(subscriptions) do if sub and sub.Unsubscribe then pcall(sub.Unsubscribe, sub) end end
-    studio:release()
+    if sceneServices.chatBridge then pcall(sceneServices.chatBridge.close,sceneServices.chatBridge)end
+    pcall(closeForInput,'Скрипт остановлен.')
+    if workspace.journal.dirty then pcall(workspace.saveJournal,workspace)end
+    pcall(menu.releaseAssets,menu,imgui,false)
+    for _,sub in ipairs(subscriptions)do if sub then sub.LockPlayer=false;sub.HideCursor=true;if sub.Unsubscribe then pcall(sub.Unsubscribe,sub)end end end
+    pcall(studio.release,studio)
     local availableOk, available = pcall(function()
         return type(isSampAvailable) == 'function' and isSampAvailable() == true
     end)
@@ -2041,6 +2097,38 @@ local function cleanup()
     for _,hook in ipairs(lifeHooks) do if chatEvents and chatEvents[hook.name]==hook.handler then chatEvents[hook.name]=hook.previous end end
 end
 
+sceneServices.performShutdown=function()
+    sceneServices.shutdownRequested=nil
+    if shutdown then return end
+    local ok,why=require('pa26_shutdown').run({
+        stop=function()
+            cancelManualActions('PA отключается пользователем.');runtime:cancel('PA отключается.');workspace:cancel('PA отключается.')
+            workspace.operations:interrupt('PA отключается. Результат незавершённой команды не установлен.')
+        end,
+        saves={
+            {'настройки PA',function()
+                studio:flushAutosave(studioCallbacks,true)
+                if next(studio.autosaves or{})then return nil,'Закройте сообщение об ошибке и повторите запись изменённых настроек.'end
+                return true
+            end},
+            {'история фиксации',function()
+                local e=sceneServices.evidence;if not e.pendingRecord then return true end
+                local saved,err=e.env.record(e.pendingRecord);if saved then e.pendingRecord=nil end;return saved,err
+            end},
+            {'личные карточки базы',function()return knowledge:flush()end},
+            {'патруль',function()return patrolSession:save(true)end},
+            {'события патруля',function()return patrolEvents:save(true)end},
+            {'журнал операций',function()return workspace.operations:save(true)end},
+            {'журнал сценариев',function()if workspace.journal.dirty then return workspace:saveJournal()end;return true end},
+            {'положение HUD и настройки игры',function()saveSettings(true);return not generalSaveFailed,'Проверьте доступ к INI и корректность настроек.'end},
+        },
+        finish=function()
+            local message=workspace.library.settings.shutdown_message
+            if message and message~=''then report(message,'info')end
+            pushLog('Police Assistant отключён пользователем.');cleanup()
+        end})
+    if ok then sceneServices.shutdownUnload=true else studio:notify(why,'shutdown',false)end
+end
 sceneServices.manualChatSettings=function()
     local settings=bindingModel.copy(workspace.library.settings)
     settings.local_tag=workspace.library.profile.local_tag
@@ -2139,6 +2227,7 @@ local function prepareNativeChat()
     if optionalRead('sampIsChatInputActive')~=true then manualInputPrefix=nil end
 end
 function onWindowMessage(message, wparam, lparam)
+    if shutdown then return end
     if workspace and sceneServices.chatBridge then
         local settings=workspace.library.settings;local bridge=sceneServices.chatBridge
         local allowed=settings.cef_chat_support and settings.cef_chat_weapon_guard and bridge.server~=nil and focused and not shutdown and
@@ -2325,17 +2414,21 @@ sceneServices.processWantedInput=function(state,now)
             if t.name~=p.name or t.generation~=p.generation then studio:notify('ID сменил владельца. Повторите /su для нужного игрока.','procedures',false);return end
             p.target=t
         end
-        studioCallbacks.openProcedures(p.head=='wanted'and 'wanted_list'or 'wanted')
-        local f,why=caseForms:begin(studio.caseKind,p.target)
+        local kind=p.head=='wanted'and'wanted_list'or'wanted'
+        local f,why=caseForms:begin(kind,p.target)
         if not f then studio:notify(why,'procedures',false);return end
-        if p.reason then f.reason_id=p.reason;f.reason_group=p.reason:sub(1,2)end
+        if p.reason then f.reason_id=p.reason end
         if p.ground then
             local h=p.ground
             if not sceneServices.copilot:groundContextValid(h.context,true)then studio:notify('Основание относится к изменившемуся случаю.','procedures',false);return end
             f.article=h.ground.article or'';f.basis=h.ground.basis or'';f.facts=f.basis;f.groundOrigin=bindingModel.copy(h.context)
-            if h.ground.game then f.reason_id=h.ground.game;f.reason_group=h.ground.game:sub(1,2)end
+            if h.ground.game then f.reason_id=h.ground.game end
         end
         studio.caseForm=f;studio.caseStoredForms=studio.caseStoredForms or {};studio.caseStoredForms[f.kind]=f
+        caseForms.message=nil
+        if studio.statusInfo and studio.statusInfo.key=='procedures'then studio.statusInfo=nil end
+        studio.wantedIdentityPage=nil;studio.wantedBasisDetails=nil;studio.wantedPassportEditor=nil;studio.wantedSearch='';studio.cache['wanted:search']=nil
+        studioCallbacks.openProcedures(kind)
     end,'открыть помощник розыска')
 end
 sceneServices.procedureFlow=require('pa26_procedure_flow').new({
@@ -3105,6 +3198,7 @@ local function updateGame()
             end
             if not ownUi() and pressedBindingId and not hud.drag then workspace:request({kind='prepare',id=pressedBindingId,start=true,returnTo='quick'}) end
         end
+        sceneServices.processWheelEdit()
         if runtime.wheel then
             if pendingWheelClick then local choice=pendingWheelClick; pendingWheelClick=nil; runtime:commitWheel(choice)
             elseif not isKeyDown(cfg.main.radial_key) then runtime:commitWheel() end
@@ -3226,6 +3320,15 @@ function main()
     local started, drawReported = false, false
     while true do
         wait(0)
+        if sceneServices.shutdownUnload then
+            sceneServices.shutdownUnload=nil
+            if type(thisScript)=='function'then local found,script=pcall(thisScript)
+                if found and script and type(script.unload)=='function'then pcall(script.unload,script)end
+            end
+            return
+        end
+        if sceneServices.shutdownRequested then sceneServices.performShutdown()end
+        if not shutdown then
         if sceneServices.requestDemoMode~=nil then
             local desired=sceneServices.requestDemoMode;sceneServices.requestDemoMode=nil
             if desired~=runtime.demo then
@@ -3247,6 +3350,7 @@ function main()
         if uiRendered and not drawReported then
             pushLog('v'..core.VERSION..': окно отрисовано.')
             drawReported = true
+        end
         end
     end
 end

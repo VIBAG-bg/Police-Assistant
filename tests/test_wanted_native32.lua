@@ -50,7 +50,7 @@ for _,name in ipairs({'InputInt','InputText','InputTextMultiline','Button'})do
         if label:find('wanted',1,true)or label:find('##case-new',1,true)or label:find('##confirm%-yes$')or label:find('##confirm%-no$')or label:find('##confirm%-cancel$')then
             local lo,hi=im.GetItemRectMin(),im.GetItemRectMax();local pos,size=im.GetWindowPos(),im.GetWindowSize()
             if name=='InputTextMultiline'then check(pos.x>=0 and pos.x+size.x<=guiIo.DisplaySize.x,'Multiline viewport overflow')else check(lo.x>=pos.x-1 and hi.x<=pos.x+size.x+1,'Overflow: '..pageNow..' '..label)end
-            if detachedNow then check(lo.y>=pos.y and hi.y<=pos.y+size.y-8,'Detached control clipped vertically: '..pageNow..' '..label)end
+            if detachedNow and frameNow>=3 and im.IsItemVisible()and im.GetScrollMaxY()<1 then check(lo.y>=pos.y and hi.y<=pos.y+size.y-8,'Detached control clipped vertically: '..pageNow..' '..label)end
             if im.IsItemVisible()then seen[widthNow..':'..label]=true end
             if label:find('##confirm%-yes$')or label:find('##confirm%-no$')or label:find('##confirm%-cancel$')then
                 check(lo.y>=pos.y and hi.y<=pos.y+size.y,'Modal buttons overflow')
@@ -156,8 +156,11 @@ for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
             frameNow=frame;im.NewFrame();im.PushStyleVarVec2(im.StyleVar.WindowPadding,im.ImVec2(18,18))
             im.SetNextWindowPos(im.ImVec2(rect.x,rect.y),im.Cond.Always);im.SetNextWindowSize(im.ImVec2(rect.width,rect.height),im.Cond.Always)
             im.Begin('dedicated-native-'..page,nil,im.WindowFlags.NoSavedSettings+im.WindowFlags.NoResize+im.WindowFlags.NoMove+im.WindowFlags.NoScrollbar+im.WindowFlags.NoScrollWithMouse)
-            detached.draw(editor,ui,data,cb);check(#stack==0,'Detached scope mismatch')
-            if frame>=3 then check(im.GetScrollMaxY()<1,'Detached view needs scrolling: '..page..' at '..display[1]..'x'..display[2]..' max='..im.GetScrollMaxY())end
+            require('pa26_menu').scrollBody(im,ui,'dedicated-wanted-viewport',function()
+                detached.draw(editor,ui,data,cb)
+                if frame==3 then im.SetScrollY(im.GetScrollMaxY())end
+            end,12);check(#stack==0,'Detached scope mismatch')
+            if frame>=3 then check(im.GetScrollMaxY()<1,'Outer wanted window must remain fixed: '..page..' at '..display[1]..'x'..display[2]..' max='..im.GetScrollMaxY())end
             im.End();im.PopStyleVar(1);im.Render();frames=frames+1
         end
     end

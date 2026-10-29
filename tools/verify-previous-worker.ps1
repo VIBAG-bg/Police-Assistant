@@ -52,7 +52,7 @@ foreach($environment in $environments){
  $plan=@(Get-PaPlan $folder $manifest)
  Check ($plan[-1].path -ceq 'MoonLoader/police_assistant_2026.lua') 'entry replaced last'
  Check (@($plan|Where-Object {$_.path -ceq 'MoonLoader/lib/pa26_vehicle_types.lua'}).Count -eq 1) 'new module owned by old worker'
- foreach($name in @('fine_window','mark_window','ground_window','procedure_flow','procedure_input','procedure_window','sanctions')){
+ foreach($name in @('fine_window','mark_window','ground_window','procedure_flow','procedure_input','procedure_window','sanctions','wheel_order','wheel_edit','shutdown')){
   Check (@($plan|Where-Object {$_.path -ceq ('MoonLoader/lib/pa26_'+$name+'.lua')}).Count -eq 1) 'new procedure module owned by previous worker'
  }
  Invoke-PaTransaction $folder $manifest
@@ -79,4 +79,4 @@ foreach($environment in $environments){
 @{status='passed';checks=$checks;release=$current.release;baseline=$oldManifest.release;
  previous_worker_sha256=Get-PaHash $worker;package_sha256=$candidate.sha256;cases=$cases;
  real_game_written=$false;official_hud_read_only=[bool]$OfficialHudPath}|ConvertTo-Json -Depth 5|
- Set-Content -LiteralPath (Join-Path $release 'tests/PREVIOUS_WORKER0422.json') -Encoding UTF8
+ Set-Content -LiteralPath (Join-Path $release 'tests/PREVIOUS_WORKER0423.json') -Encoding UTF8

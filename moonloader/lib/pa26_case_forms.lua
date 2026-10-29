@@ -41,7 +41,7 @@ function Forms:begin(kind,explicitWanted)
         ic_name=r and r.ic_name or '',passport_number=r and r.passport_number or '',appearance=r and r.appearance or '',
         phone_known=r and r.phone_known or 'unknown',phone_number=r and r.phone_number or '',phone_source=r and r.phone_source or '',
         identity_nonce=r and r.nonce,identity_version=r and r.version,passport_source=r and r.passport_source,article='',part='',basis='',amount='',ooc_ack=false,
-        reason_id='',reason_group='01',facts='',ooc_reason='tracking',life_ack=false,inVehicle=self.state.inVehicle,
+        reason_id='',reason_group='all',facts='',ooc_reason='tracking',life_ack=false,inVehicle=self.state.inVehicle,
         phone_active='unknown',prior_ic_stars='unknown',clear_ic_safe=false}
     if kind=='wanted_list'then f.stage='preview'end
     if kind=='wanted'then
@@ -339,7 +339,8 @@ function Forms:validPlan(plan)
     return valid and table.concat(plan.wire,'\0')==table.concat(p.planWire or p.wire,'\0')or false
 end
 function Forms:reset(reason)
-    local q=self.queued;self.queued=nil;self.intent=nil;self.awaitingCommand=nil;self.message=reason;self.life=self.life+1
+    local had=self.queued~=nil or self.intent~=nil or self.awaitingCommand~=nil
+    local q=self.queued;self.queued=nil;self.intent=nil;self.awaitingCommand=nil;if had then self.message=reason end;self.life=self.life+1
     if q and self.env.cancel then self.env.cancel(q.token,reason)end
 end
 function Forms:tick(state,now)

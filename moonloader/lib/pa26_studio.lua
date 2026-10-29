@@ -13,7 +13,7 @@ local identityUi=require 'pa26_identity_ui'
 local caseUi=require 'pa26_case_ui'
 local operationUi=require 'pa26_operation_ui'
 local feedbackModule=require 'pa26_feedback'
-local M={};M.optionKeys={'quick_key','tips_key','cancel_key','opacity','compact','retain_distance','retain_grace_ms','keep_target_on_interior_change','aim_select_enabled','aim_select_control','aim_select_delay_ms','wheel_mode','wheel_profile','wheel_enabled','interaction_notices','wheel_names','wheel_child_limit','wheel_system_groups','ask_screenshot_path'}; local Studio={}; Studio.__index=Studio
+local M={};M.optionKeys={'quick_key','tips_key','cancel_key','opacity','compact','retain_distance','retain_grace_ms','keep_target_on_interior_change','aim_select_enabled','aim_select_control','aim_select_delay_ms','wheel_mode','wheel_profile','wheel_enabled','interaction_notices','wheel_names','wheel_child_limit','wheel_system_groups','wheel_order','wheel_edit_enabled','shutdown_message','ask_screenshot_path'}; local Studio={}; Studio.__index=Studio
 local function label(value) return tostring(value):gsub('##','# #') end
 local captureModifiers={[16]=true,[17]=true,[18]=true,[91]=true,[92]=true,
     [160]=true,[161]=true,[162]=true,[163]=true,[164]=true,[165]=true}
@@ -178,18 +178,22 @@ end
 function Studio:drawStatusInfo(ui)
     local info=self.statusInfo;if not info or self:hasModal()then return end
     local im=self.imgui
-    local spec={title='Состояние PA',lines={info.message},font=self.buttonFont,titleFont=self.headingFont,pageState=info}
+    local spec={title='Состояние PA',lines={info.message},buttons={'ОК'},columns=1,
+        titleFont=self.headingFont or self.buttonFont,buttonFont=self.buttonFont,pageState=info}
+    im.PushStyleVarVec2(im.StyleVar.WindowPadding,im.ImVec2(28,24));ui.push(function()im.PopStyleVar(1)end)
+    im.PushStyleVarFloat(im.StyleVar.WindowRounding,14);ui.push(function()im.PopStyleVar(1)end)
+    im.PushStyleVarVec2(im.StyleVar.ItemSpacing,im.ImVec2(10,10));ui.push(function()im.PopStyleVar(1)end)
     local layout=menuModule.confirmationLayout(im,spec);local io=im.GetIO()
     im.SetNextWindowSize(im.ImVec2(layout.width,layout.height),im.Cond.Always)
-    im.SetNextWindowPos(im.ImVec2((io.DisplaySize.x-layout.width)/2,math.max(16,io.DisplaySize.y-layout.height-24)),im.Cond.FirstUseEver)
+    im.SetNextWindowPos(im.ImVec2((io.DisplaySize.x-layout.width)/2,math.max(16,io.DisplaySize.y-layout.height-24)),im.Cond.Always)
     local visible=im.Begin('Состояние PA##pa26-status-info',nil,im.WindowFlags.NoSavedSettings+im.WindowFlags.NoCollapse+
-        im.WindowFlags.NoResize+im.WindowFlags.NoFocusOnAppearing+im.WindowFlags.NoScrollbar+im.WindowFlags.NoScrollWithMouse)
+        im.WindowFlags.NoTitleBar+im.WindowFlags.NoResize+im.WindowFlags.NoFocusOnAppearing+im.WindowFlags.NoScrollbar+im.WindowFlags.NoScrollWithMouse)
     ui.push(function()im.End()end)
     if visible then
         menuModule.confirmationBody(im,ui,layout,spec)
         if self:button('ОК##status-info-ok',ui)then self.statusInfo=nil end
     end
-    ui.finish()
+    ui.finish();ui.finish();ui.finish();ui.finish()
 end
 function Studio:clearSteps()
     self.stepDraft=nil; self.stepSource=nil; self.stepError=nil; self.stepOrder={}
@@ -1567,6 +1571,11 @@ function Studio:drawOptions(ui,data,callbacks,part)
     for _,spec in ipairs({{'wheel_enabled','Включить радиальное меню'},{'interaction_notices','Карточки взаимодействия с игроками'}})do d[spec[1]]=self:check(spec[2]..'##feature-'..spec[1],d[spec[1]])end
     if self:button('Тексты и сроки карточек##interaction-edit',ui)then callbacks.openAssist('notices')end
     d.wheel_mode=self:choice('Способ выбора##wheel-mode',d.wheel_mode,{{'categories','Категории и внешняя дуга','По категориям'},{'classic','Шесть прямых действий','Прямые действия'}},ui)
+    d.wheel_edit_enabled=self:check('Ctrl + ЛКМ · переставлять секторы в колесе##wheel-edit-enabled',d.wheel_edit_enabled~=false)
+    ui.text('Удерживайте Ctrl, зажмите ЛКМ на секторе и отпустите на другом секторе того же кольца. Это меняет порядок без запуска действий. Порядок сохраняется отдельно от биндов.')
+    if self:button('Вернуть стандартный порядок категорий и действий##wheel-order-reset',ui)then d.wheel_order={}end
+    d.shutdown_message=self:field('Локальное сообщение после отключения PA##shutdown-message','settings:shutdown-message',d.shutdown_message or'',2049,true,70)
+    ui.text('Предпросмотр: '..(d.shutdown_message or'')..' · Это локальное сообщение, серверу не отправляется. Пустое поле отключает сообщение.')
     if d.wheel_mode=='categories'then
         d.wheel_profile=self:choice('Количество категорий##wheel-profile',d.wheel_profile,{{'compact','4 крупные категории','4'},{'extended','6 категорий','6'},{'full','8 категорий','8'}},ui)
         ui.text('Чтобы открыть колесо, удерживайте назначенную клавишу. Добавить бинд: откройте его в библиотеке, перейдите в «Общее», включите «В радиальном меню» и выберите категорию.')
@@ -1587,7 +1596,7 @@ function Studio:drawOptions(ui,data,callbacks,part)
         ui.text('Авто сохраняет прежний размер. При своём числе, например 10, показываются до 10 действий, а при переполнении — дополнительная кнопка «Ещё и поиск».')
         self:settingsHeading(ui,'Куда поместить встроенные действия')
         d.wheel_system_groups=d.wheel_system_groups or{}
-        local choices=wheelModel.categoryChoices(d.wheel_names);choices[1]={'auto','Стандартная секция'}
+        local choices=wheelModel.systemCategoryChoices(d.wheel_names)
         for _,row in ipairs(wheelModel.systemRows)do
             local value,edited=self:choice(row[2]..'##wheel-system-'..row[1],d.wheel_system_groups[row[1]]or'auto',choices,ui)
             if edited then d.wheel_system_groups[row[1]]=value~='auto'and value or nil end
@@ -1645,7 +1654,7 @@ function Studio:drawFilters(ui,data,callbacks)
     self:drawNotice(ui)
 end
 function Studio:hasModal()
-    return self:hasWarning()or self.authorPresetConfirm~=nil or self.manualAction~=nil or self.wantedAppearance~=nil or self.rpPresetConfirm~=nil or self.assistConfirm~=nil or self.vehicleConfirm~=nil or self.operationConfirm~=nil or self.caseConfirm~=nil or self.patrolEventConfirm~=nil or self.patrolConfirm~=nil or self.remove~=nil or self.reset~=nil or self.importPreview~=nil or self.confirmPlan~=nil or self.confirmResult~=nil or
+    return self:hasWarning()or self.shutdownConfirm==true or self.authorPresetConfirm~=nil or self.manualAction~=nil or self.wantedAppearance~=nil or self.rpPresetConfirm~=nil or self.assistConfirm~=nil or self.vehicleConfirm~=nil or self.operationConfirm~=nil or self.caseConfirm~=nil or self.patrolEventConfirm~=nil or self.patrolConfirm~=nil or self.remove~=nil or self.reset~=nil or self.importPreview~=nil or self.confirmPlan~=nil or self.confirmResult~=nil or
         self.pendingSelection~=nil or self.pendingNavigation~=nil or self.keyCapture~=nil or self.customRemove~=nil
 end
 function Studio:cancelModal()
@@ -1653,7 +1662,7 @@ function Studio:cancelModal()
     if self.caseConfirm and self.caseConfirm.phase=='command'then self.cancelledCaseToken=self.caseConfirm.token end
     self.feedback:clear()
     if self.wantedAppearance then self.wantedAppearance.form.stage='identity' end
-    self.wantedAppearance=nil
+    self.wantedAppearance=nil;self.shutdownConfirm=nil
     self.manualAction=nil
     self.authorPresetConfirm=nil
     self.rpPresetConfirm=nil
@@ -1721,6 +1730,14 @@ function Studio:modalIntent(data)
         return{kind='warning',token=warning.token,title=warning.kind=='info'and 'Уведомление'or 'Предупреждение',lines=lines}
     end
     if self.authorPresetConfirm then return require('pa26_author_controller').modal(self)end
+    if self.shutdownConfirm then
+        local lines={'Вы действительно хотите полностью отключить Police Assistant?',
+            'Окна, HUD, бинды, Copilot и перехват команд перестанут работать до перезахода в игру или ручной перезагрузки скрипта.',
+            'Настройки, личные данные и журналы будут сохранены. Если запись не удастся, PA останется включённым; текущие отправки будут остановлены.'}
+        local n=#(data and data.caseForms and data.caseForms.reminders or{})
+        if n>0 then lines[#lines+1]='Осталось напоминаний о технических звёздах: '..n..'. Они сохранятся. Отключение PA само не снимает розыск; проверьте и завершите пеленгацию по правилам.'end
+        return{kind='shutdown',token='shutdown-confirm',title='Отключить Police Assistant?',lines=lines}
+    end
     if self.manualAction then return{kind='manual_action',token='manual-command:'..self.manualAction.token,title='Отыграть действие перед командой?',lines=self.manualAction.lines}end
     if self.pendingNavigation then
         local _,lines=self:unsavedChanges()
@@ -1878,6 +1895,7 @@ end
 function Studio:acceptModal(data,callbacks)
     if self:hasWarning()then return nil,'Сначала закройте предупреждение кнопкой «ОК».'end
     if self.authorPresetConfirm then return callbacks.authorPresetAccept()end
+    if self.shutdownConfirm then return callbacks.requestShutdown()end
     if self.rpPresetConfirm then return require('pa26_rp_presets').accept(self,callbacks)end
     if self.assistConfirm then return require('pa26_assist_ui').accept(self,callbacks)end
     if self.operationConfirm then return callbacks.operationAccept(self.operationConfirm)end
@@ -1998,7 +2016,7 @@ function Studio:drawModal(ui,data,callbacks)
         titleFont=self.buttonFont,buttonFont=self.buttonFont,pageState=self.modalPagination,columns=intent and(intent.kind=='warning'or intent.kind=='manual_action')and 1 or intent and intent.kind=='changes' and 3 or 2,
         extraHeight=intent and intent.kind=='manual_action'and self.manualAction and self.manualAction.head=='frisk'and 68 or intent and intent.kind=='capture' and 136 or intent and intent.kind=='wanted_appearance_input'and 90 or 0,
         extraAfterLines=intent and intent.kind=='wanted_appearance_input',
-        buttons=intent and intent.kind=='warning'and{'ОК'}or intent and intent.kind=='changes' and {'Сохранить','Отбросить','Остаться'} or
+        buttons=intent and intent.kind=='shutdown'and{'ДА — отключить PA','НЕТ — отмена'}or intent and intent.kind=='warning'and{'ОК'}or intent and intent.kind=='changes' and {'Сохранить','Отбросить','Остаться'} or
             intent and intent.kind=='capture' and {'Назначить','Отмена'}or
             intent and intent.kind=='manual_action'and {'ДА — отыграть RP и выполнить','НЕТ — выполнить сразу без RP','Отменить всё (Esc) — не отправлять'}or
             intent and intent.kind=='case_procedure'and self.caseConfirm.phase=='command'and self.caseConfirm.kind=='fine'and {'ДА — выписать штраф','НЕТ — отменить штраф'}or

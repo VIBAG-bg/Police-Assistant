@@ -547,8 +547,8 @@ local function child(imgui, ui, name, width, height, body, transparent, flags, p
 end
 
 -- Floating window chrome must not contribute to a scrolling body's extent.
-function M.scrollBody(imgui,ui,name,body)
-    child(imgui,ui,name,0,0,body,true,0,0)
+function M.scrollBody(imgui,ui,name,body,padding)
+    child(imgui,ui,name,0,0,body,true,0,padding or 0)
 end
 
 local function withFont(imgui, ui, font, body)
@@ -746,8 +746,10 @@ function Menu:homePage(imgui, ui, model, callbacks, fonts)
         self:navigate('binds',nil,'actions')
     end
     if pairedButtons then imgui.SameLine(0, 12) end
-    if button(imgui, ui, 'Завершить работу##home', imgui.ImVec2(buttonWidth, 46), fonts.button) then callbacks.finishWork() end
-    withFont(imgui, ui, fonts.small, function() muted(imgui, ui, 'Остановить текущую отыгровку и закрыть меню.') end)
+    imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(.40,.13,.18,.90));ui.push(function()imgui.PopStyleColor(1)end)
+    if button(imgui,ui,'Отключить PA##home',imgui.ImVec2(buttonWidth,46),fonts.button)then callbacks.finishWork()end
+    ui.finish()
+    withFont(imgui, ui, fonts.small, function() muted(imgui, ui, 'Полностью выключить Police Assistant до перезахода в игру.') end)
 end
 
 function Menu:statsPage(imgui, ui, model, fonts)

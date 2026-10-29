@@ -1,8 +1,10 @@
-﻿Set-StrictMode -Version Latest
+Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $paRelease=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $paManifestBefore=(Get-FileHash -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Algorithm SHA256).Hash
 $paInstallerBefore=(Get-FileHash -LiteralPath (Join-Path $paRelease 'install.ps1') -Algorithm SHA256).Hash
+$paCurrentManifest=Get-Content -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Raw|ConvertFrom-Json
+$paRollbackPoints=@(1,37,89,91,92,93,94,97,98,102,103,($paCurrentManifest.files.Count+$paCurrentManifest.cef_files.Count))
 $paRoot=Join-Path $paRelease ('tests\install-sandbox\run-'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $paRoot | Out-Null
 function Snapshot([string]$root) {
@@ -73,7 +75,7 @@ $tag='<!-- PA26 CEF chat adapter --><script src="pa26-chat.js"></script>'
 if($patched.Replace($tag,'') -ne $original) { throw 'Patch changed other HUD content' }
 & (Join-Path $paRelease 'install.ps1') -DestinationRoot (Join-Path $cef 'MoonLoader') | Out-Null
 if([IO.File]::ReadAllText((Join-Path $cef 'cef\assets\hud\index.html')) -ne $patched) { throw 'Repeated patch duplicated the tag' }
-foreach($failAfter in @(1,37,89,91,92,93,94,97,98,102,103,104)) {
+foreach($failAfter in $paRollbackPoints) {
     $case=Create-Case ('rollback-'+$failAfter) $true
     $before=Snapshot $case
     $failed=$false
@@ -86,6 +88,6 @@ foreach($failAfter in @(1,37,89,91,92,93,94,97,98,102,103,104)) {
 }
 if((Get-FileHash -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Algorithm SHA256).Hash -ne $paManifestBefore) { throw 'Manifest changed during installer test' }
 if((Get-FileHash -LiteralPath (Join-Path $paRelease 'install.ps1') -Algorithm SHA256).Hash -ne $paInstallerBefore) { throw 'Installer changed during test' }
-$result=[ordered]@{release=(Get-Content -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Raw|ConvertFrom-Json).release;status='passed';native_install=$true;cef_install=$true;idempotent_patch=$true;preserved_personal_files=$true;personal_backups=$true;verify_only_readonly=$true;rollback_after=@(1,37,89,91,92,93,94,97,98,102,103,104);manifest_sha256=$paManifestBefore;installer_sha256=$paInstallerBefore;real_game_written=$false;sandbox=$paRoot}
+$result=[ordered]@{release=(Get-Content -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Raw|ConvertFrom-Json).release;status='passed';native_install=$true;cef_install=$true;idempotent_patch=$true;preserved_personal_files=$true;personal_backups=$true;verify_only_readonly=$true;rollback_after=$paRollbackPoints;manifest_sha256=$paManifestBefore;installer_sha256=$paInstallerBefore;real_game_written=$false;sandbox=$paRoot}
 $result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $paRelease 'tests\INSTALLER_RESULTS.json') -Encoding UTF8
 'Installer: native, CEF, repeated patch and twelve rollback points passed.'

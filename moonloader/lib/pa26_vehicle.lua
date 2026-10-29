@@ -58,9 +58,10 @@ function M.describe(c,cfg,gender)
 end
 function M.new(env)return setmetatable({env=env,life=1,targetLife=1,serial=0,candidates={},generations={}},Vehicle)end
 function Vehicle:cancel(reason)
+    local had=self.queued~=nil or self.intent~=nil
     local p=self.queued;self.queued=nil;self.intent=nil
     if p and self.env.cancel then self.env.cancel(p.token,reason)end
-    self.message=reason
+    if had then self.message=reason end
 end
 function Vehicle:reset(reason)
     self:cancel(reason);self.life=self.life+1;self.selected=nil;self.candidates={};self.phase=nil;self.motion=nil;self.own=nil;self.scanAt=nil
