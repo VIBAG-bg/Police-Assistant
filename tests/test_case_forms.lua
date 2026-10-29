@@ -23,7 +23,7 @@ for _,bad in ipairs({'0','-1','2.5','1e2','',string.rep('9',10),'nan'})do f.amou
 f.amount='0002';eq(c:preview(f).values.amount,'2');f.basis='bad\n/r spam';check(not c:preview(f));f.basis='ПМ 4.1'
 local b=assert(c:draft(f,20));check(not b.enabled);check(model.validateBinding(b));check(b.script:find('{param:amount}',1,true))
 local p=assert(c:offer(f));eq(#s.plans,0);check(c:accept(p));check(not c:accept(p));s.tick();eq(#s.plans,1)
-eq(s.plans[1].lines[#s.plans[1].lines],'/mockfine 37 2 ПМ 4.1');check(c:validPlan(s.plans[1]));s.stamp=2;s.tick();check(s.cancelled)
+check(not table.concat(s.plans[1].lines,'\n'):find('/mockfine',1,true));check(c:validPlan(s.plans[1]));c:onExecution('completed',{plan=s.plans[1]});local final=assert(c:takeCommandConfirmation());eq(final.phase,'command');check(c:accept(final));s.tick();eq(s.plans[2].lines[1],'/mockfine 37 2 ПМ 4.1');s.stamp=2;s.tick();check(s.cancelled)
 for _,key in ipairs({'session','ped','localId','local_nick','demo','alive'})do
     c,s=fixture();f=s.form();p=assert(c:offer(f));check(c:accept(p));s.state[key]=key=='alive'and false or 'changed';s.tick();eq(#s.plans,0,key)
 end

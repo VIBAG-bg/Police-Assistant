@@ -120,6 +120,7 @@ test_names.append('test_hotfix0421_patrol.lua')
 test_names.append('test_win7_patrol_stability.lua')
 
 test_names.append('test_downed_scene.lua')
+test_names.extend(['test_procedures0422.lua','test_procedure_windows0422.lua','test_ground0422.lua'])
 parser = argparse.ArgumentParser()
 test_names.extend(['test_cef_assets.lua','test_hud_close.lua','test_manual_radio.lua'])
 test_names.extend(['test_text_segments.lua','test_action_preferences.lua'])

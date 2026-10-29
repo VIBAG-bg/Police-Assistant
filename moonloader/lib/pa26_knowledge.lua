@@ -88,6 +88,11 @@ function M.validate(raw)
                     if type(s)~='table' or not clean(s.kind,80) or (s.unit~=nil and not clean(s.unit,80)) or
                         (s.condition~=nil and not clean(s.condition,2000,true))or
                         (s.alternative~=nil and not clean(s.alternative,2000,true)) then return nil,'Повреждена санкция.' end
+                    if s.source_text_sha256~=nil then
+                        if type(s.source_text_sha256)~='string'or #s.source_text_sha256~=64 or not s.source_text_sha256:match('^%x+$')or
+                         s.source_text_sha256~=item.source_text_sha256 or not clean(s.source_excerpt,2000,true)or
+                         type(item.text)~='string'or not item.text:find(s.source_excerpt,1,true)then return nil,'Ветвь санкции не совпадает с её первоисточником.'end
+                    end
                     for _,n in ipairs({'min','max'}) do if s[n]~=nil and (not core.finite(s[n]) or s[n]<0) then return nil,'Неверная величина санкции.' end end
                     if s.min~=nil and s.max~=nil and s.min>s.max then return nil,'Минимальная санкция больше максимальной.'end
                     if s.life_alternative~=nil and type(s.life_alternative)~='boolean' then return nil,'Повреждена альтернатива санкции.' end

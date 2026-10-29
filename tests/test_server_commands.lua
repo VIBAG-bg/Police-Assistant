@@ -8,7 +8,8 @@ eq(catalog.find('/find')[2],'Посмотреть онлайн фракции');
 check(catalog.find('/taser'));check(not catalog.find('/tazer'));eq(catalog.procedureHeads.fine,'/ticket')
 check(catalog.find('/wanted'));check(catalog.find('/su'));check(catalog.find('/pt'));check(catalog.find('/setmark'))
 local lib=model.defaults(core.defaults());eq(lib.taser.command,'/taser')
-for _,key in ipairs({'wanted','fine','mark'})do eq(lib.procedures[key..'_command'],'');check(not lib.procedures[key..'_verified'])end
+for _,key in ipairs({'wanted','mark'})do eq(lib.procedures[key..'_command'],'');check(not lib.procedures[key..'_verified'])end
+eq(lib.procedures.fine_command,'/ticket {id} {amount} {basis}');check(lib.procedures.fine_verified)
 lib.alerts.channel='/f';lib.alerts.patrol.police_channel='/f';lib.alerts.patrol.prison_channel='/f'
 lib.patrol_session.channel='/f';lib.vehicle.channel='/f'
 for _,r in ipairs(lib.patrol_events.items or {})do r.channel='/f'end

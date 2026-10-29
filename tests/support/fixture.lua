@@ -739,6 +739,8 @@ local function fixture(options)
         seed.settings.window_layout.initial_percent=95
         seed.settings.window_layout.remember=false
         seed.settings.window_layout.wanted_separate=false
+        seed.settings.window_layout.fine_separate=false
+        seed.settings.window_layout.mark_separate=false
     end
     if not options.categoryWheel then seed.settings.wheel_mode='classic' end
     if options.nearby==false then seed.nearby.enabled=false end

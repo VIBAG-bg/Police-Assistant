@@ -18,6 +18,7 @@ M.rpFields[#M.rpFields+1]={'clear_chain_rp','Снятие технических
 function M.defaults()
     local out={enabled=false,wanted_enabled=true,fine_enabled=true,mark_enabled=true,allow_ooc=true,fine_unmasked=true,delay_ms=1500,
         wanted_assistant_enabled=true,wanted_intercept=true,wanted_require_life_ack=true,
+        fine_intercept=true,mark_intercept=true,pm_rate=0,
         wanted_allow_remote=true,wanted_autofill_passport=true,wanted_id_as_passport=true,wanted_suggest_ooc=true,wanted_each_trait=false,
         wanted_passport_number_rp="/do В карточке ориентировки указан номер паспорта: {passport_number}.",
         wanted_generic_appearance_rp="/me {gender:зажал|зажала} кнопку тангенты рации и {gender:передал|передала} диспетчеру приметы подозреваемого.\n/do Диспетчер составил ориентировку на розыск по причине: {game_reason}.",
@@ -26,8 +27,8 @@ function M.defaults()
         wanted_reminder_enabled=true,wanted_reminder_delay_ms=15000,wanted_reminder_snooze_ms=60000,wanted_reminder_show_ms=20000,
         wanted_reminder_title='Проверьте OOC-звёзды',
         wanted_reminder_text='Проверьте результат серверного выбора. Если вы выдали OOC-звёзды, снимите их вручную после нужного этапа. PA не подтверждает выдачу и не отправляет /clear.',
-        wanted_command='',fine_command='',mark_command='',wanted_verified=false,fine_verified=false,mark_verified=false,
-        wanted_source='',fine_source='',mark_source='',
+        wanted_command='',fine_command='/ticket {id} {amount} {basis}',mark_command='',wanted_verified=false,fine_verified=true,mark_verified=false,
+        wanted_source='',fine_source='Подтверждено пользователем 29.10.2026: /ticket ID сумма причина',mark_source='',
         wanted_passport_rp="/me {gender:сверил|сверила} паспортные данные на имя {ic_name} и {gender:передал|передала} ориентировку диспетчеру.\n/do В базе данных зафиксирован запрос на розыск по причине: {game_reason}.",
         wanted_appearance_rp='/me зажал кнопку тангенты рации и передал диспетчеру известные приметы подозреваемого: {appearance}.',
         wanted_ooc_rp="/me {gender:ввёл|ввела} известный номер {phone_number} в служебный терминал и {gender:запросил|запросила} пеленгацию сигнала.\n/do На экране терминала отображается расчёт сектора по сигналу сотовой вышки.",
@@ -81,11 +82,16 @@ function M.rp(raw)
 end
 function M.validate(raw)
     local out=M.defaults();if raw==nil then return out end
+    if type(raw)=='table'and raw.fine_command==''and raw.fine_verified==false and(raw.fine_source or'')==''then
+        raw=shared.copy(raw);raw.fine_command=out.fine_command;raw.fine_verified=true;raw.fine_source=out.fine_source
+    end
     if type(raw)~='table'then return nil,'Неверные настройки процедур.'end
     for _,k in ipairs({'enabled','wanted_enabled','fine_enabled','mark_enabled','clear_enabled','clear_verified','allow_ooc','fine_unmasked','wanted_verified','fine_verified','mark_verified',
-        'wanted_assistant_enabled','wanted_intercept','wanted_require_life_ack','wanted_reminder_enabled','wanted_allow_remote','wanted_autofill_passport','wanted_id_as_passport','wanted_suggest_ooc','wanted_each_trait'})do
+        'wanted_assistant_enabled','wanted_intercept','wanted_require_life_ack','wanted_reminder_enabled','wanted_allow_remote','wanted_autofill_passport','wanted_id_as_passport','wanted_suggest_ooc','wanted_each_trait','fine_intercept','mark_intercept'})do
         if raw[k]~=nil then if type(raw[k])~='boolean'then return nil,'Неверный переключатель процедуры.'end;out[k]=raw[k]end
     end
+    out.pm_rate=raw.pm_rate or 0
+    if not shared.integer(out.pm_rate,0,1000000)then return nil,'Курс ПМ: целое число от 0 до 1000000; 0 отключает калькулятор.'end
     local n=raw.delay_ms;if n==nil then n=out.delay_ms end
     if not shared.integer(n,1000,10000)then return nil,'Пауза процедуры: от 1000 до 10000 мс.'end;out.delay_ms=n
     if raw.wanted_send_mode~=nil then

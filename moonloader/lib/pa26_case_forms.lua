@@ -57,6 +57,8 @@ function Forms:validForm(f,committed)
         f.demo~=self.state.demo or f.localId~=self.state.localId or f.local_nick~=self.state.local_nick or
         f.kind~='wanted_list'and not (accountKind(f.kind)and self.env.validWantedTarget or self.env.validTarget)(f.target,f.stamp)then return false end
     local cfg=self.env.settings();if not M.enabled(cfg,f.kind)then return false end
+    if f.sanction_id and self.env.validSanction and not self.env.validSanction(f)then return false end
+    if f.groundOrigin and self.env.validGround and not self.env.validGround(f.groundOrigin)then return false end
     if (f.kind=='wanted'or f.kind=='wanted_list')and f.inVehicle~=self.state.inVehicle then return false end
     if f.identity_nonce then
         local r
@@ -312,7 +314,7 @@ function Forms:offer(f)
     end
     self.offerSerial=self.offerSerial+1
     preview.token=self.offerSerial;preview.at=self.now;preview.session=self.state.session;preview.ped=self.state.ped;preview.demo=self.state.demo
-    if f.kind=='wanted'or f.kind=='wanted_list'then preview.phase='prepare'end
+    if f.kind=='wanted'or f.kind=='wanted_list'or f.kind=='fine'then preview.phase='prepare'end
     return preview
 end
 function Forms:proposalValid(p,committed)

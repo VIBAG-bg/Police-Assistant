@@ -76,7 +76,7 @@ $paOwned = @('lib\pa26_detention_timers.lua','lib\pa26_operational_ui.lua','lib\
     'lib\pa26_identity.lua','lib\pa26_identity_ui.lua','lib\pa26_procedure_settings.lua',
     'lib\pa26_case_forms.lua','lib\pa26_case_ui.lua','lib\pa26_wanted_catalog.lua','lib\pa26_wanted_ui.lua','lib\pa26_user_files.lua','lib\pa26_wanted_accounts.lua','lib\pa26_window_layout.lua','lib\pa26_manual_chat.lua','lib\pa26_interface_settings.lua','lib\pa26_wanted_window.lua',
     'lib\pa26_operation_settings.lua','lib\pa26_operations.lua','lib\pa26_operation_ui.lua',
-    'lib\pa26_radio_text.lua','lib\pa26_local_life.lua','lib\pa26_vehicle_types.lua','lib\pa26_vehicle.lua','lib\pa26_vehicle_settings.lua',
+    'lib\pa26_radio_text.lua','lib\pa26_local_life.lua','lib\pa26_sanctions.lua','lib\pa26_procedure_input.lua','lib\pa26_procedure_window.lua','lib\pa26_fine_window.lua','lib\pa26_mark_window.lua','lib\pa26_ground_window.lua','lib\pa26_procedure_flow.lua','lib\pa26_vehicle_types.lua','lib\pa26_vehicle.lua','lib\pa26_vehicle_settings.lua',
     'lib\pa26_vehicle_world.lua','lib\pa26_vehicle_names.lua','lib\pa26_vehicle_palette.lua','lib\pa26_vehicle_ui.lua',
     'lib\pa26_assist_settings.lua','lib\pa26_assist_ui.lua','lib\pa26_training.lua',
     'lib\pa26_evidence.lua','lib\pa26_evidence_files.lua',

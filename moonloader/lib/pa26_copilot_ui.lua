@@ -3,7 +3,7 @@ local copy=require('pa26_bindings').copy;local menu=require 'pa26_menu';local pr
 local M={}
 function M.offer(s,callbacks,action)
  local p,err=callbacks.copilotOffer(action)
- if p then s.vehicleConfirm=p else s:notify(err,'vehicle',false)end
+ if p then if p.navigation then callbacks.openGround(p)else s.vehicleConfirm=p end else s:notify(err,'vehicle',false)end
 end
 function M.quick(s,ui,callbacks,offer)
  s:settingsHeading(ui,'Вызовы и спецситуации (RP + Рация)')
@@ -80,7 +80,11 @@ function M.draw(s,ui,data,callbacks)
   d.enabled=s:check('Включить транспортные действия PA##copilot-vehicle-enabled',d.enabled)
   d.require_patrol=s:check('Транспорт только в активном патруле##copilot-vehicle-patrol',d.require_patrol)
   d.megaphone_enabled=s:check('Включить мегафон##copilot-megaphone-enabled',d.megaphone_enabled)
-  for _,r in ipairs(prefs.booleans)do cfg[r[1]]=s:check(r[2]..'##copilot-setting-'..r[1],cfg[r[1]])end
+  for _,r in ipairs(prefs.booleans)do
+   if r[1]:match('^ground_')then cfg[r[1]]=require('pa26_procedure_window').check(s,ui,r[2]..'##copilot-setting-'..r[1],cfg[r[1]])
+   else cfg[r[1]]=s:check(r[2]..'##copilot-setting-'..r[1],cfg[r[1]])end
+  end
+  cfg.ground_channel=s:choice('Речь в формах основания##copilot-ground-channel',cfg.ground_channel or'/s',{{'','Обычный чат'},{'/s','Речь /s'}},ui)
   for _,r in ipairs(prefs.numbers)do
    ui.text(r[2]);im.PushItemWidth(-1)
    local n=im.new.int(cfg[r[1]]);if im.InputInt('##copilot-setting-'..r[1],n)then cfg[r[1]]=n[0]end;im.PopItemWidth()
@@ -164,7 +168,8 @@ function M.drawHud(controller,im)
  end
  list:AddTextFontPtr(m.heading,14*s,vec(x,y),white,m.title,nil,math.max(1,m.wrap-30*s));y=y+m.titleH+6*s;text(m.text,m.body,12,x,y);y=y+m.bodyH+5*s
  if not m.traffic then return end
- local buttons={{'tire','/m +1'},{m.view.pinned or'high_risk',m.view.pinned=='pursuit_mark'and'Только /pt'or m.view.pinned and'Розыск + /pt'or'10-66'},{'finish','Завершить'}}
+ local primary=m.view.phase=='10-55'and{'explain_stop','Причина'}or m.view.phase=='10-66'and{'explain_detention','Основание'}or{'tire','/m +1'}
+ local buttons={primary,{m.view.pinned or'high_risk',m.view.pinned=='pursuit_mark'and'Только /pt'or m.view.pinned and'Розыск + /pt'or'10-66'},{'finish','Завершить'}}
  local width=(m.wrap-8*s)/3
  for i,b in ipairs(buttons)do
   local box={x=x+(i-1)*(width+4*s),y=y,w=width,h=32*s}

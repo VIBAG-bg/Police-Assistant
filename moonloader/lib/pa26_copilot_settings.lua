@@ -51,6 +51,10 @@ M.variables={vehicle_type=true,vehicle_type_gen=true,unit=true,station=true,crew
  my_name=true,my_firstname=true,officers=true,min_officers=true,warnings=true,warning_count=true,ooc_warning_count=true}
 local legacyRadio={stop="{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.",pursuit="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}",foot="{local_tag}{unit}, подозреваемый покинул {model}, веду пешую погоню 10-57 FOXTROT в районе {area} ({map_square}), направление: {direction}, {tac}, Код 3!",high_risk="{local_tag}{unit}, провожу остановку повышенного риска 10-66 {vehicle_description}, {occupants_text}, район {area} ({map_square}), запрашиваю свободные экипажи по Код 3!",finish="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4."}
 M.variables.city=true;M.variables.dispatch_officers=true;M.variables.robbery_min_officers=true
+M.variables.rank=true
+for _,r in ipairs({{'ground_offer','После осмотра предложить назвать причину'},{'ground_intro','В форме причины сначала представляться'},{'ground_ud','При представлении показывать удостоверение через /ud'},{'ground_miranda','В форме задержания читать полную Миранду'}})do M.booleans[#M.booleans+1]=r end
+M.templates[#M.templates+1]={'intro','Представление перед причиной остановки'}
+M.templates[#M.templates+1]={'badge','RP · показать жетон / удостоверение'}
 M.variables.stop_ground=true;M.variables.detention_ground=true;M.variables.ground_article=true
 function M.defaults()
  local d={pursuit_retention=true,pursuit_retain_distance=300,pursuit_retain_grace_ms=15000,repeat_megaphone=true,auto_plate=true,plate_prefix='SA-',plate_digits=3,legacy_tire_enabled=false,dispatch_enabled=true,dispatch_rp_enabled=true,robbery_guard=true,robbery_min_officers=2,
@@ -100,6 +104,9 @@ function M.defaults()
  for key,text in pairs(dispatch.defaults)do d.templates[key]=text end
  d.stop_ground='none';d.stop_branch='none';d.stop_custom='';d.detention_ground='none';d.detention_custom=''
  d.detention_timers=true;d.lawyer_response_seconds=300;d.lawyer_arrival_seconds=600;d.phone_call_seconds=180
+ d.ground_offer=true;d.ground_intro=true;d.ground_ud=false;d.ground_miranda=true;d.ground_channel='/s'
+ d.templates.intro='Здравствуйте. Вас беспокоит {rank} {my_name}, {station}.'
+ d.templates.badge='{gender:показал|показала} служебный жетон и удостоверение собеседнику.'
  d.templates.explain_stop='Причина остановки: {stop_ground}. Основание: {ground_article}.'
  d.templates.documents='Предъявите, пожалуйста, документы для проверки. Основание: {stop_ground}.'
  d.templates.explain_detention='Вы задержаны. Основание: {detention_ground}. {ground_article}.'
@@ -118,6 +125,8 @@ function M.validate(raw)
  for _,r in ipairs(M.booleans)do if raw[r[1]]~=nil then if type(raw[r[1]])~='boolean'then return nil,'Проверьте переключатель Copilot: '..r[2]end;d[r[1]]=raw[r[1]]end end
  for _,r in ipairs(M.numbers)do if raw[r[1]]~=nil then if not shared.integer(raw[r[1]],r[3],r[4])then return nil,'Проверьте значение Copilot: '..r[2]end;d[r[1]]=raw[r[1]]end end
  for _,r in ipairs(M.texts)do if raw[r[1]]~=nil then local t=shared.text(raw[r[1]],r[3]);if not t or(t==''and r[1]~='select_plate'and r[1]~='stop_custom'and r[1]~='detention_custom')then return nil,'Заполните Copilot: '..r[2]end;d[r[1]]=t end end
+ d.ground_channel=raw.ground_channel or d.ground_channel
+ if d.ground_channel~=''and d.ground_channel~='/s'then return nil,'Для речи формы выберите обычный чат или /s.'end
  local grounds=require 'pa26_operational'
  for _,kind in ipairs({'stop','detention'})do
   local key=kind..'_ground';local value=raw[key]or'none';if not grounds.find(kind,value)then return nil,'Выберите существующее основание.'end;d[key]=value

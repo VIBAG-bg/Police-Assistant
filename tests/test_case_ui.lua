@@ -59,10 +59,14 @@ for _,backend in ipairs({'native','cef','dot'})do
 end
 s=setup();if s.frames[1].condition()then s.commands.pa26();s.step()end
 s.commands.wanted('');for _=1,3 do s.step()end;eq(s.workspace.studio.caseForm.kind,'wanted_list');eq(s.workspace.studio.caseForm.target,nil);eq(#s.sent,0)
--- Fine still uses its independent validated contract and one confirmation.
+-- Fine has its validated contract and a separate confirmation after RP.
 s=setup();click(s,'Штраф##Действие##case-kindfine');click(s,'Новая форма##case-new')
 click(s,'Да##Вы видели паспорт этого человека?##case-passport_seenyes');edit(s,{['##IC-имя и фамилия из документа##case-ic_name']='John Smith'})
 click(s,'Нет##На человеке маска?##case-maskno');click(s,'Далее · основание##case-next')
 edit(s,{['##Точное основание для команды##case-basis']='ПМ 4.1',['##Сумма штрафа · вручную##case-amount']='1000'})
 click(s,'Проверить полный текст##case-preview');click(s,'Подтвердить выполнение##case-send');click(s,'ДА##confirm-yes')
-for _=1,5 do s.step(1600)end;eq(s.sent[#s.sent].line,'/mockfine 37 1000 ПМ 4.1');healthy(s)
+for _=1,24 do s.step(1600);if s.workspace.studio.caseConfirm then break end end
+check(s.workspace.studio.caseConfirm);eq(s.workspace.studio.caseConfirm.phase,'command')
+for _,r in ipairs(s.sent)do check(not r.line:match('^/mockfine '))end
+click(s,'ДА — выписать штраф##confirm-yes');s.step();s.step(1600)
+eq(s.sent[#s.sent].line,'/mockfine 37 1000 ПМ 4.1');healthy(s)

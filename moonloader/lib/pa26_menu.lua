@@ -34,7 +34,7 @@ local function clamp(value,low,high) return math.max(low,math.min(high,value)) e
 function M.windowBounds(width,height,key,percent)
     if not core.finite(width) or not core.finite(height) or width<220 or height<220 then return nil end
     percent=percent or 70
-    local defaults=({main={width*percent/100,height*percent/100,760,480},wanted={width*.7,math.max(720,height*.86),420,400},quick={780,700,360,320},tips={960,760,420,360},assist={680,560,420,380}})[key]
+    local defaults=({main={width*percent/100,height*percent/100,760,480},wanted={width*.7,math.max(720,height*.86),420,400},fine={math.min(820,width*.76),height*.82,420,360},mark={math.min(780,width*.75),height*.82,420,360},ground={math.min(780,width*.72),height*.8,420,360},quick={780,700,360,320},tips={960,760,420,360},assist={680,560,420,380}})[key]
     if not defaults then return nil end
     local maxW,maxH=width-32,height-32
     local minW,minH=math.min(defaults[3],maxW),math.min(defaults[4],maxH)
@@ -75,7 +75,7 @@ function M.windowRect(width,height,key,saved,percent)
         y=clamp(core.finite(saved.y)and saved.y or(height-h)/2,16,height-h-16)}
 end
 function Menu:resetWindowPositions()
-    self.pendingWindows={};self.resetWindows={main=true,quick=true,tips=true,assist=true,wanted=true}
+    self.pendingWindows={};self.resetWindows={main=true,quick=true,tips=true,assist=true,wanted=true,fine=true,mark=true,ground=true}
 end
 function Menu:nativeEdges(imgui)
     local io=imgui.GetIO()

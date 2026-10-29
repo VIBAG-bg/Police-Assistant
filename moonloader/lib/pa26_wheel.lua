@@ -22,7 +22,7 @@ M.copilotRows={{'stop_order','Остановить авто','service','car'},{'
  {'pursuit','10-57 VICTOR','service','car'},{'high_risk','10-66','detention','car'},
  {'approach','Осмотр салона','documents','foot'},{'foot','10-57 FOXTROT','detention','foot'},
  {'documents','Проверка документов','documents','foot'},{'explain_stop','Причина остановки','documents','both'},
- {'explain_detention','Основание и права','detention','foot'},{'rights','Адвокат и звонок','detention','foot'}}
+ {'explain_detention','Основание и права','detention','any'},{'rights','Адвокат и звонок','detention','foot'}}
 for _,r in ipairs(M.copilotRows)do M.systemRows[#M.systemRows+1]={'copilot-'..r[1],r[2]}end
 M.systemRows[#M.systemRows+1]={'copilot-pursuit_mark','Розыск / метка погони'}
 function M.context(s)
@@ -127,9 +127,9 @@ function M.build(lib,revision,includeAlerts,serviceState)
     local cp=lib.vehicle and lib.vehicle.copilot
     if lib.vehicle and lib.vehicle.enabled and cp and cp.enabled and serviceState and serviceState.onDuty then
         local context=M.context(serviceState);local v=serviceState.copilot or{}
-        for _,r in ipairs(M.copilotRows)do if r[4]==context or r[4]=='both'and context~='none'then
+        for _,r in ipairs(M.copilotRows)do if r[4]==context or r[4]=='both'and context~='none'or r[4]=='any'then
             if (r[1]~='approach'and r[1]~='foot'or v.car)then
-                place({kind='copilot',id='copilot-'..r[1],action=r[1],category=r[3],name=r[2],needsTarget=false})
+                place({kind='copilot',id='copilot-'..r[1],action=r[1],category=r[3],name=r[2],needsTarget=r[4]=='any'and context=='none'})
             end
         end end
         if v.pinned and v.car then place({kind='copilot',id='copilot-pursuit_mark',action=v.pinned,category='wanted',name=v.pinned=='pursuit_mark'and'Только /pt'or'Розыск + /pt',needsTarget=false})end

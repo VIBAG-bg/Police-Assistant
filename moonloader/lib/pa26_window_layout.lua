@@ -1,13 +1,17 @@
 local core=require 'pa26_core'
-local M={keys={main=true,quick=true,tips=true,assist=true,wanted=true}}
-function M.defaults()return {revision=1,remember=true,initial_percent=70,wanted_separate=true,windows={}}end
+local M={keys={main=true,quick=true,tips=true,assist=true,wanted=true,fine=true,mark=true,ground=true}}
+function M.defaults()return {revision=1,remember=true,initial_percent=70,wanted_separate=true,fine_separate=true,mark_separate=true,windows={}}end
 function M.validate(raw)
     if raw==nil then return M.defaults()end
     if type(raw)~='table'or raw.revision~=1 or type(raw.remember)~='boolean'or type(raw.wanted_separate)~='boolean'or
         not core.finite(raw.initial_percent)or raw.initial_percent~=math.floor(raw.initial_percent)or raw.initial_percent<50 or raw.initial_percent>95 or type(raw.windows)~='table'then
         return nil,'Проверьте настройки окон: начальный размер 50–95%, сохранение и отдельное окно розыска.'
     end
-    local out=M.defaults();out.remember=raw.remember;out.wanted_separate=raw.wanted_separate;out.initial_percent=raw.initial_percent
+    local out=M.defaults()
+    for _,key in ipairs({'fine_separate','mark_separate'})do
+        if raw[key]~=nil then if type(raw[key])~='boolean'then return nil,'Неверный переключатель отдельного окна.'end;out[key]=raw[key]end
+    end
+    out.remember=raw.remember;out.wanted_separate=raw.wanted_separate;out.initial_percent=raw.initial_percent
     for key,row in pairs(raw.windows)do
         if not M.keys[key]or type(row)~='table'then return nil,'Неизвестное сохранённое окно PA.'end
         local clean={}

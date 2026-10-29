@@ -1764,9 +1764,9 @@ function Studio:modalIntent(data)
             if p.form.mode=='ooc'and p.kind=='wanted'then lines[#lines+1]=require('pa26_procedure_settings').oocNotes[p.form.ooc_reason]end
             lines[#lines+1]='Отыгровка уже завершена. После ДА будет отправлена только эта команда:'
             for _,line in ipairs(p.lines)do lines[#lines+1]=line end
-            lines[#lines+1]=direct and 'Команда может сразу выдать розыск без серверного окна. НЕТ отменит команду; уже отправленные отыгровки не повторятся.'or 'Команда откроет серверный список; дальнейший выбор в нём вы делаете вручную. НЕТ отменит открытие.'
+            lines[#lines+1]=p.kind=='fine'and 'Команда передаст штраф на сервер. НЕТ отменит её; уже отправленные RP-реплики не повторятся. Итоговый результат проверьте в игре.'or direct and 'Команда может сразу выдать розыск без серверного окна. НЕТ отменит команду; уже отправленные отыгровки не повторятся.'or 'Команда откроет серверный список; дальнейший выбор в нём вы делаете вручную. НЕТ отменит открытие.'
             lines[#lines+1]=p.demo and 'ДЕМО · отправки на сервер нет.'or 'Реальный режим · проверьте цель, основание и последствия.'
-            return {kind='case_procedure',token='case-final:'..p.token,title=direct and 'Выдать выбранный розыск?'or 'Открыть серверный список?',lines=lines}
+            return {kind='case_procedure',token='case-final:'..p.token,title=p.kind=='fine'and'Выписать проверенный штраф?'or direct and 'Выдать выбранный розыск?'or 'Открыть серверный список?',lines=lines}
         end
         local p=self.caseConfirm;local lines={p.form.target.name..' ['..p.form.target.id..'] · '..p.form.mode:upper(),
             'Основание: '..p.values.basis}
@@ -1774,10 +1774,11 @@ function Studio:modalIntent(data)
             if p.form.mode=='ic'then lines[#lines+1]='IC-номер: '..p.values.phone_number..' · источник: '..p.values.phone_source end
             lines[#lines+1]='Метка и результат команды зависят от сервера. PA не добавляет розыск вместе с пеленгацией.'
         else lines[#lines+1]='Значение введено вручную: '..p.values.amount end
+        if p.kind=='clear'then lines[#lines+1]='Проверьте отсутствие других IC-звёзд прямо сейчас. /clear может затронуть весь розыск; отправка не доказывает снятие.'end
         for _,line in ipairs(p.lines)do lines[#lines+1]=line end
-        lines[#lines+1]='Сначала отправятся отыгровки, затем команда. End или Esc остановит оставшиеся шаги. Результат проверьте в игре.'
+        lines[#lines+1]=p.phase=='prepare'and'Сейчас отправятся только RP-реплики. Команда потребует отдельного ДА/НЕТ. End или Esc остановит остаток.'or'Сначала отправятся отыгровки, затем команда. End или Esc остановит оставшиеся шаги. Результат проверьте в игре.'
         lines[#lines+1]=p.demo and 'Демо: серверных отправок нет.'or 'Реальный режим: после ДА строки поступят в общую очередь.'
-        return {kind='case_procedure',token='case:'..p.token,title=p.kind=='wanted'and 'Выполнить процедуру розыска?'or p.kind=='mark'and 'Выполнить пеленгацию?'or 'Выполнить процедуру штрафа?',lines=lines}
+        return {kind='case_procedure',token='case:'..p.token,title=p.kind=='clear'and'Снять технические OOC-звёзды?'or p.kind=='wanted'and 'Выполнить процедуру розыска?'or p.kind=='mark'and 'Выполнить пеленгацию?'or 'Выполнить процедуру штрафа?',lines=lines}
     end
     if self.patrolEventConfirm then
         local p=self.patrolEventConfirm
@@ -2000,6 +2001,7 @@ function Studio:drawModal(ui,data,callbacks)
         buttons=intent and intent.kind=='warning'and{'ОК'}or intent and intent.kind=='changes' and {'Сохранить','Отбросить','Остаться'} or
             intent and intent.kind=='capture' and {'Назначить','Отмена'}or
             intent and intent.kind=='manual_action'and {'ДА — отыграть RP и выполнить','НЕТ — выполнить сразу без RP','Отменить всё (Esc) — не отправлять'}or
+            intent and intent.kind=='case_procedure'and self.caseConfirm.phase=='command'and self.caseConfirm.kind=='fine'and {'ДА — выписать штраф','НЕТ — отменить штраф'}or
             intent and intent.kind=='case_procedure'and self.caseConfirm.phase=='command'and {self.caseConfirm.kind=='wanted_list'and 'ДА — открыть /wanted'or(self.caseConfirm.cfg.wanted_send_mode=='direct'and 'ДА — выдать розыск'or 'ДА — открыть список'),self.caseConfirm.kind=='wanted_list'and 'НЕТ — отменить'or 'НЕТ — не выдавать розыск'}or
             intent and intent.kind=='wanted_appearance_choice'and {'Общая (без ввода)','С приметами'}or
             intent and intent.kind=='wanted_appearance_input'and {'Далее · к выбору статьи','Назад'}or{'ДА','НЕТ'}}

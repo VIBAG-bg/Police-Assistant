@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.42.1')
+script_version('0.42.2')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -62,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.42.1' then
+if #missing > 0 or not core or core.VERSION ~= '0.42.2' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -97,6 +97,9 @@ local showWindow = new.bool(false)
 local showQuick, showTips = new.bool(false), new.bool(false)
 sceneServices.showAssist=new.bool(false)
 sceneServices.showWanted=new.bool(false)
+sceneServices.showFine=new.bool(false);sceneServices.showMark=new.bool(false);sceneServices.showGround=new.bool(false)
+sceneServices.procedureWindows=function()return sceneServices.showFine[0]or sceneServices.showMark[0]or sceneServices.showGround[0]end
+sceneServices.hideProcedureWindows=function()sceneServices.showFine[0]=false;sceneServices.showMark[0]=false;sceneServices.showGround[0]=false end
 local workspace, studio, keyRecorder, pendingWheelClick
 local knowledge,knowledgeUi
 local function hasUiModal() return (studio and(studio:hasModal()or studio.modalVisible)) or (knowledgeUi and knowledgeUi:hasModal()) or false end
@@ -107,7 +110,7 @@ end
 local widgetCursor=false
 local manualSpeechFailureAt
 local manualInputPrefix
-local function ownUi() return showWindow[0] or showQuick[0] or showTips[0] or sceneServices.showAssist[0]or sceneServices.showWanted[0]or(studio and(studio:hasModal()or studio.modalVisible))or false end
+local function ownUi() return showWindow[0] or showQuick[0] or showTips[0] or sceneServices.showAssist[0]or sceneServices.showWanted[0]or sceneServices.procedureWindows()or(studio and(studio:hasModal()or studio.modalVisible))or false end
 local demoFlag = new.bool(cfg.main.demo_mode)
 local onConnectFlag = new.bool(cfg.main.show_on_connect)
 local distanceValue = new.float(cfg.main.max_distance)
@@ -553,12 +556,12 @@ local function openWorkspace(page,force)
     if studio and ownUi()and not force and(not showWindow[0]or menu.section~=(page or'binds'))and studio:unsavedChanges()then
         return studio:requestNavigation(function()openWorkspace(page,true)end,'открыть другой раздел PA')
     end
-    sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false
+    sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;sceneServices.hideProcedureWindows()
     showQuick[0],showTips[0]=false,false; showWindow[0]=true; menu.section=page or 'binds'
     uiInputReset=true; uiTyping=false; imgui.DisableInput=false; autoOpenForSession=nil
 end
 local function hideWorkspaceUi()
-    sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false
+    sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;sceneServices.hideProcedureWindows()
     if studio then cancelUiModal() end
     showWindow[0],showQuick[0],showTips[0]=false,false,false; uiTyping=false; uiInputReset=true
     imgui.DisableInput=true; autoOpenForSession=nil; hud:stopInteraction(); runtime:cancel('Запуск бинда.')
@@ -876,6 +879,17 @@ knowledge=knowledgeModule.new({json=workspace.json,now=function()return studioCl
     policyPath=getWorkingDirectory()..'\\resource\\pa26\\knowledge-policy.json',
     personalPath=getWorkingDirectory()..'\\config\\police_assistant_2026_knowledge_personal.json'})
 knowledgeUi=knowledgeUiModule.new(imgui,ffi,knowledge)
+sceneServices.getSanctions=function()
+ if not sceneServices.sanctionCatalog or sceneServices.sanctionData~=knowledge.data then
+  sceneServices.sanctionData=knowledge.data;sceneServices.sanctionCatalog=require('pa26_sanctions').new(knowledge.data)
+ end
+ return sceneServices.sanctionCatalog
+end
+caseForms.env.validSanction=function(f)return sceneServices.getSanctions():valid(f)end
+sceneServices.copilot.env.validGroundSource=caseForms.env.validSanction
+caseForms.env.validGround=function(p)return sceneServices.copilot:groundContextValid(p,true)end
+sceneServices.copilot.env.target=function()return bindingModel.copy(workspace.selectedTarget),workspace.targets.revision end
+sceneServices.copilot.env.validTarget=caseForms.env.validTarget
 do
     local ok,p=pcall(require('pa26_update_platform').new,getWorkingDirectory())
     sceneServices.updater=require('pa26_updater').new({platform=ok and p or nil,
@@ -974,6 +988,30 @@ studioCallbacks={
     evidenceArchiveAccept=function(p)return sceneServices.evidence:archive(p)end,
     evidenceRefresh=function()sceneServices.evidence.scanAt=nil end,
     copilotOffer=function(action)return sceneServices.copilot:propose(action)end,
+    openGround=function(p)sceneServices.groundInput=bindingModel.copy(p);return true end,
+    groundValid=function(p)return sceneServices.copilot:groundContextValid(p,true)end,
+    groundPreview=function(f)
+        if not sceneServices.copilot:groundContextValid(f.request,true)then return nil,'Выбор человека устарел.'end
+        f.cfg._ground_target=f.request.groundTarget
+        return sceneServices.copilot:prepare(f.request.action,f.cfg)
+    end,
+    groundOffer=function(f,ground,handoff)
+        if ground.sanction_id and not sceneServices.getSanctions():valid(ground)then return nil,'Источник статьи изменился.'end
+        f.cfg._ground_target=f.request.groundTarget
+        return sceneServices.copilot:proposeGround(f.request,f.cfg,ground,handoff)
+    end,
+    sanctions=function()return sceneServices.getSanctions()end,
+    procedureInput=function(head,args)sceneServices.queueProcedureInput(head,args);return true end,
+    trackingRules=function()
+        return require('pa26_procedure_input').trackingRules(knowledge.data)
+    end,
+    trackingOffer=function(f)
+        if not caseFormsModule.enabled(workspace.library.procedures,'mark')then return nil,'Включите формы пеленгации в настройках.'end
+        local technical,why=caseForms:begin('wanted',f.target);if not technical then return nil,why end
+        for _,key in ipairs({'phone_known','phone_number','phone_source','phone_active','prior_ic_stars','life_ack','ooc_ack','reason_id'})do technical[key]=f[key]end
+        technical.mode='ooc';technical.ooc_reason='tracking';technical.host='mark';technical.reason_group=technical.reason_id:sub(1,2)
+        return caseForms:offer(technical)
+    end,
     copilotSelect=function()return sceneServices.vehicle:requestSelection()end,
     copilotPreview=function(action,cfg)
         return sceneServices.copilot:previewTemplate(action,cfg)
@@ -1000,8 +1038,13 @@ studioCallbacks={
     operationExport=function()return workspace.operations:requestExport()end,
     openProcedures=function(kind)
         kind=kind or 'wanted'
-        if(kind=='wanted'or kind=='wanted_list')and workspace.library.settings.window_layout.wanted_separate then
-            showWindow[0],showQuick[0],showTips[0]=false,false,false;sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=true
+        local layout=workspace.library.settings.window_layout
+        local separate=(kind=='wanted'or kind=='wanted_list')and layout.wanted_separate or kind=='fine'and layout.fine_separate or kind=='mark'and layout.mark_separate
+        if separate then
+            hideWorkspaceUi()
+            if kind=='fine'then sceneServices.showFine[0]=true;studio.finePage='form'
+            elseif kind=='mark'then sceneServices.showMark[0]=true;studio.markPage='form'
+            else sceneServices.showWanted[0]=true end
             uiTyping=false;uiInputReset=true;imgui.DisableInput=false
         else openWorkspace('addons');menu.tool='procedures'end
         studio:selectProcedure(kind);studio.casePage='form';studio.wantedBasisDetails=nil;studio.wantedIdentityPage=nil
@@ -1071,10 +1114,10 @@ studioCallbacks={
     request=function(request) local ok=workspace:request(request); return ok,not ok and workspace.status or nil end,
     stop=function()cancelManualActions('Остановлено пользователем.');runtime:cancel('Сценарий остановлен.');workspace:cancel('Сценарий остановлен пользователем.')end,
     clearTarget=function() workspace:clearTarget('manual') end,
-    openQuick=function() sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;studio.quickWheelCategory=nil; showWindow[0],showTips[0]=false,false; showQuick[0]=true; uiTyping=false; uiInputReset=true; imgui.DisableInput=false end,
+    openQuick=function() sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;sceneServices.hideProcedureWindows();studio.quickWheelCategory=nil; showWindow[0],showTips[0]=false,false; showQuick[0]=true; uiTyping=false; uiInputReset=true; imgui.DisableInput=false end,
     closeQuick=hideWorkspaceUi,
     manualActionDecide=function(token,value)return sceneServices.manualActions:decide(token,value)end,
-    openTips=function() sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;showWindow[0],showQuick[0]=false,false; showTips[0]=true; uiTyping=false; uiInputReset=true; imgui.DisableInput=false end,
+    openTips=function() sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;sceneServices.hideProcedureWindows();showWindow[0],showQuick[0]=false,false; showTips[0]=true; uiTyping=false; uiInputReset=true; imgui.DisableInput=false end,
     capture=function(request)
         request.noticeScope=request.kind=='feature' and request.group or request.kind=='setting' and 'options' or 'binds'
         keyRecorder=request; request.startedAt=nil
@@ -1228,7 +1271,7 @@ env.startWheelBinding=function(item,target)
 end
 
 local function closeForInput(reason, keepAutoOpen)
-    sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false
+    sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;sceneServices.hideProcedureWindows()
     cancelManualActions(reason)
     runtime:cancel(reason)
     workspace:cancel(reason)
@@ -1258,7 +1301,7 @@ local function toggleWindow(force)
     if not force and ownUi()and studio:unsavedChanges()then
         return studio:requestNavigation(function()toggleWindow(true)end,showWindow[0]and'закрыть окно PA'or'открыть главное окно PA')
     end
-    sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false
+    sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;sceneServices.hideProcedureWindows()
     if (uiFailed or hud.failed)and recoverUi then recoverUi(true);return end
     if showWindow[0] then closePanels(force); return end
     runtime:cancel('Колесо закрыто: открыто окно PA.')
@@ -1294,7 +1337,7 @@ sceneServices.installAuthorPreset=function(p)
     local lib=workspace.userFiles:load();workspace.library=lib;workspace.libraryFresh=false;workspace.libraryRevision=workspace.libraryRevision+1;workspace.commandDirty=true
     studio.autosaves={};studio.dirty=false;studio:setLibrary(lib)
     if p.kind=='settings' then hud.settings=bindingModel.copy(cfg.widget);hud.dirty=false;hud.dirtyAt=nil end
-    showWindow[0],showQuick[0],showTips[0],sceneServices.showAssist[0],sceneServices.showWanted[0]=false,false,false,false,false
+    showWindow[0],showQuick[0],showTips[0],sceneServices.showAssist[0],sceneServices.showWanted[0]=false,false,false,false,false;sceneServices.hideProcedureWindows()
 end
 local generalSaveFailed=false
 local function saveSettings(preferencesOnly)
@@ -1353,12 +1396,12 @@ end
 local function recordUiFailure(kind,err)
     local stamp=optionalRead('getGameTimer')or studioClock
     local keepMain,keepQuick,keepTips=showWindow[0],showQuick[0],showTips[0]
-    local keepAssist=sceneServices.showAssist[0];local keepWanted=sceneServices.showWanted[0]
+    local keepAssist=sceneServices.showAssist[0];local keepWanted=sceneServices.showWanted[0];local keepFine,keepMark,keepGround=sceneServices.showFine[0],sceneServices.showMark[0],sceneServices.showGround[0]
     recovery:trip(stamp,kind,err)
     sceneServices.patrolUiRecovery=sceneServices.patrolUiRecovery or{active=patrolSession.data.active and patrolSession.data.active.status=='active'}
     closeForInput('Ошибка интерфейса. Текущие отправки отменены.')
     if kind~='main'then
-        showWindow[0],showQuick[0],showTips[0]=keepMain,keepQuick,keepTips;sceneServices.showAssist[0]=keepAssist;sceneServices.showWanted[0]=keepWanted
+        showWindow[0],showQuick[0],showTips[0]=keepMain,keepQuick,keepTips;sceneServices.showAssist[0]=keepAssist;sceneServices.showWanted[0]=keepWanted;sceneServices.showFine[0],sceneServices.showMark[0],sceneServices.showGround[0]=keepFine,keepMark,keepGround
         imgui.DisableInput=not ownUi()
     end
     if cfg.recovery.demo_after_recovery then setDemo(true)end
@@ -1858,7 +1901,7 @@ subscriptions[#subscriptions + 1] = wheelFrame
 local function drawWorkspaceWindows()
     local io=imgui.GetIO(); local ui={push=pushScope,finish=endScope,text=text}
     local wasQuick,wasTips=showQuick[0],showTips[0]
-    local wasAssist=sceneServices.showAssist[0];local wasWanted=sceneServices.showWanted[0]
+    local wasAssist=sceneServices.showAssist[0];local wasWanted=sceneServices.showWanted[0];local wasProcedure=sceneServices.procedureWindows()
     local depth=#scopes
     menu.opacity=studio.optionOpacity or workspace.library.settings.opacity; menu:pushTheme(imgui,ui)
     imgui.PushStyleVarVec2(imgui.StyleVar.WindowPadding,imgui.ImVec2(18,18)); pushScope(function() imgui.PopStyleVar(1) end)
@@ -1879,7 +1922,10 @@ local function drawWorkspaceWindows()
     if showTips[0] then window('Police Assistant · Памятки##pa26-tips',showTips,'tips',function() studio:drawNotes(ui,studioData(),studioCallbacks,true) end) end
     if sceneServices.showAssist[0]then window('Police Assistant · Помощники##pa26-assist',sceneServices.showAssist,'assist',function()sceneServices.assistUi.draw(studio,ui,studioData(),studioCallbacks)end)end
     if sceneServices.showWanted[0]then window('Police Assistant · Розыск##pa26-wanted',sceneServices.showWanted,'wanted',function()require('pa26_wanted_window').draw(studio,ui,studioData(),studioCallbacks)end)end
-    if(studio:hasModal()or studio.modalVisible or studio.statusInfo~=nil)and not showWindow[0]and not showQuick[0]and not showTips[0]and not sceneServices.showAssist[0]and not sceneServices.showWanted[0]then
+    if sceneServices.showFine[0]then window('Police Assistant · Штраф (/ticket)##pa26-fine',sceneServices.showFine,'fine',function()require('pa26_fine_window').draw(studio,ui,studioData(),studioCallbacks)end)end
+    if sceneServices.showMark[0]then window('Police Assistant · Пеленгация (/setmark)##pa26-mark',sceneServices.showMark,'mark',function()require('pa26_mark_window').draw(studio,ui,studioData(),studioCallbacks)end)end
+    if sceneServices.showGround[0]then window(studio.groundForm and studio.groundForm.request.kind=='detention'and'Основание задержания и права##pa26-ground'or'Причина остановки 10-55 и документы##pa26-ground',sceneServices.showGround,'ground',function()require('pa26_ground_window').draw(studio,ui,studioData(),studioCallbacks)end)end
+    if(studio:hasModal()or studio.modalVisible or studio.statusInfo~=nil)and not showWindow[0]and not showQuick[0]and not showTips[0]and not sceneServices.showAssist[0]and not sceneServices.showWanted[0]and not sceneServices.procedureWindows()then
         imgui.SetNextWindowPos(imgui.ImVec2(0,0),imgui.Cond.Always);imgui.SetNextWindowSize(imgui.ImVec2(1,1),imgui.Cond.Always)
         imgui.Begin('PA##warning-host',nil,imgui.WindowFlags.NoDecoration+imgui.WindowFlags.NoSavedSettings+imgui.WindowFlags.NoBackground+imgui.WindowFlags.NoInputs)
         pushScope(function()imgui.End()end);studio:drawModal(ui,studioData(),studioCallbacks);endScope()
@@ -1896,6 +1942,7 @@ local function drawWorkspaceWindows()
     end
     if sceneServices.evidence.active and not ownUi()and not q then sceneServices.assistUi.waiting(studio,ui,sceneServices.evidence:view(),studioClock)end
     while #scopes>depth do endScope() end
+    if wasProcedure and not sceneServices.procedureWindows()then studio:flushAutosave(studioCallbacks,true);uiInputReset=true end
     if wasWanted and not sceneServices.showWanted[0]then studio:flushAutosave(studioCallbacks,true)end
     if wasAssist and not sceneServices.showAssist[0]then studio:flushAutosave(studioCallbacks,true)end
     if (wasQuick and not showQuick[0]) or (wasTips and not showTips[0]) or(wasAssist and not sceneServices.showAssist[0])or(wasWanted and not sceneServices.showWanted[0])then uiInputReset=true end
@@ -1934,7 +1981,7 @@ widgetFrame.LockPlayer, widgetFrame.HideCursor = false, true
 subscriptions[#subscriptions + 1] = widgetFrame
 
 local workspaceFrame=imgui.OnFrame(function()
-    return not shutdown and not uiFailed and focused and not isGamePaused() and (showQuick[0] or showTips[0] or sceneServices.showAssist[0] or sceneServices.showWanted[0] or studio:hasModal()or studio.modalVisible or studio.statusInfo~=nil or workspace.executor.queue~=nil or sceneServices.evidence.active~=nil)
+    return not shutdown and not uiFailed and focused and not isGamePaused() and (showQuick[0] or showTips[0] or sceneServices.showAssist[0] or sceneServices.showWanted[0] or sceneServices.procedureWindows() or studio:hasModal()or studio.modalVisible or studio.statusInfo~=nil or workspace.executor.queue~=nil or sceneServices.evidence.active~=nil)
 end,function() safeDraw(beforeUiFrame) end,function() safeDraw(drawWorkspaceWindows) end)
 workspaceFrame.LockPlayer=false; workspaceFrame.HideCursor=true
 subscriptions[#subscriptions + 1]=workspaceFrame
@@ -2282,8 +2329,88 @@ sceneServices.processWantedInput=function(state,now)
         local f,why=caseForms:begin(studio.caseKind,p.target)
         if not f then studio:notify(why,'procedures',false);return end
         if p.reason then f.reason_id=p.reason;f.reason_group=p.reason:sub(1,2)end
+        if p.ground then
+            local h=p.ground
+            if not sceneServices.copilot:groundContextValid(h.context,true)then studio:notify('Основание относится к изменившемуся случаю.','procedures',false);return end
+            f.article=h.ground.article or'';f.basis=h.ground.basis or'';f.facts=f.basis;f.groundOrigin=bindingModel.copy(h.context)
+            if h.ground.game then f.reason_id=h.ground.game;f.reason_group=h.ground.game:sub(1,2)end
+        end
         studio.caseForm=f;studio.caseStoredForms=studio.caseStoredForms or {};studio.caseStoredForms[f.kind]=f
     end,'открыть помощник розыска')
+end
+sceneServices.procedureFlow=require('pa26_procedure_flow').new({
+ settings=function()return workspace.library.procedures end,codec=codec,now=function()return studioClock end,
+ context=function()return alerts.state or{}end,epoch=function()return sceneServices.chatEpoch end,
+ generation=function(id)return sceneServices.nearby.generations[id]or 0 end,
+ suggest=function(kind)
+  return workspace.selectedTarget or sceneServices.copilot.driverLive or(kind=='mark'and sceneServices.wantedAccounts.selected)
+ end,
+ notice=function(message)studio:notify(message,'procedures',false)end,
+ pass=function(raw)
+  if sceneServices.manualActions:offer(raw,true)then return end
+  local ok,wire=pcall(codec.encode,raw);if not ok or not env.send(wire)then report('Команда не отправлена. Повторите её вручную.')end
+ end,
+ resolve=function(kind,id,generation)
+  if kind=='mark'then return sceneServices.wantedAccounts:select(id,{name=optionalRead('sampGetPlayerNickname',id),generation=generation})end
+  local streamed,ped=optionalRead('sampGetCharHandleBySampPlayerId',id)
+  local target=streamed==true and inspectPed(ped,nil,cfg.main.max_distance)or nil
+  if not target or target.id~=id or(sceneServices.nearby.generations[id]or 0)~=generation then
+   return nil,'Для штрафа нужен доступный человек рядом. Пеленгация и /su могут использовать удалённый ID; штраф не получает этого исключения.'
+  end
+  local old=workspace.selectedTarget
+  if not old or old.id~=target.id or old.name~=target.name or old.ped~=target.ped then workspace:selectTarget(target)end
+  return target
+ end,
+ open=function(kind,p,target)
+  studio:requestNavigation(function()
+   local s=alerts.state or{}
+   if s.session~=p.session or s.localId~=p.localId or s.demo~=p.demo or sceneServices.chatEpoch~=p.epoch or
+    (core.elapsed(studioClock,p.at)or math.huge)>5000 or target and(sceneServices.nearby.generations[target.id]or 0)~=p.generation then
+    studio:notify('Переход устарел. Повторите команду.','procedures',false);return
+   end
+   studioCallbacks.openProcedures(kind)
+   if not target then studio.caseForm=nil;return end
+   local f,why=caseForms:begin(kind,target)
+   if not f then studio:notify(why,'procedures',false);return end
+   if p.amount then f.amount=p.amount end;if p.basis then f.basis=p.basis end
+   local inherited=p.ground or(not p.basis and sceneServices.copilot.lastStopReason)
+   if kind=='fine'and inherited and sceneServices.copilot:groundContextValid(inherited.context,true)and
+    inherited.context.groundTarget.id==target.id and inherited.context.groundTarget.name==target.name then
+    local g=inherited.ground
+    f.article=g.article or'';f.part='';f.basis=g.basis or'';f.groundOrigin=bindingModel.copy(inherited.context);f.fromStopReason=true
+    if g.sanction_id then local row=sceneServices.getSanctions().byId[g.sanction_id]
+     if row and row.hash==g.sanction_hash then require('pa26_sanctions').select(f,row,g.sanction_branch)end
+    end
+   end
+   studio.caseForm=f;studio.caseStoredForms=studio.caseStoredForms or{};studio.caseStoredForms[kind]=f
+  end,'открыть '..(kind=='fine'and'штраф'or'пеленгацию'))
+ end,
+})
+sceneServices.queueProcedureInput=function(head,args,ground)
+ local ok,why=sceneServices.procedureFlow:capture(head,args,ground);if not ok then studio:notify(why,'procedures',false)end
+end
+sceneServices.processProcedureInput=function(s,now)sceneServices.procedureFlow:tick(s,now)end
+sceneServices.processGroundInput=function()
+ local c=sceneServices.copilot;local p=sceneServices.groundInput or c.groundRequest
+ sceneServices.groundInput=nil;c.groundRequest=nil
+ if p then
+  if c:groundContextValid(p,true)then
+   studio:requestNavigation(function()
+    if not c:groundContextValid(p,true)then studio:notify('Случай изменился.','vehicle',false);return end
+    hideWorkspaceUi();sceneServices.showGround[0]=true;imgui.DisableInput=false;uiInputReset=true
+    studio.groundForm={request=bindingModel.copy(p),cfg=bindingModel.copy(p.cfg)};studio.groundPage='form';studio.groundSearch='';studio.groundListPage=1
+   end,'выбрать основание для этого человека')
+  else studio:notify('Водитель или случай изменились. Повторите выбор причины.','vehicle',false)end
+ end
+ local h=c.groundHandoff;c.groundHandoff=nil
+ if h and c:groundContextValid(h.context,true)then
+  local id=h.context.groundTarget.id
+  if h.kind=='fine'then sceneServices.queueProcedureInput('ticket',tostring(id),h)
+  else
+   sceneServices.queueWantedInput('su',tostring(id))
+   if sceneServices.wantedInput then sceneServices.wantedInput.ground=h end
+  end
+ end
 end
 local function syncBindingCommands()
     if not workspace.commandDirty then return end
@@ -2831,6 +2958,7 @@ local function updateGame()
     alertState.patrolStatus=patrolSession.data.active and patrolSession.data.active.status or nil
     sceneServices.vehicle:tick(alertState,now)
     sceneServices.copilot:tick(alertState,now)
+    sceneServices.processGroundInput()
     local hot=sceneServices.vehicleHotkey;sceneServices.vehicleHotkey=nil
     if hot and hot.session==ctx.session and(core.elapsed(now,hot.at)or math.huge)<2000 and not hasUiModal()then
         if not hot.select or(sceneServices.vehicle.selectionRevision or 0)>hot.revision then
@@ -2852,7 +2980,7 @@ local function updateGame()
         if cm.action=='hide'then sceneServices.copilot:hideHud()
         elseif cm.action=='repeat_pause'then sceneServices.copilot:pauseRepeats()
         else p,err=sceneServices.copilot:propose(cm.action)end
-        if p then studio.vehicleConfirm=p;uiInputReset=true elseif err then studio:notify(err,'vehicle',false)end
+        if p then if p.navigation then sceneServices.groundInput=p else studio.vehicleConfirm=p end;uiInputReset=true elseif err then studio:notify(err,'vehicle',false)end
     end
     alertState.busy=alertState.busy or(workspace.executor.queue and tostring(workspace.executor.queue))
     sceneServices.evidence:tick(alertState,now)
@@ -2878,12 +3006,17 @@ local function updateGame()
     caseForms:flush()
     if not hasUiModal()then
         local final=caseForms:takeCommandConfirmation()
-        if final then if(final.kind=='wanted'or final.kind=='wanted_list')and workspace.library.settings.window_layout.wanted_separate then studioCallbacks.openProcedures(final.kind)else openWorkspace('addons');menu.tool='procedures'end;studio.caseConfirm=final end
+        if final then
+            studioCallbacks.openProcedures(final.form.host or final.kind)
+            if final.form.host=='mark'then studio.markReview=true end
+            studio.caseConfirm=final
+        end
     end
     if caseForms.reviewReminders then
-        caseForms.reviewReminders=nil;openWorkspace('addons');menu.tool='procedures';studio:selectProcedure('wanted');studio.casePage='ooc'
+        caseForms.reviewReminders=nil;studioCallbacks.openProcedures('mark');studio.markReview=true
     end
     sceneServices.processWantedInput(alertState,now)
+    sceneServices.processProcedureInput(alertState,now)
     alertState.busy=alertState.busy or (workspace.executor.queue and tostring(workspace.executor.queue))
     patrolSession:tick(alertState,now)
     alertState.patrolSuspended=patrolSession.data.active~=nil and patrolSession.suspended==true
@@ -3028,6 +3161,8 @@ function main()
     end
     local commands = {
         {'pa26', toggleWindow},
+        {'ticket',function(arguments)sceneServices.queueProcedureInput('ticket',arguments)end},
+        {'setmark',function(arguments)sceneServices.queueProcedureInput('setmark',arguments)end},
         {'su',function(arguments)sceneServices.queueWantedInput('su',arguments)end},
         {'wanted',function(arguments)sceneServices.queueWantedInput('wanted',arguments)end},
         {'pa26repair',function()recoverUi(true)end},

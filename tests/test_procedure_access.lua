@@ -25,7 +25,7 @@ local function healthy(s)
 end
 local function click(s,label)s.click=label;s.render();eq(s.click,nil,'Missing control: '..label);healthy(s)end
 local function setup(classic,withoutTarget,capture)
-    local seed=model.defaults(cfg);seed.procedures.enabled=true
+    local seed=model.defaults(cfg);seed.procedures.enabled=true;seed.settings.window_layout.fine_separate=false;seed.settings.window_layout.mark_separate=false
     local s=fixture({demo=false,library=seed,categoryWheel=not classic,consumeKeyboard=capture==true});s.step()
     if not withoutTarget then check(s.workspace:selectTarget({id=s.id,ped=s.mappedPed,name=s.name}));s.step()
     else s.aimed=false;s.streamed=false;s.pool={1}end
