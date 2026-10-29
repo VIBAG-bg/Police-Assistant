@@ -19,6 +19,7 @@ function M.after(v,action)
     v.editor=nil;v.review=nil;clearBuffers(v,'edit-');v.editorError=nil
     if not action then return end
     if action.kind=='select'then v:select(action.key)
+    elseif action.kind=='top'then v:switchTop(action.tab)
     elseif action.kind=='mode'then v:switchMode(action.mode)
     elseif action.kind=='new'then M.open(v,nil,action.group)end
 end

@@ -27,21 +27,23 @@ local function equal(a,b)
 end
 local function empty()
     local v=model.defaults();v.bindings={};v.next_id=1;v.notes={};v.next_note_id=1;v.wheel={0,0,0,0,0,0}
+    v.settings.wheel_car_classic={0,0,0,0,0,0}
     v.settings.quick_key=0;v.settings.tips_key=0;v.settings.cancel_key=0
     return v
 end
 function M.partition(lib)
-    local p={binds={format=formats.binds,schema=M.SCHEMA,next_id=lib.next_id,bindings=model.copy(lib.bindings),wheel=model.copy(lib.wheel)},
+    local p={binds={format=formats.binds,schema=M.SCHEMA,next_id=lib.next_id,bindings=model.copy(lib.bindings),wheel=model.copy(lib.wheel),wheel_car_classic=model.copy(lib.settings.wheel_car_classic)},
         notes={format=formats.notes,schema=M.SCHEMA,next_note_id=lib.next_note_id,notes=model.copy(lib.notes)},
         settings={format=formats.settings,schema=M.SCHEMA,data={}}}
     for k,v in pairs(lib)do if not separated[k]then p.settings.data[k]=model.copy(v)end end
+    p.settings.data.settings.wheel_car_classic=nil -- Slot IDs belong to the bind exchange, not another user's settings.
     return p
 end
 function M.validate(kind,raw,cfg)
     if not formats[kind]or type(raw)~='table'or raw.format~=formats[kind]or raw.schema~=M.SCHEMA then
         return nil,'Неверный тип или версия файла: '..tostring(kind)..'.'
     end
-    local allowed=kind=='binds'and{format=true,schema=true,next_id=true,bindings=true,wheel=true}or
+    local allowed=kind=='binds'and{format=true,schema=true,next_id=true,bindings=true,wheel=true,wheel_car_classic=true}or
         kind=='notes'and{format=true,schema=true,next_note_id=true,notes=true}or{format=true,schema=true,data=true}
     for k in pairs(raw)do if not allowed[k]then return nil,'В отдельном файле обнаружены посторонние данные: '..tostring(k)..'.'end end
     local v=empty()
@@ -52,7 +54,7 @@ function M.validate(kind,raw,cfg)
             if v[k]==nil then return nil,'Неизвестное поле настроек: '..tostring(k)..'.'end
             v[k]=model.copy(x)
         end
-    elseif kind=='binds'then v.bindings=raw.bindings;v.next_id=raw.next_id;v.wheel=raw.wheel
+    elseif kind=='binds'then v.bindings=raw.bindings;v.next_id=raw.next_id;v.wheel=raw.wheel;v.settings.wheel_car_classic=raw.wheel_car_classic;if v.settings.wheel_car_classic==nil then v.settings.wheel_car_classic=raw.wheel end
     else v.notes=raw.notes;v.next_note_id=raw.next_note_id end
     local clean,err=model.validate(v,kind=='settings'and cfg or nil)
     if not clean then return nil,err end
@@ -61,6 +63,7 @@ end
 function M.combine(parts,cfg)
     local v=model.copy(parts.settings.data)
     v.bindings=model.copy(parts.binds.bindings);v.next_id=parts.binds.next_id;v.wheel=model.copy(parts.binds.wheel)
+    v.settings.wheel_car_classic=model.copy(parts.binds.wheel_car_classic or v.settings.wheel_car_classic or v.wheel)
     v.notes=model.copy(parts.notes.notes);v.next_note_id=parts.notes.next_note_id
     return model.validate(v,cfg)
 end
@@ -71,7 +74,7 @@ function M.exchange(lib,kind,id)
         local field=kind=='binds'and'bindings'or'notes';local found
         for _,row in ipairs(p[field])do if row.id==id then found=row;break end end
         if not found then return nil,'Сначала сохраните выбранную запись.'end
-        p[field]={found};if kind=='binds'then p.wheel={0,0,0,0,0,0}end
+        p[field]={found};if kind=='binds'then p.wheel={0,0,0,0,0,0};p.wheel_car_classic={0,0,0,0,0,0}end
     end
     return M.validate(kind,p)
 end

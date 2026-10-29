@@ -4,6 +4,7 @@ local menu=require 'pa26_menu'
 local core=require 'pa26_core'
 local editorUi=require 'pa26_knowledge_editor_ui'
 local model=require 'pa26_bindings'
+local importantUi=require 'pa26_knowledge_important_ui'
 local M={};local View={};View.__index=View
 local function safe(s) return tostring(s or ''):gsub('##','# #') end
 function M.layout(w,h,ratio)
@@ -23,6 +24,7 @@ function View:warning(key,message,manual)
 end
 function View:cancelModal() self.confirm=nil;self.modalToken=nil end
 function View:resetSection()
+    if self.importantView then self.importantView.card=nil;self.importantView.tab=nil;self.importantView.page=1;self.importantView.cache=nil end
     self.group='all';self.status='all';self.page=1
 end
 -- Main-loop clock; changing a filter never edits a card or replaces its draft.
@@ -98,6 +100,7 @@ local function child(self,ui,id,w,h,fn,flags,padding)
 end
 function View:select(key)
     if self.editor or self.review then editorUi.leave(self,{kind='select',key=key});return end
+    if self.knowledge.personal.view.top_tab~='registry'then self.knowledge.personal.view.top_tab='registry';self.knowledge:changed()end
     if key~=self.selected then self.buffers={};self.form=nil;self.formError=nil;self.mappingError=nil end
     self.selected=key;self.showCard=true;self.sourceOnly=false;self.knowledge:opened(key)
 end
@@ -319,7 +322,28 @@ function View:drawMaintenance(ui)
     if k.operationError then if not self:warning('operation-error',k.operationError)then self:muted(ui,k.operationError,'warning')end else self:warning('operation-error',nil)end
     editorUi.maintenance(self,ui)
 end
+function View:switchTop(tab)
+    if self.knowledge.personal.view.top_tab==tab then return end
+    if tab~='important'and tab~='registry'then return end
+    if self.editor or self.review then editorUi.leave(self,{kind='top',tab=tab});return end
+    if self.knowledge.personal.view.top_tab~=tab then self.knowledge.personal.view.top_tab=tab;self.knowledge:changed()end
+end
 function View:draw(ui,callbacks)
+    if not self.knowledge.loaded or not self.knowledge.data then return self:drawRegistry(ui,callbacks)end
+    editorUi.result(self)
+    local im=self.im;local selected=self.knowledge.personal.view.top_tab or'important'
+    local width=math.max(1,(im.GetContentRegionAvail().x-10)/2)
+    for n,row in ipairs({{'important','ВАЖНОЕ'},{'registry','РЕЕСТР'}})do
+        if n>1 then im.SameLine(0,10)end
+        if selected==row[1]then im.PushStyleColor(im.Col.Button,im.ImVec4(.09,.43,.62,.95));ui.push(function()im.PopStyleColor(1)end)end
+        if self:button(ui,row[2]..'##kb-top-'..row[1],width,38)then self:switchTop(row[1])end
+        if selected==row[1]then ui.finish()end
+    end
+    if self.knowledge.personal.view.top_tab=='registry'then return self:drawRegistry(ui,callbacks)end
+    if self.knowledge.personalError or self.knowledge.personalWarning then self:warning('personal',self.knowledge.personalError or self.knowledge.personalWarning)end
+    importantUi.draw(self,ui,callbacks)
+end
+function View:drawRegistry(ui,callbacks)
     local im=self.im;local k=self.knowledge
     editorUi.result(self)
     if not k.loaded then ui.text('База подготавливается…');return end

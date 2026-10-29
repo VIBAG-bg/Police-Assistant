@@ -23,13 +23,13 @@ function M.prepare(kind,payload,lib,cfg)
  local nextLib=model.copy(lib);local nextCfg=model.copy(cfg)
  if kind=='binds'then
   local p,why=users.validate('binds',payload,cfg);if not p then return nil,why end
-  nextLib.bindings=p.bindings;nextLib.next_id=p.next_id;nextLib.wheel=p.wheel
+  nextLib.bindings=p.bindings;nextLib.next_id=p.next_id;nextLib.wheel=p.wheel;nextLib.settings.wheel_car_classic=model.copy(p.wheel_car_classic or p.wheel)
  elseif kind=='settings'then
   local p,why=M.validate(kind,payload)
   if not p then return nil,why end
   for k,v in pairs(p.settings.data)do if not M.protected[k]then nextLib[k]=model.copy(v)end end
   nextLib.profile=model.copy(lib.profile);nextLib.partners=model.copy(lib.partners);nextLib.next_partner_id=lib.next_partner_id
-  nextLib.assist.history=model.copy(lib.assist.history);nextLib.settings.updates=model.copy(lib.settings.updates)
+  nextLib.assist.history=model.copy(lib.assist.history);nextLib.settings.updates=model.copy(lib.settings.updates);nextLib.settings.wheel_car_classic=model.copy(lib.settings.wheel_car_classic)
   nextCfg=model.copy(p.config);nextCfg.main.demo_mode=cfg.main.demo_mode
  else return nil,'Неверный вид набора.'end
  local clean,why=model.validate(nextLib,nextCfg);if not clean then return nil,why end

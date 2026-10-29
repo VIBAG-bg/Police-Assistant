@@ -23,6 +23,10 @@ M.copilotRows={{'stop_order','Остановить авто','service','car'},{'
  {'approach','Осмотр салона','documents','foot'},{'foot','10-57 FOXTROT','detention','foot'},
  {'documents','Проверка документов','documents','foot'},{'explain_stop','Причина остановки','documents','both'},
  {'explain_detention','Основание и права','detention','any'},{'rights','Адвокат и звонок','detention','foot'}}
+for _,r in ipairs({{'tire','Предупреждение: колёса','citizen','car'},{'risk_order','10-66 · Ключи и выход','detention','car'},
+ {'return_car','Вернуться в салон','detention','car'},{'lost','Потерян · CODE 4 ADAM','detention','car'},
+ {'finish','Завершить ситуацию','detention','any'},{'fast_wanted','Розыск по авто 8.1 + /pt','wanted','car'},
+ {'call911','Вызов 9-1-1 · Код 3','service','car'},{'arrived','Прибыл на вызов','service','car'}})do M.copilotRows[#M.copilotRows+1]=r end
 for _,r in ipairs(M.copilotRows)do M.systemRows[#M.systemRows+1]={'copilot-'..r[1],r[2]}end
 M.systemRows[#M.systemRows+1]={'copilot-pursuit_mark','Розыск / метка погони'}
 function M.context(s)
@@ -79,11 +83,13 @@ function M.procedureItems(lib)
     end
     return out
 end
+M.activeScope=require('pa26_wheel_scope').active
 function M.build(lib,revision,includeAlerts,serviceState)
+    local scope=M.activeScope(lib,serviceState);lib=require('pa26_wheel_scope').project(lib,scope)
     if lib.settings.wheel_mode=='classic' then return nil end
     local profile=lib.settings.wheel_profile or 'compact'
     local ids=M.profiles[profile] or M.profiles.compact
-    local out={profile=profile,revision=revision or 0,categories={},byId={},byCategory={},bySystem={}}
+    local out={scope=scope,profile=profile,revision=revision or 0,categories={},byId={},byCategory={},bySystem={}}
     for _,id in ipairs(ids) do
         local d=definitions[id];local custom=lib.settings.wheel_names and lib.settings.wheel_names[id]
         local name=M.categoryName(id,lib.settings.wheel_names)
@@ -131,11 +137,11 @@ function M.build(lib,revision,includeAlerts,serviceState)
     end end
     -- Operational actions have their own feature gate, independent of SOS.
     local cp=lib.vehicle and lib.vehicle.copilot
-    if lib.vehicle and lib.vehicle.enabled and cp and cp.enabled and serviceState and serviceState.onDuty then
+    if lib.vehicle and lib.vehicle.enabled and cp and cp.enabled and serviceState then
         local context=M.context(serviceState);local v=serviceState.copilot or{}
         for _,r in ipairs(M.copilotRows)do if r[4]==context or r[4]=='both'and context~='none'or r[4]=='any'then
-            if (r[1]~='approach'and r[1]~='foot'or v.car)then
-                place({kind='copilot',id='copilot-'..r[1],action=r[1],category=r[3],name=r[2],needsTarget=r[4]=='any'and context=='none'})
+            if (r[1]~='approach'and r[1]~='foot'or v.car)and(r[1]~='fast_wanted'or v.pinned=='fast_wanted')then
+                place({kind='copilot',id='copilot-'..r[1],action=r[1],category=r[3],name=r[2],disabled=not serviceState.onDuty,reason='Включите «На службе» в настройках PA.',needsTarget=r[4]=='any'and context=='none'})
             end
         end end
         if v.pinned and v.car then place({kind='copilot',id='copilot-pursuit_mark',action=v.pinned,category='wanted',name=v.pinned=='pursuit_mark'and'Только /pt'or'Розыск + /pt',needsTarget=false})end
@@ -357,7 +363,7 @@ function M.draw(im,layout,catalog,nav,info,fonts)
     end
     list:AddCircleFilled(vec(layout.cx,layout.cy),layout.inner-3*scale,color(.035,.10,.16,.84),80)
     list:AddCircle(vec(layout.cx,layout.cy),layout.inner-3*scale,color(.29,.57,.75,.23),80,1.2*scale)
-    centered('Police Assistant',fonts.heading,20,layout.cx,layout.top+24*scale,600)
+    centered('Police Assistant · '..(catalog.scope=='car'and'В МАШИНЕ'or'ПЕШКОМ'),fonts.heading,20,layout.cx,layout.top+24*scale,600)
     centered(info.demo and 'ID 42' or info.target and ('ID '..info.target.id) or 'Нет цели',fonts.id,26,layout.cx,layout.cy-17*scale,146)
     centered(info.demo and 'Демо-игрок' or info.nickname or 'Свои действия',fonts.body,14,layout.cx,layout.cy+20*scale,138,muted)
     local status=nav.reason or nav.choice and (nav.choice.kind=='binding' and catalog.byId[nav.choice.id].name or nav.choice.name) or

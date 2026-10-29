@@ -84,7 +84,7 @@ $paOwned = @('lib\pa26_detention_timers.lua','lib\pa26_operational_ui.lua','lib\
     'lib\pa26_rp_presets.lua',
     'resource\pa26\banner-bmw-lamborghini.png','resource\pa26\sidebar-police-assistant.png',
     'resource\pa26\knowledge-base.json','resource\pa26\knowledge-policy.json','resource\pa26\wanted-catalog.json',
-    'config\police_assistant_2026.ini','police_assistant_2026.lua','lib\pa26_wheel_order.lua','lib\pa26_wheel_edit.lua','lib\pa26_shutdown.lua')
+    'config\police_assistant_2026.ini','police_assistant_2026.lua','lib\pa26_wheel_order.lua','lib\pa26_wheel_edit.lua','lib\pa26_shutdown.lua','lib\pa26_wheel_scope.lua','lib\pa26_important_data.lua','lib\pa26_knowledge_important.lua','lib\pa26_knowledge_important_ui.lua')
 if ($paManifest.files.Count -ne $paOwned.Count) { throw 'Unexpected manifest entries.' }
 function Get-PaPath([string]$root,[string]$relative) {
     $paPath = [IO.Path]::GetFullPath((Join-Path $root $relative))

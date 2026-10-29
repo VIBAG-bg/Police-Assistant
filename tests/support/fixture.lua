@@ -743,7 +743,12 @@ local function fixture(options)
         seed.settings.window_layout.fine_separate=false
         seed.settings.window_layout.mark_separate=false
     end
-    if not options.categoryWheel then seed.settings.wheel_mode='classic' end
+    if not options.categoryWheel then
+        seed.settings.wheel_mode='classic'
+        -- Legacy targeting fixtures use the same classic slots in either scene.
+        -- Independent car wheels are exercised by the categoryWheel fixtures.
+        seed.settings.wheel_car_separate=false
+    end
     if options.nearby==false then seed.nearby.enabled=false end
     if options.legacyWanted then
         local b=model.find(seed,3);b.enabled=true;b.script='/me '..core.defaults().wanted.me..'\n/do '..core.defaults().wanted.do_text..'\n/wanted {id}'
@@ -877,6 +882,7 @@ local function fixture(options)
         s.press = {}
     end
     function s.page(key)
+        if key=='knowledge'and s.knowledgeUi and options.important~=true then s.knowledgeUi:switchTop('registry')end
         s.render() -- floating windows may have been the last rendered surface
         for i,entry in ipairs(require('pa26_menu').sections) do
             if entry.key==key then

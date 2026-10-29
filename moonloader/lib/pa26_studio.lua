@@ -13,7 +13,7 @@ local identityUi=require 'pa26_identity_ui'
 local caseUi=require 'pa26_case_ui'
 local operationUi=require 'pa26_operation_ui'
 local feedbackModule=require 'pa26_feedback'
-local M={};M.optionKeys={'quick_key','tips_key','cancel_key','opacity','compact','retain_distance','retain_grace_ms','keep_target_on_interior_change','aim_select_enabled','aim_select_control','aim_select_delay_ms','wheel_mode','wheel_profile','wheel_enabled','interaction_notices','wheel_names','wheel_child_limit','wheel_system_groups','wheel_order','wheel_edit_enabled','shutdown_message','ask_screenshot_path'}; local Studio={}; Studio.__index=Studio
+local M={};M.optionKeys={'quick_key','tips_key','cancel_key','opacity','compact','retain_distance','retain_grace_ms','keep_target_on_interior_change','aim_select_enabled','aim_select_control','aim_select_delay_ms','wheel_mode','wheel_profile','wheel_enabled','interaction_notices','wheel_names','wheel_child_limit','wheel_system_groups','wheel_order','wheel_car_separate','wheel_car_mode','wheel_car_profile','wheel_car_names','wheel_car_child_limit','wheel_car_system_groups','wheel_car_order','wheel_car_classic','wheel_edit_enabled','shutdown_message','ask_screenshot_path'}; local Studio={}; Studio.__index=Studio
 local function label(value) return tostring(value):gsub('##','# #') end
 local captureModifiers={[16]=true,[17]=true,[18]=true,[91]=true,[92]=true,
     [160]=true,[161]=true,[162]=true,[163]=true,[164]=true,[165]=true}
@@ -654,7 +654,7 @@ function Studio:drawEditorBody(ui,data,callbacks)
         value,changed=self:field(f[2]..'##bind',f[1],b[f[1]],f[3]); if changed then b[f[1]]=value; self.dirty=true; self.plan=nil end
     end
     ui.text('Вводите без /: pa26_name в первое поле или name во второе, можно заполнить оба. В чате запуск будет /pa26_name или /name. Используйте латиницу без пробелов. Серверные и занятые имена не заменяются.')
-    for _,f in ipairs({{'enabled','Включён'},{'quick','В быстром меню'},{'wheel_visible','В радиальном меню'},{'favorite','Избранное'},{'target_required','Требовать выбранного игрока'},
+    for _,f in ipairs({{'enabled','Включён'},{'quick','В быстром меню'},{'wheel_visible','В радиальном меню (пешком)'},{'wheel_car_visible','В радиальном меню (в машине)'},{'favorite','Избранное'},{'target_required','Требовать выбранного игрока'},
         {'skip_confirmation','Без предупреждения'},{'no_accent','Без акцента'}}) do
         value,changed=self:check(f[2]..'##bind',b[f[1]]); if changed then b[f[1]]=value; self.dirty=true; self.plan=nil end
         if f[1]=='skip_confirmation'then self:tooltip(ui,'Запускать этот бинд без окна ДА / НЕТ. Проверки цели, параметров и доступности игры остаются включены. Сохраните сценарий, чтобы запомнить выбор.')end
@@ -663,6 +663,9 @@ function Studio:drawEditorBody(ui,data,callbacks)
     b.wheel_group,changed=self:choice('Категория колеса##bind-wheel-group',b.wheel_group or 'auto',
         wheelModel.categoryChoices(self.lib.settings.wheel_names),ui)
     if changed then self.dirty=true; self.plan=nil end
+    b.wheel_car_group,changed=self:choice('Секция в машине##bind-wheel-car-group',b.wheel_car_group or'auto',
+        wheelModel.categoryChoices(self.lib.settings.wheel_car_names),ui)
+    if changed then self.dirty=true;self.plan=nil end
     ui.text('Клавиша: '..model.shortcutName(b.shortcut))
     if im.Button('Записать сочетание##bindkey') then callbacks.capture({kind='binding',id=b.id}) end
     im.SameLine(); if im.Button('Убрать##bindkey') then b.shortcut={key=0,ctrl=false,alt=false,shift=false}; self.dirty=true end
@@ -879,6 +882,7 @@ function Studio:drawQuick(ui,data,callbacks)
     self.currentUi=ui
     self.currentNoticeScope='quick'
     require('pa26_nearby').draw(self,ui,data,callbacks)
+    local wheelLib=require('pa26_wheel_scope').project(self.lib,self.quickWheelScope or'foot')
     local im=self.imgui
     self:queueStatus(ui,data,callbacks)
     if data.target then
@@ -891,7 +895,7 @@ function Studio:drawQuick(ui,data,callbacks)
         return
     end
     if self.quickWheelCategory then
-        ui.text('Колесо → '..wheelModel.categoryName(self.quickWheelCategory,self.lib.settings.wheel_names))
+        ui.text('Колесо → '..wheelModel.categoryName(self.quickWheelCategory,wheelLib.settings.wheel_names))
         if self:button('Все бинды быстрого меню##quick-wheel-clear',ui) then self.quickWheelCategory=nil; self.quickSelected=nil end
     end
     local query=self:field('Найти сценарий##quick','quickSearch',self.quickQuery,256); self.quickQuery=query
@@ -914,14 +918,14 @@ function Studio:drawQuick(ui,data,callbacks)
             end
         end
     end
-    for _,item in ipairs(wheelModel.procedureItems(self.lib))do
+    for _,item in ipairs(wheelModel.procedureItems(wheelLib))do
         local included=self.quickWheelCategory and item.wheel_visible and item.category==self.quickWheelCategory or not self.quickWheelCategory and item.quick
         if included and(search==''or model.casefold(item.name):find(search,1,true))then
             count=count+1
             if self:button(item.name..'##quick-system-'..item.id,ui)then callbacks.navigateService(item.kind,item.id)end
         end
     end
-    for number,b in ipairs(self.lib.bindings) do
+    for number,b in ipairs(wheelLib.bindings) do
         local included=self.quickWheelCategory and b.wheel_visible and wheelModel.groupFor(b,self.quickWheelProfile)==self.quickWheelCategory or
             not self.quickWheelCategory and b.quick
         if b.enabled and included and (not self.quickFavorites or b.favorite) and (search=='' or model.casefold(b.name..' '..b.category):find(search,1,true)) then
@@ -1570,45 +1574,51 @@ function Studio:drawOptions(ui,data,callbacks,part)
     im.Separator();self:settingsHeading(ui,'Радиальное меню')
     for _,spec in ipairs({{'wheel_enabled','Включить радиальное меню'},{'interaction_notices','Карточки взаимодействия с игроками'}})do d[spec[1]]=self:check(spec[2]..'##feature-'..spec[1],d[spec[1]])end
     if self:button('Тексты и сроки карточек##interaction-edit',ui)then callbacks.openAssist('notices')end
-    d.wheel_mode=self:choice('Способ выбора##wheel-mode',d.wheel_mode,{{'categories','Категории и внешняя дуга','По категориям'},{'classic','Шесть прямых действий','Прямые действия'}},ui)
+    d.wheel_car_separate=self:check('Отдельное колесо в машине##wheel-car-separate',d.wheel_car_separate==true)
+    ui.text('Пешком и в машине: свои названия, бинды, порядок и встроенные действия. Выключение объединяет меню, сохраняя автомобильные настройки.')
+    self.wheelEditScope=self:choice('Какое колесо настраивать##wheel-edit-scope',self.wheelEditScope or'foot',{{'foot','ПЕШКОМ'},{'car','В МАШИНЕ'}},ui)
+    local scope=self.wheelEditScope;local wd=require('pa26_wheel_scope').settings(d,scope)
+    wd.wheel_mode=self:choice('Способ выбора##wheel-mode',wd.wheel_mode,{{'categories','Категории и внешняя дуга','По категориям'},{'classic','Шесть прямых действий','Прямые действия'}},ui)
     d.wheel_edit_enabled=self:check('Ctrl + ЛКМ · переставлять секторы в колесе##wheel-edit-enabled',d.wheel_edit_enabled~=false)
     ui.text('Удерживайте Ctrl, зажмите ЛКМ на секторе и отпустите на другом секторе того же кольца. Это меняет порядок без запуска действий. Порядок сохраняется отдельно от биндов.')
-    if self:button('Вернуть стандартный порядок категорий и действий##wheel-order-reset',ui)then d.wheel_order={}end
+    if self:button('Вернуть стандартный порядок категорий и действий##wheel-order-reset',ui)then wd.wheel_order={}end
     d.shutdown_message=self:field('Локальное сообщение после отключения PA##shutdown-message','settings:shutdown-message',d.shutdown_message or'',2049,true,70)
     ui.text('Предпросмотр: '..(d.shutdown_message or'')..' · Это локальное сообщение, серверу не отправляется. Пустое поле отключает сообщение.')
-    if d.wheel_mode=='categories'then
-        d.wheel_profile=self:choice('Количество категорий##wheel-profile',d.wheel_profile,{{'compact','4 крупные категории','4'},{'extended','6 категорий','6'},{'full','8 категорий','8'}},ui)
+    if wd.wheel_mode=='categories'then
+        wd.wheel_profile=self:choice('Количество категорий##wheel-profile',wd.wheel_profile,{{'compact','4 крупные категории','4'},{'extended','6 категорий','6'},{'full','8 категорий','8'}},ui)
         ui.text('Чтобы открыть колесо, удерживайте назначенную клавишу. Добавить бинд: откройте его в библиотеке, перейдите в «Общее», включите «В радиальном меню» и выберите категорию.')
         self:settingsHeading(ui,'Названия категорий колеса','Ниже показаны категории для выбранного числа секций. При переключении между 4, 6 и 8 секциями скрытые названия сохраняются. Бинды остаются в своих категориях.','wheel-names')
         ui.text('Можно менять только названия: привязка биндов к категориям останется прежней. Пустое поле вернёт стандартное название.')
-        d.wheel_names=d.wheel_names or{}
-        local ids=wheelModel.profiles[d.wheel_profile]or wheelModel.profiles.compact
+        wd.wheel_names=wd.wheel_names or{}
+        local ids=wheelModel.profiles[wd.wheel_profile]or wheelModel.profiles.compact
         for n,id in ipairs(ids)do
             -- IDs, not visible positions, own the names across 4/6/8 profiles.
-            local name,edited=self:field('Категория '..n..'##wheel-name-'..id,'wheel-name:'..id,
-                d.wheel_names[id]or wheelModel.categoryName(id),256)
-            if edited then d.wheel_names[id]=name~=''and name or nil end
+            local name,edited=self:field('Категория '..n..'##wheel-name-'..id,'wheel-name:'..scope..':'..id,
+                wd.wheel_names[id]or wheelModel.categoryName(id),256)
+            if edited then wd.wheel_names[id]=name~=''and name or nil end
         end
         ui.text('Названия скрытых категорий сохраняются. Верните 6 или 8 секций — поля появятся с вашими названиями.')
-        local customCount,changed=self:check('Своё число действий второго кольца##wheel-child-custom',(d.wheel_child_limit or 0)>0)
-        if changed then d.wheel_child_limit=customCount and 10 or 0 end
-        if customCount then local v=im.new.int(d.wheel_child_limit);if im.SliderInt('Действий перед кнопкой поиска##wheel-child-limit',v,1,16)then d.wheel_child_limit=v[0]end end
+        local customCount,changed=self:check('Своё число действий второго кольца##wheel-child-custom',(wd.wheel_child_limit or 0)>0)
+        if changed then wd.wheel_child_limit=customCount and 10 or 0 end
+        if customCount then local v=im.new.int(wd.wheel_child_limit);if im.SliderInt('Действий перед кнопкой поиска##wheel-child-limit',v,1,16)then wd.wheel_child_limit=v[0]end end
         ui.text('Авто сохраняет прежний размер. При своём числе, например 10, показываются до 10 действий, а при переполнении — дополнительная кнопка «Ещё и поиск».')
         self:settingsHeading(ui,'Куда поместить встроенные действия')
-        d.wheel_system_groups=d.wheel_system_groups or{}
-        local choices=wheelModel.systemCategoryChoices(d.wheel_names)
+        wd.wheel_system_groups=wd.wheel_system_groups or{}
+        local choices=wheelModel.systemCategoryChoices(wd.wheel_names)
         for _,row in ipairs(wheelModel.systemRows)do
-            local value,edited=self:choice(row[2]..'##wheel-system-'..row[1],d.wheel_system_groups[row[1]]or'auto',choices,ui)
-            if edited then d.wheel_system_groups[row[1]]=value~='auto'and value or nil end
+            local value,edited=self:choice(row[2]..'##wheel-system-'..row[1],wd.wheel_system_groups[row[1]]or'auto',choices,ui)
+            if edited then wd.wheel_system_groups[row[1]]=value~='auto'and value or nil end
         end
         ui.text('В профиле с 4/6 секциями скрытые категории объединяются, как у биндов. При возврате к 8 назначения сохраняются.')
     else
+        local slots=scope=='car'and d.wheel_car_classic or copy.wheel
         ui.text('Места прямого меню')
         local choices={{0,'Пусто'}};for _,binding in ipairs(copy.bindings)do choices[#choices+1]={binding.id,binding.name}end
         local positions={'Верх справа','Справа','Низ справа','Низ слева','Слева','Верх слева'}
-        for slot,index in ipairs(core.wheelSlots)do local value,changed=self:choice(positions[slot]..'##wheel'..slot,copy.wheel[index],choices,ui)
-            if changed then copy.wheel[index]=value;callbacks.save(copy)end end
+        for slot,index in ipairs(core.wheelSlots)do local value,changed=self:choice(positions[slot]..'##wheel'..slot,slots[index],choices,ui)
+            if changed then slots[index]=value;if scope=='foot'then callbacks.save(copy)end end end
     end
+    if scope=='car'then for _,field in ipairs(require('pa26_wheel_scope').fields)do d['wheel_car_'..field]=wd['wheel_'..field]end end
     end
     self.optionDraft=d;self:autoSettings('options',{'settings'},d,'optionDraft');self:autosaveHint(ui,'options');self:drawNotice(ui)
 end
@@ -1922,7 +1932,7 @@ function Studio:acceptModal(data,callbacks)
         else
             for i=#copy[key],1,-1 do if copy[key][i].id==r.id then table.remove(copy[key],i) end end
         end
-        if r.kind=='binding' then for i,id in ipairs(copy.wheel) do if id==r.id then copy.wheel[i]=0 end end end
+        if r.kind=='binding' then for _,slots in ipairs({copy.wheel,copy.settings.wheel_car_classic or{}})do for i,id in ipairs(slots)do if id==r.id then slots[i]=0 end end end end
         local ok,err=callbacks.save(copy)
         if not ok then return nil,err end
         self:setLibrary(copy)

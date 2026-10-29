@@ -101,7 +101,7 @@ eq(#s.sent,1);eq(s.sent[1].line,'Проверка параметра: Готов
 seed=model.defaults(core.defaults());seed.vehicle.megaphone_wheel=false
 s=fixture({categoryWheel=true,library=seed});layout,catalogue=open(s,4);child(s,layout,catalogue,4,1);release(s)
 check(s.frames[1].condition());check(visible(s,'В бинде откройте'));eq(#s.sent,0)
-s.ackInfo();s.click='Общее##editor-tab';s.render();s.toggle='В радиальном меню##bind';s.render();s.click='Сохранить сценарий';s.render();s.ackInfo()
+s.ackInfo();s.click='Общее##editor-tab';s.render();s.toggle='В радиальном меню (пешком)##bind';s.render();s.click='Сохранить сценарий';s.render();s.ackInfo()
 check(not library(s).bindings[1].wheel_visible);check(library(s).bindings[1].quick);onScriptTerminate(s.script)
 
 -- Native controls persist profile/mode and keep old direct slots available.

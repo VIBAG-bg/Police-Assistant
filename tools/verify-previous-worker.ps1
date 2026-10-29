@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
  [Parameter(Mandatory=$true)][string]$Baseline,
  [string]$OfficialHudPath=''
@@ -79,4 +79,4 @@ foreach($environment in $environments){
 @{status='passed';checks=$checks;release=$current.release;baseline=$oldManifest.release;
  previous_worker_sha256=Get-PaHash $worker;package_sha256=$candidate.sha256;cases=$cases;
  real_game_written=$false;official_hud_read_only=[bool]$OfficialHudPath}|ConvertTo-Json -Depth 5|
- Set-Content -LiteralPath (Join-Path $release 'tests/PREVIOUS_WORKER0423.json') -Encoding UTF8
+ Set-Content -LiteralPath (Join-Path $release 'tests/PREVIOUS_WORKER0430.json') -Encoding UTF8

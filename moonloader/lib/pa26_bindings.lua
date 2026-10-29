@@ -173,7 +173,7 @@ function M.bindingNumber(lib, id)
 end
 function M.newBinding(id)
     return {id=id,name='Новый сценарий',category='Мои сценарии',enabled=true,quick=false,favorite=false,
-        target_required=false,skip_confirmation=false,no_accent=false,wheel_visible=false,wheel_group='auto',command='',command_alias='',shortcut={key=0,ctrl=false,alt=false,shift=false},stat='none',
+        target_required=false,skip_confirmation=false,no_accent=false,wheel_visible=false,wheel_group='auto',wheel_car_visible=false,wheel_car_group='auto',command='',command_alias='',shortcut={key=0,ctrl=false,alt=false,shift=false},stat='none',
         script='Здравствуйте.',parameters={}}
 end
 -- Native chat input can be prepared before Enter, independently from outgoing
@@ -296,6 +296,8 @@ function M.defaults(cfg)
         bind.script=table.concat(lines,'\n'); if bind.script=='' then bind.script='Сценарий не настроен.'; bind.enabled=false end
         lib.bindings[#lib.bindings+1]=bind
     end
+    require('pa26_wheel_scope').fresh(lib.settings,lib.wheel)
+    for _,bind in ipairs(lib.bindings)do bind.wheel_car_visible=bind.wheel_visible end
     if cfg then for _,k in ipairs({'quick_key','tips_key'}) do if lib.settings[k]==cfg.main.menu_key or lib.settings[k]==cfg.main.radial_key then lib.settings[k]=0 end end end
     return lib
 end
@@ -355,6 +357,10 @@ function M.validateBinding(raw)
     local groups={auto=true,citizen=true,documents=true,detention=true,frisk=true,wanted=true,service=true,leadership=true,custom=true}
     b.wheel_group=raw.wheel_group or 'auto'
     if not groups[b.wheel_group] then return nil,'Неизвестная категория радиального меню.' end
+    if raw.wheel_car_visible~=nil and type(raw.wheel_car_visible)~='boolean'then return nil,'Видимость бинда в машине: включено или выключено.'end
+    b.wheel_car_visible=raw.wheel_car_visible;if b.wheel_car_visible==nil then b.wheel_car_visible=b.wheel_visible end
+    b.wheel_car_group=raw.wheel_car_group;if b.wheel_car_group==nil then b.wheel_car_group=b.wheel_group end
+    if not groups[b.wheel_car_group]then return nil,'Неизвестная секция бинда в машине.'end
     b.shortcut,error=M.shortcut(raw.shortcut); if not b.shortcut then return nil,error end
     local found=false; for _, s in ipairs(M.stats) do if s[1]==raw.stat then found=true end end
     if not found then return nil,'Неизвестный служебный счётчик.' end; b.stat=raw.stat
@@ -499,6 +505,9 @@ function M.validate(raw, cfg)
         if not groups[key]or not clean or clean:find('[\r\n]')then return nil,'Название категории должно быть однострочным, до 160 байт UTF-8.'end
         if clean~=''then out.settings.wheel_names[key]=clean end
     end
+    local carSettings,carError=require('pa26_wheel_scope').validate(raw.settings,out.settings,out.wheel,ids,M.clean,M.array,validSystems)
+    if not carSettings then return nil,carError end
+    for key,value in pairs(carSettings)do out.settings[key]=value end
     out.alert_shortcuts=M.alertShortcutDefaults()
     if raw.alert_shortcuts~=nil and type(raw.alert_shortcuts)~='table'then return nil,'Неверные клавиши связи.'end
     for key,rawKey in pairs(raw.alert_shortcuts or {})do

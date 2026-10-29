@@ -136,6 +136,7 @@ test_names.extend(['test_colleagues.lua','test_copilot_traffic.lua','test_eviden
 test_names.append('test_dispatch0412.lua')
 test_names.append('test_normative0420.lua')
 test_names.extend(['test_status_shutdown0423.lua','test_wheel_order0423.lua','test_patrol_diagnostics0423.lua'])
+test_names.extend(['test_dual_wheel.lua','test_knowledge_important.lua'])
 parser.add_argument('--report')
 parser.add_argument('--only', nargs='+', choices=test_names)
 parser.add_argument('--keep-going', action='store_true', help='Collect failures from every test group; still exit with failure.')

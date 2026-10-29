@@ -32,6 +32,7 @@ for p in (ROOT/'moonloader/config').iterdir():
 main=(ROOT/'moonloader/police_assistant_2026.lua').read_text('utf-8')
 core=(ROOT/'moonloader/lib/pa26_core.lua').read_text('utf-8')
 assert "script_version('%s')"%manifest['release'] in main
+assert "core.VERSION ~= '%s'"%manifest['release'] in main, 'Bootstrap version guard differs from release'
 assert "VERSION = '%s'"%manifest['release'] in core
 assert "repository='VIBAG-bg/Police-Assistant'" in (ROOT/'moonloader/lib/pa26_updater.lua').read_text('utf-8')
 links=0

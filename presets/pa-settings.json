@@ -559,7 +559,37 @@
           "wanted": "Розыск / штрафы"
         },
         "cancel_key": 35,
-        "accent_skip_brackets": true
+        "accent_skip_brackets": true,
+        "wheel_car_separate": true,
+        "wheel_car_mode": "categories",
+        "wheel_car_profile": "compact",
+        "wheel_car_child_limit": 6,
+        "wheel_car_names": {
+          "citizen": "Мегафон и 10-55",
+          "documents": "Проверка и бортовой ПК",
+          "detention": "Погоня и 10-66",
+          "frisk": "Досмотр и обыск",
+          "wanted": "Розыск и штрафы",
+          "service": "Рация и патруль",
+          "leadership": "Вызовы и руководство",
+          "custom": "Свои бинды (авто)"
+        },
+        "wheel_car_system_groups": {
+          "copilot-stop_order": "citizen",
+          "copilot-tire": "citizen",
+          "copilot-stop": "citizen",
+          "copilot-explain_stop": "citizen",
+          "assist-megaphone": "citizen",
+          "copilot-pursuit": "detention",
+          "copilot-high_risk": "detention",
+          "copilot-risk_order": "detention",
+          "copilot-return_car": "detention",
+          "copilot-lost": "detention",
+          "copilot-finish": "detention",
+          "copilot-fast_wanted": "wanted",
+          "copilot-pursuit_mark": "wanted"
+        },
+        "wheel_car_order": {}
       },
       "recruitment": {
         "land": true,

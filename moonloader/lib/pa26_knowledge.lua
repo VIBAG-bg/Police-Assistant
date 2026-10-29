@@ -124,7 +124,7 @@ function M.validate(raw)
     end
     return raw
 end
-function M.personalDefaults() return {schema_version=1,department='EPD',favorites={},recent={},notes={},mappings={},view={reset_enabled=true,reset_minutes=10,catalog_mode='current'}} end
+function M.personalDefaults() return {schema_version=1,department='EPD',favorites={},recent={},notes={},mappings={},view={reset_enabled=true,reset_minutes=10,catalog_mode='current',top_tab='important'}} end
 function M.validatePersonal(raw)
     if type(raw)~='table' or raw.schema_version~=1 or not ({EPD=true,FBI=true,Alcatraz=true})[raw.department] or
         not model.array(raw.favorites,500) or not model.array(raw.recent,40) or type(raw.notes)~='table' or
@@ -133,7 +133,9 @@ function M.validatePersonal(raw)
     if type(view)~='table'or type(view.reset_enabled)~='boolean'or not core.finite(view.reset_minutes)or
         view.reset_minutes~=math.floor(view.reset_minutes)or view.reset_minutes<1 or view.reset_minutes>1440 then return nil,'Интервал сброса раздела: от 1 до 1440 минут.'end
     local out={schema_version=1,department=raw.department,favorites={},recent={},notes={},mappings={},
-        view={reset_enabled=view.reset_enabled,reset_minutes=view.reset_minutes,catalog_mode=view.catalog_mode or'current'}}
+        view={reset_enabled=view.reset_enabled,reset_minutes=view.reset_minutes,catalog_mode=view.catalog_mode or'current',top_tab=view.top_tab or'important'}}
+    if out.view.top_tab=='all_database'then out.view.top_tab='registry'end
+    if out.view.top_tab~='important'and out.view.top_tab~='registry'then return nil,'Вкладка базы: ВАЖНОЕ или РЕЕСТР.'end
     if out.view.catalog_mode~='current'and out.view.catalog_mode~='all'then return nil,'Выберите режим базы: актуальное или все записи.'end
     for _,key in ipairs({'favorites','recent'}) do
         local seen={}
@@ -255,6 +257,7 @@ function Knowledge:activate(data)
         end
     end
     self.revision=self.revision+1;self.loaded=true
+    self.important=require('pa26_knowledge_important').build(self)
 end
 function Knowledge:load()
     local active,err=self:read(self.path,M.validate)

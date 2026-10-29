@@ -25,7 +25,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Кричалка предупреждение",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "frisk"
     },
     {
       "id": 1,
@@ -49,7 +51,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Представиться + бейджик",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "citizen"
     },
     {
       "id": 2,
@@ -73,7 +77,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Запросить паспорт у гражданина",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "citizen"
     },
     {
       "id": 3,
@@ -97,7 +103,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Открыть базу разыскиваемых (/wanted)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "wanted"
     },
     {
       "id": 4,
@@ -121,7 +129,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Первичный обыск на месте задержания (/frisk)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "documents"
     },
     {
       "id": 5,
@@ -145,7 +155,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Надеть наручники (/cuff)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "documents"
     },
     {
       "id": 6,
@@ -169,7 +181,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Снять наручники (/uncuff)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "documents"
     },
     {
       "id": 13,
@@ -193,7 +207,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Показать бейджик / Удостоверение",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "citizen"
     },
     {
       "id": 14,
@@ -217,7 +233,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Представиться (Трафик-стоп 10-55)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "detention"
     },
     {
       "id": 15,
@@ -249,7 +267,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Разъяснить причину остановки / обращения",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "detention"
     },
     {
       "id": 16,
@@ -273,7 +293,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Предупреждение о соблюдении дистанции (6 метров)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "wanted"
     },
     {
       "id": 17,
@@ -297,7 +319,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Изучить и вернуть документы гражданину",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "citizen"
     },
     {
       "id": 18,
@@ -321,7 +345,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Передать свой пакет документов (На проверке)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 19,
@@ -345,7 +371,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Включить нагрудную боди-камеру (Начало смены)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "service"
     },
     {
       "id": 20,
@@ -369,7 +397,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Выключить боди-камеру и выгрузить запись в облако",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "service"
     },
     {
       "id": 21,
@@ -393,7 +423,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Взять под конвой / Отпустить хват (/hold)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "documents"
     },
     {
       "id": 22,
@@ -417,7 +449,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Сорвать маску с подозреваемого (/unmask)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "documents"
     },
     {
       "id": 23,
@@ -441,7 +475,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Зачитать Правило Миранды (Полный текст + /mirand)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "service"
     },
     {
       "id": 24,
@@ -465,7 +501,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Повторное зачитывание Миранды (2-й раз)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 25,
@@ -489,7 +527,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Посадить задержанного в крузер (/push)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "documents"
     },
     {
       "id": 26,
@@ -513,7 +553,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Высадить задержанного из крузера у участка",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "service"
     },
     {
       "id": 27,
@@ -537,7 +579,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Вытащить подозреваемого из автомобиля (/eject)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "service"
     },
     {
       "id": 28,
@@ -561,7 +605,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Передача задержанного в КПЗ (/arrest)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "documents"
     },
     {
       "id": 29,
@@ -585,7 +631,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Фоторобот и установление личности по лицу",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "frisk"
     },
     {
       "id": 30,
@@ -609,7 +657,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Регистрация личного дела арестованного в базе",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "documents"
     },
     {
       "id": 31,
@@ -633,7 +683,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Предоставить телефонный звонок / Вызов адвоката",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "documents"
     },
     {
       "id": 32,
@@ -657,7 +709,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Временное освобождение одной руки (для подписи/телефона)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "documents"
     },
     {
       "id": 33,
@@ -681,7 +735,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Вторичный (полный) обыск в участке с зип-пакетом (/frisk)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "service"
     },
     {
       "id": 34,
@@ -705,7 +761,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Изъятие огнестрельного / холодного оружия (/take)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "service"
     },
     {
       "id": 35,
@@ -729,7 +787,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Изъятие запрещённых веществ и нелегальных предметов (/take)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "service"
     },
     {
       "id": 36,
@@ -753,7 +813,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Аннулирование лицензии через базу КПК (/take)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "service"
     },
     {
       "id": 37,
@@ -777,7 +839,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Изъятие аудио/видеозаписывающих устройств и рации у задержанного",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 38,
@@ -801,7 +865,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Обыск салона и багажного отделения автомобиля",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 39,
@@ -825,7 +891,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Проверка серийного номера оружия / VIN-кода авто",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 40,
@@ -849,7 +917,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Пеленгация подозреваемого по спутнику (/setmark)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "detention"
     },
     {
       "id": 41,
@@ -873,7 +943,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Проверить гражданина по Чёрному списку (/blackcheck)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 42,
@@ -897,7 +969,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Внести в Чёрный список организации (/blacklist)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "leadership"
     },
     {
       "id": 43,
@@ -921,7 +995,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Вынести из Чёрного списка организации (/unblacklist)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 44,
@@ -945,7 +1021,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Снять розыск с гражданина (/clear)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "wanted"
     },
     {
       "id": 45,
@@ -969,7 +1047,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Выписать административный штраф (/ticket)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "wanted"
     },
     {
       "id": 46,
@@ -993,7 +1073,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Мегафон: Трафик-стоп 10-55 (1-е требование)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "detention"
     },
     {
       "id": 47,
@@ -1017,7 +1099,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Мегафон: Погоня — Последнее предупреждение перед огнём",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "detention"
     },
     {
       "id": 48,
@@ -1041,7 +1125,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Мегафон: Трафик-стоп повышенного риска 10-66 (Выход с ключами)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "detention"
     },
     {
       "id": 49,
@@ -1065,7 +1151,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Мегафон: Пропустить спецтранспорт с маячками (Code 3)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 50,
@@ -1089,7 +1177,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Накинуть метку погони на подозреваемого (/pt)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "detention"
     },
     {
       "id": 51,
@@ -1113,7 +1203,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Кричалка: Предупреждение / Работает департамент (/s)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "frisk"
     },
     {
       "id": 52,
@@ -1137,7 +1229,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Экстренный сигнал бедствия Code 0 (/mark)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "auto"
     },
     {
       "id": 53,
@@ -1161,7 +1255,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Запрос подкрепления в погоню Code 1 / 10-57 (/mark)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 54,
@@ -1185,7 +1281,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Доклад в рацию: Выезд в патруль (/r)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 55,
@@ -1209,7 +1307,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Доклад в рацию: Проведение 10-55 (/r)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 56,
@@ -1233,7 +1333,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Доклад в рацию: Транспортировка задержанного 10-15 (/r)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 57,
@@ -1257,7 +1359,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Рация департамента: Связь с гос. структурами (/d)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 58,
@@ -1281,7 +1385,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Достать электрошокер Taser X26 (4-я стадия силы)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 59,
@@ -1305,7 +1411,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Снять с пояса полимерную дубинку / Перцовый спрей",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 60,
@@ -1329,7 +1437,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Установить дорожное ограждение / Шипы (/break)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 61,
@@ -1353,7 +1463,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Взять баллистический штурмовой щит и экипировку SWAT",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 62,
@@ -1377,7 +1489,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Надеть тактический противогаз (Защита от газа)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 63,
@@ -1401,7 +1515,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Применить светошумовую / газовую гранату (Штурм)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 64,
@@ -1425,7 +1541,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Выбить дверь помещения штурмовым тараном",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 65,
@@ -1449,7 +1567,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Оказать Первую Медицинскую Помощь (ПМП / Жгут)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 66,
@@ -1473,7 +1593,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Запустить тактический квадрокоптер разведки",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 67,
@@ -1497,7 +1619,9 @@
       "command": "",
       "skip_confirmation": true,
       "name": "Переодеться в рабочую / тактическую форму в раздевалке",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 68,
@@ -1521,7 +1645,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Начало допроса: Включить камеры и аудиопротокол допросной",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 69,
@@ -1545,7 +1671,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Завершение допроса: Подписание протокола и сохранение записи",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 70,
@@ -1569,7 +1697,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Дактилоскопическая экспертиза (Снятие отпечатков пальцев)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 71,
@@ -1593,7 +1723,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Химический экспресс-анализ изъятого вещества (Наркотест)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 72,
@@ -1617,7 +1749,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Баллистическая экспертиза гильз и оружия",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 73,
@@ -1641,7 +1775,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Обезвреживание взрывного устройства (Сапёрный набор)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 74,
@@ -1665,7 +1801,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Осмотр места преступления и фотофиксация улик",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 75,
@@ -1689,7 +1827,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Копирование записей с камер видеонаблюдения объекта",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 76,
@@ -1713,7 +1853,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Принять кандидата в организацию (/invite)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "leadership"
     },
     {
       "id": 77,
@@ -1737,7 +1879,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Уволить сотрудника из организации (/uninvite)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "leadership"
     },
     {
       "id": 78,
@@ -1761,7 +1905,9 @@
       "command": "pa26_rang",
       "skip_confirmation": false,
       "name": "Изменить звание / должность сотрудника (/rang)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "leadership"
     },
     {
       "id": 79,
@@ -1785,7 +1931,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Назначить подразделение / отдел сотруднику (/division)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "leadership"
     },
     {
       "id": 80,
@@ -1809,7 +1957,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Выдать комплект служебной формы (/setskin)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "leadership"
     },
     {
       "id": 81,
@@ -1833,7 +1983,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Выдать / Снять дисциплинарный выговор (/fwarn)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": true,
+      "wheel_car_group": "leadership"
     },
     {
       "id": 82,
@@ -1857,7 +2009,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Лекция №1: Вводный инструктаж, Субординация и Рация",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 83,
@@ -1881,7 +2035,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Лекция №2: Пять стадий применения силы и Правило 6 метров",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 84,
@@ -1905,7 +2061,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Лекция №3: Процедура задержания и Правило Миранды",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 85,
@@ -1929,7 +2087,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Лекция №4: Регламент проведения первичного и вторичного обыска",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 86,
@@ -1953,7 +2113,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Лекция №5: Трафик-стоп (10-55) и Повышенного риска (10-66)",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 87,
@@ -1977,7 +2139,9 @@
       "command": "",
       "skip_confirmation": false,
       "name": "Лекция №6: Тактика штурма, действия при терактах и похищениях",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "auto"
     },
     {
       "id": 88,
@@ -2001,10 +2165,20 @@
       "command": "pa26_ad",
       "skip_confirmation": true,
       "name": "Рекламное объявление",
-      "no_accent": false
+      "no_accent": false,
+      "wheel_car_visible": false,
+      "wheel_car_group": "custom"
     }
   ],
   "wheel": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "wheel_car_classic": [
     1,
     2,
     3,

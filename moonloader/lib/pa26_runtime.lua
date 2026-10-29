@@ -99,6 +99,8 @@ function Runtime:refresh()
         elseif self.wheel.epoch ~= self.epoch or self.wheel.revision ~= self.revision or
             self.wheel.demo ~= self.demo then
             self:cancel('Контекст колеса изменился. Действие отменено.')
+        elseif self.env.wheelScope and self.wheel.scope~=self.env.wheelScope()then
+            self:cancel('Пешком / в машине: контекст колеса изменился. Откройте меню заново.')
         elseif self.wheel.catalog and self.env.wheelRevision and not catalogueCurrent(self) then
             self:cancel('Библиотека или настройки меню изменились. Откройте колесо заново.')
         elseif not self.demo and self.wheel.target ~= nil then
@@ -133,7 +135,7 @@ function Runtime:openWheel()
             if not catalogue then self:report(targetNote,'info')end
         end
     end
-    self.wheel = {target = target, choice = nil, openedAt = now, drawnAt = nil,
+    self.wheel = {scope=self.env.wheelScope and self.env.wheelScope()or'foot',target = target, choice = nil, openedAt = now, drawnAt = nil,
         demo = self.demo, epoch = self.epoch, revision = self.revision, targetNote = targetNote,catalog=catalogue,nav={}}
     return true
 end

@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.42.3')
+script_version('0.43.0')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -62,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.42.3' then
+if #missing > 0 or not core or core.VERSION ~= '0.43.0' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -924,11 +924,12 @@ for _,source in ipairs({patrolSession,patrolEvents})do for _,note in ipairs(sour
 for _,note in ipairs(workspace.warnings)do pushLog(note)end
 if workspace.userFiles and workspace.userFiles.blocked~=nil then runtime:setDemo(true)end
 env.startBinding=function(index,target)
-    local id=workspace.library.wheel[index]; local binding=bindingModel.find(workspace.library,id)
+    local scope=require('pa26_wheel_scope').active(workspace.library,alerts.state);local id=require('pa26_wheel_scope').slots(workspace.library,scope)[index]; local binding=bindingModel.find(workspace.library,id)
     if not binding then report('В этом месте колеса нет сценария.'); return false end
     if target then workspace:selectTarget(target) end
     return workspace:request({kind='prepare',id=id,target=target,start=true,returnTo='quick'})
 end
+env.wheelScope=function()return require('pa26_wheel_scope').active(workspace.library,alerts.state)end
 env.wheelCatalog=function() local state=bindingModel.copy(alerts.state or {});state.patrolSession=patrolSession:view();state.copilot=sceneServices.copilot:view();return wheelModel.build(workspace.library,env.wheelRevision(),true,state) end
 env.wheelRevision=function() local state=bindingModel.copy(alerts.state or{});state.copilot=sceneServices.copilot:view();return workspace.libraryRevision*100000000+patrolSession.revision*100+wheelModel.contextRevision(state) end
 env.acquire=function(distance)
@@ -1185,9 +1186,10 @@ for _,name in ipairs({'openAssist','openQuick','openTips'})do
     end
 end
 local knowledgeCallbacks={codec=codec,nextBindingId=function()return workspace.library.next_id end,
-    openCaseGround=function(kind,reference)return studioCallbacks.groundHandoff({article=reference,basis=reference},kind)end,
+    openCaseGround=function(kind,reference)if not reference then return studioCallbacks.openProcedures(kind)end;return studioCallbacks.groundHandoff({article=reference,basis=reference},kind)end,
+    openMark=function()return studioCallbacks.openProcedures('mark')end,
     openOperational=function(topic)
-        studioCallbacks.openAssist('traffic');studio.copilotPage=topic=='rights'and'rights'or'grounds'
+        studioCallbacks.openAssist('traffic');studio.copilotPage=topic=='rights'and'rights'or topic=='traffic'and'work'or'grounds'
     end,
     openWanted=function(reason)
         studio.wantedSuggestedReason=reason
@@ -1251,7 +1253,7 @@ env.wheelNavigate=function(route,profile,target)
             wheelModel.categoryName(route.category)..'».','binds',false,'info')
         return true
     end
-    studioCallbacks.openQuick(); studio.quickWheelCategory=route.category; studio.quickWheelProfile=profile
+    studioCallbacks.openQuick(); studio.quickWheelCategory=route.category; studio.quickWheelProfile=profile;studio.quickWheelScope=require('pa26_wheel_scope').active(workspace.library,alerts.state)
     studio.quickQuery=''; studio.cache.quickSearch=nil; studio.quickFavorites=false; studio.quickSelected=nil
     return true
 end
@@ -1261,7 +1263,7 @@ env.startWheelBinding=function(item,target)
     local parameters=#binding.parameters>0 or binding.script:find('{param',1,true)
     if parameters then
         studioCallbacks.openQuick(); studio.quickWheelCategory=item.category
-        studio.quickWheelProfile=workspace.library.settings.wheel_profile
+        studio.quickWheelScope=require('pa26_wheel_scope').active(workspace.library,alerts.state);studio.quickWheelProfile=require('pa26_wheel_scope').settings(workspace.library.settings,studio.quickWheelScope).wheel_profile
         studio.quickQuery=''; studio.cache.quickSearch=nil; studio.quickFavorites=false
     end
     local ok=studio:launchBinding(binding,studioCallbacks,'quick')
@@ -1784,7 +1786,7 @@ sceneServices.wheelEditInput=function(io,wheel,hit,blocked)
  local previous=wheel.editMouseDown;wheel.editMouseDown=down
  local intent=require('pa26_wheel_edit').update(wheel,hit,{ctrl=ctrl,down=down,clicked=imgui.IsMouseClicked(0),
     released=previous==true and not down,blocked=blocked,now=studioClock},workspace.libraryRevision)
- if intent then wheel.pendingEdit=intent end
+ if intent then intent.scope=wheel.scope;wheel.pendingEdit=intent end
  if ctrl or wheel.editConsumed then wheel.choice=nil;pendingWheelClick=nil;return true end
  return false
 end
@@ -1792,10 +1794,11 @@ sceneServices.processWheelEdit=function()
  local w=runtime.wheel;local p=w and w.pendingEdit;if not p then return end;w.pendingEdit=nil
  local age=core.elapsed(studioClock,p.at);local ctx=context()
  if p.revision~=workspace.libraryRevision or not age or age>1500 or not focused or ctx.blocked or ctx.paused or hasUiModal()then return end
+ local scope=require('pa26_wheel_scope').active(workspace.library,alerts.state);if p.scope~=scope then return end
  local lib=bindingModel.copy(workspace.library);local source,target=p.source,p.target
  if source.ring=='classic'then
-  if lib.settings.wheel_mode~='classic'or source.index<1 or source.index>6 or target.index<1 or target.index>6 then return end
-  lib.wheel[source.index],lib.wheel[target.index]=lib.wheel[target.index],lib.wheel[source.index]
+  if require('pa26_wheel_scope').settings(lib.settings,scope).wheel_mode~='classic'or source.index<1 or source.index>6 or target.index<1 or target.index>6 then return end
+  local slots=require('pa26_wheel_scope').slots(lib,scope);slots[source.index],slots[target.index]=slots[target.index],slots[source.index]
  else
   if not w.catalog or w.catalog.revision~=env.wheelRevision()or source.category~=target.category then return end
   local group=source.ring=='root'and'root'or source.category;local visible={}
@@ -1803,8 +1806,8 @@ sceneServices.processWheelEdit=function()
   else local cat=w.catalog.byCategory[group];if not cat then return end
    for _,item in ipairs(cat.items)do visible[#visible+1]=require('pa26_wheel_order').key(item)end
   end
-  local values=require('pa26_wheel_order').swap(lib.settings.wheel_order[group],visible,source.key,target.key)
-  if not values then return end;lib.settings.wheel_order[group]=values
+  local key=require('pa26_wheel_scope').key(scope,'order');local values=require('pa26_wheel_order').swap(lib.settings[key][group],visible,source.key,target.key)
+  if not values then return end;lib.settings[key][group]=values
  end
  local active=w.catalog and w.nav.active and w.catalog.categories[w.nav.active].id
  local ok,why=workspace:save(lib)
@@ -1866,9 +1869,9 @@ local function drawWheel()
     local overWidget = (not alerts.suppressHud and hud:overWidget(imgui)) or hud.drag ~= nil or alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)or sceneServices.copilotUi.over(sceneServices.copilot,imgui)
     local ready = wheel.demo or wheel.target ~= nil
     local choice = ready and not overWidget and core.radialAction(io.MousePos.x - cx, io.MousePos.y - cy, inner, outer) or nil
-    if choice then local b=bindingModel.find(workspace.library,workspace.library.wheel[choice]); if not b or not b.enabled then choice=nil end end
+    if choice then local b=bindingModel.find(workspace.library,require('pa26_wheel_scope').slots(workspace.library,wheel.scope)[choice]); if not b or not b.enabled then choice=nil end end
     local editIndex=core.radialAction(io.MousePos.x-cx,io.MousePos.y-cy,inner,outer)
-    local editBinding=editIndex and bindingModel.find(workspace.library,workspace.library.wheel[editIndex])
+    local editBinding=editIndex and bindingModel.find(workspace.library,require('pa26_wheel_scope').slots(workspace.library,wheel.scope)[editIndex])
     local hit=editIndex and{ring='classic',category='classic',index=editIndex,key=tostring(editIndex),name=editBinding and editBinding.name or'Пустой сектор'}
     if sceneServices.wheelEditInput(io,wheel,hit,overWidget)then choice=nil end
     runtime:setChoice(choice)
@@ -1894,7 +1897,7 @@ local function drawWheel()
     draw:AddTextFontPtr(menuButtonFont or imgui.GetFont(), 18 * scale, vec(left + 24 * scale, top + 20 * scale), white, 'Police Assistant 2026')
     draw:AddTextFontPtr(menuSmallFont or imgui.GetFont(), 16 * scale, vec(left + 24 * scale, top + 50 * scale), muted, 'Радиальное меню по наведению на игрока')
     for slot, index in ipairs(core.wheelSlots) do
-        local action = bindingModel.find(workspace.library,workspace.library.wheel[index]) or {name='Пусто',enabled=false}
+        local action = bindingModel.find(workspace.library,require('pa26_wheel_scope').slots(workspace.library,wheel.scope)[index]) or {name='Пусто',enabled=false}
         local beginAngle = -math.pi / 2 + (slot - 1) * math.pi / 3
         local endAngle = beginAngle + math.pi / 3
         local enabled = ready and action.enabled
@@ -1908,7 +1911,7 @@ local function drawWheel()
     -- Draw dividers after all fills so neighboring sectors cannot cover half
     -- of a divider's stroke or antialiasing.
     for slot, index in ipairs(core.wheelSlots) do
-        local action = bindingModel.find(workspace.library,workspace.library.wheel[index]) or {name='Пусто',enabled=false}
+        local action = bindingModel.find(workspace.library,require('pa26_wheel_scope').slots(workspace.library,wheel.scope)[index]) or {name='Пусто',enabled=false}
         local beginAngle = -math.pi / 2 + (slot - 1) * math.pi / 3
         local endAngle = beginAngle + math.pi / 3
         local enabled = ready and action.enabled
@@ -1932,7 +1935,7 @@ local function drawWheel()
     nickname = nickname:gsub('~[^~]*~', ''):gsub('%c', '')
     centered(idText, wheelIdFont or menuHeadingFont, 32, cx, cy - 22 * scale, white, 170)
     centered(nickname, menuBodyFont, 18, cx, cy + 18 * scale, muted, 156)
-    if choice then local b=bindingModel.find(workspace.library,workspace.library.wheel[choice]); if b then centered(b.name,menuSmallFont,14,cx,cy+49*scale,muted,146) end end
+    if choice then local b=bindingModel.find(workspace.library,require('pa26_wheel_scope').slots(workspace.library,wheel.scope)[choice]); if b then centered(b.name,menuSmallFont,14,cx,cy+49*scale,muted,146) end end
     for n,e in ipairs({wheel.nav.editSource or false,wheel.nav.editTarget or false})do if e then
         for slot,index in ipairs(core.wheelSlots)do if index==e.index then local a=-math.pi/2+(slot-1)*math.pi/3
             wheelModel.outline(draw,vec,cx,cy,inner,outer,a,a+math.pi/3,n==1 and color(.25,1,.65,1)or color(1,.8,.25,1),3*scale)
