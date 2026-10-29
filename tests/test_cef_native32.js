@@ -51,7 +51,8 @@ let checks=0;const eq=(a,b,m)=>{checks++;assert.deepEqual(a,b,m);};const ok=(v,m
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(fn,message){for(let i=0;i<180;i++){if(fn())return;if(exited)throw Error('Native probe exited: '+error);await wait(30);}throw Error(message);}
 const timers=new Set(),intervals=new Set(),listeners={},sent=[],network=[],consoleCodes=[];
-let endpoint,offset=0,context;
+let endpoint,offset=0,context,requestNumber=0,responseNumber=0;
+async function refreshAdapter(){const after=requestNumber;await until(()=>responseNumber>after,'No fresh adapter metadata reply');}
 const field={value:'',selectionStart:0,selectionEnd:0,tagName:'INPUT',parentElement:{appendChild(){}},
  setSelectionRange(a,b){this.selectionStart=a;this.selectionEnd=b;}};
 const panel={open:true,classList:{contains(){return panel.open;}}};
@@ -81,8 +82,8 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
    addEventListener(name,cb){(listeners[name]||=[]).push(cb);},createElement(){return{style:{},setAttribute(){},remove(){}};},
    head:{appendChild(el){loadEndpoint();if(el.onload)el.onload();}}},
   cef:{on(){},emit(...args){sent.push(args);}},
-  fetch:async(url,options)=>{endpoint=url;let r;try {r=await fetch(url,{...options,headers:{...options.headers,Origin:'sampcef://assets'}});}catch(e){consoleCodes.push('native_fetch:'+e.name+':'+(e.cause?.code||'none'));throw e;}
-    network.push({status:r.status,cors:r.headers.get('access-control-allow-origin')});return r;}});
+  fetch:async(url,options)=>{const sequence=++requestNumber;endpoint=url;let r;try {r=await fetch(url,{...options,headers:{...options.headers,Origin:'sampcef://assets'}});}catch(e){consoleCodes.push('native_fetch:'+e.name+':'+(e.cause?.code||'none'));throw e;}
+    network.push({status:r.status,cors:r.headers.get('access-control-allow-origin')});return {ok:r.ok,status:r.status,json:async()=>{const value=await r.json();responseNumber=sequence;return value;}};}});
  vm.runInContext('window=globalThis;'+fn('_0x52d0')+';'+fn('_0x2db2')+';'+source.slice(0,source.indexOf('const hudContainer=')),context,{timeout:1000});
  vm.runInContext(fs.readFileSync(adapter,'utf8'),context,{timeout:1000});
  vm.runInContext("const chatInputField=__testField;let chatInputHistory=[],historyIndex=0,inputBuffer='';const MAX_INPUT_HISTORY_LENGTH=100;function saveInputMessageToStorage(){};"+fn('sendMessageToChat'),context,{timeout:1000});
@@ -99,10 +100,10 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  for(const [raw,expected]of [['.к Запрашиваю помощь.','/r Запрашиваю помощь.'],['.ыефеы','/stats'],['.unknown123 Параметры.','/unknown123 Параметры.'],[') Привет.',') Привет.'],['(Привет','(Привет']]){
    type(raw);eq(field.value,raw);await submit(raw);eq(sent.at(-1)[1],expected);
  }
- setControl({accentEnabled:false});await context.PA26Chat.exchange();await wait(120);await submit('.ыефеы');eq(sent.at(-1)[1],'/stats');
- setControl({chat_dot_commands:false});await context.PA26Chat.exchange();await wait(120);await submit('.ыефеы');eq(sent.at(-1)[1],'.ыефеы');
- setControl({chat_dot_commands:true,accentEnabled:true});await context.PA26Chat.exchange();await wait(120);
- type('Привет.');eq(field.value,control.accent+' Привет.');await submit('Привет.');eq(sent.at(-1),['HandleHudSendMessage',control.accent+' Привет.']);
+ setControl({accentEnabled:false});await refreshAdapter();await submit('.ыефеы');eq(sent.at(-1)[1],'/stats');
+ setControl({chat_dot_commands:false});await refreshAdapter();await submit('.ыефеы');eq(sent.at(-1)[1],'.ыефеы');
+ setControl({chat_dot_commands:true,accentEnabled:true});await refreshAdapter();
+ type('Привет.');eq(field.value,'Привет.','the draft stays native until submission');await submit('Привет.');eq(sent.at(-1),['HandleHudSendMessage',control.accent+' Привет.']);
  // Reproduce a launcher removing the tag/endpoint while the adapter page exists.
  fs.writeFileSync(path.join(box,'index.html'),originalHtml);fs.unlinkSync(path.join(box,'pa26-chat-endpoint.js'));
  await until(()=>fs.readFileSync(path.join(box,'index.html'),'utf8').includes(tag)&&fs.existsSync(path.join(box,'pa26-chat-endpoint.js')),'Automatic asset repair did not run');
@@ -110,21 +111,22 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  eq(fs.readFileSync(path.join(box,'index.html'),'utf8').replace(tag,''),originalHtml);
  const beforeFault=fs.readFileSync(path.join(box,'pa26-chat-endpoint.js'),'utf8');setControl({forceClose:true});
  await until(()=>fs.readFileSync(path.join(box,'pa26-chat-endpoint.js'),'utf8')!==beforeFault,'Failed listener did not restart');
- loadEndpoint();await until(()=>{type('Проверка связи.');return field.value===control.accent+' Проверка связи.';},'No active chat config after listener restart');
+ loadEndpoint();await until(()=>context.PA26Chat.submitted('Проверка связи.').text===control.accent+' Проверка связи.','No active chat config after listener restart');
+ type('Проверка связи.');eq(field.value,'Проверка связи.','reconnection never rewrites the draft');
  await submit('После обрыва.');eq(sent.at(-1)[1],control.accent+' После обрыва.');
  ok(output.includes('socket_accept'),'real socket failure must be diagnosed');
  for(const text of ['/me оглянулся.','/do Дверь открыта.','/r Доклад.','/b Текст.']){await submit(text);eq(sent.at(-1)[1],text);}
- setControl({local_tag:'[SIGMA]:',manual_radio_prefix:true});await context.PA26Chat.exchange();await wait(150);
+ setControl({local_tag:'[SIGMA]:',manual_radio_prefix:true});await refreshAdapter();
  const radioRules=(await languagePacket()).chatText.radioPrefix;eq(radioRules.enabled,true);eq(radioRules.localTag,'[SIGMA]:');
  for(const[raw,expected]of [['/r Доклад.','/r [SIGMA]: Доклад.'],['.к Доклад.','/r [SIGMA]: Доклад.'],
   ['/r [SIGMA]: Доклад.','/r [SIGMA]: Доклад.'],['/rn Текст.','/rn Текст.'],['/r','/r']]){
   await submit(raw);eq(sent.at(-1)[1],expected);
  }
- setControl({manual_radio_prefix:false});await context.PA26Chat.exchange();await wait(150);await submit('/r Выключено.');eq(sent.at(-1)[1],'/r Выключено.');
- setControl({manual_radio_prefix:true,local_tag:''});await context.PA26Chat.exchange();await wait(150);await submit('/r Пусто.');eq(sent.at(-1)[1],'/r Пусто.');
+ setControl({manual_radio_prefix:false});await refreshAdapter();await submit('/r Выключено.');eq(sent.at(-1)[1],'/r Выключено.');
+ setControl({manual_radio_prefix:true,local_tag:''});await refreshAdapter();await submit('/r Пусто.');eq(sent.at(-1)[1],'/r Пусто.');
  const count=sent.length;await submit('/pa26unknown');eq(sent.length,count,'unknown PA commands stay local');
- setControl({accentEnabled:false});await context.PA26Chat.exchange();await wait(120);await submit('Без акцента.');eq(sent.at(-1)[1],'Без акцента.');
- setControl({accentEnabled:true});await context.PA26Chat.exchange();await wait(120);
+ setControl({accentEnabled:false});await refreshAdapter();await submit('Без акцента.');eq(sent.at(-1)[1],'Без акцента.');
+ setControl({accentEnabled:true});await refreshAdapter();
  const capacity=127-control.accent.length-1;await submit('Я'.repeat(capacity));eq(sent.at(-1)[1].length,127);
  const before=sent.length;eq((await submit('Я'.repeat(capacity+1))).prevented,true);eq(sent.length,before);
  const preflight=await fetch(endpoint,{method:'OPTIONS',headers:{Origin:'sampcef://assets','Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type','Access-Control-Request-Private-Network':'true'}});
@@ -135,8 +137,8 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  eq((await fetch(endpoint,{method:'POST',headers:{Origin:'sampcef://assets','Content-Type':'application/json'},body:'{}'})).status,400);
  const old=fs.readFileSync(path.join(box,'pa26-chat-endpoint.js'),'utf8');setControl({generation:2});
  await until(()=>fs.readFileSync(path.join(box,'pa26-chat-endpoint.js'),'utf8')!==old,'Native bridge did not restart');
- loadEndpoint();await wait(150);await context.PA26Chat.exchange();await submit('После перезапуска.');eq(sent.at(-1)[1],control.accent+' После перезапуска.');
- setControl({manualEnabled:true});await context.PA26Chat.exchange();await wait(150);
+ loadEndpoint();await refreshAdapter();await submit('После перезапуска.');eq(sent.at(-1)[1],control.accent+' После перезапуска.');
+ setControl({manualEnabled:true});await refreshAdapter();
  const longManual='синяя куртка и чёрные брюки '.repeat(8).trim();
  const manualLines=()=> {try{return JSON.parse(fs.readFileSync(path.join(box,'manual-sent.json'),'utf8'));}catch(_){return [];}};
  for(const head of ['','/me ','/do ','/try ','/r ','/rn ','/f ','/fn ','/d ','/df ','/n ','/todo ']) {
@@ -150,7 +152,7 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  }
  const badTodo=manualLines().length;const todoReject=await submit('/todo текст*'+'я'.repeat(61));eq(todoReject.prevented,true);eq(manualLines().length,badTodo);
  const unchanged=manualLines().length;const tooLong='слово '.repeat(100);const rejected=await submit(tooLong);eq(rejected.prevented,true);eq(manualLines().length,unchanged);
- setControl({manualEnabled:false});await context.PA26Chat.exchange();await wait(150);
+ setControl({manualEnabled:false});await refreshAdapter();
  type('Не потерять.');fs.writeFileSync(path.join(box,'stop'),'stop');await until(()=>exited,'Native helper did not close');offset+=2500;
  for(let i=0;i<3;i++)await context.PA26Chat.exchange();context.PA26Chat.prepare();eq(field.value,'Не потерять.');
  ok(output.includes('port_type=string'));ok(output.includes('browser_exchange'));ok(output.includes('browser_ready'));ok(!output.includes(control.accent),'native diagnostics must not contain the prefix');

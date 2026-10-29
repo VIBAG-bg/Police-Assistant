@@ -10,6 +10,7 @@ const chatText = {version:1,skipBrackets:true,dotCommands:true,keyboardMap:{к:'
 const endpoint = 'http://127.0.0.1:39001/' + 'a'.repeat(48) + '/exchange';
 const flush = () => new Promise(resolve => setImmediate(resolve));
 async function page(delayed=false) {
+  const stats={textReads:0,textWrites:0,styleReads:0,rectReads:0,endpointLoads:0};
   const observers=[], fieldListeners={};
   let now = 0, sequence = 0;
   const listeners = {}, callbacks = {}, sent = [], observed = [], requests = [], timers = new Map(),warnings=[];
@@ -18,10 +19,11 @@ async function page(delayed=false) {
     insertBefore(el,next) {const index=this.children.indexOf(next);this.children.splice(index<0?this.children.length:index,0,el);el.parentElement=this;el.isConnected=true;elements[el.id]=el;}};
   const elements = {};
   const input = elements.chatInputField = {id:'chatInputField',value: '', selectionStart: 0, selectionEnd: 0, tagName: 'INPUT',
-    getClientRects() {return this.collapsed ? [] : [{}];},
+    getClientRects() {stats.rectReads++;return this.collapsed ? [] : [{}];},
     addEventListener(name,cb) {(fieldListeners[name] ||= []).push(cb);},
     selectionDirection: 'none', caretWrites: 0, parentElement: panel,
     setSelectionRange(start,end,direction) {this.caretWrites++;this.selectionStart=start;this.selectionEnd=end;this.selectionDirection=direction;}};
+  let inputValue='';Object.defineProperty(input,'value',{get(){stats.textReads++;return inputValue;},set(value){stats.textWrites++;inputValue=value;}});
   elements.chatInput = panel;
   const send={id:'SendMsgButton',parentElement:panel};panel.children.push(input,send);
   Object.defineProperty(input,'nextSibling',{get(){return panel.children[panel.children.indexOf(this)+1]||null;}});
@@ -33,9 +35,9 @@ async function page(delayed=false) {
         if(elements[this.id]===this)delete elements[this.id];this.isConnected=false;this.parentElement=null;
       }};},
     addEventListener(name,cb,capture) {cb.capture=!!capture;(listeners[name] ||= []).push(cb);},
-    head: {appendChild(el) {if (el.onload) el.onload();}}};
+    head: {appendChild(el) {stats.endpointLoads++;if (el.onload) el.onload();}}};
   const root = {document, performance: {now: () => now}, Date: {now: () => now},Math: {random: () => 0.1234},
-    getComputedStyle(el) {return {display: 'flex',visibility: 'visible',opacity: String(el.opacity ?? (el === panel && !panel.open ? 0 : 1))};},
+    getComputedStyle(el) {stats.styleReads++;return {display: 'flex',visibility: 'visible',opacity: String(el.opacity ?? (el === panel && !panel.open ? 0 : 1))};},
     console: {warn(value) {warnings.push(value);}},
     MutationObserver:class {constructor(cb){this.cb=cb;observers.push(this);}observe(target,options){this.target=target;this.options=options;this.live=true;}disconnect(){this.live=false;}},
     AbortController, setTimeout(cb,ms) {timers.set(++sequence,{cb,ms,at:now+ms});return sequence;},clearTimeout(id) {timers.delete(id);},
@@ -62,7 +64,7 @@ async function page(delayed=false) {
     return event;
   }
   fire('DOMContentLoaded');api.endpoint(endpoint);await flush();
-  return {root,api,input,panel,sent,observed,requests,callbacks,fire,timers,warnings,elements,observers,
+  return {root,api,input,panel,sent,observed,requests,callbacks,fire,timers,warnings,elements,observers,stats,
     mutate(){for(const o of observers)if(o.live)o.cb([{type:'attributes'}]);},
     type(text,cursor=text.length) {panel.open=true;input.value=text;input.selectionStart=input.selectionEnd=cursor;fire('input');},
     async config(value) {config={...config,...value};await api.exchange();await flush();},
@@ -257,9 +259,20 @@ async function page(delayed=false) {
   // Heavy typing/editing: no CEF/native-style caret rewrites or repeated layout walks.
   p=await page();p.input.scrollLeft=340;
   const initialCaret=p.input.caretWrites;
-  for(let i=0;i<300;i++){p.type('Длинный текст '+i,3);p.api.prepare();}
+  const requestsBeforeTyping=p.requests.length;
+  const beforeTyping={...p.stats};
+  for(let i=0;i<300;i++){p.type('Длинный текст '+i,3);p.fire('keydown',{key:'t'});p.fire('keyup',{key:'t'});}
+  eq(p.stats.textReads,beforeTyping.textReads,'typing does not read or parse the draft');
+  eq(p.stats.textWrites-beforeTyping.textWrites,300,'only the simulated user writes the draft');
+  eq(p.stats.styleReads,beforeTyping.styleReads,'typing does not force CSS reads');
+  eq(p.stats.rectReads,beforeTyping.rectReads,'typing does not force layout');
+  p.fire('compositionstart');p.fire('compositionend');eq(p.stats.textReads,beforeTyping.textReads);
   eq(p.input.caretWrites,initialCaret);eq(p.input.selectionStart,3);eq(p.input.scrollLeft,340);
-  eq([...p.timers.values()].filter(t=>!t.interval&&t.ms===150).length,1,'preview is debounced');
+  eq([...p.timers.values()].filter(t=>!t.interval&&t.ms===150).length,0,'no live text-processing timers');
+  eq(p.requests.length,requestsBeforeTyping,'typing is independent of loopback requests');
+  const endpointTimer=[...p.timers.values()].find(t=>t.interval&&t.ms===2500),loads=p.stats.endpointLoads;
+  endpointTimer.cb();eq(p.stats.endpointLoads,loads,'healthy connections do not reload endpoint scripts');
+  p.offline(true);await p.exchange();endpointTimer.cb();eq(p.stats.endpointLoads,loads+1,'a failed connection can discover a replacement endpoint');p.offline(false);await p.exchange();
   p.type('Привет',2);p.runTimers(150);await flush();
   eq(p.input.value,'Привет');eq(p.input.selectionStart,2);
   p.type('Очень длинное слово '.repeat(20),5);const held=p.input.value;await p.enter();
@@ -284,7 +297,7 @@ async function page(delayed=false) {
     await p.config({manualResult:{key,status:'completed',raw:'',sent:prepared.parts.length,total:prepared.parts.length}});
     p.type('Готово');await p.enter();eq(p.sent.at(-1)[1],prefix+' Готово');
   }
-  p=await page();await p.config({chatText:{...chatText,manual}});p.input.maxLength=127;p.type(words);eq(p.input.maxLength,8192);
+  p=await page();await p.config({chatText:{...chatText,manual}});p.input.maxLength=127;p.mutate();await flush();p.type(words);eq(p.input.maxLength,8192,'HUD-open metadata refresh restores the limit without handling input events');
   await p.enter();await p.exchange();const manualPacket=p.observed.find(e=>e.kind==='manual');
   const manualRequest=p.requests.map(q=>JSON.parse(q.options.body)).find(q=>q.events.some(e=>e.kind==='manual'));
   const manualKey=manualRequest.page+':'+manualPacket.id;p.input.value='';
@@ -335,6 +348,13 @@ async function page(delayed=false) {
   beforeMutation=p.requests.length;p.fire('keydown',{key:'F6'});p.panel.open=true;p.runTimers(0);await flush();p.runTimers(0);await flush();
   eq(p.requests.length>beforeMutation,true);eq(JSON.parse(p.requests.at(-1).options.body).chat,true);
   p.api.stop();eq(p.observers[0].live,false);eq(p.fire('keydown',{key:'2'}).bubbleStopped,undefined);
+  // A single-line submission does not await the heartbeat response or a round trip.
+  p=await page();p.type('Короткое сообщение.');let finishReply;
+  p.root.fetch=()=>new Promise(resolve=>finishReply=resolve);const hanging=p.exchange();
+  const emitted=p.sent.length;p.root.sendMessageToChat(p.input.value);
+  eq(p.sent.length,emitted+1,'native single-line emit happens while HTTP remains pending');
+  eq(p.sent.at(-1)[1],prefix+' Короткое сообщение.');
+  finishReply({ok:true,json:async()=>({schema:1,ack:0,enabled:true,session:'one'})});await hanging;
   const fs=require('node:fs'),crypto=require('node:crypto');
   fs.writeFileSync(require('node:path').join(__dirname,'CEF_BROWSER_RESULTS.json'),JSON.stringify({status:'passed',checks,
     adapter_sha256:crypto.createHash('sha256').update(fs.readFileSync(require('node:path').join(__dirname,'../cef/assets/hud/pa26-chat.js'))).digest('hex'),

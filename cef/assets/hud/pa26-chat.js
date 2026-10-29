@@ -133,7 +133,7 @@
       let button=doc.getElementById('pa26-chat-restore');
       if (!button) { button=doc.createElement('button');button.id='pa26-chat-restore';button.textContent='Вставить сохранённый остаток';el.parentElement.appendChild(button); }
       button.hidden=false;
-      button.onclick=()=> { const input=field();if (input && (!input.value || input.value === state.owned)) { input.value=state.manualDraft;state.manualDraft=null;state.owned='';button.hidden=true;prepare(); }else notice('Сначала сохраните или очистите текущий ввод. Оба текста сохранены.'); };
+      button.onclick=()=> { const input=field();if (input && (!input.value || input.value === state.owned)) { input.value=state.manualDraft;state.manualDraft=null;state.owned='';button.hidden=true;notice('Текст восстановлен. Проверьте его перед отправкой.'); }else notice('Сначала сохраните или очистите текущий ввод. Оба текста сохранены.'); };
     }
   }
   function submitted(text) {
@@ -178,10 +178,16 @@
     const panel = doc.getElementById('chatInput');
     return !!(panel && !panel.hidden && panel.isConnected !== false && panel.classList.contains('active') && visible(panel, true));
   }
+  function panelOpen() {
+    const panel=doc.getElementById('chatInput');
+    return !!(panel && !panel.hidden && panel.isConnected!==false && panel.classList.contains('active'));
+  }
   function inputChanged() { state.visibleCache = new WeakMap(); state.inputDirty = true; exchange(); }
   function guardDigit(event) {
+    if (!(/^[0-9]$/u.test(event.key || '') || /^(Digit|Numpad)[0-9]$/u.test(event.code || '') ||
+        event.keyCode >= 48 && event.keyCode <= 57 || event.keyCode >= 96 && event.keyCode <= 105)) return;
     const c = config();
-    if (state.stopped || c && (!c.enabled || c.weaponGuard === false) || state.inputGuardDisabled || !active() || event.target !== field()) return;
+    if (state.stopped || c && (!c.enabled || c.weaponGuard === false) || state.inputGuardDisabled || !panelOpen() || event.target !== field()) return;
     if (/^[0-9]$/u.test(event.key || '') || /^(Digit|Numpad)[0-9]$/u.test(event.code || '') ||
         event.keyCode >= 48 && event.keyCode <= 57 || event.keyCode >= 96 && event.keyCode <= 105) {
       // Keep the input's default editing and WM_CHAR; stop only HUD bubbling.
@@ -277,10 +283,6 @@
     notice(state.recoveryNotice || result.error || (result.parts && result.parts.length>1 ?
       'После Enter: '+result.parts.length+' части, целые слова и ... на стыках.' : ''));
   }
-  function schedulePreview() {
-    if (state.previewTimer) root.clearTimeout(state.previewTimer);
-    state.previewTimer=root.setTimeout(()=> { state.previewTimer=null;prepare(); },150);
-  }
   function enqueue(kind, text, color, session = state.config && state.config.session) {
     if (!config() || !state.config.enabled || typeof text !== 'string' || text.length > 4096) return false;
     if (state.queue.length >= 64) return false;
@@ -318,6 +320,7 @@
       return originalOn.call(this, name, callback, ...rest);
     };
     cef.emit = function (name, text, ...args) {
+      if (name !== 'HandleHudSendMessage') return originalEmit.call(this,name,text,...args);
       state.submits = state.submits.filter(ticket => clock() - ticket.at <= 5000);
       const index = typeof text === 'string' ? state.submits.findIndex(ticket => ticket.text === text ||
         !ticket.manual && command(ticket.text) && command(text) && ticket.text.replace(/^\s*\S+/u,'') === text.replace(/^\s*\S+/u,'')) : -1;
@@ -363,6 +366,7 @@
       state.submits.push({at: clock(), text: result.text, manual:result.manual, session: config() && config().session});
       if (result.text !== body) state.applied=Math.min(1000000,state.applied+1);
       state.submitted = Math.min(1000000, state.submitted + 1);
+      state.recoveryNotice=null;notice('');
       return original.call(this, result.text, ...args);
     };
     state.hooked = true;
@@ -396,7 +400,6 @@
       }
       if (state.manualPending && clock()-state.manualPending.at>60000) { const raw=state.manualPending.raw;state.manualPending=null;recoverManual(raw,'Подтверждение PA не получено. Текст сохранён; проверьте чат перед повтором.',false); }
       syncFieldLimit();updateLayoutBadge();
-      if (doc.activeElement !== field()) schedulePreview();
     } catch (error) {
       state.failures++;
       const code = error && /^(http_\d{3}|bad_response)$/u.test(error.message) ? error.message : 'network';
@@ -404,12 +407,12 @@
         state.lastError = code;
         if (root.console && typeof root.console.warn === 'function') root.console.warn('[PA26 CEF] exchange_failed: ' + code);
       }
-      if (state.failures >= 3) { state.config = null; state.until = 0; state.queue = []; schedulePreview(); }
+      if (state.failures >= 3) { state.config = null; state.until = 0; state.queue = []; }
     } finally { root.clearTimeout(timeout); state.pending = false; if (state.inputDirty && !state.stopped) root.setTimeout(exchange, 0); }
   }
   let endpointLoading = false;
   function loadEndpoint() {
-    if (endpointLoading || state.stopped) return;
+    if (endpointLoading || state.stopped || state.url && config() && state.failures===0) return;
     endpointLoading = true;
     const script = doc.createElement('script');
     script.src = 'pa26-chat-endpoint.js?pa26=' + root.Date.now();
@@ -428,19 +431,20 @@
     },
     // Exposed for bounded, offline tests; no page-wide network or game API is exposed.
     wireSize, prepare, exchange, inputState, updateLayoutBadge, manualSubmission, submitted, manualBusy:()=>!!state.manualPending,
-    stop() { if (state.manualPending) recoverManual(state.manualPending.raw,'PA остановлен. Проверьте уже переданные части перед повтором.',false);const input=field();if (input && state.originalMaxLength !== undefined) input.maxLength=state.originalMaxLength;state.stopped = true;if (state.inputObserver) state.inputObserver.disconnect();if (state.previewTimer) root.clearTimeout(state.previewTimer);state.config = null; state.lastChatText = null; state.until = 0; prepare(); }
+    stop() { if (state.manualPending) recoverManual(state.manualPending.raw,'PA остановлен. Проверьте уже переданные части перед повтором.',false);const input=field();if (input && state.originalMaxLength !== undefined) input.maxLength=state.originalMaxLength;state.stopped = true;if (state.inputObserver) state.inputObserver.disconnect();state.config = null; state.lastChatText = null; state.until = 0; updateLayoutBadge(); }
   };
   hookCef();
-  doc.addEventListener('input', event => { if (event.target === field()) { state.recoveryNotice=null;syncFieldLimit();schedulePreview(); } }, true);
+  // Text, selection and caret are owned by the HUD. Analyze only on submission.
   doc.addEventListener('compositionstart', event => { if (event.target === field()) state.composing = true; }, true);
-  doc.addEventListener('compositionend', event => { if (event.target === field()) { state.composing = false; schedulePreview(); } }, true);
+  doc.addEventListener('compositionend', event => { if (event.target === field()) state.composing = false; }, true);
   doc.addEventListener('keydown', event => {
-    hookSubmit();
-    if (event.key === 'F6' || event.key === 'Escape' || event.key === 't' || event.key === 'T') {
+    if (event.key === 'F6' || event.key === 'Escape' || (event.key === 't' || event.key === 'T') && !panelOpen()) {
       inputChanged(); root.setTimeout(() => { hookInput(); inputChanged(); }, 0);
     }
-    if (active() && event.key === 'Enter' && (event.isComposing || state.composing)) { event.stopImmediatePropagation(); return; }
-    if (active() && event.key === 'Enter' && !event.isComposing && !state.composing) {
+    if (event.key !== 'Enter') return;
+    hookSubmit();
+    if (active() && (event.isComposing || state.composing)) { event.stopImmediatePropagation(); return; }
+    if (active() && !event.isComposing && !state.composing) {
       if (state.manualPending) { event.preventDefault();event.stopImmediatePropagation();notice('Предыдущее сообщение ещё отправляется. Новый ввод сохранён.');return; }
       const el = field();
       const body = el && state.owned && el.value.startsWith(state.owned) ? el.value.slice(state.owned.length) : el && el.value;
@@ -451,7 +455,7 @@
       }
     }
   }, true);
-  doc.addEventListener('focusin', () => { hookInput();state.visibleCache=new WeakMap();syncFieldLimit();schedulePreview();exchange(); }, true);
+  doc.addEventListener('focusin', () => { hookInput();state.visibleCache=new WeakMap();syncFieldLimit();exchange(); }, true);
   doc.addEventListener('focusout', () => root.setTimeout(exchange, 0), true);
   doc.addEventListener('DOMContentLoaded', () => { hookInput(); hookSubmit(); loadEndpoint(); });
   root.setInterval(() => { hookInput(); hookSubmit(); exchange(); updateLayoutBadge(); if (!active() && (!field() || !field().value.startsWith(state.owned))) state.owned = ''; }, 250);

@@ -7,17 +7,30 @@ end
 local function write(directory,status,message)
     local file=io.open(M.path(directory),'wb');if not file then return false end
     local body=status..'\n'..tostring(message or''):gsub('[%z\r\n]',' '):sub(1,M.LIMIT-16)
-    local ok=file:write(body);local flushed=file:flush();local closed=file:close()
-    return ok~=nil and flushed~=nil and closed~=nil
+    local ok,written=pcall(file.write,file,body)
+    local flushed,flushResult=pcall(file.flush,file)
+    local closed,closeResult=pcall(file.close,file)
+    return ok and written~=nil and written~=false and flushed and flushResult~=nil and flushResult~=false and
+        closed and closeResult~=nil and closeResult~=false
 end
 function M.block(directory,message)return write(directory,'blocked',message)end
 function M.ready(directory)return write(directory,'ready','')end
+-- The next ordinary main-script load clears this ephemeral handshake.
+function M.disable(directory)
+    local ok,written=pcall(write,directory,'disabled','')
+    if ok and written then
+        local readable,state=pcall(M.read,directory)
+        if readable and state=='disabled'then return true end
+    end
+    pcall(M.ready,directory)
+    return false
+end
 function M.read(directory)
     local file=io.open(M.path(directory),'rb');if not file then return end
     local value=file:read(M.LIMIT+1);file:close()
     if not value or #value>M.LIMIT then return end
     local state,message=value:match('^(%a+)\n([^%z\r\n]*)$')
-    if state=='blocked'or state=='ready'then return state,message end
+    if state=='blocked'or state=='ready'or state=='disabled'then return state,message end
 end
 function M.announce(message,encoding,api)
     api=api or _G

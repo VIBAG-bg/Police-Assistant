@@ -1,5 +1,5 @@
 {
-  "release": "0.43.0",
+  "release": "0.43.1",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -55,7 +55,7 @@
     },
     {
       "path": "lib\\pa26_chat_bridge.lua",
-      "sha256": "1edb26f9c3b5f8d42b32092e82e703749569fdb9c512f9f587cbd2b6958b2028"
+      "sha256": "9e8cf21c9e84b8cef4ff62b99c124480a92148b36dee231140b1c2be9918ec3d"
     },
     {
       "path": "lib\\pa26_chat_text.lua",
@@ -83,7 +83,7 @@
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "b95fa4a1a24bedb7f296c7f1e91b0220e62a1069fc826f7f23ff039096c69273"
+      "sha256": "d49c1724c7144d64ed8b532f3d07ef37ca878bbd01ee0c15a396b3f73251f100"
     },
     {
       "path": "lib\\pa26_detention_timers.lua",
@@ -267,7 +267,7 @@
     },
     {
       "path": "lib\\pa26_preferences.lua",
-      "sha256": "ec4af2e02abeb01f2d4c03d3e9c33837a781b65f6312ce91cbde2cde43b9538c"
+      "sha256": "0e4d8485dc1f6cdc0bb86bbe70f5ea34bf22c3dd8206b97e0961089534f61e42"
     },
     {
       "path": "lib\\pa26_procedure_flow.lua",
@@ -339,11 +339,11 @@
     },
     {
       "path": "lib\\pa26_startup.lua",
-      "sha256": "8849b400b2caaa94e6c60883c6c306543b8cd0b66e6168c08562f9e89f5bd145"
+      "sha256": "1508afcd41cd3309a145843d6ed7ec63987b507daa06af8bbf12dcc27f6251a7"
     },
     {
       "path": "lib\\pa26_studio.lua",
-      "sha256": "6b0e9b928d26340edc6d2b677444f552864a5c97f2a4d97355e68b178db26b4b"
+      "sha256": "0594e3cd5ead0a9eab8b8c8b245f6fb57b62d48053225004d51875ecc77fe61c"
     },
     {
       "path": "lib\\pa26_target.lua",
@@ -455,11 +455,11 @@
     },
     {
       "path": "pa26_guard.lua",
-      "sha256": "477d56d14bbec74b8b157248d6c801d7c23f6a2bd59ba4f2a8a2f0d3da93b6ec"
+      "sha256": "4dc2fcf33c2c4ea53c1b9e7ee40bf5d09845d788742565f34271b003cbd96e4b"
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "d717b9266746b4e8e177221aba9296b8752d771066c01b6dc5de87c016e2e930"
+      "sha256": "16a3e4bd845fa2bf94318df29b3e4fc02b50009c1a3c3f7f8dd581f4fbb6d55d"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",
@@ -493,7 +493,7 @@
     },
     {
       "path": "pa26-chat.js",
-      "sha256": "79c6b4065e29ceb2cac8295b859679fcee27f4c9d0ed206e650e82fd066dea40"
+      "sha256": "c0090b45567709146a4c289d846cc901ccc0a86b79afdc22c79c4904d2fedda6"
     }
   ],
   "setup_files": [

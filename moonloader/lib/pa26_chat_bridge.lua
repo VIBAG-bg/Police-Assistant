@@ -219,7 +219,10 @@ function Bridge:tick(now)
     -- A loaded adapter can re-read a repaired endpoint without a browser reload.
     -- Reattaching an HTML tag alone cannot execute it in an already loaded page.
     local elapsed=self.assetAt and core.elapsed(now,self.assetAt)
-    if self.env.assetFs and self.env.settings().enabled==true and(not self.assetAt or not elapsed or elapsed>=M.ASSET_CHECK_MS)then
+    -- File verification/repair never runs while a browser input owns the scene.
+    -- Check the cheap deadline before constructing settings or touching disk.
+    if self.env.assetFs and(not self.assetAt or not elapsed or elapsed>=M.ASSET_CHECK_MS)and
+        not self:inputBusy(now)and self.env.settings().enabled==true then
         self.assetAt=now
         local installed,reason=self:installed()
         if self.assetReason~=reason then

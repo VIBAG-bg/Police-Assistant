@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.43.0')
+script_version('0.43.1')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -62,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.43.0' then
+if #missing > 0 or not core or core.VERSION ~= '0.43.1' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -1282,6 +1282,12 @@ sceneServices.hasManualActivity=function()
         patrolSession.intent or patrolSession.queued or patrolEvents.intent or patrolEvents.queued
 end
 local function closeForInput(reason, keepAutoOpen)
+    if not ownUi()and not hasUiModal()and not sceneServices.hasManualActivity()and not runtime.wheel and not runtime.queue and
+        not workspace.pending and not workspace.executor.queue and not keyRecorder and not pendingWheelClick and
+        not uiTyping and not widgetCursor and not hud.editing and not hud.drag and imgui.DisableInput==true then
+        if not keepAutoOpen then autoOpenForSession=nil end
+        return
+    end
     sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;sceneServices.hideProcedureWindows()
     if sceneServices.hasManualActivity()then cancelManualActions(reason)end
     runtime:cancel(reason)
@@ -2124,6 +2130,10 @@ sceneServices.performShutdown=function()
             {'журнал операций',function()return workspace.operations:save(true)end},
             {'журнал сценариев',function()if workspace.journal.dirty then return workspace:saveJournal()end;return true end},
             {'положение HUD и настройки игры',function()saveSettings(true);return not generalSaveFailed,'Проверьте доступ к INI и корректность настроек.'end},
+            {'намерение отключить PA',function()
+                if require('pa26_startup').disable(getWorkingDirectory())then return true end
+                return nil,'Не удалось подтвердить отключение автоматического восстановления. Проверьте доступ к папке config.'
+            end},
         },
         finish=function()
             local message=workspace.library.settings.shutdown_message
@@ -2231,6 +2241,9 @@ local function prepareNativeChat()
 end
 function onWindowMessage(message, wparam, lparam)
     if shutdown then return end
+    -- WM_CHAR/IME text and mouse-selection messages pass straight to the HUD.
+    if message~=0x100 and message~=0x101 and message~=0x104 and message~=0x105 and
+        message~=0x7 and message~=0x8 and message~=0x1C and message~=0x6 then return end
     if workspace and sceneServices.chatBridge then
         local settings=workspace.library.settings;local bridge=sceneServices.chatBridge
         local allowed=settings.cef_chat_support and settings.cef_chat_weapon_guard and bridge.server~=nil and focused and not shutdown and
@@ -2244,6 +2257,9 @@ function onWindowMessage(message, wparam, lparam)
         end
     end
     if message==0x100 and sceneServices.manual and sceneServices.manual.queue and(wparam==27 or wparam==workspace.library.settings.cancel_key)then sceneServices.manual:cancel('Отменено пользователем.')end
+    if (message==0x100 or message==0x101 or message==0x104 or message==0x105)and not ownUi()and
+        sceneServices.chatBridge and sceneServices.chatBridge:inputBusy(studioClock,workspace.library.settings.cef_chat_grace_ms)and
+        (wparam~=0x0D or optionalRead('sampIsChatInputActive')==false)then return end
     confirmationInput:observeMenu(message,wparam,cfg.main.menu_key,lparam)
     if workspace and sceneServices.assistInput and(message==0x100 or message==0x104 or message==0x101 or message==0x105)then
         local shortcut=workspace.library.assist.open_shortcut

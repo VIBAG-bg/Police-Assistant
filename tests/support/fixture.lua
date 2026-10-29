@@ -583,6 +583,7 @@ local function fixture(options)
         clear=function()s.startupState=nil end,
         block=function(_,message)s.startupState='blocked';s.startupMessage=message;return true end,
         ready=function()s.startupState='ready';return true end,
+        disable=function()if s.startupDisableFail then return false end;s.startupState='disabled';return true end,
         read=function()return s.startupState,s.startupMessage end,
         announce=function(message)s.logs[#s.logs+1]=message;return true end,
     }

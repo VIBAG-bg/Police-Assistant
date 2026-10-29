@@ -7,15 +7,20 @@ local function text(v,max)
     if type(v)~='string' or #v>max or not core.validUtf8(v) or v:find('%c') then return nil end
     return v:match('^%s*(.-)%s*$')
 end
-M.radioVariables={area=true,local_tag=true,global_tag=true,prison_tag=true,callsign=true,city=true,square=true,map_square=true,location=true,
-    my_name=true,department=true,rank=true,post=true,officer=true,crew=true,crew_count=true,crew_roles=true,crew_callsigns=true,
-    unit=true,station=true,vehicle=true,sector=true,duration=true,patrol_id=true,direction=true,
-    model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true,vehicle_description=true}
+-- Session previews and scheduled delivery share the same patrol vocabulary.
+-- Vehicle-only radio fields extend it instead of duplicating a patrol list.
+M.radioVariables=copy(require('pa26_patrol_settings').variables)
+for _,key in ipairs({'model','model_id','vehicle_id','vehicle_color','color_one','color_two','vehicle_description'})do M.radioVariables[key]=true end
 function M.template(value,allowed)
     value=text(value,768)
     if not value or value=='' or value:match('^[/@]') then return nil,'Нужен однострочный текст без /команды.' end
-    local rest=core.stripGender(value):gsub('{([a-z_]+)}',function(k)return allowed[k] and '' or '{' end)
-    if rest:find('[{}]') then return nil,'В тексте есть неизвестная переменная.' end
+    local unknown
+    local rest=core.stripGender(value):gsub('{([a-z_]+)}',function(k)
+        if allowed[k]then return ''end
+        unknown=unknown or('{'..k..'}');return '{'
+    end)
+    if unknown then return nil,'В тексте есть неизвестная переменная '..unknown..'.'end
+    if rest:find('[{}]') then return nil,'Неверная запись переменной: проверьте скобки и имя в формате {имя_переменной}.' end
     return value
 end
 local function flag(out,raw,key)

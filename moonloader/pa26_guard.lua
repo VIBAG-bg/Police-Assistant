@@ -1,6 +1,6 @@
 script_name('PA26 Recovery')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.41.2')
+script_version('0.43.1')
 script_description('Restarts only Police Assistant after a Lua-script termination, with a bounded retry count')
 if type(script_properties)=='function'then script_properties('work-in-pause')end
 
@@ -31,6 +31,7 @@ local registered=false
 local encodingOk,encoding=pcall(require,'encoding')
 if not encodingOk then encoding=nil end
 local verifying
+local function automaticBlocked(state)return state=='blocked'or state=='disabled'end
 local function note(text)startup.announce(text,encoding)end
 local function matches(scriptObject)
     if not scriptObject then return false end
@@ -58,7 +59,7 @@ function onScriptTerminate(scriptObject,quitGame)
     end
     if not stopping and matches(scriptObject)then
         known=true;target=nil;verifying=nil
-        if startup.read(directory)=='blocked'then guard:stop()
+        if automaticBlocked(startup.read(directory))then guard:stop()
         else guard:trip(getGameTimer(),'terminated','Main PA script terminated')end
     end
 end
@@ -94,8 +95,8 @@ function main()
         elseif known and not guard.pending and target then
             target=nil;guard:trip(now,'missing','Main PA script is no longer loaded')
         end
-        if startupState=='blocked'and not manual then guard:stop();verifying=nil end
-        if not live and(manual or startupState~='blocked'and guard:ready(now,settings))then
+        if automaticBlocked(startupState)and not manual then guard:stop();verifying=nil end
+        if not live and(manual or not automaticBlocked(startupState)and guard:ready(now,settings))then
             local requested=manual;manual=false
             if guard:begin(now,settings,requested)then
                 if settings.demo_after_recovery and not module.writeMarker(markerPath,storage.fs)then
