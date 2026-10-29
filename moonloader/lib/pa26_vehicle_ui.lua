@@ -96,7 +96,15 @@ function M.draw(studio,ui,data,callbacks)
         ui.text(text and('Предпросмотр: '..text)or('Для предпросмотра: '..tostring(err)))
     end
     d.description_template=studio:field('Описание машины##vehicle-description','vehicle:description',d.description_template,1024,true,62)
-    ui.text('Для описания доступны {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}. Если цвет не удалось определить, PA не подставляет случайное название.')
+    ui.text('Для описания доступны {vehicle_type}, {vehicle_type_gen}, {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}. Если цвет не удалось определить, PA не подставляет случайное название.')
+    studio:settingsHeading(ui,'Тип транспорта в отыгровках')
+    local types=require 'pa26_vehicle_types';d.type_names=d.type_names or types.defaults()
+    local choices={};for _,r in ipairs(types.rows)do choices[#choices+1]={r[1],r[2]}end
+    studio.vehicleTypeKey=studio:choice('Тип##vehicle-type-key',studio.vehicleTypeKey or'car',choices,ui)
+    local typeKey=studio.vehicleTypeKey;local typeRow=d.type_names[typeKey]
+    typeRow.name=studio:field('Именительный: автобус##vehicle-type-name','vehicle:type:'..typeKey..':name',typeRow.name,321)
+    typeRow.genitive=studio:field('Родительный: автобуса##vehicle-type-gen','vehicle:type:'..typeKey..':genitive',typeRow.genitive,321)
+    ui.text('Предпросмотр: '..typeRow.name..' Coach; водитель '..typeRow.genitive..' Coach. Для неизвестной дополнительной модели используется нейтральное «транспортное средство».')
     studio:settingsHeading(ui,'Названия моделей и цветов')
     for _,sp in ipairs({{'model_aliases','Модель GTA',400,65535,'model_id'},{'color_aliases','Цвет GTA',0,255,'color1'}})do
         local id=studio[sp[1]..'Edit']or(view.selected and view.selected[sp[5]])or sp[3]

@@ -3,17 +3,17 @@ local core=require 'pa26_core'
 local M={}
 local copilot=require 'pa26_copilot_settings'
 M.variables=shared.copy(shared.variables)
-M.vehicleFields={model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true,vehicle_description=true}
+M.vehicleFields={vehicle_type=true,vehicle_type_gen=true,model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true,vehicle_description=true}
 for _,k in ipairs({'occupants','occupants_text','driver_id','driver_name','vehicle_plate','tac','armed_text','stop_outcome'})do M.variables[k]=true;if k~='tac'and k~='stop_outcome'then M.vehicleFields[k]=true end end
-for _,k in ipairs({'model','model_id','vehicle_id','vehicle_color','color_one','color_two','direction','vehicle_description'})do M.variables[k]=true end
+for _,k in ipairs({'vehicle_type','vehicle_type_gen','model','model_id','vehicle_id','vehicle_color','color_one','color_two','direction','vehicle_description'})do M.variables[k]=true end
 M.actions={{'traffic_stop','Начать трафик-стоп 10-55'},{'pursuit','Начать преследование'},{'megaphone','Обратиться в мегафон'},{'finish','Завершить остановку / погоню'},{'approach','Подойти к остановленной машине'},{'window','Спросить об открытом окне'}}
-M.keys={{'select_shortcut','Выбрать машину и открыть компактную консоль'},{'pursuit_shortcut','Подтвердить преследование'},{'megaphone_shortcut','Открыть выбор реплик мегафона'}}
+M.keys={{'select_shortcut','Выбрать машину и предложить остановку'},{'pursuit_shortcut','Подтвердить преследование'},{'megaphone_shortcut','Открыть выбор реплик мегафона'}}
 M.phraseCount=8
 M.phraseConditions={{'any','Всегда'},{'vehicle','Из служебной машины'},{'foot','Пешком'},{'stop','Во время 10-55'},{'pursuit','Во время погони'}}
 for i=1,M.phraseCount do M.keys[#M.keys+1]={'phrase_'..i..'_shortcut','Мегафон · требование '..i}end
 local legacyRadio={traffic_stop_template="{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.",pursuit_template="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}",finish_template="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4."}
 function M.defaults()
-    local out={radio_templates_version=1,enabled=true,require_patrol=false,megaphone_enabled=true,megaphone_require_patrol=false,megaphone_require_duty=true,
+    local out={type_names=require('pa26_vehicle_types').defaults(),radio_templates_version=1,enabled=true,require_patrol=false,megaphone_enabled=true,megaphone_require_patrol=false,megaphone_require_duty=true,
         megaphone_require_radio=false,megaphone_wheel=true,radius=60,retain_distance=200,approach_distance=6,front_only=true,occupied_only=true,scan_ms=250,
         selection_mode='auto',selection_ranking='direction',cone_angle=85,height_tolerance=15,close_radius=15,
         sync_driver_target=true,occupied_priority=true,copilot_migrated=2,
@@ -29,7 +29,7 @@ function M.defaults()
         approach_template='подойдя к машине, коснулся заднего фонаря и, держа руку у кобуры, направился к водителю.',
         window_template='Открыто ли окно со стороны водителя?',
         unknown_model='Модель не определена',unknown_color='Цвет не определён',color_separator=' / ',
-        description_template='{model}, цвет: {vehicle_color}'}
+        description_template='{vehicle_type} {model}, цвет: {vehicle_color}'}
     out.copilot=copilot.defaults()
     out.phrases={}
     local initial={
@@ -106,8 +106,11 @@ function M.validate(raw)
     for _,k in ipairs({'traffic_stop','pursuit','pursuit_periodic','megaphone','finish','approach','window','description'})do
         local err;out[k..'_template'],err=M.template(raw[k..'_template']or out[k..'_template']);if not out[k..'_template']then return nil,err end
     end
+    local typeError;out.type_names,typeError=require('pa26_vehicle_types').validate(raw.type_names)
+    if not out.type_names then return nil,typeError end
+    if raw.description_template=='{model}, цвет: {vehicle_color}'then out.description_template=M.defaults().description_template end
     local description=core.stripGender(out.description_template):gsub('{([a-z_]+)}',function(k)
-        return({model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true})[k]and ''or '{'
+        return({vehicle_type=true,vehicle_type_gen=true,model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true})[k]and ''or '{'
     end)
     if description:find('[{}]')then return nil,'В описании машины доступны модель, ID и цвета.'end
     if raw.directions~=nil then

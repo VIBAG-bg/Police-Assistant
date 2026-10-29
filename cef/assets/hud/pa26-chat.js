@@ -160,21 +160,25 @@
   function field() { return doc.getElementById('chatInputField'); }
   function visible(el, allowTransparent = false) {
     if (!el || el.hidden || el.isConnected === false) return false;
-    if (typeof el.getClientRects === 'function' && el.getClientRects().length === 0) return false;
+    state.visibleCache ||= new WeakMap();
+    const cached = state.visibleCache.get(el), now = clock();
+    if (cached && now >= cached.at && now - cached.at < 250 && cached.transparent === allowTransparent) return cached.value;
+    const remember = value => { state.visibleCache.set(el,{at:now,transparent:allowTransparent,value}); return value; };
+    if (typeof el.getClientRects === 'function' && el.getClientRects().length === 0) return remember(false);
     if (typeof root.getComputedStyle === 'function') {
       for (let node = el; node; node = node.parentElement) {
         const style = root.getComputedStyle(node);
         if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse' ||
-            !allowTransparent && Number(style.opacity) === 0) return false;
+            !allowTransparent && Number(style.opacity) === 0) return remember(false);
       }
     }
-    return true;
+    return remember(true);
   }
   function active() {
     const panel = doc.getElementById('chatInput');
-    return !!(visible(panel, true) && panel.classList.contains('active'));
+    return !!(panel && !panel.hidden && panel.isConnected !== false && panel.classList.contains('active') && visible(panel, true));
   }
-  function inputChanged() { state.inputDirty = true; exchange(); }
+  function inputChanged() { state.visibleCache = new WeakMap(); state.inputDirty = true; exchange(); }
   function guardDigit(event) {
     const c = config();
     if (state.stopped || c && (!c.enabled || c.weaponGuard === false) || state.inputGuardDisabled || !active() || event.target !== field()) return;
@@ -251,34 +255,31 @@
       Object.assign(hint.style, {font: '600 13px/1.4 sans-serif', color: '#ffd591', padding: '5px 8px', whiteSpace: 'normal'});
       el.parentElement.appendChild(hint);
     }
-    hint.textContent = message || ''; hint.hidden = !message;
+    if (hint.textContent !== (message || '')) hint.textContent = message || '';
+    if (hint.hidden !== !message) hint.hidden = !message;
+  }
+  function syncFieldLimit() {
+    const el=field(), policy=textPolicy(), enabled=policy && policy.manual && policy.manual.enabled;
+    if (!el) return;
+    if (state.limitField !== el) { state.limitField=el;state.originalMaxLength=undefined; }
+    if (enabled && el.maxLength>0 && el.maxLength<8192) {
+      if (state.originalMaxLength===undefined) state.originalMaxLength=el.maxLength;
+      el.maxLength=8192;
+    } else if (!enabled && state.originalMaxLength!==undefined) {
+      el.maxLength=state.originalMaxLength;state.originalMaxLength=undefined;
+    }
   }
   function prepare() {
-    updateLayoutBadge();
-    const el = field(), policy=textPolicy(), manualEnabled=policy && policy.manual && policy.manual.enabled;
-    if (el && manualEnabled && el.maxLength > 0 && el.maxLength < 8192) { if (state.originalMaxLength === undefined) state.originalMaxLength=el.maxLength;el.maxLength=8192; }
-    if (el && !manualEnabled && state.originalMaxLength !== undefined) { el.maxLength=state.originalMaxLength;delete state.originalMaxLength; }
-    if (!el || state.composing || !active()) return;
-    const raw = el.value;
-    const owned = state.owned && raw.startsWith(state.owned) ? state.owned : '';
-    const body = owned ? raw.slice(owned.length) : raw;
-    const split=manualSubmission(body,textPolicy());
-    if (split && split.error) { notice(split.error);return; }
-    const result = split ? accentedWithoutLimit(body) : accented(body);
-    if (result.error) { notice(result.error); return; }
-    notice(state.recoveryNotice || (split && split.parts.length>1 ? 'После Enter: '+split.parts.length+' части, целые слова и ... на стыках.' : ''));
-    if (textPolicy() && textPolicy().manual && textPolicy().manual.enabled) { if (el.maxLength > 0 && el.maxLength < 8192) { if (state.originalMaxLength === undefined) state.originalMaxLength=el.maxLength;el.maxLength=8192; } }
-    const added = result.text === body ? '' : result.text.slice(0, result.text.length - body.length);
-    if (raw !== result.text) {
-      if (added) state.applied = Math.min(1000000, state.applied + 1);
-      const start = el.selectionStart, end = el.selectionEnd, direction = el.selectionDirection;
-      el.value = result.text;
-      if (typeof start === 'number' && typeof end === 'number') {
-        const shift = added.length - owned.length;
-        el.setSelectionRange(Math.max(0, start + shift), Math.max(0, end + shift), direction || 'none');
-      }
-    }
-    state.owned = added;
+    // Advisory only: never modify the user's text, selection or scroll position.
+    syncFieldLimit();updateLayoutBadge();
+    const el=field();if (!el || state.composing || !active() || state.stopped) return;
+    const result=submitted(el.value);
+    notice(state.recoveryNotice || result.error || (result.parts && result.parts.length>1 ?
+      'После Enter: '+result.parts.length+' части, целые слова и ... на стыках.' : ''));
+  }
+  function schedulePreview() {
+    if (state.previewTimer) root.clearTimeout(state.previewTimer);
+    state.previewTimer=root.setTimeout(()=> { state.previewTimer=null;prepare(); },150);
   }
   function enqueue(kind, text, color, session = state.config && state.config.session) {
     if (!config() || !state.config.enabled || typeof text !== 'string' || text.length > 4096) return false;
@@ -360,6 +361,7 @@
       if (state.submits.length >= 8) { notice('Дождитесь отправки предыдущего сообщения. Текст сохранён в поле.'); return; }
       if (result.manual && state.queue.length>=64) { notice('Очередь PA занята. Ввод сохранён.');return; }
       state.submits.push({at: clock(), text: result.text, manual:result.manual, session: config() && config().session});
+      if (result.text !== body) state.applied=Math.min(1000000,state.applied+1);
       state.submitted = Math.min(1000000, state.submitted + 1);
       return original.call(this, result.text, ...args);
     };
@@ -393,7 +395,8 @@
         state.manualPending=null;recoverManual(pending.raw,'Подключение изменилось. Проверьте чат перед повтором сохранённого текста.',false);
       }
       if (state.manualPending && clock()-state.manualPending.at>60000) { const raw=state.manualPending.raw;state.manualPending=null;recoverManual(raw,'Подтверждение PA не получено. Текст сохранён; проверьте чат перед повтором.',false); }
-      prepare();
+      syncFieldLimit();updateLayoutBadge();
+      if (doc.activeElement !== field()) schedulePreview();
     } catch (error) {
       state.failures++;
       const code = error && /^(http_\d{3}|bad_response)$/u.test(error.message) ? error.message : 'network';
@@ -401,7 +404,7 @@
         state.lastError = code;
         if (root.console && typeof root.console.warn === 'function') root.console.warn('[PA26 CEF] exchange_failed: ' + code);
       }
-      if (state.failures >= 3) { state.config = null; state.until = 0; state.queue = []; prepare(); }
+      if (state.failures >= 3) { state.config = null; state.until = 0; state.queue = []; schedulePreview(); }
     } finally { root.clearTimeout(timeout); state.pending = false; if (state.inputDirty && !state.stopped) root.setTimeout(exchange, 0); }
   }
   let endpointLoading = false;
@@ -425,12 +428,12 @@
     },
     // Exposed for bounded, offline tests; no page-wide network or game API is exposed.
     wireSize, prepare, exchange, inputState, updateLayoutBadge, manualSubmission, submitted, manualBusy:()=>!!state.manualPending,
-    stop() { if (state.manualPending) recoverManual(state.manualPending.raw,'PA остановлен. Проверьте уже переданные части перед повтором.',false);const input=field();if (input && state.originalMaxLength !== undefined) input.maxLength=state.originalMaxLength;state.stopped = true;if (state.inputObserver) state.inputObserver.disconnect();state.config = null; state.lastChatText = null; state.until = 0; prepare(); }
+    stop() { if (state.manualPending) recoverManual(state.manualPending.raw,'PA остановлен. Проверьте уже переданные части перед повтором.',false);const input=field();if (input && state.originalMaxLength !== undefined) input.maxLength=state.originalMaxLength;state.stopped = true;if (state.inputObserver) state.inputObserver.disconnect();if (state.previewTimer) root.clearTimeout(state.previewTimer);state.config = null; state.lastChatText = null; state.until = 0; prepare(); }
   };
   hookCef();
-  doc.addEventListener('input', event => { if (event.target === field()) { state.recoveryNotice=null;prepare(); } }, true);
+  doc.addEventListener('input', event => { if (event.target === field()) { state.recoveryNotice=null;syncFieldLimit();schedulePreview(); } }, true);
   doc.addEventListener('compositionstart', event => { if (event.target === field()) state.composing = true; }, true);
-  doc.addEventListener('compositionend', event => { if (event.target === field()) { state.composing = false; prepare(); } }, true);
+  doc.addEventListener('compositionend', event => { if (event.target === field()) { state.composing = false; schedulePreview(); } }, true);
   doc.addEventListener('keydown', event => {
     hookSubmit();
     if (event.key === 'F6' || event.key === 'Escape' || event.key === 't' || event.key === 'T') {
@@ -439,7 +442,6 @@
     if (active() && event.key === 'Enter' && (event.isComposing || state.composing)) { event.stopImmediatePropagation(); return; }
     if (active() && event.key === 'Enter' && !event.isComposing && !state.composing) {
       if (state.manualPending) { event.preventDefault();event.stopImmediatePropagation();notice('Предыдущее сообщение ещё отправляется. Новый ввод сохранён.');return; }
-      prepare();
       const el = field();
       const body = el && state.owned && el.value.startsWith(state.owned) ? el.value.slice(state.owned.length) : el && el.value;
       const result = el && submitted(body);
@@ -449,10 +451,10 @@
       }
     }
   }, true);
-  doc.addEventListener('focusin', () => { prepare(); exchange(); }, true);
+  doc.addEventListener('focusin', () => { hookInput();state.visibleCache=new WeakMap();syncFieldLimit();schedulePreview();exchange(); }, true);
   doc.addEventListener('focusout', () => root.setTimeout(exchange, 0), true);
   doc.addEventListener('DOMContentLoaded', () => { hookInput(); hookSubmit(); loadEndpoint(); });
-  root.setInterval(() => { hookInput(); hookSubmit(); exchange(); updateLayoutBadge(); if (!active() && (!field() || !field().value.startsWith(state.owned))) state.owned = ''; }, 100);
+  root.setInterval(() => { hookInput(); hookSubmit(); exchange(); updateLayoutBadge(); if (!active() && (!field() || !field().value.startsWith(state.owned))) state.owned = ''; }, 250);
   root.setInterval(loadEndpoint, 2500);
   hookInput();
   if (doc.readyState !== 'loading') { hookSubmit(); loadEndpoint(); }

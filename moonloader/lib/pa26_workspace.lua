@@ -58,7 +58,8 @@ function Workspace:selectTarget(target)
 end
 function Workspace:clearTarget(reason) self.targets:clear(reason) end
 function Workspace:refreshTarget()
-    self.targets:refresh(self.env.context(),self.env.now(),{action_distance=self.cfg.main.max_distance,
+    local pursuit=self.env.targetRetention and self.env.targetRetention(self.targets.target)
+    self.targets:refresh(self.env.context(),self.env.now(),{action_distance=self.cfg.main.max_distance,pursuit=pursuit,
         retain_distance=self.library.settings.retain_distance,retain_grace_ms=self.library.settings.retain_grace_ms})
     self.selectedTarget=self.targets.target
 end

@@ -77,5 +77,5 @@ s=fixture({demo=false,library=seed,categoryWheel=true});s.step();s.commands.pa26
 if not s.frames[1].condition()then s.commands.pa26();s.step()end
 s.page('binds');s.widgetError=true;s.render();check(s.hasLog('Ошибка интерфейса'))
 s.widgetError=false;s.step(3100);s.step(20000)
-eq(#s.sent,1);check(s.runtime.demo);check(s.workspace.executor.queue==nil)
+eq(#s.sent,1);check(not s.runtime.demo);check(s.workspace.executor.queue==nil)
 eq(#s.scopes,0);onScriptTerminate(s.script)

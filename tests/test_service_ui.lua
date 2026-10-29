@@ -47,9 +47,9 @@ seed.alerts.patrol.police_interval_ms=60000
 s=setup(seed);check(s.patrol:view().visible);wait(s,59000);eq(#s.sent,0);wait(s,1000);eq(#s.sent,1)
 check(s.sent[1].line:find('Продолжаю патруль',1,true));s.step();check(s.patrol:view().remaining>59000)
 s.step(600000);eq(#s.sent,1);onScriptTerminate(s.script)
--- Death/spawn clears old shot events, counters, RP queues and patrol clocks.
+-- A spawn REQUEST cancels outgoing work but does not fabricate a new life.
 s=setup();s.weapon=23;s.step();shot(s);s.events.onSendBulletSync({weaponId=23});s.events.onSendSpawn();s.step()
-eq(s.taser.shots,0);eq(#s.sent,0);healthy(s);onScriptTerminate(s.script)
+eq(s.taser.shots,2);eq(#s.sent,0);healthy(s);onScriptTerminate(s.script)
 -- The previous script may cancel a packet. Hook ownership survives unload.
 local called=0;local previous=function(data)called=called+1;return false end
 s=setup(nil,{bulletHandler=previous});s.weapon=23;s.step();eq(s.events.onSendBulletSync({weaponId=23}),false)

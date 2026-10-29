@@ -13,7 +13,7 @@ function Taser:reset()
     self.overflow=false
     self.reloadDone=nil;self.firearmAt=nil;self.firearmMail=nil
     self.activeCapacity=nil
-    self.mode='inactive';self.pendingMode=nil;self.commandMail=nil;self.replyMail=nil;self.manualMode=nil;self.modeSource=nil
+    self.mode='inactive';self.suppressModeRp=nil;self.pendingMode=nil;self.commandMail=nil;self.replyMail=nil;self.manualMode=nil;self.modeSource=nil
 end
 function Taser:damage(weapon)
  local s=self.state
@@ -23,11 +23,11 @@ function Taser:activeFor(state)
     local cfg=self.env.settings();local s=state or self.state
     return cfg.enabled and s and s.weapon==cfg.weapon_id and(cfg.activation~='command'or self.mode=='active')or false
 end
-function Taser:command(line)
+function Taser:command(line,suppressRp)
     local cfg=self.env.settings();local s=self.state
     if cfg.activation~='command'or not cfg.enabled or not s or not s.session or not s.alive or s.weapon~=cfg.weapon_id or
         type(line)~='string'or line:match('^%s*(.-)%s*$'):lower()~=cfg.command then return false end
-    self.commandMail={at=self.now,session=s.session,ped=s.ped,demo=s.demo};return true
+    self.commandMail={at=self.now,session=s.session,ped=s.ped,demo=s.demo,suppressRp=suppressRp==true or(self.commandMail and self.commandMail.suppressRp==true)or false};return true
 end
 function Taser:serverMessage(line)
     local cfg=self.env.settings();local p=self.commandMail or self.pendingMode
@@ -40,7 +40,7 @@ end
 function Taser:confirmMode(active)
     local s=self.state
     if type(active)~='boolean'or not s or not s.session or not s.alive then return nil,'Персонаж недоступен.'end
-    self.manualMode={active=active,at=self.now,session=s.session,ped=s.ped,demo=s.demo};return true
+    self.manualMode={active=active,at=self.now,session=s.session,ped=s.ped,demo=s.demo,suppressRp=self.pendingMode and self.pendingMode.suppressRp};return true
 end
 function Taser:updateMode(state,now,cfg)
     if cfg.activation~='command'then return end
@@ -53,7 +53,7 @@ function Taser:updateMode(state,now,cfg)
     local event=self.manualMode or self.replyMail;local manual=self.manualMode~=nil;self.manualMode=nil;self.replyMail=nil
     local request=event and(event.request or event);local age=request and core.elapsed(now,request.at)
     if event and request.session==state.session and request.ped==state.ped and request.demo==state.demo and age and age<=cfg.reply_timeout_ms then
-        self.mode=event.active and 'active'or 'inactive';self.pendingMode=nil;self.modeSource=manual and 'manual'or 'server'
+        self.mode=event.active and 'active'or 'inactive';self.suppressModeRp=request.suppressRp==true;self.pendingMode=nil;self.modeSource=manual and 'manual'or 'server'
     end
 end
 function Taser:bullet(data)
@@ -112,6 +112,11 @@ function Taser:tick(state,now)
     local manual=self.manual
     if self.queued or self.reloadDone or self.shots==0 or (not manual and (not self:needsReload() or not cfg.auto_reload or self.failedVersion==self.version)) then return end
     if not weapons.safe(state)or not self:activeFor(state)or state.busy or state.wheel or state.alertPending then return end
+    if cfg.reload_rp_enabled==false then
+        if self:remaining(now)>0 then return end
+        self.manual=false;self.shots=0;self.failedVersion=nil;self.violation=false;self.activeCapacity=cfg.capacity or M.CAPACITY
+        self.status='Счётчик RP-зарядов восстановлен без отправки текста';return
+    end
     self.manual=false
     local plan,err=weapons.plan(core.expandGender(cfg.reload_template,state.gender),state,self.env.codec,now,'taser_reload',self.life,signature(cfg),cfg.weapon_id)
     if plan then plan.automatic.shotVersion=self.version;plan.automatic.reloadAuto=not manual end
@@ -123,7 +128,7 @@ end
 function Taser:validPlan(plan)
     local a=plan.automatic;if not a or a.kind~='taser_reload' then return true end
     local cfg=self.env.settings();local s=self.state;local age=core.elapsed(self.now,plan.createdAt)
-    return cfg.enabled and (not a.reloadAuto or cfg.auto_reload) and weapons.safe(s)and self:activeFor(s)and a.weapon==cfg.weapon_id and
+    return cfg.enabled and cfg.reload_rp_enabled~=false and (not a.reloadAuto or cfg.auto_reload) and weapons.safe(s)and self:activeFor(s)and a.weapon==cfg.weapon_id and
         a.life==self.life and a.shotVersion==self.version and self.shots>0 and plan.session==s.session and
         a.ped==s.ped and a.gender==s.gender and plan.demo==s.demo and signature(cfg)==a.signature and age and age<=10000+(plan.rpExtraSteps or 0)*(s.sendIntervalMs or 5000)or false
 end
@@ -158,13 +163,13 @@ function Taser:view()
     elseif available==false then status='События выстрелов недоступны'
     elseif self.reloadDone then status=string.format('Перезарядка · подождите %.1f с',remaining/1000)
     elseif self.queued then status='RP-перезарядка выполняется…'
-    elseif needs then status=self.failedVersion==self.version and 'Повторите RP-перезарядку' or cfg.auto_reload and 'RP-перезарядка ждёт очередь' or 'Нужна RP-перезарядка'
+    elseif needs then status=cfg.reload_rp_enabled==false and'Учёт перезарядки без RP · соблюдайте паузу' or self.failedVersion==self.version and 'Повторите RP-перезарядку' or cfg.auto_reload and 'RP-перезарядка ждёт очередь' or 'Нужна RP-перезарядка'
     elseif remaining>0 then status=string.format('Подождите %.1f с',remaining/1000)
     else status='Можно стрелять' end
     if s.demo then status='ДЕМО · '..status end
     return {visible=true,demo=s.demo,charges=self:capacity()-self.shots,capacity=self:capacity(),pendingCapacity=(cfg.capacity or M.CAPACITY)~=self:capacity()and cfg.capacity or nil,
         remaining=remaining,ready=self:activeFor(s)and available~=false and not needs and not self.queued and remaining==0,
-        mode=self.mode or 'inactive',modeSource=self.modeSource,pendingMode=self.pendingMode~=nil,
+        mode=self.mode or 'inactive',modeSource=self.modeSource,pendingMode=self.pendingMode~=nil,reloadRp=cfg.reload_rp_enabled~=false,
         combatWarning=combat,status=status,violation=self.violation,needs=needs,queued=self.queued,button=self:activeFor(s)and self.shots>0 and not self.queued and not self.reloadDone and
             (not cfg.auto_reload or self.failedVersion==self.version),progress=1-remaining/cfg.cooldown_ms}
 end
@@ -206,7 +211,7 @@ function Taser:draw(im,hud,fonts)
     text(v.status,m.body,14,x,y,tone);y=y+m.statusH+7*s
     if m.warning then text(m.warning,m.body,12,x,y,color(1,.67,.43));y=y+m.warningH+6*s end
     if v.button then
-        local r={x=x,y=y,w=m.wrap,h=30*s};local label='Отыграть перезарядку';local io=im.GetIO()
+        local r={x=x,y=y,w=m.wrap,h=30*s};local label=v.reloadRp==false and'Учесть перезарядку без RP'or'Отыграть перезарядку';local io=im.GetIO()
         list:AddRectFilled(vec(x,y),vec(x+m.wrap,y+30*s),color(.12,.34,.50,.95),7*s)
         local ext=m.heading:CalcTextSizeA(13*s,100000,m.wrap,label)
         text(label,m.heading,13,x+(m.wrap-ext.x)/2,y+(30*s-ext.y)/2)

@@ -24,8 +24,18 @@ M.fs = {
         if not ok or not closed then return nil, failure or closeErr end
         return true
     end,
-    rename = os.rename,
-    remove = os.remove,
+    -- Retry only the same operation. Never unlink an occupied destination:
+    -- save() owns the verified rollback/backup transaction, not this adapter.
+    rename = function(from,to)
+        local ok,err,code
+        for attempt=1,3 do ok,err,code=os.rename(from,to);if ok then return ok end end
+        return nil,err,code
+    end,
+    remove = function(path)
+        local ok,err,code
+        for attempt=1,3 do ok,err,code=os.remove(path);if ok then return ok end end
+        return nil,err,code
+    end,
 }
 
 local function call(fs, name, ...)
@@ -108,15 +118,13 @@ function M.load(path, fs)
     end
     if backupRaw then
         local cfg, notes = core.normalizeConfig(backupRaw)
-        cfg.main.demo_mode = true
-        warnings[1] = 'Загружена резервная копия INI; включён деморежим.'
+        warnings[1] = 'Загружена проверенная резервная копия INI; сохранён записанный в ней режим.'
         for _, note in ipairs(notes) do warnings[#warnings + 1] = note end
         return cfg, warnings
     end
     warnings[1] = text and ('INI не загружен: ' .. tostring(err)) or
         'INI не найден или недоступен. Загружены безопасные настройки.'
     local fallback=core.defaults()
-    if text or backup or rollback then fallback.main.demo_mode=true end
     return fallback, warnings
 end
 

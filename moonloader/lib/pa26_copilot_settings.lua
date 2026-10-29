@@ -3,7 +3,8 @@ local shared=require 'pa26_patrol_settings'
 local core=require 'pa26_core'
 local dispatch=require 'pa26_dispatch'
 local M={}
-M.booleans={{'auto_plate','Условный госномер из ID авто · RP-конвенция PA'},{'legacy_tire_enabled','Учитывать отмеченные ниже слоты мегафона как предупреждение об огне'}, {'pursuit_armed','Подозреваемые вооружены · ручная отметка'}, {'enabled','Подсказывать следующий шаг'}, {'hud','Карточка ситуации у HUD'}, {'always_show_on_duty','Карточка на службе в машине'},
+M.booleans={{'pursuit_retention','Удерживать выбранного водителя до 300 м только в активной погоне'},
+ {'repeat_megaphone','Повторно предлагать требования до остановки'}, {'auto_plate','Условный госномер из ID авто · RP-конвенция PA'},{'legacy_tire_enabled','Учитывать отмеченные ниже слоты мегафона как предупреждение об огне'}, {'pursuit_armed','Подозреваемые вооружены · ручная отметка'}, {'enabled','Подсказывать следующий шаг'}, {'hud','Карточка ситуации у HUD'}, {'always_show_on_duty','Карточка на службе в машине'},
  {'stationary_offer','Предложить доклад после остановки'}, {'exit_offer','Реагировать на выход водителя'},
  {'approach_offer','Предложить осмотр салона'}, {'flee_offer','Предложить погоню при отъезде'},
  {'high_risk_offer','Предложить 10-66 после погони'}, {'fast_wanted','Предлагать розыск и /pt отдельным шагом'}, {'taser_offer','Предлагать предупреждение тайзера при пешей погоне'},
@@ -13,7 +14,8 @@ M.booleans={{'auto_plate','Условный госномер из ID авто ·
  {'uniforms_enabled','Учитывать форму ПД как подсказку'}, {'radio_cache','Запоминать коллег из подтверждённых форматов чата'},
  {'ghetto_guard','Напоминать о численности в опасном районе'}, {'combat_guard','Напоминать о тайзере при перестрелке'},
  {'dispatch_enabled','Вызовы и спецситуации'}, {'dispatch_rp_enabled','RP перед докладом о вызове'}, {'robbery_guard','Состав патруля перед выездом'}}
-M.numbers={{'plate_digits','Минимум цифр условного номера',1,6},{'find_cache_window_ms','Ожидание ответа /find, мс',1000,30000},{'raid_start_hour','Окно рейдов · начало (ваша трактовка МСК)',0,23},{'raid_end_hour','Окно рейдов · конец (ваша трактовка МСК)',0,23},{'scan_ms','Обновление радара, мс',100,5000},{'colleague_radius','Коллеги в радиусе, м',5,100},
+M.numbers={{'pursuit_retain_distance','Погоня: дальность удержания личности, м',20,300},
+ {'pursuit_retain_grace_ms','Погоня: ожидание потерянного наблюдения, мс',1000,30000}, {'plate_digits','Минимум цифр условного номера',1,6},{'find_cache_window_ms','Ожидание ответа /find, мс',1000,30000},{'raid_start_hour','Окно рейдов · начало (ваша трактовка МСК)',0,23},{'raid_end_hour','Окно рейдов · конец (ваша трактовка МСК)',0,23},{'scan_ms','Обновление радара, мс',100,5000},{'colleague_radius','Коллеги в радиусе, м',5,100},
  {'stop_distance','Дальность остановки, м',5,50},{'stop_ms','Время неподвижности для 10-55, мс',1000,10000},
  {'risk_stop_ms','Время неподвижности после погони, мс',1000,15000},{'risk_distance','Дальность 10-66, м',5,100},
  {'flee_distance','Отъезд для предложения погони, м',10,150},{'foot_distance','Отход водителя для пешей погони, м',5,50},
@@ -43,7 +45,7 @@ for _,row in ipairs({{'explain_stop','Назвать причину остано
 M.booleans[#M.booleans+1]={'detention_timers','Таймеры адвоката и звонка'}
 for _,r in ipairs({{'lawyer_response_seconds','Адвокат: ожидание ответа, секунд',1,3600},{'lawyer_arrival_seconds','Адвокат: ожидание прибытия, секунд',1,3600},{'phone_call_seconds','Звонок: длительность, секунд',1,3600}})do M.numbers[#M.numbers+1]=r end
 M.texts[#M.texts+1]={'stop_custom','Своя причина остановки',2000};M.texts[#M.texts+1]={'detention_custom','Своё основание задержания',2000}
-M.variables={unit=true,station=true,crew=true,model=true,model_id=true,vehicle_id=true,vehicle_color=true,
+M.variables={vehicle_type=true,vehicle_type_gen=true,unit=true,station=true,crew=true,model=true,model_id=true,vehicle_id=true,vehicle_color=true,
  vehicle_description=true,vehicle_plate=true,occupants=true,occupants_text=true,driver_id=true,driver_name=true,
  tac=true,armed_text=true,stop_outcome=true,area=true,location=true,map_square=true,sector=true,direction=true,
  my_name=true,my_firstname=true,officers=true,min_officers=true,warnings=true,warning_count=true,ooc_warning_count=true}
@@ -51,12 +53,12 @@ local legacyRadio={stop="{local_tag}{unit}, провожу остановку {v
 M.variables.city=true;M.variables.dispatch_officers=true;M.variables.robbery_min_officers=true
 M.variables.stop_ground=true;M.variables.detention_ground=true;M.variables.ground_article=true
 function M.defaults()
- local d={auto_plate=true,plate_prefix='SA-',plate_digits=3,legacy_tire_enabled=false,dispatch_enabled=true,dispatch_rp_enabled=true,robbery_guard=true,robbery_min_officers=2,
+ local d={pursuit_retention=true,pursuit_retain_distance=300,pursuit_retain_grace_ms=15000,repeat_megaphone=true,auto_plate=true,plate_prefix='SA-',plate_digits=3,legacy_tire_enabled=false,dispatch_enabled=true,dispatch_rp_enabled=true,robbery_guard=true,robbery_min_officers=2,
   lost_vehicle_fallback='преследуемому т/с',
   robbery_warning='ВНИМАНИЕ! Пункты 3.1 / 10.4: на ограбление бизнеса нужен патруль минимум из {robbery_min_officers} сотрудников. Нарушение: Jail–Warn. PA оценивает состав в {dispatch_officers} чел. Подтвердите, что выезжаете с напарником; люди рядом или пассажиры сами по себе не подтверждают состав патруля.',
   dispatch_confirmation_note='Подтверждайте фактически полученный RP-вызов. Место и курс в докладе берутся из текущего положения офицера; проверьте их в предпросмотре. Отыгровка не устанавливает серверную GPS-метку.',
   gas_confirmation_note='Пункт 8.2: требование предъявляют на месте, пока ограбление АЗС продолжается. Предупреждение не разрешает автоматически открывать огонь: основания и ограничения применения силы проверяются отдельно. Пешком выберите доступный канал /s в настройках мегафона, если /m недоступен.',
-  radio_templates_version=1,always_show_on_duty=true,pursuit_armed=false,enabled=true,hud=true,stationary_offer=true,exit_offer=true,approach_offer=true,flee_offer=true,high_risk_offer=true,
+  radio_templates_version=1,always_show_on_duty=false,pursuit_armed=false,enabled=true,hud=true,stationary_offer=true,exit_offer=true,approach_offer=true,flee_offer=true,high_risk_offer=true,
   fast_wanted=true,taser_offer=true,adam_driver_mute_radio=true,night_flashlight=true,window_ooc_hint=true,backup_mark=false,
   colleagues_enabled=true,uniforms_enabled=true,radio_cache=true,ghetto_guard=true,combat_guard=true,
   find_cache_window_ms=10000,raid_start_hour=14,raid_end_hour=22,scan_ms=500,colleague_radius=50,stop_distance=25,stop_ms=1500,risk_stop_ms=2500,risk_distance=35,flee_distance=25,foot_distance=12,
@@ -86,9 +88,9 @@ function M.defaults()
    taser_warning='Гражданин, остановитесь и держите руки на виду! В случае неподчинения будет применён тайзер!',
    window='{gender:Мог|Могла} ли {my_firstname} увидеть оружие или запрещённые предметы в салоне автомобиля?',
    ooc_hint='Ответьте в /do на мой вопрос (например: /do В салоне оружия нет.)',
-   return_car='Водитель автомобиля {model}, немедленно вернитесь в салон, заглушите двигатель и держите руки на виду! При неподчинении будет применена сила!',
-   stop_order='Водитель автомобиля {model}, немедленно остановитесь у обочины и заглушите двигатель!',
-   tire='Водитель автомобиля {model}, немедленно остановитесь у обочины! В случае неподчинения будет открыт огонь по колёсам!',
+   return_car='Водитель {vehicle_type_gen} {model}, цвет: {vehicle_color}, вернитесь на место водителя, заглушите двигатель и держите руки на виду!',
+   stop_order='Водитель {vehicle_type_gen} {model}, цвет: {vehicle_color}, остановитесь у обочины и заглушите двигатель!',
+   tire='Водитель {vehicle_type_gen} {model}, цвет: {vehicle_color}, остановитесь! При неподчинении будет открыт огонь по колёсам!',
    risk_single='Водитель {model}, заглушите двигатель, вытащите ключи из замка зажигания и выбросьте их в окно!\nМедленно откройте дверь снаружи, выйдите с поднятыми руками спиной к офицерам и поднимите верхнюю одежду!\nСделайте три шага влево от машины и лягте на землю на живот! Выполняйте требования спокойно и без резких движений! В случае угрозы жизни или сопротивления будет применена сила!',
    risk_multi='Водитель {model}, заглушите двигатель, вытащите ключи из замка зажигания и выбросьте их в окно!\nВодитель и пассажиры, выходите из машины строго ПО ОДНОМУ с поднятыми руками спиной к офицерам!\nЛожитесь на живот в метре от дороги в шахматном порядке! Выполняйте требования спокойно и без резких движений! В случае угрозы жизни или сопротивления будет применена сила!',
    wanted_rp='/me {gender:зажал|зажала} кнопку тангенты рации и {gender:передал|передала} диспетчеру приметы автомобиля: {vehicle_description}, гос. номер «{vehicle_plate}».\n/do Диспетчер пробил регистрационные данные автомобиля по базе и объявил водителя в розыск.',
@@ -135,6 +137,11 @@ function M.validate(raw)
     d.templates[r[1]]=t
    end
   end
+ end
+ if type(raw.templates)=='table'then
+  local old={stop_order='Водитель автомобиля {model}, немедленно остановитесь у обочины и заглушите двигатель!',tire='Водитель автомобиля {model}, немедленно остановитесь у обочины! В случае неподчинения будет открыт огонь по колёсам!',return_car='Водитель автомобиля {model}, немедленно вернитесь в салон, заглушите двигатель и держите руки на виду! При неподчинении будет применена сила!'}
+  local stock=M.defaults().templates
+  for key,value in pairs(old)do if raw.templates[key]==value then d.templates[key]=stock[key]end end
  end
  if raw.radio_templates_version~=nil and raw.radio_templates_version~=1 then return nil,'Неизвестная версия реплик Copilot.'end
  if raw.radio_templates_version==nil and type(raw.templates)=='table'then

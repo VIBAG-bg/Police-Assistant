@@ -16,7 +16,7 @@ local api={getCharCoordinates=function(p)return 0,p==4 and 100 or 3,0 end,getCha
  sampIsPlayerConnected=function()return true end,sampIsPlayerNpc=function()return false end,sampGetPlayerNickname=function(id)return({[12]='Radio_Partner',[13]='Third_Officer',[14]='Far_Officer'})[id]end,
  getCharModel=function(p)return p==2 and model or 281 end,getAllVehicles=function()return{50,51,51}end,doesVehicleExist=function()return true end,
  getCarModel=function()return 597 end,getCarCoordinates=function()return 0,5,0 end,getDriverOfCar=function(car)return car==50 and 1 or nil end,
- storeCarCharIsInNoSave=function()return 50 end,getNumberOfPassengers=function()return 1 end}
+ storeCarCharIsInNoSave=function()return 50 end,isCharInAnyCar=function()return true end,getNumberOfPassengers=function()return 1 end}
 local radar=module.new({settings=function()return cfg end,read=function(k,...)if api[k]then return api[k](...)end end,profile=function()return{department='SFPS',callsign=''}end,partners=function()return{}end})
 radar:tick(s,0);local v=radar:view();eq(#v.nearbyOfficers,2);eq(v.nearbyCruisers,1);eq(v.ownCruiserRole,'driver')
 for _,skin in ipairs(skins)do model=skin;radar:tick(s,skin*1000);eq(#radar:view().nearbyOfficers,2)end

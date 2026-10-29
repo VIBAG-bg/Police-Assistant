@@ -78,13 +78,13 @@ local normalized, warnings = core.normalizeConfig(raw)
 eq(normalized.main.demo_mode, false); eq(#warnings, 0)
 raw.main.max_distance = 'nan'
 normalized, warnings = core.normalizeConfig(raw)
-eq(normalized.main.demo_mode, true); eq(normalized.main.max_distance, 8); check(#warnings > 0)
+eq(normalized.main.demo_mode, false); eq(normalized.main.max_distance, 8); check(#warnings > 0)
 raw = core.defaults(); raw.main = 'broken'
 normalized, warnings = core.normalizeConfig(raw)
-eq(normalized.main.demo_mode, true); check(#warnings > 0)
+eq(normalized.main.demo_mode, false); check(#warnings > 0)
 raw = core.defaults(); raw.cuff = nil; raw.main.demo_mode = false
 normalized, warnings = core.normalizeConfig(raw)
-eq(normalized.cuff.enabled, false); eq(normalized.main.demo_mode, true)
+eq(normalized.cuff.enabled, false); eq(normalized.main.demo_mode, false)
 raw = core.defaults(); raw.cuff.enabled = 'false'
 normalized, warnings = core.normalizeConfig(raw)
 eq(normalized.cuff.enabled, false); eq(#warnings, 0)
@@ -93,7 +93,7 @@ normalized, warnings = core.normalizeConfig(raw)
 eq(normalized.cuff.enabled, false); check(#warnings > 0)
 raw = core.defaults(); raw.main.schema = 99; raw.main.demo_mode = false
 normalized, warnings = core.normalizeConfig(raw)
-eq(normalized.main.demo_mode, true); check(#warnings > 0)
+eq(normalized.main.demo_mode, false); check(#warnings > 0)
 
 local visible = {captured = true, exists = true, alive = true, local_alive = true,
     on_screen = true, streamed = true, id_match = true, connected = true,

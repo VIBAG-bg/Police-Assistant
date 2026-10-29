@@ -1,7 +1,8 @@
 local core=require 'pa26_core'
 local recovery=require 'pa26_recovery'
 local model=require 'pa26_bindings'
-local settings=core.recoveryDefaults();local r=recovery.new()
+local settings=core.recoveryDefaults();check(not settings.demo_after_recovery);settings.demo_after_recovery=true -- Explicit opt-in path below.
+local r=recovery.new()
 r:trip(100,'ui','failure');check(not r:ready(3099,settings));check(r:ready(3100,settings))
 check(r:begin(3100,settings));eq(r.attempts,1);check(not r:ready(50000,settings))
 for i=2,3 do r:trip(i*10000,'ui','failure');check(r:begin(i*10000+3000,settings))end

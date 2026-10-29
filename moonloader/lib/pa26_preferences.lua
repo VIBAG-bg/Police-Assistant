@@ -177,7 +177,7 @@ function M.validateWeapons(raw)
     return out
 end
 function M.taserDefaults()
-    return {enabled=true,hud=true,weapon_id=24,activation='command',command='/taser',active_reply='',inactive_reply='',reply_timeout_ms=10000,
+    return {enabled=true,hud=true,draw_rp_enabled=true,holster_rp_enabled=true,reload_rp_enabled=true,weapon_id=24,activation='command',command='/taser',active_reply='',inactive_reply='',reply_timeout_ms=10000,
         name='Taser X26',draw_template='осмотревшись, извлёк {weapon} из кобуры и направил ствол в безопасную сторону.',
         holster_template='убедившись в безопасности, убрал {weapon} в кобуру и застегнул фиксатор.',capacity=2,cooldown_ms=5000,auto_reload=true,
         reload_template='извлёк использованные картриджи, установил новые и проверил крепление тайзера.'}
@@ -198,7 +198,7 @@ function M.validateTaser(raw)
         out[key],err=M.template(raw[key]or out[key],{weapon=true});if not out[key]then return nil,err end
     end
     local ok,err=integer(out,raw,'reply_timeout_ms',1000,30000);if not ok then return nil,err end
-    for _,k in ipairs({'enabled','hud','auto_reload'}) do local ok,err=flag(out,raw,k);if not ok then return nil,err end end
+    for _,k in ipairs({'enabled','hud','auto_reload','draw_rp_enabled','holster_rp_enabled','reload_rp_enabled'}) do local ok,err=flag(out,raw,k);if not ok then return nil,err end end
     for _,sp in ipairs({{'weapon_id',22,34},{'capacity',1,10},{'cooldown_ms',1000,15000}}) do local ok,err=integer(out,raw,sp[1],sp[2],sp[3]);if not ok then return nil,err end end
     local err;out.reload_template,err=M.template(raw.reload_template or out.reload_template,{})
     if not out.reload_template then return nil,err end
@@ -210,7 +210,7 @@ function M.weaponName(cfg,id)
     return item and item.name or ('Weapon '..tostring(id))
 end
 function M.radioGuardDefaults()
-    return {lead_ms=30000,toast_ms=10000,split_enabled=true,continuation='...',max_lines=6,skip_shortcut={key=0x4e,alt=true,ctrl=false,shift=false},custom={},next_id=1}
+    return {count_during_input=true,lead_ms=30000,toast_ms=10000,split_enabled=true,continuation='...',max_lines=6,skip_shortcut={key=0x4e,alt=true,ctrl=false,shift=false},custom={},next_id=1}
 end
 function M.validateRadioGuard(raw)
     local out=M.radioGuardDefaults();if raw==nil then return out end
@@ -218,7 +218,8 @@ function M.validateRadioGuard(raw)
     for _,sp in ipairs({{'lead_ms',1000,120000},{'toast_ms',1000,20000}}) do
         local ok,err=integer(out,raw,sp[1],sp[2],sp[3]);if not ok then return nil,err end
     end
-    local ok,err=flag(out,raw,'split_enabled');if not ok then return nil,err end
+    local ok,err=flag(out,raw,'count_during_input');if not ok then return nil,err end
+    ok,err=flag(out,raw,'split_enabled');if not ok then return nil,err end
     ok,err=integer(out,raw,'max_lines',1,8);if not ok then return nil,err end
     out.continuation=text(raw.continuation or out.continuation,80);if not out.continuation then return nil,'Неверное начало продолжения доклада.'end
     out.skip_shortcut=copy(raw.skip_shortcut or out.skip_shortcut)

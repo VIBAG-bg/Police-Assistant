@@ -4,27 +4,34 @@ local M={};local Patrol={};Patrol.__index=Patrol
 local function valid(s)return s and s.session and s.ped and s.alive==true and s.onDuty==true and s.radioEnabled==true end
 local function safe(s)return valid(s) and s.focused==true and s.paused==false and s.blocked==false and
     s.typing~=true and s.recording~=true and s.editingHud~=true and s.draggingHud~=true end
+local function canTick(s,countDuringInput)
+    return valid(s)and s.focused==true and s.paused==false and not s.patrolSuspended and(countDuringInput~=false or safe(s))
+end
 function M.new(env)return setmetatable({env=env,remaining=nil,active=false,cycle=0},Patrol)end
 function Patrol:reset()
     if self.currentKey and self.env.drop then self.env.drop(self.currentKey)end
-    self.cycle=self.cycle+1;self.currentKey=nil;self.state=nil;self.lastNow=nil;self.remaining=nil;self.active=false;self.signature=nil;self.phase='off'
+    self.cycle=self.cycle+1;self.currentKey=nil;self.state=nil;self.anchor=nil;self.lastNow=nil;self.remaining=nil;self.active=false;self.signature=nil;self.phase='off'
 end
 function Patrol:tick(state,now)
     local cfg=self.env.settings();local kind=cfg.mode;local interval=cfg[kind..'_interval_ms']
-    if not core.finite(now) or now~=math.floor(now) or not cfg.enabled or not valid(state) then self:reset();return end
+    if not cfg.enabled then self:reset();return end
+    if core.elapsed(now,now)==nil then self.lastNow=nil;self.phase='paused';return end
+    if not valid(state)or state.patrolSuspended then self.state=state;self.lastNow=now;self.phase='paused';return end
     local signature=table.concat({kind,tostring(interval),tostring(cfg.confirmation),cfg[kind..'_channel'],cfg[kind..'_template'],cfg.post,cfg.session_key or ''},'\0')
     local dt=self.lastNow and core.elapsed(now,self.lastNow)
-    local changed=not self.state or self.state.session~=state.session or self.state.ped~=state.ped or
-        self.state.demo~=state.demo or self.signature~=signature or (self.lastNow and not dt)
+    local anchor=self.anchor
+    local changed=not anchor or anchor.session~=state.session or anchor.demo~=state.demo or self.signature~=signature or
+        (anchor.ped~=state.ped and not(state.local_nick and state.local_nick~=''and state.local_nick==anchor.local_nick))
     if changed then
         if self.currentKey and self.env.drop then self.env.drop(self.currentKey)end
         self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil
     end
-    -- Do not catch up after a stalled/paused client or consume time spent in a
-    -- server dialog. A missed interval never creates multiple queued reports.
-    if not changed and safe(state) and safe(self.state) and dt and dt<=5000 then self.remaining=math.max(0,self.remaining-dt) end
-    self.state=state;self.lastNow=now;self.signature=signature;self.active=true;self.interval=interval
-    self.phase=not safe(state) and 'paused' or self.remaining>0 and 'countdown' or 'waiting'
+    -- Input postpones delivery, not the clock. Focus/pause and stalls do not
+    -- invent elapsed time or create a catch-up burst.
+    local policy=not self.env.clockPolicy or self.env.clockPolicy()~=false
+    if not changed and canTick(state,policy)and canTick(self.state,policy)and dt and dt<=5000 then self.remaining=math.max(0,self.remaining-dt)end
+    self.state=state;self.anchor=state;self.lastNow=now;self.signature=signature;self.active=true;self.interval=interval
+    self.phase=not canTick(state,policy)and'paused'or self.remaining>0 and'countdown'or'waiting'
     local key='patrol:'..kind..':'..self.cycle
     if self.env.preview and self.remaining<=(self.env.lead and self.env.lead()or 30000)then
         self.currentKey=key
@@ -72,5 +79,5 @@ function Patrol:view()
     return {visible=true,label=label,status=status,remaining=remaining,interval=self.interval,
         progress=math.max(0,math.min(1,1-self.remaining/self.interval)),phase=phase}
 end
-M.safe=safe
+M.safe=safe;M.canTick=canTick
 return M

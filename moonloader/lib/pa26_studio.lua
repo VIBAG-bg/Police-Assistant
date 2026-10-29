@@ -1184,6 +1184,8 @@ function Studio:drawRadioGuard(ui,data,callbacks)
     local im=self.imgui;local d=self.radioGuardDraft or model.copy(self.lib.radio_guard);local changed=false
     self:settingsHeading(ui,'Предупреждения перед автодокладами')
     ui.text('Все автодоклады используют общую очередь. Время предупреждения и полной карточки задаётся ниже, от 1 секунды. Если интервал доклада короче предупреждения, оно сокращается до интервала; отмена остаётся доступной.')
+    local clock,clockEdited=self:check('Считать время докладов при открытом чате или окне##guard-input-clock',d.count_during_input~=false)
+    if clockEdited then d.count_during_input=clock;changed=true end
     local value=im.new.int(d.lead_ms/1000)
     if im.SliderInt('Предупредить заранее, с##guard-lead',value,1,120)then d.lead_ms=value[0]*1000;changed=true end
     value=im.new.int(d.toast_ms/1000)
@@ -1191,7 +1193,7 @@ function Studio:drawRadioGuard(ui,data,callbacks)
     ui.text('Пропустить ближайший: '..model.shortcutName(d.skip_shortcut)..' · /pa26skip')
     if self:button('Назначить сочетание отмены##guard-key',ui)then callbacks.capture({kind='feature',group='radio_guard',field='skip_shortcut'})end
     im.SameLine();if self:button('Убрать##guard-key',ui)then d.skip_shortcut={key=0,ctrl=false,alt=false,shift=false};changed=true end
-    ui.text('Пока вы печатаете или игра неактивна, таймер стоит на паузе. После возвращения PA предупредит снова. Экстренные подтверждения Y/N идут первыми. Отмена пропускает один доклад; выключение расписания останавливает следующие.')
+    ui.text('При включённом флажке отсчёт идёт в чате и окнах PA. В 00:00 доклад ждёт закрытия ввода и свободной очереди; закрытие F6 не начинает предупреждение заново. Alt+Tab, пауза игры и долгий зависший кадр приостанавливают отсчёт. Экстренные подтверждения идут первыми; отмена пропускает один доклад.')
     self:settingsHeading(ui,'Длинные доклады')
     local split,splitChanged=self:check('Делить длинные доклады на строки##guard-split',d.split_enabled)
     if splitChanged then d.split_enabled=split;changed=true end
@@ -1380,6 +1382,7 @@ end
 function Studio:drawTaser(ui,data,callbacks)
     local im=self.imgui;local draft=self.taserDraft or model.copy(self.lib.taser);local changed=false
     self:settingsHeading(ui,'Тайзер · серверный режим и учёт выстрелов')
+    changed=require('pa26_manual_actions').taserToggles(self,ui,draft)or changed
     local activation,activationChanged=self:choice('Определение тайзера##taser-activation',draft.activation,{{'command','Команда сервера · Deagle'},{'weapon','Отдельный GTA ID · другой профиль'}},ui)
     if activationChanged then draft.activation=activation;changed=true end
     if self:button('Применить профиль Exsellent: /taser + Deagle##taser-exsellent',ui)then draft.activation='command';draft.command='/taser';draft.weapon_id=24;changed=true end
@@ -1414,7 +1417,7 @@ function Studio:drawTaser(ui,data,callbacks)
     if value~=draft.reload_template then draft.reload_template=value;changed=true end
     require('pa26_rp_ui').preview(self,ui,data,'/me '..draft.reload_template)
     ui.text('Счётчик учитывает ваши выстрелы, включая промахи. Он отражает заряды по выбранному RP-профилю, а не патроны GTA. Смена оружия его не обнуляет.')
-    ui.text('Когда заряды закончатся, PA дождётся свободной очереди и отправит отыгровку перезарядки. Готовность вернётся после отправки всех её частей и заданной паузы. Если отправка не удалась, повтор нужно запустить вручную.')
+    ui.text(draft.reload_rp_enabled~=false and'Когда заряды закончатся, PA дождётся свободной очереди и отправит отыгровку перезарядки. Готовность вернётся после отправки всех её частей и заданной паузы. Если отправка не удалась, повтор нужно запустить вручную.'or'RP перезарядки отключена: PA только восстановит свой счётчик после паузы. При выключенной автоматике используйте кнопку учёта перезарядки. Это не подтверждение серверного результата и не изменение патронов GTA.')
     ui.text('Для автоматической перезарядки включите «На службе». Повторить её вручную можно командой /pa26reload или кнопкой на виджете.')
     ui.text('PA не блокирует выстрелы и не меняет патроны. Перед применением тайзера учитывайте требование о предупреждении, допустимую дистанцию и ограничения сервера.')
     if not data.chatFiltersAvailable then ui.text('SAMP.Lua недоступна: автоматический подсчёт выстрелов не работает.')end
@@ -1461,7 +1464,7 @@ function Studio:drawProfile(ui,data,callbacks,part)
     copy.profile.accent=self:field('Акцент##profile','profile:accent',copy.profile.accent,512)
     ui.text('Префикс обычной речи, например: [Русский акцент]:. Пустое поле отключает акцент.')
     ui.text('Акцент добавляется только к обычному сообщению, которое вы сами вводите в игровой чат. Команды с / или !, /me, /do, рация и автоматические реплики PA не меняются. В собственном бинде можно явно поставить {accent}.')
-    local live,changed=self:check('Добавлять акцент в мой обычный чат##accent-live',copy.settings.accent_live_input)
+    local live,changed=self:check('Добавлять акцент при отправке обычной речи##accent-live',copy.settings.accent_live_input)
     if changed then
         if live and model.accentPrefix(copy.profile.accent)==''then copy.profile.accent='[Русский акцент]:';self:setBuffer('profile:accent',copy.profile.accent,512)end
         self:autoSettings('accent_chat',{'settings','accent_live_input'},live)

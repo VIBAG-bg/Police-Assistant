@@ -12,7 +12,7 @@ Windows 7 SP1 / 10 / 11 с Windows PowerShell 5.1 и .NET Framework 4.5.2 или
 
 ## Установка через помощник
 
-1. В [последнем Release](https://github.com/VIBAG-bg/Police-Assistant/releases/latest) скачай **`Police-Assistant-v0.41.2.zip`**. Архив **Source code** предназначен для разработки.
+1. В [последнем Release](https://github.com/VIBAG-bg/Police-Assistant/releases/latest) скачай **`Police-Assistant-v0.42.1.zip`**. Архив **Source code** предназначен для разработки.
 2. Полностью закрой GTA и распакуй **весь** архив в отдельную папку.
 3. Запусти **`Установить PA.cmd`** и выбери папку своей GTA либо её папку `MoonLoader`. Для Exsellent Launcher обычно это `%LOCALAPPDATA%\Exsellent Launcher\game`.
 4. Справа появятся сведения о библиотеках. Нажми **«Установить PA»** либо **«Установить и докачать библиотеки»**. Если не хватает библиотек, помощник перечислит их и скачает после этой кнопки. Он получает закреплённые версии из исходных источников, проверяет архивы и каждый выбранный файл перед установкой.

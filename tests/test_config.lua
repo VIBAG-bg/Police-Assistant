@@ -70,15 +70,15 @@ check(storage.save('config', cfg, fake(files)))
 eq(files.config, text)
 files = {config = 'broken', ['config.bak'] = text}
 local loaded, notes = storage.load('config', fake(files))
-eq(loaded.main.demo_mode, true); check(#notes > 0); eq(files.config, 'broken')
+eq(loaded.main.demo_mode, false); check(#notes > 0); eq(files.config, 'broken')
 files = {['config.rollback'] = text, ['config.tmp'] = 'unfinished'}
 loaded, notes = storage.load('config', fake(files))
-eq(loaded.main.demo_mode, true); check(#notes > 0)
+eq(loaded.main.demo_mode, false); check(#notes > 0)
 check(storage.save('config', cfg, fake(files)))
 eq(files.config, text); eq(files['config.rollback'], nil)
 files = {config = 'broken'}
 loaded, notes = storage.load('config', fake(files))
-eq(loaded.main.demo_mode, true); check(#notes > 0)
+eq(loaded.main.demo_mode, false); check(#notes > 0)
 files = {config = text}
 loaded, notes = storage.load('config', fake(files))
 eq(#notes, 0)

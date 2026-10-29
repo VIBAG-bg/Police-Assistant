@@ -4,7 +4,8 @@
   "policy": "Reviewed adapter update; protocol-1 workers 0.40.3+ skip CEF on native installs and require the official HUD main hash on launcher installs.",
   "hashes": {
     "pa26-chat-endpoint.js": "dafae2adea0cd37d9aae06d45012279c0d4371af956e0b67d90468bb5647cfc8",
-    "pa26-chat.js": "929ce54731cf70863567304e69935005961b8f0eaf15fc4b4f39efaca93bbf48"
+    "pa26-chat.js": "79c6b4065e29ceb2cac8295b859679fcee27f4c9d0ed206e650e82fd066dea40"
   },
-  "include_assets": true
+  "include_assets": true,
+  "adapter_review": "0.42.1: submit-only transforms, advisory debounced preview, existing IPC protocol and official launcher main unchanged."
 }

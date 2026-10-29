@@ -30,7 +30,7 @@ function M.draw(s,ui,data,callbacks)
   if c then
    s:settingsHeading(ui,(values.model or'Машина')..' ['..c.id..'] · '..(v.phase or'Выбрана'))
    ui.text((values.vehicle_color or'Цвет неизвестен')..' · Гос. номер: '..(values.vehicle_plate or'не установлен'))
-   ui.text((values.occupants_text or'Салон не определён')..' · Водитель: '..(v.driver and('ID '..v.driver.id)or'не установлен')..' · '..math.floor(c.distance)..' м')
+   ui.text((values.occupants_text or'Салон не определён')..' · Водитель: '..(v.driver and('ID '..v.driver.id)or'не установлен')..' · '..(c.stale and'последнее наблюдение'or math.floor(c.distance or 0)..' м'))
    if c.armed or v.phase=='10-66'or v.phase=='Преследование'then ui.text('Повышенный риск · рассмотрите 10-66. Наличие оружия не подтверждает стрельбу.')end
   else ui.text('Выберите видимую машину. Если автовыбор водителя включён, его ID станет целью биндов и обычного взаимодействия.')end
   if s:button('Выбрать ближайшую впереди##copilot-select',ui)then local ok,err=callbacks.copilotSelect();if not ok then s:notify(err,'vehicle',false)end end
@@ -85,6 +85,8 @@ function M.draw(s,ui,data,callbacks)
    ui.text(r[2]);im.PushItemWidth(-1)
    local n=im.new.int(cfg[r[1]]);if im.InputInt('##copilot-setting-'..r[1],n)then cfg[r[1]]=n[0]end;im.PopItemWidth()
   end
+  ui.text('Удержание до 300 м действует только после подтверждённого начала автомобильной или пешей погони. Дальности наручников, обыска и других близких действий не меняются. В обычном режиме используются ваши прежние настройки. Крестик скрывает карточку без сброса погони.')
+  ui.text('Повтор /m — только новое предложение после интервала, отправка требует ДА. N откладывает повтор; «Пауза подсказок /m» выключает повторы для этой ситуации.')
   ui.text('Порог неподвижности, м');im.PushItemWidth(-1)
   local delta=im.new.float(cfg.stationary_delta);if im.SliderFloat('##copilot-stationary',delta,.05,5)then cfg.stationary_delta=delta[0]end;im.PopItemWidth()
   for _,r in ipairs(prefs.texts)do
@@ -104,7 +106,7 @@ function M.draw(s,ui,data,callbacks)
   end
   cfg.templates[key]=s:field('Реплика##copilot-rp','copilot:rp:'..key,cfg.templates[key],8193,true,140)
   ui.text('Для RP розыска и вызовов — отдельные строки /me, /do, /try или /todo. У вызовов есть варианты в машине и пешком. Для докладов и требования на АЗС — текст без /команды; канал добавляется отдельно. Род: {gender:передал|передала}.')
-  ui.text('Переменные: {unit}, {station}, {crew}, {model}, {vehicle_id}, {vehicle_color}, {vehicle_description}, {vehicle_plate}, {occupants_text}, {driver_id}, {driver_name}, {city}, {area}, {map_square}, {direction}, {tac}, {stop_outcome}, {armed_text}, {my_firstname}.')
+  ui.text('Переменные: {unit}, {station}, {crew}, {vehicle_type}, {vehicle_type_gen}, {model}, {vehicle_id}, {vehicle_color}, {vehicle_description}, {vehicle_plate}, {occupants_text}, {driver_id}, {driver_name}, {city}, {area}, {map_square}, {direction}, {tac}, {stop_outcome}, {armed_text}, {my_firstname}.')
   local text,err=callbacks.copilotPreview(key,cfg);ui.text('Предпросмотр: '..tostring(text or err))
   ui.text('Состав на ограбление: порог подсказки по умолчанию 2 (п. 3.1 / 10.4). В предупреждении доступны {dispatch_officers}, {robbery_min_officers}. Число по радару/салону — оценка; реальный совместный выезд подтверждаете вы. Для всех подсказок доступны остальные переменные Copilot.')
   ui.text('База источников: 28.10.2026. Слоты мегафона учитываются только после отдельного включения и проверки, что их текст предупреждает об огне по колёсам. Обычное «остановитесь» не считается. По Мануалу также нужны погоня свыше 10 минут, место вне города, парный назначенный патруль и условия применения силы; исключения проверяются отдельно. Счётчик не разрешает огонь.')
@@ -126,12 +128,16 @@ function M.reserve(controller,im,hud,fonts,taserHeight)
   'Курс: '..(values.direction or'не определён')..' · '..(values.city or'город не определён'),
   (values.area or'Район не определён')..' · '..(values.map_square or'квадрат неизвестен'),
   'Экипаж: '..(values.crew or'одиночный')..' · рядом ПД: '..#(colleagues.nearbyOfficers or{})..', авто: '..(colleagues.nearbyCruisers or 0)}
- if v.car then rows[#rows+1]=(values.model or'Машина')..' ['..tostring(v.car.id)..'] · '..(values.occupants_text or'салон не определён')..' · '..math.floor(v.car.distance or 0)..' м' end
+ if v.car then
+  rows[#rows+1]=(values.vehicle_type or'Транспорт')..' '..(values.model or'')..' ['..tostring(v.car.id)..']'
+  rows[#rows+1]='Цвет: '..(values.vehicle_color or'неизвестен')..' · '..(values.occupants_text or'салон не определён')
+  rows[#rows+1]='Водитель: '..(v.driver and((v.driver.name or'Игрок')..' ['..v.driver.id..']')or'не установлен')..' · '..(v.car.stale and'последнее наблюдение'or math.floor(v.car.distance or 0)..' м')
+ end
  local traffic=v.phase~=nil and v.car~=nil
  if traffic then rows[#rows+1]=v.tireStatus or''end
  local text=table.concat(rows,'\n')
- local th=heading:CalcTextSizeA(14*scale,100000,wrap,title).y;local bh=font:CalcTextSizeA(12*scale,100000,wrap,text).y
- local h=th+bh+(traffic and 82 or 30)*scale;local base=taserHeight or 0
+ local th=heading:CalcTextSizeA(14*scale,100000,math.max(1,wrap-30*scale),title).y;local bh=font:CalcTextSizeA(12*scale,100000,wrap,text).y
+ local h=th+bh+(traffic and 108 or 30)*scale;local base=taserHeight or 0
  controller.hudMetrics={view=v,w=w,wrap=wrap,h=h,scale=scale,title=title,text=text,titleH=th,bodyH=bh,body=font,heading=heading,traffic=traffic,offset=base>0 and base+8*scale or 0}
  hud:setEquipmentHeight(controller.hudMetrics.offset+h)
 end
@@ -150,7 +156,13 @@ function M.drawHud(controller,im)
  list:AddRectFilled(vec(r.x,r.y),vec(r.x+r.w,r.y+r.h),color(.025,.10,.18,.94),10*s)
  list:AddRectFilled(vec(r.x,r.y),vec(r.x+4*s,r.y+r.h),accent,2*s)
  local function text(t,font,size,xx,yy)list:AddTextFontPtr(font,size*s,vec(xx,yy),white,t,nil,m.wrap)end
- text(m.title,m.heading,14,x,y);y=y+m.titleH+6*s;text(m.text,m.body,12,x,y);y=y+m.bodyH+5*s
+ local close={x=r.x+r.w-32*s,y=r.y+8*s,w=24*s,h=24*s}
+ list:AddRectFilled(vec(close.x,close.y),vec(close.x+close.w,close.y+close.h),color(.18,.30,.40),4*s)
+ list:AddTextFontPtr(m.heading,14*s,vec(close.x+7*s,close.y+3*s),white,'X')
+ if controller.state and controller.state.mouseAllowed and not controller.state.modal and inside(close,io.MousePos.x,io.MousePos.y)and im.IsMouseClicked(0)then
+  controller.widgetMail={action='hide',life=controller.life,at=controller.now}
+ end
+ list:AddTextFontPtr(m.heading,14*s,vec(x,y),white,m.title,nil,math.max(1,m.wrap-30*s));y=y+m.titleH+6*s;text(m.text,m.body,12,x,y);y=y+m.bodyH+5*s
  if not m.traffic then return end
  local buttons={{'tire','/m +1'},{m.view.pinned or'high_risk',m.view.pinned=='pursuit_mark'and'Только /pt'or m.view.pinned and'Розыск + /pt'or'10-66'},{'finish','Завершить'}}
  local width=(m.wrap-8*s)/3
@@ -162,6 +174,13 @@ function M.drawHud(controller,im)
    controller.widgetMail={action=b[1],life=controller.life,at=controller.now}
   end
  end
- y=y+37*s;text(m.view.cooldown>0 and('Следующее предупреждение через '..math.ceil(m.view.cooldown/1000)..' с')or'Alt — курсор · F4 — полная консоль',m.body,11,x,y)
+ y=y+37*s
+ local pause={x=x,y=y,w=m.wrap,h=22*s}
+ list:AddRectFilled(vec(x,y),vec(x+m.wrap,y+22*s),color(.10,.25,.34),4*s)
+ text(m.view.repeatPaused and'Возобновить подсказки /m'or'Пауза подсказок /m',m.body,11,x+6*s,y+3*s)
+ if controller.state and controller.state.mouseAllowed and not controller.state.modal and inside(pause,io.MousePos.x,io.MousePos.y)and im.IsMouseClicked(0)then
+  controller.widgetMail={action='repeat_pause',life=controller.life,at=controller.now}
+ end
+ y=y+26*s;text(m.view.cooldown>0 and('Следующее предупреждение через '..math.ceil(m.view.cooldown/1000)..' с')or'Alt — курсор · F4 — полная консоль',m.body,11,x,y)
 end
 return M

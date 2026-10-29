@@ -44,7 +44,8 @@ end
 function M.describe(c,cfg,gender)
     local name=cfg.model_aliases[tostring(c.model_id)]or c.model_name or cfg.unknown_model
     local color,a,b=M.colors(c,cfg)
-    local values={model=name,model_id=tostring(c.model_id),vehicle_id=tostring(c.id),vehicle_color=color,color_one=a,color_two=b}
+    local kind,gen=require('pa26_vehicle_types').names(c.model_id,cfg.type_names)
+    local values={vehicle_type=kind,vehicle_type_gen=gen,model=name,model_id=tostring(c.model_id),vehicle_id=tostring(c.id),vehicle_color=color,color_one=a,color_two=b}
     local cp=cfg.copilot or{}
     values.occupants=tostring(c.occupants or 1);values.occupants_text=({[0]='салон пуст',[1]='внутри один',[2]='внутри двое',[3]='внутри трое',[4]='внутри четверо'})[c.occupants or 1]or('внутри '..tostring(c.occupants)..' чел.')
     values.driver_id=c.driver_id and tostring(c.driver_id)or'';values.driver_name=c.driver_name and c.driver_name:gsub('_',' ')or'Водитель'
@@ -52,7 +53,7 @@ function M.describe(c,cfg,gender)
     values.tac=cp.tac_channel or'TAC 1';values.stop_outcome=cp.stop_outcome or'проведена беседа';values.armed_text=(c.armed or cp.pursuit_armed)and' Подозреваемые вооружены!'or''
     local missing
     local description=core.expandGender(cfg.description_template,gender):gsub('{([a-z_]+)}',function(k)if not values[k]then missing=k;return ''end;return values[k]end)
-    if missing then return nil,'Описание машины: используйте {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}.'end
+    if missing then return nil,'Описание машины: используйте {vehicle_type}, {vehicle_type_gen}, {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}.'end
     values.vehicle_description=description;return values
 end
 function M.new(env)return setmetatable({env=env,life=1,targetLife=1,serial=0,candidates={},generations={}},Vehicle)end
@@ -63,10 +64,11 @@ function Vehicle:cancel(reason)
 end
 function Vehicle:reset(reason)
     self:cancel(reason);self.life=self.life+1;self.selected=nil;self.candidates={};self.phase=nil;self.motion=nil;self.own=nil;self.scanAt=nil
-    self.selectionRequest=nil
+    self.selectionRequest=nil;self.retainedByStream=nil
     self.syncedDriver=nil;self.syncedRevision=nil;self.driverSelectionRevision=nil
 end
-function Vehicle:clearTarget(reason)
+function Vehicle:clearTarget(reason,streamLost)
+    self.retainedByStream=streamLost==true
     self.targetLife=self.targetLife+1
     local p=self.queued or self.intent
     if p and p.target then self:cancel(reason)end
@@ -74,10 +76,10 @@ function Vehicle:clearTarget(reason)
     self.syncedDriver=nil;self.syncedRevision=nil;self.driverSelectionRevision=nil
     if not p or p.target then self.message=reason end
 end
-function Vehicle:invalidate(id)
+function Vehicle:invalidate(id,kind)
     if not core.finite(id)then return end
     self.generations[id]=(self.generations[id]or 0)+1
-    if self.selected and self.selected.id==id then self:clearTarget('Выбранная машина выгружена или её ID выдан заново.')end
+    if self.selected and self.selected.id==id then self:clearTarget('Выбранная машина выгружена или её ID выдан заново.',kind=='onVehicleStreamOut')end
     self.scanAt=nil
 end
 function Vehicle:decorate(c)
@@ -105,7 +107,7 @@ function Vehicle:values(state,c)
     for k,v in pairs(self.env.service and self.env.service()or {})do if out[k]==nil or out[k]==''then out[k]=v end end
     out.direction=cfg.direction_enabled and(self.directionValue or cfg.stationary)or cfg.manual_direction
     local profile=self.env.profile and self.env.profile()or{};local nearby=out.colleagues or{}
-    if not out.unit or out.unit==''then out.unit=profile.callsign~=''and profile.callsign or nearby.autoCallsign or'1-L-1'end
+    if not out.unit or out.unit==''then out.unit=nearby.unitAuto or(profile.callsign~=''and profile.callsign)or nearby.autoCallsign or'1-L-1'end
     if not out.station or out.station==''then out.station=nearby.station or'LSPS'end
     if not out.crew or out.crew==''then out.crew=profile.name~=''and profile.name or out.my_name or'Офицер'end
     if not out.city or out.city==''then out.city=profile.city and profile.city~=''and profile.city or'не определён'end
@@ -290,7 +292,14 @@ function Vehicle:onExecution(kind,q)
     elseif kind=='cancelled'then self.queued=nil;self.message='Действие прервано; оставшиеся строки отменены без повтора.'end
 end
 function Vehicle:tick(state,now)
-    local previous=self.state;local age=self.now and core.elapsed(now,self.now)
+    if state.incapacitated then
+        self.state=model.copy(state);self.now=now;self:cancel('Персонаж ранен. Ситуация транспорта сохранена.');return
+    end
+    local previous=self.state
+    if previous and previous.incapacitated and previous.session==state.session and previous.local_nick==state.local_nick then
+        previous=model.copy(previous);previous.ped=state.ped;previous.alive=state.alive
+    end
+    local age=self.now and core.elapsed(now,self.now)
     if previous and(not age or previous.session~=state.session or previous.ped~=state.ped or previous.alive~=state.alive or previous.demo~=state.demo)then self:reset('Игровая сцена изменилась.')end
     self.state=model.copy(state);self.now=now;local cfg=self.env.settings()
     if not state.session or not state.alive or not state.focused or state.paused or state.blocked then
@@ -302,8 +311,10 @@ function Vehicle:tick(state,now)
     if self.selectionRequest or not scanAge or scanAge>=cfg.scan_ms then
         self:refreshCandidates(cfg)
         if self.selected then
-            local current=self:decorate(self.env.resolve(self.selected,cfg))
-            if not same(current,self.selected)or current.distance>cfg.retain_distance then self:clearTarget('Выбранная машина недоступна или слишком далеко.')
+            local tracking=cfg
+            if self.env.retention then local p=self.env.retention();if p then tracking=model.copy(cfg);tracking.retain_distance=p.distance end end
+            local current=self:decorate(self.env.resolve(self.selected,tracking))
+            if not same(current,self.selected)or current.distance>tracking.retain_distance then self:clearTarget('Выбранная машина недоступна или слишком далеко.',current==nil)
             else self.selected=current end
         end
     end

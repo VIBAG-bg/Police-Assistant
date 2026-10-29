@@ -32,7 +32,7 @@ click(s,'Остановитесь##assist-say-1');local proposal=s.workspace.stu
 local changed=model.copy(s.workspace.library);changed.vehicle.phrases[1].template='Новый текст.';check(s.workspace:save(changed))
 click(s,'ДА##confirm-yes');check(s.workspace.studio.modalError);eq(#s.sent,1);s.workspace.studio:cancelModal()
 -- A phrase key opens the established confirmation rather than sending directly.
-s.commands.pa26();s.commands.pa26();s.physicalDown={};s.step()
+s.commands.pa26();s.commands.pa26();s.physicalDown={};s.step();s.step() -- Close stale popup, then arm a fresh physical chord.
 s.physicalDown={[0x12]=true,[0x30]=true};s.step();s.physicalDown={};s.step()
 check(s.workspace.studio.vehicleConfirm);eq(s.workspace.studio.vehicleConfirm.action,'megaphone_1');eq(#s.sent,1)
 s.gone=true;s.events.onVehicleStreamOut(105);click(s,'ДА##confirm-yes');check(s.workspace.studio.modalError);eq(#s.sent,1)

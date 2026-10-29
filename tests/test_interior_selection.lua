@@ -92,8 +92,8 @@ local before=#s.sent;s.step(6000);eq(#s.sent,before);check(s.workspace.selectedT
 s.commands.pa26run('1');s.step(100);s.step(100);eq(#s.sent,before,'inaccessible retained target allowed an action');check(not s.workspace.pending)
 s.distance=5;s.onScreen=true;s.step(300);chosen(s,'followed outside after old coordinates expired',before)
 healthy(s);onScriptTerminate(s.script)
--- Invalid identity/life/session still clear selection during a transition.
-for _,why in ipairs({'quit','join','identity','death','session','toggle-off'})do
+-- Invalid identity/session still clear selection during a transition.
+for _,why in ipairs({'quit','join','identity','session','toggle-off'})do
     s=setup(6,0);aim(s)
     if why=='toggle-off'then
         local lib=model.copy(s.workspace.library);lib.settings.keep_target_on_interior_change=false;check(s.workspace:save(lib))
@@ -102,10 +102,18 @@ for _,why in ipairs({'quit','join','identity','death','session','toggle-off'})do
     if why=='quit'then s.events.onPlayerQuit(37)
     elseif why=='join'then s.events.onPlayerJoin(37)
     elseif why=='identity'then s.name='Other_Person';s.step(300)
-    elseif why=='death'then s.localDead=true;s.step(300)
     elseif why=='session'then s.connected=false;s.step(300)end
     check(not s.workspace.selectedTarget,why);eq(#s.sent,0);healthy(s);onScriptTerminate(s.script)
 end
+-- A downed local actor may be revived: retain identity, revoke physical actions.
+s=setup(6,0);aim(s);s.down[2]=false;s.step(16)
+s.localInterior=0;s.streamed=false;s.step(16)
+s.health=0;s.localDead=true;s.step(300)
+check(s.workspace.selectedTarget,'downed state must retain the selected identity')
+check(s.workspace.targets.state~='available','downed state cannot authorize physical interaction')
+check(not s.workspace.executor.queue);check(not s.workspace.pending);eq(#s.sent,0)
+s.health=100;s.localDead=false;s.streamed=true;s.step(300)
+chosen(s,'same person after revival and interior transition');onScriptTerminate(s.script)
 s=setup(6,0);s.commands.pa26();s.page('binds');s.click='Выбрать игрока для проверки бинда##bind-target';s.render();s.step(550)
 s.edits={['Выбрать игрока по ID##nearby-id']='37'};s.render();s.click='Выбрать по ID##nearby-select-id';s.render()
 s.localInterior=7;s.step(16);check(not s.workspace.selectedTarget,'stale nearby click crossed interior boundary')

@@ -39,6 +39,8 @@ check(findButton(s,'Сохранить##changes-save'));studio:cancelModal();stu
 -- Explicit success is acknowledged too; popup works with every PA window closed.
 s.down[27]=true;onWindowMessage(0x100,27,0);s.step();s.down[27]=false;onWindowMessage(0x101,27,0);s.step()
 studio:notify('Сохранено.','profile',false,'info');check(studio:hasWarning());s.render();s.click='ОК##warning-ok';s.render();check(not studio:hasWarning())
+-- Explicitly close the remaining page; confirmations preserve their background.
+s.commands.pa26();s.step();if s.frames[1].condition()then s.commands.pa26();s.step()end
 studio:notify('Самостоятельное предупреждение.','system',false);s.step();check(findButton(s,'ОК##warning-ok'));check(s.windows['PA##warning-host'])
 s.click='ОК##warning-ok';s.render();eq(#s.sent,0);eq(#s.scopes,0);check(not s.hasLog('Ошибка интерфейса'))
 onScriptTerminate(s.script)

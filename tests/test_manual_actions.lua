@@ -65,7 +65,7 @@ local lib=model.defaults(core.defaults());lib.settings.manual_actions.rules.cuff
 local parts=require('pa26_user_files').partition(lib)
 local back=assert(require('pa26_user_files').combine(parts,core.defaults()));eq(back.settings.manual_actions.rules.cuff.rp,'/me поправил наручники.')
 s=setup();s.commands.pa26();s.render();require('support.ui_routes').chat(s,'commands')
-s.edits={['##RP-шаблон · резерв при отсутствии подходящего бинда##manual-action-rp']='/me подготовил наручники.'};s.render();s.edits={}
+s.edits={['##Стандартная RP-отыгровка команды##manual-action-rp']='/me подготовил наручники.'};s.render();s.edits={}
 s.toggle='Предлагать RP при ручном вводе команды##manual-actions-enabled';s.render();s.step(750)
 eq(s.workspace.library.settings.manual_actions.enabled,false)
 eq(s.savedLibrary().settings.manual_actions.rules.cuff.rp,'/me подготовил наручники.')

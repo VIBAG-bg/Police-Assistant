@@ -77,7 +77,7 @@ check(v:requestSelection(11));state.session='new';tick();check(not v.selected,'O
 local cpModule=require 'pa26_copilot';local plans={};v.selected=nil;v.candidates={};rows={}
 local cp=cpModule.new({vehicle=v,settings=function()return cfg.copilot end,profile=function()return{name='Officer Name',callsign='',department='',gender='female'}end,codec=codec,equal=equal,driver=function()return driver end,start=function(p)plans[#plans+1]=p;return true end})
 state.gender='female';state.colleagues={autoCallsign='1-L-1',station='LSPS',nearbyOfficers={},nearbyCruisers=0,ownCruiserRole='solo'}
-cp:tick(state,now);check(cp:view().visible,'On-duty officer in any vehicle sees card without selected car');eq(cp:view().statusCode,4)
+cp:tick(state,now);check(not cp:view().visible,'New default hides idle on-duty card');cfg.copilot.always_show_on_duty=true;check(cp:view().visible,'Saved user opt-in still shows idle on-duty card');eq(cp:view().statusCode,4)
 for _,action in ipairs({'call911','arrived','break_report'})do
  local proposal,err=cp:propose(action);check(proposal,err);check(proposal.carFree and proposal.car==nil);check(cp:accept(proposal));local prior=#plans;cp:tick(state,now+1);eq(#plans,prior+1)
  check(cp:validPlan(plans[#plans]));cp:onExecution('completed',{plan=plans[#plans]});check(not cp.phase,'Quick report must not start traffic stop')
@@ -112,7 +112,7 @@ snap=assert(f.workspace:snapshot(binding,{}));eq(snap.values.city,'Лос-Сан
 f.workspace.library.map_grid.auto_city=false;f.workspace.library.profile.city='Свой город';f.step();snap=assert(f.workspace:snapshot(binding,{}));eq(snap.values.city,'Свой город')
 check(not f.hasLog('Ошибка интерфейса'));onScriptTerminate(f.script)
 local colleagues=require 'pa26_colleagues';local radarCfg=cpPrefs.defaults();local skins={[1]=281,[2]=280,[3]=280,[4]=100}
-local natives={storeCarCharIsInNoSave=function()return 101 end,doesVehicleExist=function()return true end,getDriverOfCar=function(h)return h-100 end,
+local natives={storeCarCharIsInNoSave=function()return 101 end,isCharInAnyCar=function()return true end,doesVehicleExist=function()return true end,getDriverOfCar=function(h)return h-100 end,
  getNumberOfPassengers=function()return 1 end,getCharModel=function(p)return skins[p]end,getCharCoordinates=function()return 0,0,0 end,
  getCharActiveInterior=function()return 0 end,getAllChars=function()return{1,2,3,4}end,doesCharExist=function()return true end,isCharDead=function()return false end,
  sampGetPlayerIdByCharHandle=function(p)return true,p end,sampGetCharHandleBySampPlayerId=function(p)return true,p end,

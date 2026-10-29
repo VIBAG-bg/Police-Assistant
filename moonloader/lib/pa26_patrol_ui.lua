@@ -35,18 +35,30 @@ function M.draw(studio,ui,data,callbacks)
     studio:passiveWarning('patrol-save',view.saveError and('Не удалось сохранить сеанс: '..view.saveError),'patrol_session')
     im.Separator()
     for _,row in ipairs({{'enabled','Включить сеансы патруля'},{'hud','Показывать патруль в HUD'},
-        {'restore_offer','Предлагать восстановление после перезапуска PA'},{'pause_on_crew_change','Пауза при выходе или замене ID напарника'},
+        {'restore_offer','Предлагать восстановление после перезапуска PA'},{'auto_resume_reload','Продолжать патруль после быстрой перезагрузки PA в той же игре'},{'pause_on_crew_change','Пауза при выходе или замене ID напарника'},
         {'periodic','Периодические доклады в сеансе'},{'reporter_self','Рацию в экипаже веду я'},{'confirmation','Подтверждать каждый периодический доклад'}})do
         local v,edit=studio:check(row[2]..'##session-'..row[1],draft[row[1]]);if edit then draft[row[1]]=v end
     end
+    for _,r in ipairs({{'interrupt_grace_ms','Подтверждать смену сервера или персонажа, с##session-grace'},{'reload_grace_ms','Перерыв для автовосстановления PA, с##session-reload-grace'}})do
+        local n=im.new.int(draft[r[1]]/1000);if im.InputInt(r[2],n)then draft[r[1]]=n[0]*1000 end
+    end
+    ui.text('Короткая потеря данных и 0 HP не завершают патруль. Ранение с возможностью реанимации сохраняет сцену; RP и команды ждут восстановления. Автовосстановление требует тот же процесс GTA, сервер и персонажа; ручная пауза сохраняется. Старые доклады не повторяются. Отсчёт при F6 настраивается в «Предупреждения и свои автодоклады».')
+    for _,r in ipairs({{'downed_hp','Порог ранения: блокировать действия при HP не выше##session-downed-hp',1},{'respawn_distance','Перемещение для проверки респавна, м##session-respawn-distance',1},{'respawn_position_tolerance','Допуск совпадения с точкой спавна, м##session-respawn-tolerance',1},{'respawn_evidence_ms','Срок связи событий респавна, с##session-respawn-evidence',1000}})do
+        local n=im.new.int(draft[r[1]]/r[3]);if im.InputInt(r[2],n)then draft[r[1]]=n[0]*r[3]end
+    end
+    ui.text('Ни здоровье, ни дверь больницы, ни запрос спавна сами по себе не означают смерть. Нужны новая наблюдаемая позиция и связанные события спавна/телепорта от сервера. Неизвестный сценарий сохраняет патруль; его можно завершить вручную.')
     ui.text('Включённый сеанс заменяет старый таймер полиции/тюрьмы. До начала сеанса периодических докладов нет. Все автодоклады проходят предупреждение и отмену.')
     ui.text('Если рацию ведёт напарник, снимите флажок «Рацию в экипаже веду я»: начало, продолжение, смена состава и завершение сохраняются локально; периодические доклады PA не отправляются. Ручные SOS и мегафон остаются отдельными действиями.')
     local v,edit=studio:choice('Вид службы##session-mode',draft.mode,{{'police','Автомобильный патруль'},{'foot','Пеший патруль'},{'prison','Охрана тюрьмы'}},ui)
     if edit then draft.mode=v end
-    for _,row in ipairs({{'station','Станция / подразделение'},{'unit','Юнит / маркировка'},{'vehicle','Транспорт · вручную'},
+    for _,row in ipairs({{'station','Станция / подразделение'},{'unit','Юнит вручную · пусто = автоматически'},{'vehicle','Транспорт · вручную'},
         {'sector','Полицейский сектор · вручную'},{'post','Пост тюрьмы'}})do
         draft[row[1]]=studio:field(row[2]..'##session-'..row[1],'session:'..row[1],draft[row[1]],512)
     end
+    ui.text('Пустой юнит определяется автоматически: LINCOLN — один сотрудник, ADAM — вы и распознанные напарники в этой машине. Гражданский пассажир не считается напарником только по месту в салоне. Личный позывной профиля остаётся отдельным полем. Ручной юнит выше имеет приоритет.')
+    local number=im.new.int(draft.unit_number or 1)
+    if im.InputInt('Номер автоматического юнита##session-unit-number',number)then draft.unit_number=number[0]end
+    ui.text('Автомаркировка PA не резервирует юнит у диспетчера. При назначенной маркировке впишите её вручную.')
     ui.text('Квадрат добавляется к {area} по настройкам карты. {location} явно подставляет район и доступный квадрат; {sector} — отдельный сектор вашего патруля.')
     ui.text('IC-имя офицера и позывной берутся из профиля. Район GTA не считается официальным полицейским сектором. Поля и формулировки проверяет игрок.')
     local seconds=im.new.int(draft.interval_ms/1000)
@@ -85,12 +97,16 @@ function M.draw(studio,ui,data,callbacks)
     studio:settingsHeading(ui,'Реплики и предпросмотр')
     ui.text('Грамматический род: {gender:передал|передала}. Без /r, /f или /d: канал добавляется отдельно. Переменные: {officer}, {callsign}, {crew}, {crew_count}, {crew_roles}, {crew_callsigns}, {unit}, {station}, {vehicle}, {sector}, {post}, {area}, {location}, {map_square}, {direction}, {duration}, {patrol_id}; также теги и поля профиля. Длинный итог может не поместиться в лимит чата — предпросмотр это проверяет.')
     if studio:button('Вставить пример докладов SFPS##patrol-sfps-preset',ui)then
-        draft.start_template='{local_tag}{unit}, начинаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}. Далее доступны.'
-        draft.resume_template='{local_tag}{unit}, продолжаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}. Направление: {direction}.'
-        draft.periodic_template=draft.resume_template
-        draft.finish_template='{local_tag}{unit}, патрулирование завершено. Экипаж: {crew}. Время на службе: {duration}.'
+        local stock=settings.defaults();for _,key in ipairs({'start','resume','periodic','finish'})do draft[key..'_template']=stock[key..'_template']end
         for k in pairs(studio.cache)do if k:match('^session:template:')then studio.cache[k]=nil end end
     end
+    studio:settingsHeading(ui,'Формы фраз: один / экипаж')
+    draft.grammar=draft.grammar or settings.grammarDefaults()
+    studio.patrolGrammar=studio:choice('Форма фразы##patrol-grammar',studio.patrolGrammar or'start_solo',settings.grammarRows,ui)
+    local grammarKey=studio.patrolGrammar
+    draft.grammar[grammarKey]=studio:field('Текст формы##patrol-grammar-text','session:grammar:'..grammarKey,draft.grammar[grammarKey],1024,true,64)
+    ui.text('В стандартных докладах {patrol_start}, {patrol_resume}, {patrol_finish}, {patrol_moving}, {patrol_available} выбирают единственное или множественное число. В машине учитываются распознанные напарники в салоне; пешком — подтверждённый состав сеанса. {unit_crew_count} — это количество участников юнита.')
+    ui.text('Предпросмотр формы: '..require('pa26_core').expandGender(draft.grammar[grammarKey],studio.lib.profile.gender))
     local names={start='Начало патруля',resume='Продолжение патруля',finish='Завершение патруля',crew='Смена экипажа',periodic='Периодический доклад'}
     for _,key in ipairs({'start','resume','finish','crew','periodic'})do
         draft[key..'_template']=studio:field(names[key]..'##session-template-'..key,'session:template:'..key,draft[key..'_template'],2048,true,82)

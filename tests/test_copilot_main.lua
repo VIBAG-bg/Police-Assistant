@@ -16,16 +16,19 @@ isCarOnScreen=function()return true end
 isLineOfSightClear=function()check(not s.rendererContext);return true end
 s.step();s.commands.pa26();s.step();if s.frames[1].condition()then s.commands.pa26();s.step()end
 s.physicalDown={[0x12]=true,[0x37]=true};s.step();s.physicalDown={};s.step()
-eq(s.workspace.studio.assistPage,'traffic');check(s.frames[4].condition());check(not s.frames[1].condition());check(s.vehicleController.selected);eq(#s.sent,0)
+check(not s.frames[4].condition());check(not s.frames[1].condition());check(s.vehicleController.selected);eq(#s.sent,0)
+check(s.copilot.offers[1]and s.copilot.offers[1].action=='stop_order')
+s.copilot.offers={}
 eq(s.workspace.selectedTarget.id,37,'Driver ID reaches ordinary interaction immediately after Alt+7');eq(s.workspace.selectedTarget.name,s.name)
-s.click='Вызов 9-1-1 · Код 3##copilot-quick-call911';s.render();eq(s.click,nil);check(s.workspace.studio.vehicleConfirm.carFree);eq(#s.sent,0)
+s.workspace.studio.vehicleConfirm=assert(s.copilot:propose('call911'));s.render();check(s.workspace.studio.vehicleConfirm.carFree);eq(#s.sent,0)
 s.click='ДА##confirm-yes';s.render();for _=1,8 do s.step(1600)end;check(#s.sent>0);check(not s.copilot.phase,'Manual radio report does not start traffic')
 local radioBefore=#s.sent
-s.physicalDown={[0x12]=true,[0x38]=true};s.step();s.physicalDown={};s.step();check(s.workspace.studio.vehicleConfirm);check(s.workspace.studio.vehicleConfirm.copilot)
-eq(#s.sent,radioBefore);s.click='ДА##confirm-yes';s.render()
+s.physicalDown={[0x12]=true,[0x38]=true};s.step();s.physicalDown={};s.step();local pursuit=s.copilot.offers[1];check(pursuit and pursuit.action=='pursuit');s.copilot:shown(pursuit.token)
+check(s.copilot:decide(pursuit.token,true))
+eq(#s.sent,radioBefore)
 for _=1,8 do s.step(1600)end
 eq(s.copilot.phase,'Преследование');eq(s.copilot.pinned,'fast_wanted');check(not s.workspace.studio.caseConfirm)
-local prior=#s.sent;s.click='Розыск 8.1 + /pt##copilot-wanted';s.render();eq(s.click,nil);check(s.workspace.studio.vehicleConfirm);eq(#s.sent,prior)
+local prior=#s.sent;s.workspace.studio.vehicleConfirm=assert(s.copilot:propose('fast_wanted'));s.render();check(s.workspace.studio.vehicleConfirm);eq(#s.sent,prior)
 s.click='ДА##confirm-yes';s.render();for _=1,12 do s.step(1600)end
 local wanted,pt=0,0
 for _,line in ipairs(s.sent)do if line.line=='/su 37 8 1'then wanted=wanted+1 elseif line.line=='/pt 37'then pt=pt+1 end end

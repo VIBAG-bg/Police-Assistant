@@ -66,7 +66,7 @@ check(c:pause());local before=c.data.active.elapsed_ms;s.tick(1000);eq(c.data.ac
 check(not c:effectivePatrol(s.cfg).enabled);s.commit('resume');s.sent();eq(c.data.active.status,'active')
 -- Cancel/report failures do not claim radio delivery or silently retry.
 c,s=fixture();s.startError='Busy';s.commit('start');eq(#s.plans,0);check(not c.data.active);s.tick();eq(#s.plans,0)
-c,s=fixture();s.commit('start');c:onExecution('cancelled',{plan=s.plans[1]});eq(c.data.active.status,'paused');eq(#s.plans,1)
+c,s=fixture();s.commit('start');c:onExecution('cancelled',{plan=s.plans[1]});eq(c.data.active.status,'active');eq(#s.plans,1)
 s.tick();eq(#s.plans,1)
 c,s=fixture();s.state.busy='binder';p=s.offer('start');check(c:accept(p));s.tick();check(not c.data.active);eq(#s.plans,0)
 s.state.busy=nil;s.tick();eq(#s.plans,1)
@@ -79,7 +79,7 @@ end
 c,s=fixture();p=s.offer('start');s.cfg.start_template='Changed';check(not c:accept(p));eq(#s.plans,0)
 c,s=fixture();p=s.offer('start');s.profile.name='Another';check(not c:accept(p))
 c,s=fixture();p=s.offer('start');s.tick(61000);check(not c:accept(p))
-c,s=fixture();s.cfg.unit='';check(not c:propose('start'))
+c,s=fixture();s.cfg.unit='';local automatic=assert(c:propose('start'));check(automatic.record.unit~='','Empty unit uses automatic marking')
 c,s=fixture();s.profile.name='';check(not c:propose('start'),'Nickname is not IC identity')
 c,s=fixture();s.cfg.start_template=string.rep('д',250);check(not c:propose('start'),'CP1251 wire bound')
 -- Frozen crew vs permanent contacts, unknown/offline ID, identity reuse.
@@ -97,12 +97,15 @@ c,s=fixture();s.crew();s.players[4].near=false;check(not c:propose('start'))
 c,s=fixture();s.crew();s.cfg.crew[1].ic_name='';check(not c:propose('start'))
 c,s=fixture();s.crew();s.contacts={};check(not c:propose('start'))
 c,s=fixture();s.crew();plan=s.commit('start');c:playerChanged(4);eq(c.data.active.status,'paused');eq(#s.cancels,1);check(not c:validPlan(plan))
--- Session discontinuities archive a scene, never announce death or send by themselves.
-for _,change in ipairs({'session','local_nick','ped','alive','demo'})do
+-- Only sustained, confirmed discontinuities archive; unknown data holds time.
+for _,change in ipairs({'session','local_nick'})do
     c,s=fixture();s.commit('start');s.sent()
-    if change=='alive'then s.state.alive=false elseif change=='demo'then s.state.demo=true else s.state[change]='other'end;s.tick()
+    if change=='alive'then s.state.alive=false;s.state.health=0 else s.state[change]='other'end
+    s.tick(0);s.tick(2999);check(c.data.active,change);s.tick(1)
     check(not c.data.active,change);eq(#c.data.history,1);eq(c.data.history[1].status,'interrupted');eq(#s.plans,1)
 end
+c,s=fixture();s.commit('start');s.sent();s.state.ped=2;s.state.demo=true;s.tick()
+check(c.data.active);check(c.data.active.demo);eq(#c.data.history,0)
 c,s=fixture();s.commit('start');s.sent();s.tick(30000);eq(c.data.active.elapsed_ms,0,'Stalled client does not invent service time')
 s.state.focused=false;s.tick();s.tick();eq(c.data.active.elapsed_ms,0);s.state.focused=true;s.tick();s.tick();eq(c.data.active.elapsed_ms,1000)
 c,s=fixture();s.now=4294967280;c:tick(s.state,s.now);s.commit('start');s.sent();s.now=16;c:tick(s.state,s.now);eq(c.data.active.elapsed_ms,32)

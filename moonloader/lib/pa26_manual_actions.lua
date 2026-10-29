@@ -31,7 +31,7 @@ function M.defaults()
  local out={enabled=true,rules={},frisk_mode='saved',
   frisk_primary_rp='/me {gender:поставил|поставила} задержанного у опоры и быстрыми движениями без перчаток {gender:прохлопал|прохлопала} верхнюю одежду, торс и ноги на наличие оружия.\n/do Что офицер {gender:мог|могла} нащупать под одеждой задержанного?',
   frisk_full_rp='/me {gender:надел|надела} плотные чёрные резиновые перчатки, тщательно {gender:проверил|проверила} все карманы и обувь задержанного и {gender:выложил|выложила} вещи под камеру крузера.\n/do Предметы, подлежащие изъятию по результатам обыска, подготовлены к упаковке в зип-пакет и бокс для улик.'}
- for _,s in ipairs(M.specs())do out.rules[s.head]={enabled=true,prefer_bind=true,
+ for _,s in ipairs(M.specs())do out.rules[s.head]={enabled=s.head~='find'and s.head~='taser',prefer_bind=false,
   rp=standard[s.head]or('/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: '..s.title:lower()..'.')}end
  return out
 end
@@ -167,12 +167,33 @@ function Controller:tick()
  if p.head=='frisk'then p.frisk_mode=p.frisk_mode or(self.env.library().settings.manual_actions.frisk_mode or'saved')end
  p.displayed=true;p.refresh=nil;self.env.show(p)
 end
+function M.taserToggles(studio,ui,draft)
+ local changed=false
+ for _,r in ipairs({{'draw_rp_enabled','RP: достать тайзер'},{'holster_rp_enabled','RP: убрать тайзер'},{'reload_rp_enabled','RP: перезарядить тайзер'}})do
+  local value,hit=studio:check(r[2]..'##taser-rp-'..r[1],draft[r[1]]~=false);draft[r[1]]=value;changed=changed or hit
+ end
+ ui.text('Эти три настройки общие с разделом оружия. Учёт режима, выстрелов и паузы работает отдельно. Без RP перезарядки PA только восстанавливает свой счётчик после паузы; патроны игры не меняются.')
+ return changed
+end
 function M.draw(studio,ui)
  local model=require 'pa26_bindings';local cfg=studio.manualActionsDraft or model.copy(studio.lib.settings.manual_actions or M.defaults())
  studio:settingsHeading(ui,'Ручные серверные команды')
  cfg.enabled=studio:check('Предлагать RP при ручном вводе команды##manual-actions-enabled',cfg.enabled)
  ui.text('ДА — RP и исходная команда; НЕТ — только исходная команда; Esc — отмена. Бинды PA повторно не перехватываются. /su и /wanted используют свой помощник, чат и рация не затрагиваются.')
  local choices={};for head in pairs(cfg.rules)do choices[#choices+1]={head,'/'..head}end;table.sort(choices,function(a,b)return a[1]<b[1]end)
+ studio:settingsHeading(ui,'Стандартные RP команд · включение по командам')
+ ui.text('Галочка включает вопрос об отыгровке этой команды. Ниже редактируется стандартный текст PA, отдельно от списка ваших биндов. /find и /taser не требуют RP по таблице XI; их можно включить по желанию.')
+ local im=studio.imgui;local avail=im.GetContentRegionAvail and im.GetContentRegionAvail()
+ local columns=avail and type(avail.x)=='number'and avail.x>=620 and im.Columns and im.NextColumn and 2 or 1
+ if columns==2 then im.Columns(2,'manual-rp-checklist',false)end
+ local titles={};for _,sp in ipairs(M.specs())do titles[sp.head]=sp.title end
+ for _,row in ipairs(choices)do local h=row[1]
+  cfg.rules[h].enabled=studio:check('/'..h..'##manual-toggle-'..h,cfg.rules[h].enabled)
+  if im.SameLine then im.SameLine()end;ui.text(titles[h]or'Своя команда')
+  if columns==2 then im.NextColumn()end
+ end
+ if columns==2 then im.Columns(1)end
+ studio:settingsHeading(ui,'Текст выбранной команды')
  studio.manualActionHead=studio:choice('Команда##manual-actions-head',studio.manualActionHead or'cuff',choices,ui)
  local head=studio.manualActionHead;local rule=cfg.rules[head]
  if rule then
@@ -185,12 +206,16 @@ function M.draw(studio,ui)
   end
   rule.enabled=studio:check('Обрабатывать эту команду##manual-action-enabled',rule.enabled)
   rule.prefer_bind=studio:check('Сначала брать RP из подходящего включённого бинда##manual-action-bind',rule.prefer_bind)
-  rule.rp=studio:field('RP-шаблон · резерв при отсутствии подходящего бинда##manual-action-rp','manual-action-rp:'..head,rule.rp,8192,true,110)
+  rule.rp=studio:field('Стандартная RP-отыгровка команды##manual-action-rp','manual-action-rp:'..head,rule.rp,8192,true,110)
   local source=rule.prefer_bind and M.source(studio.lib,head)
   ui.text('Источник: '..(source and('бинд «'..source.name..'»; его серверный хвост заменяется введённой командой.')or'RP-шаблон выше.'))
   ui.text('От 1 до 8 строк /me, /do, /try или /todo. Переменные биндов: {param1}…{param8}, {params}, {my_name}, {select_id}, {select_name}. Последние требуют доступного игрока из введённого ID. Лишние серверные команды не исполняются.')
   ui.text('Пример для /'..head..' 37: '..M.preview(source and source.script or rule.rp,studio.lib.profile.gender))
  end
+ studio:settingsHeading(ui,'Автоматические отыгровки тайзера')
+ local td=studio.taserDraft or model.copy(studio.lib.taser)
+ M.taserToggles(studio,ui,td)
+ studio.taserDraft=td;studio:autoSettings('taser',{'taser'},td,'taserDraft')
  studio.manualNewHead=studio:field('Другая серверная команда · без /##manual-action-new','manual-action-new',studio.manualNewHead or'',128)
  if studio:button('Добавить команду##manual-action-add',ui)then
   local name=studio.manualNewHead:lower():match('^%s*(.-)%s*$')

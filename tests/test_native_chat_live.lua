@@ -15,12 +15,12 @@ local seed=model.defaults(core.defaults());seed.profile.accent=prefix
 for _,events in ipairs({true,false})do
     local s=fixture({library=seed,sampEvents=events,demo=false});s.step();s.chat=true;s.chatText=codec.encode('Прямой чат SA:MP.')
     -- No onWindowMessage callback: simulate native/CEF handling Enter first.
-    s.step();eq(codec.decode(s.chatText),prefix..' Прямой чат SA:MP.');eq(s.chatWrites,1)
-    s.step();eq(s.chatWrites,1,'stable input must not move the cursor every frame')
-    if events then local r=s.events.onSendChat(s.chatText);check(not r or r[1]==s.chatText)end
+    s.step();eq(codec.decode(s.chatText),'Прямой чат SA:MP.');eq(s.chatWrites or 0,0)
+    s.step();eq(s.chatWrites or 0,0,'typing never moves the cursor')
+    if events then local r=s.events.onSendChat(s.chatText);check(r and codec.decode(r[1])==prefix..' Прямой чат SA:MP.')end
     s.workspace.library.profile.accent='';s.step();eq(codec.decode(s.chatText),'Прямой чат SA:MP.')
     s.workspace.library.profile.accent=prefix;s.chatText=codec.encode('/me действие');s.step();eq(codec.decode(s.chatText),'/me действие')
-    s.chatText=codec.encode('Текст.');s.step();check(codec.decode(s.chatText):find(prefix,1,true))
+    s.chatText=codec.encode('Текст.');s.step();eq(codec.decode(s.chatText),'Текст.')
     s.workspace.library.settings.accent_live_input=false;s.step();eq(codec.decode(s.chatText),'Текст.')
     s.workspace.library.settings.accent_live_input=true;s.chatText=codec.encode(string.rep('Я',127));s.step()
     eq(codec.decode(s.chatText),string.rep('Я',127));eq(#s.sent,0)
@@ -36,7 +36,7 @@ local b=model.newBinding(77);b.command='pa26_nativeonly';b.script='Обычна�
 seed.bindings[#seed.bindings+1]=b;seed.next_id=78
 local native=fixture({demo=false,library=seed});native.step()
 eq(native.chatBridge.status,'disabled');eq(native.chatBridge.reason,'setting_disabled');eq(native.chatBridge.server,nil)
-native.chat=true;native.chatText=codec.encode('Привет.');native.step();eq(codec.decode(native.chatText),prefix..' Привет.')
+native.chat=true;native.chatText=codec.encode('Привет.');native.step();eq(codec.decode(native.chatText),'Привет.')
 onWindowMessage(0x100,13);local result=native.events.onSendChat(native.chatText);check(not result or result[1]==native.chatText)
 for _,text in ipairs({'/me осмотрелся.','/do Всё спокойно.','/r Доклад.','!r Доклад.'})do
     native.chatText=codec.encode(text);native.step();eq(codec.decode(native.chatText),text)

@@ -58,7 +58,8 @@ function Tracker:refresh(ctx,now,settings)
     if not core.finite(distance) or distance<0 then distance=nil end
     -- Distance is exposed only when native visibility was positively checked.
     self.distance=observed.visible==true and distance or nil
-    local retain=settings.retain_distance or 40
+    local pursuit=settings.pursuit
+    local retain=pursuit and pursuit.distance or settings.retain_distance or 40
     -- Interior teleports can temporarily expose the old remote coordinates.
     -- Keep only the identity until a visible actor is back in retention range.
     -- All real actions still perform the usual native identity/range/LOS check.
@@ -68,7 +69,7 @@ function Tracker:refresh(ctx,now,settings)
         end
         self.transition=nil
     end
-    local grace=settings.retain_grace_ms or 1500
+    local grace=pursuit and pursuit.grace or settings.retain_grace_ms or 1500
     if distance and distance>retain then
         self.state='too_far'; self.farAt=self.farAt or now
         local age=core.elapsed(now,self.farAt)
@@ -78,6 +79,14 @@ function Tracker:refresh(ctx,now,settings)
     self.farAt=nil
     if observed.visible==true and distance and distance>settings.action_distance then
         self.state='out_of_range'; return
+    end
+    -- A retained pursuit identity never grants physical-action availability.
+    if pursuit and core.capturedTargetValid(observed.tracked)and distance and distance<=retain then
+        local tracked=observed.tracked
+        if tracked.id~=self.target.id or tracked.name~=self.target.name then self:clear('identity');return end
+        if self.target.ped~=tracked.ped then self.target=copy(tracked);self.revision=self.revision+1;self:event('rebound',self.target)end
+        self.distance=distance
+        if observed.visible~=true or distance>settings.action_distance then self.state='out_of_range';return end
     end
     local target=observed.validated
     if not core.capturedTargetValid(target) or target.id~=self.target.id or target.name~=self.target.name then

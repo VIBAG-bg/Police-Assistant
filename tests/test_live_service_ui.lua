@@ -38,7 +38,7 @@ for _,line in ipairs(s.sent)do if line.line:find('провожу останов�
 -- Physical hotkeys work with F9 closed and open the vehicle tab, never the patrol tab.
 s.commands.pa26();s.physicalDown={};s.step()
 s.physicalDown={[0x12]=true,[0x37]=true};s.step();s.physicalDown={};s.step()
-eq(s.workspace.studio.assistPage,'traffic');check(s.frames[4].condition());check(not s.frames[1].condition());check(not s.workspace.studio.vehicleConfirm)
+check(not s.workspace.studio.vehicleConfirm);check(s.copilot.offers[1]and s.copilot.offers[1].action=='stop_order','Alt+7 produces a standalone proposal instead of opening traffic settings')
 local before=#s.sent;s.physicalDown={[0x4e]=true};s.step();s.physicalDown={};s.step();check(not s.workspace.studio.vehicleConfirm);eq(#s.sent,before)
 s.commands.pa26();s.physicalDown={};s.step()
 s.physicalDown={[0x12]=true,[0x39]=true};s.step();s.physicalDown={};s.step();check(s.frames[4].condition());check(not s.workspace.studio.vehicleConfirm)

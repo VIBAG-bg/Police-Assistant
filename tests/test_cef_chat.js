@@ -72,25 +72,25 @@ async function page(delayed=false) {
     status(value){responseStatus=value;},malformed(value){malformed=value;},hang(value){hang=value;}};
 }
 (async () => {
-  let p=await page();p.type('Привет');eq(p.input.value,prefix+' Привет');eq(p.input.selectionStart,p.input.value.length);
+  let p=await page();p.type('Привет');eq(p.input.value,'Привет');eq(p.input.selectionStart,p.input.value.length);
   const caret=p.input.caretWrites;p.api.prepare();eq(p.input.caretWrites,caret,'stable input must not reset the caret');
   await p.enter();eq(p.sent,[['HandleHudSendMessage',prefix+' Привет']]);
   for(const text of ['/me оглянулся.','/do Дверь открыта.',' /r Доклад.','/b Привет','!r Доклад.']) {
     p.type(text);eq(p.input.value,text);await p.enter();eq(p.sent.at(-1)[1],text);
   }
-  p.type('Текст');p.type(prefix+' /me действие.');eq(p.input.value,'/me действие.');
-  p.type('Один');await p.config({accent:'[Акцент]:'});eq(p.input.value,'[Акцент]: Один');
+  p.type('Текст');p.type(prefix+' /me действие.');eq(p.input.value,prefix+' /me действие.');
+  p.type('Один');await p.config({accent:'[Акцент]:'});eq(p.input.value,'Один');
   await p.config({accentEnabled:false});eq(p.input.value,'Один');await p.enter();eq(p.sent.at(-1)[1],'Один');
   await p.config({accentEnabled:true,accent:prefix});p.type(prefix+' Уже есть.');eq(p.input.value,prefix+' Уже есть.');
   p.type('');eq(p.input.value,'');p.type('   ');eq(p.input.value,'   ');
-  p=await page();p.type('Привет',2);eq(p.input.selectionStart,prefix.length+1+2);eq(p.input.selectionEnd,p.input.selectionStart);
+  p=await page();p.type('Привет',2);eq(p.input.selectionStart,2);eq(p.input.selectionEnd,p.input.selectionStart);
   const capacity=127-prefix.length-1;
-  p.type('Я'.repeat(capacity));eq(p.api.wireSize(p.input.value),127);eq((await p.enter()).prevented,undefined);
+  p.type('Я'.repeat(capacity));eq(p.api.wireSize(p.api.submitted(p.input.value).text),127);eq((await p.enter()).prevented,undefined);
   p.type('Я'.repeat(capacity+1));const before=p.sent.length;eq((await p.enter()).prevented,true);eq(p.sent.length,before);eq(p.input.value,'Я'.repeat(capacity+1));
   p.type('Привет 🙂');eq((await p.enter()).prevented,true);eq(p.sent.length,before);
   p.type('/me '+ 'Я'.repeat(160));eq((await p.enter()).prevented,undefined,'commands keep the original chat behavior');
   eq(p.api.wireSize('ЁёЇїҐґЄєІі€№—–'),14);eq(p.api.wireSize('\n'),null);eq(p.api.wireSize('中'),null);
-  p=await page();p.fire('compositionstart');p.type('При');eq(p.input.value,'При');p.fire('compositionend');eq(p.input.value,prefix+' При');
+  p=await page();p.fire('compositionstart');p.type('При');eq(p.input.value,'При');p.fire('compositionend');eq(p.input.value,'При');
   const count=p.requests.length;p.api.endpoint('http://example.com/a');p.api.endpoint('http://127.0.0.1:65536/'+'b'.repeat(48)+'/exchange');await flush();eq(p.requests.length,count);
   p.type('/pa26demo');const sentBefore=p.sent.length;await p.enter();await p.exchange();eq(p.sent.length,sentBefore,'local PA command must never reach the game server');
   eq(p.observed.some(e=>e.kind==='local'&&e.text==='/pa26demo'),true);
@@ -122,7 +122,7 @@ async function page(delayed=false) {
   p.panel.open=true;eq(p.api.inputState().chat,true);p.panel.open=false;p.input.hidden=true;eq(p.api.inputState().busy,false);
   const other={tagName:'INPUT',parentElement:{opacity:0}};p.root.document.activeElement=other;
   eq(p.api.inputState().busy,false,'transparent ancestor must not leave a hidden form blocking F9');
-  other.parentElement.opacity=1;eq(p.api.inputState().busy,true,'visible focused form keeps priority');
+  other.parentElement.opacity=1;p.fire('focusin',{target:other});eq(p.api.inputState().busy,true,'visible focused form keeps priority');
   // Diagnostic metadata contains no entered text, prefix or secret URL.
   p=await page();p.type('Служебная проверка.');await p.enter();await p.exchange();
   const diagnostic=JSON.parse(p.requests.at(-1).options.body).diagnostics;
@@ -135,10 +135,10 @@ async function page(delayed=false) {
   // Failed exchanges are reported once per reason, without URL or player text.
   p=await page();p.status(403);await p.exchange();await p.exchange();eq(p.warnings,['[PA26 CEF] exchange_failed: http_403']);
   p.status(200);p.malformed(true);await p.exchange();eq(p.warnings.at(-1),'[PA26 CEF] exchange_failed: bad_response');
-  p.malformed(false);await p.exchange();p.type('Снова работает.');eq(p.input.value,prefix+' Снова работает.');
+  p.malformed(false);await p.exchange();p.type('Снова работает.');eq(p.input.value,'Снова работает.');
   // The abort timeout clears a pending exchange so a later request can recover.
   p=await page();p.hang(true);const waiting=p.exchange();p.runTimers(1600);await waiting;eq(p.warnings.at(-1),'[PA26 CEF] exchange_failed: network');
-  p.hang(false);await p.exchange();p.type('После таймаута.');eq(p.input.value,prefix+' После таймаута.');
+  p.hang(false);await p.exchange();p.type('После таймаута.');eq(p.input.value,'После таймаута.');
   // Burst input remains bounded; rendering of ordinary incoming chat continues.
   p=await page();for(let i=0;i<100;i++)p.callbacks['chat:messages'](1,'Строка '+i);
   await flush();for(let i=0;i<6;i++)await p.exchange();eq(p.callbacks.rendered.length,100);
@@ -164,12 +164,12 @@ async function page(delayed=false) {
   await p.config({layoutIndicator:true,keyboardLayout:'RU',accentEnabled:false});eq(p.elements['pa26-chat-layout'].textContent,'RU','layout is independent from RP accent');
   p.panel.open=false;p.api.updateLayoutBadge();eq(p.elements['pa26-chat-layout'],undefined);
   p.panel.open=true;p.api.updateLayoutBadge();eq(p.elements['pa26-chat-layout'].textContent,'RU');
-  p.input.collapsed=true;p.api.updateLayoutBadge();eq(p.elements['pa26-chat-layout'],undefined);p.input.collapsed=false;
+  p.input.collapsed=true;p.mutate();p.api.updateLayoutBadge();eq(p.elements['pa26-chat-layout'],undefined);p.input.collapsed=false;p.mutate();
   for(const code of [null,undefined,'','ru','R','RUSSIAN','РУ','RU\n','<img>',123]){
     await p.config({keyboardLayout:code});eq(p.elements['pa26-chat-layout'],undefined,'invalid or missing language stays hidden');
   }
   await p.config({keyboardLayout:'RU'});p.offline(true);p.time(2100);
-  for(const timer of p.timers.values())if(timer.interval&&timer.ms===100)timer.cb();
+  for(const timer of p.timers.values())if(timer.interval&&timer.ms===250)timer.cb();
   eq(p.elements['pa26-chat-layout'],undefined,'stale badge disappears even while a request is pending');await flush();
   p.offline(false);await p.exchange();eq(p.elements['pa26-chat-layout'].textContent,'RU','connection recovers');
   await p.config({enabled:false});eq(p.elements['pa26-chat-layout'],undefined);
@@ -254,6 +254,16 @@ async function page(delayed=false) {
   await p.config({chatText:{...radioPolicy,radioPrefix:{enabled:true,localTag:'[NEW]:'}}});
   p.runTimers(60);await flush();eq(p.sent.at(-1)[1],'/r [SIGMA]: Снимок.','delayed emit retains the submitted prefix');
 
+  // Heavy typing/editing: no CEF/native-style caret rewrites or repeated layout walks.
+  p=await page();p.input.scrollLeft=340;
+  const initialCaret=p.input.caretWrites;
+  for(let i=0;i<300;i++){p.type('Длинный текст '+i,3);p.api.prepare();}
+  eq(p.input.caretWrites,initialCaret);eq(p.input.selectionStart,3);eq(p.input.scrollLeft,340);
+  eq([...p.timers.values()].filter(t=>!t.interval&&t.ms===150).length,1,'preview is debounced');
+  p.type('Привет',2);p.runTimers(150);await flush();
+  eq(p.input.value,'Привет');eq(p.input.selectionStart,2);
+  p.type('Очень длинное слово '.repeat(20),5);const held=p.input.value;await p.enter();
+  eq(p.input.value,held,'failed submit retains the raw complete draft');eq(p.input.selectionStart,5);
   // The whole manual submission is preflighted before any original HUD emit.
   const manual={enabled:true,maxParts:3,threshold:90,marker:'...',displayLimit:115,margin:6,meExtra:1,doExtra:3,nicknameLength:12,rpEnabled:true,speechEnabled:true};
   const words='синяя куртка и чёрные брюки '.repeat(5).trim();
@@ -270,7 +280,7 @@ async function page(delayed=false) {
     const count=p.sent.length;await p.enter();await p.exchange();eq(p.sent.length,count,'manual parts use authenticated IPC, not the intercepted HUD emit');
     const packet=p.observed.find(e=>e.kind==='manual');eq(packet.text,raw);const request=p.requests.map(q=>JSON.parse(q.options.body)).find(q=>q.events.some(e=>e.kind==='manual'));
     const key=request.page+':'+packet.id;
-    p.type('Новый текст');eq((await p.enter()).prevented,true);eq(p.input.value,prefix+' Новый текст');
+    p.type('Новый текст');eq((await p.enter()).prevented,true);eq(p.input.value,'Новый текст');
     await p.config({manualResult:{key,status:'completed',raw:'',sent:prepared.parts.length,total:prepared.parts.length}});
     p.type('Готово');await p.enter();eq(p.sent.at(-1)[1],prefix+' Готово');
   }
@@ -299,7 +309,7 @@ async function page(delayed=false) {
   p.type('Другой черновик');const preserved=p.input.value;
   await p.config({manualResult:{key:recoveredRequest.page+':'+recoveredPacket.id,status:'rejected',raw:words,message:'Очередь занята.'}});
   eq(p.input.value,preserved,'recovering a rejected message cannot overwrite newly typed text');eq(!!p.elements['pa26-chat-restore'],true);
-  p.elements['pa26-chat-restore'].onclick();eq(p.input.value,preserved);p.input.value='';p.elements['pa26-chat-restore'].onclick();eq(p.input.value,prefix+' '+words);
+  p.elements['pa26-chat-restore'].onclick();eq(p.input.value,preserved);p.input.value='';p.elements['pa26-chat-restore'].onclick();eq(p.input.value,words);
 
   p=await page();await p.config({chatText:{...chatText,manual}});p.type(words);p.offline(true);p.time(2500);
   const staleBefore=p.sent.length;eq((await p.enter()).prevented,true);eq(p.sent.length,staleBefore);eq(p.input.value,words,'a lost bridge cannot send or truncate a previously prepared long message');

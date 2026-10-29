@@ -15,10 +15,15 @@ local c,s=fixture();eq(c.remaining,60000);s.advance(59000);eq(#s.calls,0);eq(c:v
 s.tick(1000);eq(#s.calls,1);eq(s.calls[1][1],'police');check(s.calls[1][2]);eq(c.remaining,60000)
 s.pending={kind='police'};s.tick();eq(c:view().phase,'confirmation');eq(#s.calls,1)
 s.pending=nil;s.advance(58000);eq(#s.calls,1);s.tick();eq(#s.calls,2)
-for _,key in ipairs({'blocked','typing','recording','editingHud','draggingHud','paused','focused'})do
+for _,key in ipairs({'paused','focused'})do
     c,s=fixture();s.advance(20000);s.state[key]=key~='focused';s.tick();local remaining=c.remaining
     s.advance(60000);eq(c.remaining,remaining,key);eq(#s.calls,0)
     s.state[key]=key=='focused';s.tick();eq(#s.calls,0);s.advance(remaining);eq(#s.calls,1)
+end
+for _,key in ipairs({'blocked','typing','recording','editingHud','draggingHud'})do
+    c,s=fixture();s.advance(20000);s.state[key]=true;s.advance(60000)
+    eq(c.remaining,0,key);eq(#s.calls,0);check(c:view().phase~='paused')
+    s.state[key]=false;s.tick();eq(#s.calls,1,key)
 end
 c,s=fixture();s.state.busy='binder';s.advance(120000);eq(#s.calls,0);eq(c:view().phase,'waiting')
 s.state.busy=nil;s.tick();eq(#s.calls,1);s.tick();eq(#s.calls,1,'no catch-up burst')

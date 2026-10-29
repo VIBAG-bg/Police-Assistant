@@ -17,5 +17,7 @@
   "observed_client_update": "24.10 launcher main.js changed; outgoing HandleHudSendMessage, incoming chat:messages and DOM IDs reviewed. Actual send function plus real x86 LuaSocket loopback: 68 checks passed. Official assets unchanged.",
   "manual_radio_prefix": "/r only; policy from Lua; explicit profile toggle; no accent or implicit bind rewriting",
   "pa_text_splitting": "Prepared PA speech; 90 CP1251 body characters including accent, spaces and continuation markers. Native manual entry keeps its existing route.",
-  "previous_hud_main_sha256": "c6c6e2dfe9fd66e66c37ac6cbe4989166e87cbd6bbd38cd951e357b10003fc77"
+  "previous_hud_main_sha256": "c6c6e2dfe9fd66e66c37ac6cbe4989166e87cbd6bbd38cd951e357b10003fc77",
+  "pa_adapter_reviewed": "2026-10-29",
+  "input_transforms": "Submit only; typing never rewrites value/caret. Advisory preview after 150 ms; heartbeat 250 ms; focus/mutation/submit messages remain immediate."
 }

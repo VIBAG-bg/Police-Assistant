@@ -12,12 +12,18 @@ function M.safe(s)
         s.focused==true and s.paused==false and s.blocked==false and s.typing~=true and s.recording~=true and
         s.editingHud~=true and s.draggingHud~=true and not s.alertPending and not s.modal
 end
-local function identity(s,template)
-    local out={};for key in pairs(prefs.radioVariables)do if key~='area'and key~='duration'and key~='direction'and key~='map_square'and key~='location'and key~='square'then out[#out+1]=key..'='..tostring(s[key] or '')end end
+function M.canTick(s,countDuringInput)
+    return s and s.session and core.finite(s.ped)and s.alive==true and s.onDuty==true and s.radioEnabled==true and
+        s.focused==true and s.paused==false and not s.patrolSuspended and(countDuringInput~=false or M.safe(s))
+end
+local dynamic={unit=true,unit_crew_count=true,crew=true,crew_count=true,crew_roles=true,crew_callsigns=true,
+    patrol_start=true,patrol_resume=true,patrol_finish=true,patrol_moving=true,patrol_available=true}
+local function identity(s,template,skipDynamic)
+    local out={};for key in pairs(prefs.radioVariables)do if key~='area'and key~='duration'and key~='direction'and key~='map_square'and key~='location'and key~='square'and not(skipDynamic and dynamic[key])then out[#out+1]=key..'='..tostring(s[key] or '')end end
     table.sort(out);return table.concat(out,'\0')
 end
-local function signature(spec,s)
-    return table.concat({spec.name,spec.template,spec.channel,tostring(spec.confirmation),tostring(spec.interval_ms),identity(s,spec.template),mapGrid.reportPolicy(s,spec.template)},'\0')
+local function signature(spec,s,skipDynamic)
+    return table.concat({spec.name,spec.template,spec.channel,tostring(spec.confirmation),tostring(spec.interval_ms),identity(s,spec.template,skipDynamic),mapGrid.reportPolicy(s,spec.template)},'\0')
 end
 function M.prepare(spec,s,codec,now,life)
     local template,err=prefs.template(spec.template,prefs.radioVariables);if not template then return nil,err end
@@ -74,11 +80,26 @@ function Guard:cancel(token)
     local t=token and self:find(token) or self:first()
     return self:finish(t,'cancelled','Ближайший доклад пропущен.')
 end
+function Guard:refreshTicket(t,spec)
+    -- Only patrol crew/unit context is refreshable. Personal/profile/settings
+    -- changes still retire consent. A partially delivered report never restarts.
+    if spec.source~='patrol'or t.spec.source~='patrol'or t.started or
+        t.stableSignature~=signature(spec,self.state,true)or
+        (t.phase~='pending'and t.phase~='confirm'and t.phase~='queued')then return false end
+    local plan,err=M.prepare(spec,self.state,self.env.codec,self.now,self.life)
+    if not plan then self:finish(t,'cancelled',err);return false end
+    if t.phase=='queued'and self.env.cancel then
+        t.refreshing=true;self.env.cancel(t.token);t.refreshing=nil
+    end
+    t.spec=model.copy(spec);t.signature=signature(spec,self.state);t.plan=plan;t.phase='pending'
+    t.accepted=nil;t.confirmAt=nil;t.paintedWire=nil;t.paintedAt=nil;t.bodyAt=self.now
+    return true
+end
 function Guard:track(key,spec,remaining)
     local s=self.state;local cfg=self.env.settings()
     if not s or not core.finite(remaining) then return 'unavailable' end
     local t=self.tickets[key];local sig=signature(spec,s)
-    if t and t.signature~=sig then self:finish(t,'cancelled','Данные доклада изменились.');return 'cancelled' end
+    if t and t.signature~=sig and not self:refreshTicket(t,spec)then self:finish(t,'cancelled','Данные доклада изменились.');return 'cancelled'end
     if not t then
         -- Producers have at most one occurrence; completed old cycles are pruned.
         local count=0;for k,old in pairs(self.tickets)do
@@ -88,7 +109,7 @@ function Guard:track(key,spec,remaining)
         local plan,err=M.prepare(spec,s,self.env.codec,self.now,self.life)
         if not plan then return 'invalid',err end
         self.serial=self.serial+1
-        t={key=key,token='radio:'..self.life..':'..self.serial,order=self.serial,spec=model.copy(spec),signature=sig,phase='pending',
+        t={key=key,token='radio:'..self.life..':'..self.serial,order=self.serial,spec=model.copy(spec),signature=sig,stableSignature=signature(spec,s,true),phase='pending',
             createdAt=self.now,lead=lead(cfg,spec),remaining=remaining,plan=plan,seen=false,bodyAt=self.now}
         self.tickets[key]=t
     elseif t.phase=='pending' or t.phase=='confirm' then
@@ -103,13 +124,13 @@ function Guard:ready(key)
     local t=self.tickets[key]
     local age=t and t.paintedAt and core.elapsed(self.now,t.paintedAt)
     return t and t.phase=='pending' and t.seen and t.lead<=0 and t.remaining<=0 and
-        age and age<=math.max(250,self.dt or 0)+50 and t.paintedWire==radio.key(t.plan) and M.safe(self.state) or false
+        age and age<=math.max(250,self.dt or 0)+50 and t.paintedWire==radio.key(t.plan) and M.safe(self.state)and not self.state.patrolSuspended or false
 end
 function Guard:shown(token)
     local t=self:find(token)
     if t and(t.phase=='pending' or t.phase=='confirm' or t.phase=='queued')then
-        local gap=t.paintedAt and core.elapsed(self.now,t.paintedAt)
-        if t.phase=='pending'and gap and gap>5000 then t.lead=lead(self.env.settings(),t.spec);t.seen=false;t.toastAt=nil end
+        -- Focus/clock discontinuities are handled by tick. Hidden chat input
+        -- does not restart an already painted prewarning.
         if not t.seen then t.seen=true;t.toastAt=self.now end
         t.paintedWire=radio.key(t.plan);t.paintedAt=self.now
     end
@@ -140,28 +161,32 @@ function Guard:decide(token,yes)
 end
 function Guard:tick(state,now)
     local previous=self.state;local dt=self.now and core.elapsed(now,self.now)
-    if not core.finite(now) or now~=math.floor(now)then self:reset();return end
-    if previous and(not dt or previous.session~=state.session or previous.ped~=state.ped or previous.demo~=state.demo or previous.alive~=state.alive)then self:reset();previous=nil;dt=nil end
+    if core.elapsed(now,now)==nil then self.clockLost=true;return end
+    if previous and((previous.session and state.session and previous.session~=state.session)or previous.demo~=state.demo or
+        previous.ped and state.ped and previous.ped~=state.ped and not(state.local_nick and state.local_nick~=''and state.local_nick==previous.local_nick))then self:reset();previous=nil;dt=nil end
+    if self.clockLost or self.now and not dt then dt=0;self.clockLost=nil end
     self.state=state;self.now=now
     self.dt=dt
-    if self.env.uiAvailable and not self.env.uiAvailable()then self:reset();self.state=state;self.now=now;return end
-    if not state.session or not state.ped or not state.alive or not state.onDuty or not state.radioEnabled then self:reset();self.state=state;self.now=now;return end
+    if self.env.uiAvailable and not self.env.uiAvailable()then self.viewUnavailable=true;return end
+    if state.onDuty==false or state.radioEnabled==false then self:reset();self.state=state;self.now=now;return end
+    if not state.session or not state.ped or not state.alive or state.patrolSuspended then return end
     local cfg=self.env.settings();local changed=self.cfgSignature and self.cfgSignature~=table.concat({cfg.lead_ms,cfg.toast_ms},':')
     self.cfgSignature=table.concat({cfg.lead_ms,cfg.toast_ms},':')
     for _,t in pairs(self.tickets)do
         if changed then self:finish(t,'cancelled','Настройки предупреждения изменились.')end
         local current=self:currentSpec(t)
-        if not current or signature(current,state)~=t.signature then self:finish(t,'cancelled','Доклад отключён или данные изменились.')end
+        if not current or(signature(current,state)~=t.signature and not self:refreshTicket(t,current))then self:finish(t,'cancelled','Доклад отключён или данные изменились.')end
         if t.phase=='pending' or t.phase=='confirm' then
-            if previous and not M.safe(previous) and M.safe(state)then t.lead=lead(cfg,t.spec);t.seen=false;t.toastAt=nil;t.confirmAt=nil;t.paintedWire=nil;t.accepted=nil;t.phase='pending'end
+            if self.viewUnavailable or previous and not M.canTick(previous,cfg.count_during_input)and M.canTick(state,cfg.count_during_input)then t.lead=lead(cfg,t.spec);t.seen=false;t.toastAt=nil;t.confirmAt=nil;t.paintedWire=nil;t.accepted=nil;t.phase='pending'end
             if dt and dt>5000 then t.lead=lead(cfg,t.spec);t.seen=false;t.toastAt=nil;t.paintedWire=nil end
-            if t.seen and dt and dt<=5000 and M.safe(state)and M.safe(previous)then t.lead=math.max(0,t.lead-dt)end
+            if t.seen and dt and dt<=5000 and M.canTick(state,cfg.count_during_input)and M.canTick(previous,cfg.count_during_input)then t.lead=math.max(0,t.lead-dt)end
             if t.phase=='confirm' and t.seen then
                 t.confirmAt=t.confirmAt or now
                 if core.elapsed(now,t.confirmAt)>=15000 then self:cancel(t.token)end
             end
         end
     end
+    self.viewUnavailable=nil
     local active={}
     for _,row in ipairs(cfg.custom)do if row.enabled then
         local spec=model.copy(row);spec.source='custom'
@@ -171,7 +196,7 @@ function Guard:tick(state,now)
         if not job or job.signature~=sig then
             if job and job.token then local old=self:find(job.token);self:cancel(job.token);if old then self:retire(old.key)end end
             job={signature=sig,remaining=spec.interval_ms,cycle=(job and job.cycle or 0)+1};self.jobs[key]=job
-        elseif dt and dt<=5000 and M.safe(state)and M.safe(previous)and not job.token then job.remaining=math.max(0,job.remaining-dt);decremented=true end
+        elseif dt and dt<=5000 and M.canTick(state,cfg.count_during_input)and M.canTick(previous,cfg.count_during_input)and not job.token then job.remaining=math.max(0,job.remaining-dt);decremented=true end
         if job.remaining<=cfg.lead_ms or job.token then
             local occurrence=key..':'..job.cycle
             local phase,err,t=self:track(occurrence,spec,job.remaining)
@@ -183,7 +208,7 @@ function Guard:tick(state,now)
             elseif t and t.phase=='confirm' then
                 -- Its explicit Y/N owns the next transition.
             elseif t then
-                if not decremented and dt and dt<=5000 and M.safe(state)and M.safe(previous)then job.remaining=math.max(0,job.remaining-dt);t.remaining=job.remaining end
+                if not decremented and dt and dt<=5000 and M.canTick(state,cfg.count_during_input)and M.canTick(previous,cfg.count_during_input)then job.remaining=math.max(0,job.remaining-dt);t.remaining=job.remaining end
                 if self:ready(occurrence)then self:dispatch(occurrence)end
             end
         end
@@ -197,7 +222,7 @@ end
 function Guard:validPlan(plan)
     local mark=plan.radioGuard;if not mark then return true end
     local t=self:find(mark.token)
-    if not t or t.phase~='queued' or mark.life~=self.life or mark.signature~=t.signature or not M.safe(self.state)then return false end
+    if not t or t.phase~='queued' or mark.life~=self.life or mark.signature~=t.signature or not M.safe(self.state)or self.state.patrolSuspended then return false end
     local spec=self:currentSpec(t);if not spec then return false end
     if t.started then return signature(spec,self.state)==t.signature and radio.key(plan)==radio.key(t.plan)end
     local paintedAge=t.paintedAt and core.elapsed(self.now,t.paintedAt)
@@ -207,7 +232,7 @@ function Guard:validPlan(plan)
 end
 function Guard:onExecution(kind,q)
     local mark=q and q.plan and q.plan.radioGuard;if not mark then return end
-    local t=self:find(mark.token);if not t then return end
+    local t=self:find(mark.token);if not t or t.refreshing then return end
     if kind=='sent_line' or kind=='preview_line' then
         if q.plan.steps and q.index and q.index<#q.plan.steps then t.started=true;return end
         t.phase='sent'
@@ -221,8 +246,8 @@ function Guard:candidates()
         out[#out+1]={owner='radio',token=t.token,title=t.phase=='confirm' and 'Передать доклад?'or t.spec.name,
             body=table.concat(t.plan.lines,'\n'),mode=t.phase=='confirm' and 'confirm' or 'radio',full=full,unseen=not t.seen,
             priority=t.phase=='confirm' and 70 or 40,serial=t.order,remaining=remaining,
-            status=t.phase=='queued' and 'Ожидает отправки · ещё можно отменить' or not M.safe(self.state)and 'Отсчёт на паузе' or
-                remaining>0 and ('Доклад через '..math.ceil(remaining/1000)..' с')or 'Ожидает свободную очередь',
+            status=t.phase=='queued' and 'Ожидает отправки · ещё можно отменить' or not M.canTick(self.state,cfg.count_during_input)and 'Отсчёт на паузе' or
+                remaining>0 and ('Доклад через '..math.ceil(remaining/1000)..' с')or self.state.incapacitated and'Доклад готов · ожидает восстановления персонажа'or not M.safe(self.state)and'Доклад готов · ожидает закрытия чата или окна'or'Ожидает свободную очередь',
             hint=(t.spec.template:find('{area}',1,true)or t.spec.template:find('{location}',1,true))and('Место на момент отправки: '..tostring(mapGrid.reportValues(self.state,t.spec.template)[t.spec.template:find('{location}',1,true)and 'location'or 'area'] or 'не определено'))or 'Текст и канал из сохранённых настроек',
             yes='Передать',no='Отменить',shortcut=cfg.skip_shortcut}
     end end

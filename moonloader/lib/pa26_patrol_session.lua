@@ -7,6 +7,22 @@ local settings=require 'pa26_patrol_settings'
 local store=require 'pa26_library'
 local radio=require 'pa26_radio_text'
 local M={};local Session={};Session.__index=Session
+-- Read once outside draw. PID plus process creation time distinguishes a PA
+-- reload from a new GTA process, even if Windows reuses the PID.
+-- https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes
+function M.clientInstance(ffi)
+    if not ffi or ffi.os~='Windows'then return nil end
+    for _,declaration in ipairs({'void* __stdcall GetCurrentProcess(void);',
+        'unsigned long __stdcall GetCurrentProcessId(void);',
+        'int __stdcall GetProcessTimes(void*,void*,void*,void*,void*);'})do pcall(ffi.cdef,declaration)end
+    local ok,key=pcall(function()
+        local k=ffi.load('kernel32');local created=ffi.new('unsigned long[2]')
+        local exited,cpu,user=ffi.new('unsigned long[2]'),ffi.new('unsigned long[2]'),ffi.new('unsigned long[2]')
+        if k.GetProcessTimes(k.GetCurrentProcess(),created,exited,cpu,user)==0 then return nil end
+        return string.format('%.0f:%08x%08x',tonumber(k.GetCurrentProcessId()),tonumber(created[1]),tonumber(created[0]))
+    end)
+    return ok and key or nil
+end
 local function baseSafe(s)
     return s and s.session and core.finite(s.ped)and s.alive==true and s.focused==true and s.paused==false and
         s.blocked==false and s.onDuty==true and s.radioEnabled==true and s.recording~=true and s.editingHud~=true and s.draggingHud~=true
@@ -16,7 +32,10 @@ function M.defaults()return {schema=1,next_id=1,history={}}end
 local function record(raw)
     if type(raw)~='table'or not settings.integer(raw.id,1,999999998)or not settings.integer(raw.elapsed_ms,0,31536000000)or
         not settings.array(raw.crew,8)or type(raw.demo)~='boolean'then return nil end
-    local out={id=raw.id,elapsed_ms=raw.elapsed_ms,demo=raw.demo,crew={}}
+    if raw.unit_auto~=nil and type(raw.unit_auto)~='boolean'or raw.unit_number~=nil and not settings.integer(raw.unit_number,1,999)then return nil end
+    if raw.last_tick~=nil and core.elapsed(raw.last_tick,raw.last_tick)==nil then return nil end
+    local instance=settings.text(raw.client_instance or '',96);if not instance then return nil end
+    local out={client_instance=instance,last_tick=raw.last_tick,id=raw.id,elapsed_ms=raw.elapsed_ms,demo=raw.demo,crew={},unit_auto=raw.unit_auto==true,unit_number=raw.unit_number or 1}
     for _,key in ipairs({'server','local_nick','officer','callsign','mode','station','unit','vehicle','sector','post','started','ended','reason','report_status','status'})do
         out[key]=settings.text(raw[key]or '',240);if not out[key]then return nil end
     end
@@ -49,7 +68,9 @@ function M.new(env)
     local data,warnings,fresh=M.defaults(),{},true
     if env.path then data,warnings,fresh=store.load(env.path,env.json,M.validate,M.defaults,env.fs)end
     local self=setmetatable({env=env,data=data,warnings=warnings,revision=1,serial=0,generations={},dirty=false},Session)
+    self.clientInstance=env.clientInstance
     if data.active then
+        self.resumeWasActive=data.active.status=='active'
         self.recoverable=data.active;data.active=nil;self.recoverable.status='paused'
         self.recoverable.reason='PA был перезапущен. Проверьте состав и продолжите вручную.'
     end
@@ -120,13 +141,20 @@ function Session:crewText(a)
     end
     return table.concat(names,', '),#names
 end
-function Session:values(s,a)
+function Session:values(s,a,override)
     local out=model.copy(s);if not a then return out end
     local profile=self.env.profile()or{}
     for key,fallback in pairs({city='не определён',direction='не определено',map_square='не определён',rank='сотрудник'})do
         if out[key]==nil or out[key]==''then out[key]=profile[key]and profile[key]~=''and profile[key]or fallback end
     end
     for _,k in ipairs({'officer','callsign','station','unit','vehicle','sector','post'})do out[k]=a[k]end
+    local cfg=override or self.env.settings();local count=settings.crewCount(s,a.crew)
+    out.unit_crew_count=tostring(count)
+    if a.unit_auto then out.unit=settings.autoUnit(profile,s,count,a.unit_number)end
+    local grammar=cfg.grammar or settings.grammarDefaults();local form=count>=2 and'team'or'solo'
+    for _,key in ipairs({'start','resume','finish','moving','available'})do
+        out['patrol_'..key]=core.expandGender(grammar[key..'_'..form],s.gender or profile.gender)
+    end
     out.crew,out.crew_count=self:crewText(a);out.crew_count=tostring(out.crew_count)
     local roles={a.officer};local callsigns={}
     if a.callsign~=''then callsigns[#callsigns+1]=a.callsign end
@@ -144,12 +172,15 @@ function Session:makeRecord(cfg,s)
     local crew,err=self:collectCrew(cfg);if not crew then return nil,err end
     if self.data.next_id>=999999999 then return nil,'Достигнут предел номеров патрулей.'end
     local a={id=self.data.next_id,server=s.session,local_nick=s.local_nick or '',officer=officer,callsign=profile.callsign,
-        demo=s.demo,elapsed_ms=0,status='active',report_status='Ожидает доклада',crew=crew,started=self.env.date and self.env.date()or '',ended='',reason=''}
+        client_instance=self.clientInstance or'',last_tick=self.now,demo=s.demo,elapsed_ms=0,status='active',report_status='Ожидает доклада',crew=crew,started=self.env.date and self.env.date()or '',ended='',reason=''}
     for _,k in ipairs({'mode','station','unit','vehicle','sector','post'})do a[k]=cfg[k]end
+    a.unit_auto=cfg.unit=='';a.unit_number=cfg.unit_number or 1
+    if a.unit_auto then a.unit=settings.autoUnit(profile,s,settings.crewCount(s,crew),a.unit_number)end
+    if a.station==''then a.station=s.colleagues and s.colleagues.station or profile.department or'EPD'end
     return a
 end
 function Session:prepareLine(action,a,s,cfg)
-    local values=self:values(s,a);local template=cfg[action..'_template'];local checked,err=settings.template(template)
+    local values=self:values(s,a,cfg);local template=cfg[action..'_template'];local checked,err=settings.template(template)
     if not checked then return nil,err end
     values=mapGrid.reportValues(values,checked)
     local missing
@@ -165,7 +196,7 @@ end
 function Session:propose(action)
     local cfg=self.env.settings();local s=self.state
     if action~='discard'and not cfg.enabled then return nil,'Включите сеансы патруля в настройках.'end
-    if action~='discard'and not baseSafe(s)then return nil,'Нужны живой персонаж, служебный режим и доступная рация.'end
+    if action~='discard'and(self.suspended or not baseSafe(s))then return nil,'Нужны живой персонаж, служебный режим и доступная рация.'end
     s=s or {}
     local a=self.data.active
     if action=='start'then
@@ -189,6 +220,11 @@ function Session:propose(action)
             for _,k in ipairs({'station','unit','vehicle','sector','post'})do a[k]=cfg[k]end
         end
     else return nil,'Неизвестное действие патруля.'end
+    if action=='restore'or action=='resume'or action=='crew'then
+        a.unit_auto=cfg.unit=='';a.unit_number=cfg.unit_number or 1
+        if a.unit_auto then a.unit=settings.autoUnit(self.env.profile(),s,settings.crewCount(s,a.crew),a.unit_number)else a.unit=cfg.unit end
+        if a.station==''then a.station=s.colleagues and s.colleagues.station or self.env.profile().department or'EPD'end
+    end
     local line,err
     local noReport=cfg.reporter_self==false
     if action~='discard'and not noReport then line,err=self:prepareLine(action=='restore'and 'resume'or action,a,s,cfg);if not line then return nil,err end end
@@ -201,7 +237,7 @@ function Session:proposalValid(p)
     local age=p and core.elapsed(self.now,p.at)
     if not p or p.revision~=self.revision or not age or age>60000 then return false end
     if p.action=='discard'then return (self.data.active or self.recoverable)~=nil end
-    if not baseSafe(self.state)or
+    if self.suspended or not baseSafe(self.state)or
         self.state.session~=p.session or self.state.ped~=p.ped or self.state.demo~=p.demo then return false end
     local cfg=self.env.settings()
     -- A fresh proposal is required after changing any form/template/roster field.
@@ -277,7 +313,7 @@ function Session:onExecution(kind,q)
         self:save(true)
     elseif kind=='cancelled'then
         self.queued=nil;self.awaitingReport=false
-        if a then a.report_status='Доклад отменён · без повтора';self:pause('Доклад не передан. Проверьте ситуацию и продолжите вручную.')end
+        if a then a.report_status='Доклад отменён · без повтора';self:changed()end
     end
 end
 function Session:effectivePatrol(legacy)
@@ -285,37 +321,99 @@ function Session:effectivePatrol(legacy)
     if not cfg.enabled and not a and not self.recoverable then return legacy end
     local out=model.copy(legacy);out.enabled=cfg.enabled and cfg.reporter_self~=false and a~=nil and a.status=='active'and cfg.periodic and not self.awaitingReport
     out.mode=a and a.mode=='prison'and 'prison'or 'police';out.hud=cfg.hud;out.confirmation=cfg.confirmation
-    out.session_key=a and tostring(a.id)..':'..self.revision or 'idle';out.post=a and a.post or cfg.post
+    out.session_key=a and tostring(a.id)or 'idle';out.post=a and a.post or cfg.post
     for _,kind in ipairs({'police','prison'})do out[kind..'_interval_ms']=cfg.interval_ms;out[kind..'_channel']=cfg.channel;out[kind..'_template']=cfg.periodic_template end
     return out
 end
+function Session:restoreLocal(state,now,cfg)
+    local a=self.recoverable
+    local age=a and a.last_tick and core.elapsed(now,a.last_tick)
+    if not a or not self.resumeWasActive or not cfg.auto_resume_reload or not cfg.enabled or
+        type(self.clientInstance)~='string'or self.clientInstance==''or a.client_instance~=self.clientInstance or
+        not age or age>cfg.reload_grace_ms or state.alive~=true or not core.finite(state.ped)or state.onDuty~=true or state.radioEnabled~=true or state.session~=a.server or
+        type(state.local_nick)~='string'or state.local_nick==''or state.local_nick~=a.local_nick then return false end
+    local roster=model.copy(cfg);roster.crew={}
+    for _,r in ipairs(a.crew)do
+        local contact;for _,p in ipairs(self.env.contacts())do if p.id==r.contact_id and p.nickname==r.nickname then contact=p end end
+        if not contact then return false end
+        roster.crew[#roster.crew+1]={contact_id=r.contact_id,ic_name=r.ic_name,role=r.role}
+    end
+    local crew=self:collectCrew(roster);if not crew then return false end
+    a.crew=crew;a.status='active';a.reason='';a.demo=state.demo
+    a.report_status='Патруль восстановлен · прежние доклады не повторяются'
+    self.data.active=a;self.recoverable=nil;self.resumeWasActive=nil
+    self.intent=nil;self.queued=nil;self.awaitingReport=false;self:changed()
+    return true
+end
+function Session:recoverUi(wasActive)
+    self:cancelQueued('Окно PA восстановлено. Прежний доклад не повторяется.')
+    local a=self.data.active
+    if a and wasActive and a.status=='paused'and a.reason=='Доклад не передан. Проверьте ситуацию и продолжите вручную.'then
+        a.status='active';a.reason='';self:changed()
+    end
+end
 function Session:tick(state,now)
-    if not core.finite(now)or now~=math.floor(now)then self:interrupt('Таймер игры изменился.');return end
+    state=state or{}
+    if core.elapsed(now,now)==nil then
+        self.state=model.copy(state);self.suspended=true;self.suspendedReason='Нет достоверного времени игры.'
+        self.lastNow=nil;self.previousTrusted=false;self:cancelQueued('Таймер недоступен. Подтверждение нужно подготовить заново.');return
+    end
     local previous=self.state;local dt=self.lastNow and core.elapsed(now,self.lastNow)
     self.now=now;self.state=model.copy(state)
-    local a=self.data.active;local cfg=self.env.settings()
+    if self.lastNow and not dt then
+        dt=0;self.previousTrusted=false
+        self:cancelQueued('Отсчёт времени переустановлен. Прежний доклад не повторяется.');self:changed()
+    end
+    local cfg=self.env.settings();local restored=self:restoreLocal(state,now,cfg)
+    local a=self.data.active;local trusted=false
+    self.suspended=false;self.suspendedReason=nil
+    if a and state.respawnConfirmed then self:interrupt('Подтверждён респавн персонажа.');a=nil end
     if a then
-        if a.server~=state.session or a.local_nick~=(state.local_nick or '')or a.demo~=state.demo or not state.alive or
-            previous and previous.ped~=state.ped or self.lastNow and not dt then
-            self:interrupt('Сервер, персонаж, жизнь или игровой таймер изменились.');a=nil
-        elseif not cfg.enabled or not state.onDuty or not state.radioEnabled then
+        if type(state.demo)=='boolean'and a.demo~=state.demo then
+            self:cancelQueued('Режим изменён. Прежний доклад не повторяется.')
+            a.demo=state.demo;self:changed()
+        end
+        local nick=state.local_nick
+        local cause=type(state.session)=='string'and state.session~=''and state.session~=a.server and('server:'..state.session)or
+            type(nick)=='string'and nick~=''and nick~=a.local_nick and('character:'..nick)or nil
+        trusted=not cause and state.session==a.server and type(nick)=='string'and nick~=''and nick==a.local_nick and
+            core.finite(state.ped)and state.alive==true
+        if not trusted then
+            self.suspended=true;self.suspendedReason='Ожидаю достоверные данные персонажа · время сохранено'
+            self:cancelQueued('Данные персонажа временно недоступны. Прежний доклад не повторяется.')
+        end
+        if cause then
+            local c=self.interruptCandidate
+            if not c or c.cause~=cause then c={cause=cause,elapsed=0};self.interruptCandidate=c
+            elseif dt and dt<=5000 then c.elapsed=c.elapsed+dt end
+            if c.elapsed>=cfg.interrupt_grace_ms then
+                self:interrupt('Подтверждена смена сервера или персонажа.');a=nil
+            end
+        else self.interruptCandidate=nil end
+        if a and(not cfg.enabled or state.onDuty==false or state.radioEnabled==false)then
             local reason='Сеанс или служебная связь отключены.'
             if a.status~='paused'or a.reason~=reason or self.queued then self:pause(reason)end
-        elseif a.status=='active'and dt and dt<=5000 and previous and previous.focused and state.focused and not previous.paused and not state.paused then
+        elseif a and a.status=='active'and trusted and self.previousTrusted and not restored and dt and dt<=5000 and
+            previous and previous.focused and state.focused and not previous.paused and not state.paused then
             a.elapsed_ms=math.min(31536000000,a.elapsed_ms+dt);self.dirty=true
         end
-        if a and(not self.pollAt or(core.elapsed(now,self.pollAt)or 1000)>=1000)then
-            self.pollAt=now
-            for _,r in ipairs(a.crew)do if r.available~=false then
-                local found=self.env.observe(r.player_id)
-                if not found or found.connected~=true or found.name~=r.nickname or r.generation~=(self.generations[r.player_id]or 0)then
-                    r.available=false;r.issue='Напарник недоступен. Перепроверьте состав.';self:changed();self:cancelQueued(r.issue)
-                    if cfg.pause_on_crew_change then self:pause(r.issue)end
-                end
-            end end
+        if a and trusted then
+            a.client_instance=self.clientInstance or'';a.last_tick=now
+            if not self.pollAt or(core.elapsed(now,self.pollAt)or 1000)>=1000 then
+                self.pollAt=now
+                for _,r in ipairs(a.crew)do if r.available~=false then
+                    local found=self.env.observe(r.player_id)
+                    if not found or found.connected~=true or found.name~=r.nickname or r.generation~=(self.generations[r.player_id]or 0)then
+                        r.available=false;r.issue='Напарник недоступен. Перепроверьте состав.';self:changed();self:cancelQueued(r.issue)
+                        if cfg.pause_on_crew_change then self:pause(r.issue)end
+                    end
+                end end
+            end
         end
-    end
-    self.lastNow=now;self:dispatch();self:save(false)
+    else self.interruptCandidate=nil end
+    self.previousTrusted=trusted;self.lastNow=now;self:dispatch()
+    if not a and self.data.active then self.previousTrusted=baseSafe(state)and state.local_nick==self.data.active.local_nick end
+    self:save(false)
 end
 function Session:view(timer)
     local a=self.data.active;local cfg=self.env.settings();local out={active=a and model.copy(a),recoverable=self.recoverable and model.copy(self.recoverable),
@@ -323,7 +421,7 @@ function Session:view(timer)
     if not a then return out end
     local crew,count=self:crewText(a);out.crew=crew;out.duration=settings.duration(a.elapsed_ms)
     out.hud={visible=cfg.hud,label=(a.status=='paused'and 'Патруль · пауза'or 'Патруль')..' '..out.duration,
-        status=a.status=='paused'and a.reason or timer and timer.visible and timer.status or a.report_status,
+        status=self.suspended and self.suspendedReason or a.status=='paused'and a.reason or timer and timer.visible and timer.status or a.report_status,
         crew='Экипаж: '..count..' · '..a.unit,remaining=timer and timer.remaining or 0,interval=timer and timer.interval or cfg.interval_ms,
         progress=timer and timer.progress or 0,phase=a.status}
     return out

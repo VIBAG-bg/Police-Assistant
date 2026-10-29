@@ -31,10 +31,15 @@ eq(c:track('one',spec,19000),'cancelled');eq(#s.plans,0)
 -- Another producer must not prune an unacknowledged cancellation tombstone.
 c:track('two',spec,30000);eq(c:track('one',spec,0),'cancelled')
 -- Pause/resume and clock stalls always get a new warning, never catch-up.
-for _,key in ipairs({'focused','typing','blocked','recording','modal','alertPending'})do
+for _,key in ipairs({'focused'})do
     c,s=setup();_,_,t=c:track('one',spec,0);c:shown(t.token);s.advance(20000)
     s.state[key]=key~='focused';s.advance(60000);eq(t.lead,10000)
     s.state[key]=key=='focused';s.tick();eq(t.lead,30000);check(not c:ready('one'));eq(#s.plans,0)
+end
+for _,key in ipairs({'typing','blocked','recording','modal','alertPending'})do
+    c,s=setup();_,_,t=c:track('one',spec,0);c:shown(t.token);s.advance(20000)
+    s.state[key]=true;s.advance(60000);eq(t.lead,0);check(not c:ready('one'));eq(#s.plans,0)
+    s.state[key]=false;s.tick();eq(t.lead,0);check(c:ready('one'))
 end
 c,s=setup();_,_,t=c:track('one',spec,0);c:shown(t.token);s.tick(600000,false);eq(t.lead,30000);eq(#s.plans,0)
 -- Fresh dynamic location must be painted; changing identity/config cancels.

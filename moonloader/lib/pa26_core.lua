@@ -1,5 +1,5 @@
 -- Original Police Assistant 2026 rules. Lua 5.1 / LuaJIT, no game APIs.
-local M = {VERSION = '0.42.0', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
+local M = {VERSION = '0.42.1', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
 M.actions = {
     {key = 'introduce', label = 'Представиться', me = 'остановившись рядом, достал служебное удостоверение и раскрыл его перед собеседником.', do_text = 'Удостоверение раскрыто: данные и фотография видны собеседнику.', command = ''},
     {key = 'documents', label = 'Документы', me = 'оглянувшись по сторонам, обратился к собеседнику с просьбой предъявить паспорт.', do_text = 'Готов ли собеседник предъявить документ?', command = ''},
@@ -76,7 +76,7 @@ function M.widgetDefaults()
 end
 
 function M.recoveryDefaults()
-    return {enabled=true,delay_ms=3000,max_attempts=3,stable_ms=60000,demo_after_recovery=true}
+    return {enabled=true,delay_ms=3000,max_attempts=3,stable_ms=60000,demo_after_recovery=false}
 end
 function M.validateRecovery(value)
     if type(value)~='table'or type(value.enabled)~='boolean'or type(value.demo_after_recovery)~='boolean'then
@@ -163,18 +163,16 @@ local function parseBool(v)
     return nil
 end
 
--- Each damaged field recovers independently. Recovery always starts in demo.
+-- Recover fields independently; valid saved RP mode is never changed by a warning.
 function M.normalizeConfig(raw)
     local cfg, warnings = M.defaults(), {}
     local function warn(s) warnings[#warnings + 1] = s end
     if type(raw) ~= 'table' or type(raw.main) ~= 'table' then
-        cfg.main.demo_mode=true
         warn('Повреждён раздел main. Загружены безопасные настройки.')
         return cfg, warnings
     end
     local schema = raw.main.schema == nil and 1 or tonumber(raw.main.schema)
     if schema ~= 1 and schema ~= M.SCHEMA then
-        cfg.main.demo_mode=true
         warn('Неизвестная версия INI. Загружены безопасные настройки.')
         return cfg, warnings
     end
@@ -212,7 +210,6 @@ function M.normalizeConfig(raw)
             warn('Отсутствует раздел ' .. a.key .. '; действие отключено.')
         end
     end
-    if #warnings > 0 then cfg.main.demo_mode = true end
     -- Older schema-2 files have no widget section. Cosmetic recovery must not
     -- alter RP mode or actions; those have already been validated above.
     if raw.widget ~= nil then

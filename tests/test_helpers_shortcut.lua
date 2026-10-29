@@ -28,7 +28,7 @@ local saved=s.savedLibrary();eq(saved.assist.open_shortcut.key,0)
 tap(s,0x73);check(s.frames[4].condition(),'disabled shortcut cannot close the current window')
 saved.assist.open_shortcut={key=0x75,ctrl=true,alt=false,shift=false};check(s.workspace:save(saved));s.step()
 tap(s,0x75);check(s.frames[4].condition(),'exact modifiers required')
-s.down[0x11]=true;tap(s,0x75);check(not s.frames[4].condition());s.down[0x11]=false;s.step()
+s.windows={};s.down[0x11]=true;tap(s,0x75);check(not s.windows['Police Assistant · Помощники##pa26-assist'],'Assist closes even if independent status still renders');s.down[0x11]=false;s.step()
 eq(#s.sent,0);eq(s.invalidIOReads,0);check(not s.hasLog('Ошибка интерфейса'));onScriptTerminate(s.script)
 local p=input.new(function()return 0 end);local keys={physical=true,keys={[0x75]=false},ctrl=true,alt=false,shift=false,super=false}
 local chord={key=0x75,ctrl=true,alt=false,shift=false};p:menuPressed(0x75,true,keys,false,chord);keys.keys[0x75]=true

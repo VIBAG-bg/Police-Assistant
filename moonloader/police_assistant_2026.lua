@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.42.0')
+script_version('0.42.1')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -62,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.42.0' then
+if #missing > 0 or not core or core.VERSION ~= '0.42.1' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -99,7 +99,7 @@ sceneServices.showAssist=new.bool(false)
 sceneServices.showWanted=new.bool(false)
 local workspace, studio, keyRecorder, pendingWheelClick
 local knowledge,knowledgeUi
-local function hasUiModal() return (studio and studio:hasModal()) or (knowledgeUi and knowledgeUi:hasModal()) end
+local function hasUiModal() return (studio and(studio:hasModal()or studio.modalVisible)) or (knowledgeUi and knowledgeUi:hasModal()) or false end
 local function cancelUiModal()
     if studio then studio:cancelModal()end
     if knowledgeUi then knowledgeUi:cancelModal()end
@@ -107,7 +107,7 @@ end
 local widgetCursor=false
 local manualSpeechFailureAt
 local manualInputPrefix
-local function ownUi() return showWindow[0] or showQuick[0] or showTips[0] or sceneServices.showAssist[0]or sceneServices.showWanted[0]or(studio and(studio:hasWarning()or studio.pendingNavigation~=nil))end
+local function ownUi() return showWindow[0] or showQuick[0] or showTips[0] or sceneServices.showAssist[0]or sceneServices.showWanted[0]or(studio and(studio:hasModal()or studio.modalVisible))or false end
 local demoFlag = new.bool(cfg.main.demo_mode)
 local onConnectFlag = new.bool(cfg.main.show_on_connect)
 local distanceValue = new.float(cfg.main.max_distance)
@@ -289,12 +289,17 @@ local function context()
         end
         if type(isSampfuncsConsoleActive) == 'function' and isSampfuncsConsoleActive() ~= false then otherCursor = true;console=true end
     end
-    return {session = session, focused = focused, paused = isGamePaused(),
-        blocked = chat ~= false or dialog ~= false or otherCursor ~= false,
+    local inputBlocked=chat~=false or dialog~=false or otherCursor~=false
+    local life=sceneServices.localLife and sceneServices.localLife:view()
+    local incapacitated=life and life.incapacitated and sceneServices.localLife.session==session or false
+    local nativeAlive=session~=nil and localAlive()or false
+    return {session = session, focused = focused, paused = isGamePaused(),inputBlocked=inputBlocked,
+        nativeAlive=nativeAlive,incapacitated=incapacitated,
+        blocked = inputBlocked or incapacitated or life and life.transitioning or false,
         menuBlocked=chat~=false or dialog~=false or cefBusy or console,
         window = ownUi(), ownWindow = ownUi(), typing = ownUi() and (uiTyping or (studio and hasUiModal())),
         recording = keyRecorder ~= nil or bindingKeyCaptured, editingHud = hud.editing or hud.drag ~= nil,
-        alive = session ~= nil and localAlive() or false,
+        alive = nativeAlive or incapacitated,
         chatActive = chat ~= false, dialogActive = dialog ~= false}
 end
 
@@ -435,6 +440,7 @@ local function inspectSelected(target, settings)
     if core.finite(x) and core.finite(y) and core.finite(z) and core.finite(lx) and core.finite(ly) and core.finite(lz) then
         out.distance=math.sqrt((x-lx)^2+(y-ly)^2+(z-lz)^2)
     end
+    if settings.pursuit and optionalRead('isCharDead',ped)==false then out.tracked={id=target.id,ped=ped,name=target.name}end
     local visual=visiblePed(ped,math.min(200,settings.retain_distance))
     out.visible=visual~=nil
     if visual and visual.distance<=settings.action_distance then
@@ -615,7 +621,7 @@ workspace = workspaceModule.new({
         local x,y,z=getCharCoordinates(PLAYER_PED); addOneOffSound(x,y,z,({1056,1057,1058})[index]); return true
     end,
     preview=function() metrics.previews=metrics.previews+1 end,hideUi=hideWorkspaceUi,
-    openConfirm=function() showWindow[0],showTips[0]=false,false; showQuick[0]=true; uiInputReset=true; imgui.DisableInput=false end,
+    openConfirm=function() uiInputReset=true; imgui.DisableInput=false end,
     openReturn=function(page) if page=='quick' then showQuick[0]=true; uiInputReset=true; imgui.DisableInput=false else openWorkspace(page or 'binds') end end,
 },cfg,getWorkingDirectory()..'\\config\\police_assistant_2026')
 sceneServices.nearby=require('pa26_nearby').new({settings=function()return workspace.library.nearby end,scan=nearbyVisible,
@@ -660,7 +666,8 @@ local function cancelNoticePlan(token)
         workspace.executor:cancel('Отменено уведомлением. Автоматического повтора нет.')
     end
 end
-patrolSession=patrolSessionModule.new({settings=function()return workspace.library.patrol_session end,
+sceneServices.localLife=require('pa26_local_life').new({settings=function()return workspace.library.patrol_session end})
+patrolSession=patrolSessionModule.new({clientInstance=patrolSessionModule.clientInstance(ffi),settings=function()return workspace.library.patrol_session end,
     profile=function()return workspace.library.profile end,contacts=function()return workspace.library.partners end,
     codec=codec,log=pushLog,json=workspace.json,path=workspace.base..'_patrol.json',date=function()return os.date('%d.%m.%Y %H:%M:%S')end,
     equal=function(a,b)
@@ -755,6 +762,7 @@ caseForms=caseFormsModule.new({gender=function()return workspace.library.profile
 sceneServices.world=sceneServices.worldModule.new(optionalRead,codec,function()return PLAYER_PED end)
 sceneServices.vehicle=sceneServices.model.new({settings=function()return workspace.library.vehicle end,codec=codec,scan=sceneServices.world.scan,resolve=sceneServices.world.resolve,ownCar=sceneServices.world.ownCar,selectionStatus=sceneServices.world.status,
     driver=function(id)return sceneServices.readDriver and sceneServices.readDriver(id)end,
+    retention=function()local c=sceneServices.copilot;if c and c:inPursuit()then return{distance=workspace.library.vehicle.copilot.pursuit_retain_distance}end end,
     currentTarget=function()return workspace.targets.target,workspace.targets.revision end,
     selectTarget=function(target)
         local ok,err=workspace:selectTarget(target)
@@ -774,13 +782,28 @@ sceneServices.readDriver=function(id)
     if ok~=true or not core.finite(ped)or optionalRead('doesCharExist',ped)~=true or optionalRead('isCharDead',ped)~=false then return end
     local back,mapped=optionalRead('sampGetPlayerIdByCharHandle',ped);if back~=true or mapped~=id then return end
     local name=optionalRead('sampGetPlayerNickname',id);if type(name)~='string'or name==''then return end
+    if not core.pedAreaCompatible(optionalRead('getCharActiveInterior',PLAYER_PED),optionalRead('getCharActiveInterior',ped))then return end
     local weapon=optionalRead('getCurrentCharWeapon',ped);local x,y,z=optionalRead('getCharCoordinates',ped);local lx,ly,lz=optionalRead('getCharCoordinates',PLAYER_PED)
     local distance=core.finite(x)and core.finite(y)and core.finite(z)and core.finite(lx)and core.finite(ly)and core.finite(lz)and math.sqrt((x-lx)^2+(y-ly)^2+(z-lz)^2)or nil
     return{id=id,ped=ped,name=name,generation=sceneServices.nearby.generations[id]or 0,distance=distance,x=x,y=y,z=z,
         armed=core.finite(weapon)and weapon>=22 and weapon<=38,weapon=weapon}
 end
+sceneServices.readDriverAccount=function(id)
+    if not core.validId(id)or optionalRead('sampIsPlayerConnected',id)~=true or optionalRead('sampIsPlayerNpc',id)~=false then return end
+    local name=optionalRead('sampGetPlayerNickname',id);if type(name)~='string'or name==''then return end
+    local ok,ped=optionalRead('sampGetCharHandleBySampPlayerId',id)
+    if ok==true and core.finite(ped)and optionalRead('doesCharExist',ped)==true and optionalRead('isCharDead',ped)~=false then return end
+    local incompatible=ok==true and core.finite(ped)and not core.pedAreaCompatible(optionalRead('getCharActiveInterior',PLAYER_PED),optionalRead('getCharActiveInterior',ped))
+    return{id=id,name=name,generation=sceneServices.nearby.generations[id]or 0,incompatible=incompatible}
+end
+workspace.env.targetRetention=function(target)
+    local c=sceneServices.copilot
+    if not target or not c or not c.driver or c.driver.id~=target.id or c.driver.name~=target.name or
+        c.driver.generation~=(sceneServices.nearby.generations[target.id]or 0)then return end
+    return c:retentionFor(c.driver)
+end
 sceneServices.copilot=require('pa26_copilot').new({vehicle=sceneServices.vehicle,settings=function()return workspace.library.vehicle.copilot end,
-    profile=function()return workspace.library.profile end,codec=codec,equal=patrolSession.env.equal,driver=sceneServices.readDriver,taserActive=function(s)return taser:activeFor(s)end,start=startAutomatic,
+    profile=function()return workspace.library.profile end,codec=codec,equal=patrolSession.env.equal,driver=sceneServices.readDriver,driverAccount=sceneServices.readDriverAccount,taserActive=function(s)return taser:activeFor(s)end,start=startAutomatic,
     notice=function(message)if sceneServices.userWarning then sceneServices.userWarning(message)end end,
     cancel=function(token,reason)local q=workspace.executor.queue;if q and q.plan.copilotAction and q.plan.copilotAction.token==token then workspace.executor:cancel(reason)end end})
 sceneServices.copilotUi=require 'pa26_copilot_ui'
@@ -838,7 +861,7 @@ notifications=notificationsModule.new({skipShortcut=function()return workspace.l
         elseif owner=='weapon'then weaponWarning:shown(token)elseif owner=='patrol'then patrolEvents:shown(token)
         elseif owner=='vehicle'then sceneServices.copilot:shown(token)
         elseif owner=='wanted'then caseForms:shownReminder(token)end end})
-patrol=patrolModule.new({settings=effectivePatrol,log=pushLog,
+patrol=patrolModule.new({settings=effectivePatrol,clockPolicy=function()return workspace.library.radio_guard.count_during_input end,log=pushLog,
     lead=function()return workspace.library.radio_guard.lead_ms end,
     preview=function(key,cfg,remaining)return radioGuard:track(key,radioGuardModule.patrolSpec(cfg),remaining)end,
     ready=function(key)return radioGuard:ready(key)end,
@@ -883,8 +906,9 @@ local function noticeAvoid()
     if not alerts.suppressHud then for _,r in ipairs(hud.noticeBounds or {})do out[#out+1]=r end end
     return out
 end
-for _,source in ipairs({patrolSession,patrolEvents})do for _,note in ipairs(source.warnings)do pushLog(note);runtime:setDemo(true)end end
-for _,note in ipairs(workspace.warnings) do pushLog(note); runtime:setDemo(true) end
+for _,source in ipairs({patrolSession,patrolEvents})do for _,note in ipairs(source.warnings)do pushLog(note)end end
+for _,note in ipairs(workspace.warnings)do pushLog(note)end
+if workspace.userFiles and workspace.userFiles.blocked~=nil then runtime:setDemo(true)end
 env.startBinding=function(index,target)
     local id=workspace.library.wheel[index]; local binding=bindingModel.find(workspace.library,id)
     if not binding then report('В этом месте колеса нет сценария.'); return false end
@@ -1248,7 +1272,10 @@ local function toggleWindow(force)
 end
 
 local function setDemo(value)
-    if value~=runtime.demo then workspace:cancel('Режим изменён. Сценарий отменён.') end
+    if value~=runtime.demo then
+        if patrolSession then patrolSession:cancelQueued('Режим изменён. Прежний доклад не повторяется.')end
+        workspace:cancel('Режим изменён. Сценарий отменён.')
+    end
     runtime:setDemo(value)
     demoFlag[0] = runtime.demo
 end
@@ -1328,13 +1355,14 @@ local function recordUiFailure(kind,err)
     local keepMain,keepQuick,keepTips=showWindow[0],showQuick[0],showTips[0]
     local keepAssist=sceneServices.showAssist[0];local keepWanted=sceneServices.showWanted[0]
     recovery:trip(stamp,kind,err)
+    sceneServices.patrolUiRecovery=sceneServices.patrolUiRecovery or{active=patrolSession.data.active and patrolSession.data.active.status=='active'}
     closeForInput('Ошибка интерфейса. Текущие отправки отменены.')
     if kind~='main'then
         showWindow[0],showQuick[0],showTips[0]=keepMain,keepQuick,keepTips;sceneServices.showAssist[0]=keepAssist;sceneServices.showWanted[0]=keepWanted
         imgui.DisableInput=not ownUi()
     end
     if cfg.recovery.demo_after_recovery then setDemo(true)end
-    caseForms:reset('Интерфейс восстановлен. Проверьте процедуру заново.');patrolEvents:reset('Интерфейс восстановлен. Проверьте действие заново.');patrolSession:pause('PA восстановил интерфейс. Проверьте патруль и продолжите вручную.');sceneServices.vehicle:reset('Интерфейс восстановлен. Перепроверьте машину.');alerts:reset();patrol:reset();weapons:reset();taser:reset();radioGuard:reset();weaponWarning:reset();notifications:reset()
+    caseForms:reset('Интерфейс восстановлен. Проверьте процедуру заново.');patrolEvents:reset('Интерфейс восстановлен. Проверьте действие заново.');sceneServices.vehicle:reset('Интерфейс восстановлен. Перепроверьте машину.');alerts:reset();weapons:reset();taser:reset();weaponWarning:reset();notifications:reset()
     pushLog('Ошибка интерфейса ['..kind..']: '..tostring(err))
     pushLog('Диагностика UI: '..tostring(menu.section)..'; непрозрачность '..tostring(workspace.library.settings.opacity)..
         '; попыток восстановления '..recovery.attempts..'; F9 или /pa26repair — восстановить окна.')
@@ -1346,8 +1374,9 @@ end
 recoverUi=function(manual)
     local now=optionalRead('getGameTimer')or studioClock
     if not recovery:begin(now,cfg.recovery,manual)then return false end
+    sceneServices.patrolUiRecovery=sceneServices.patrolUiRecovery or{active=patrolSession.data.active and patrolSession.data.active.status=='active'}
     closeForInput('Восстановление интерфейса. Незавершённые отправки отменены.')
-    caseForms:reset('Интерфейс восстановлен. Проверьте процедуру заново.');patrolEvents:reset('Интерфейс восстановлен. Проверьте действие заново.');patrolSession:pause('PA восстановил интерфейс. Проверьте патруль и продолжите вручную.');sceneServices.vehicle:reset('Интерфейс восстановлен. Перепроверьте машину.');alerts:reset();patrol:reset();weapons:reset();taser:reset();radioGuard:reset();weaponWarning:reset();notifications:reset()
+    caseForms:reset('Интерфейс восстановлен. Проверьте процедуру заново.');patrolEvents:reset('Интерфейс восстановлен. Проверьте действие заново.');sceneServices.vehicle:reset('Интерфейс восстановлен. Перепроверьте машину.');alerts:reset();weapons:reset();taser:reset();weaponWarning:reset();notifications:reset()
     if cfg.recovery.demo_after_recovery then setDemo(true)end
     -- Keep drafts and loaded player data; only window/input state is rebuilt.
     menu:resetWindowPositions();uiFailed=false;hud.failed=false;alerts.failed=false;notifications.failed=false
@@ -1850,7 +1879,7 @@ local function drawWorkspaceWindows()
     if showTips[0] then window('Police Assistant · Памятки##pa26-tips',showTips,'tips',function() studio:drawNotes(ui,studioData(),studioCallbacks,true) end) end
     if sceneServices.showAssist[0]then window('Police Assistant · Помощники##pa26-assist',sceneServices.showAssist,'assist',function()sceneServices.assistUi.draw(studio,ui,studioData(),studioCallbacks)end)end
     if sceneServices.showWanted[0]then window('Police Assistant · Розыск##pa26-wanted',sceneServices.showWanted,'wanted',function()require('pa26_wanted_window').draw(studio,ui,studioData(),studioCallbacks)end)end
-    if(studio:hasWarning()or studio.pendingNavigation)and not showWindow[0]and not showQuick[0]and not showTips[0]and not sceneServices.showAssist[0]and not sceneServices.showWanted[0]then
+    if(studio:hasModal()or studio.modalVisible or studio.statusInfo~=nil)and not showWindow[0]and not showQuick[0]and not showTips[0]and not sceneServices.showAssist[0]and not sceneServices.showWanted[0]then
         imgui.SetNextWindowPos(imgui.ImVec2(0,0),imgui.Cond.Always);imgui.SetNextWindowSize(imgui.ImVec2(1,1),imgui.Cond.Always)
         imgui.Begin('PA##warning-host',nil,imgui.WindowFlags.NoDecoration+imgui.WindowFlags.NoSavedSettings+imgui.WindowFlags.NoBackground+imgui.WindowFlags.NoInputs)
         pushScope(function()imgui.End()end);studio:drawModal(ui,studioData(),studioCallbacks);endScope()
@@ -1905,7 +1934,7 @@ widgetFrame.LockPlayer, widgetFrame.HideCursor = false, true
 subscriptions[#subscriptions + 1] = widgetFrame
 
 local workspaceFrame=imgui.OnFrame(function()
-    return not shutdown and not uiFailed and focused and not isGamePaused() and (showQuick[0] or showTips[0] or sceneServices.showAssist[0] or sceneServices.showWanted[0] or studio:hasWarning()or studio.pendingNavigation~=nil or workspace.executor.queue~=nil or sceneServices.evidence.active~=nil)
+    return not shutdown and not uiFailed and focused and not isGamePaused() and (showQuick[0] or showTips[0] or sceneServices.showAssist[0] or sceneServices.showWanted[0] or studio:hasModal()or studio.modalVisible or studio.statusInfo~=nil or workspace.executor.queue~=nil or sceneServices.evidence.active~=nil)
 end,function() safeDraw(beforeUiFrame) end,function() safeDraw(drawWorkspaceWindows) end)
 workspaceFrame.LockPlayer=false; workspaceFrame.HideCursor=true
 subscriptions[#subscriptions + 1]=workspaceFrame
@@ -1970,7 +1999,7 @@ sceneServices.manualChatSettings=function()
     settings.local_tag=workspace.library.profile.local_tag
     return settings
 end
-sceneServices.manual=require('pa26_manual_chat').new({codec=codec,context=context,now=function()return studioClock end,
+sceneServices.manual=require('pa26_manual_chat').new({codec=codec,context=function()local s=context();s.blocked=s.inputBlocked;return s end,now=function()return studioClock end,
     epoch=function()return sceneServices.chatEpoch end,interval=function()return cfg.main.interval_ms end,
     settings=function()return workspace.library.settings.manual_chat,workspace.library.rp_text,
         workspace.library.settings.accent_live_input and bindingModel.accentPrefix(workspace.library.profile.accent)or'',
@@ -1986,7 +2015,7 @@ sceneServices.manual=require('pa26_manual_chat').new({codec=codec,context=contex
     end,
     send=function(wire)
         local ctx=context()
-        if not ctx.session or ctx.focused~=true or ctx.paused~=false or ctx.blocked or ctx.ownWindow or not ctx.alive then return false end
+        if not ctx.session or ctx.focused~=true or ctx.paused~=false or ctx.inputBlocked or ctx.ownWindow or not ctx.alive then return false end
         ownedChatSendDepth=ownedChatSendDepth+1;ownedSendCancelled=false
         local ok=pcall(sampSendChat,wire);ownedChatSendDepth=ownedChatSendDepth-1
         if not ok or ownedSendCancelled then return false end
@@ -2014,7 +2043,7 @@ sceneServices.manualActions=sceneServices.manualActionModule.new({codec=codec,no
     notice=function(message)studio:notify(message,'commands',false)end,
     showing=function(token)return studio.manualAction and studio.manualAction.token==token end,
     close=function(token)if studio.manualAction and studio.manualAction.token==token then studio.manualAction=nil end end,
-    show=function(p)showWindow[0],showTips[0]=false,false;showQuick[0]=true;studio.manualAction=p;uiInputReset=true;imgui.DisableInput=false end,
+    show=function(p)studio.manualAction=p;uiInputReset=true;imgui.DisableInput=false end,
     start=function(plan)return workspace:request({kind='startPlan',plan=plan,returnTo='quick'})end,
     prepare=function(p)
         local model=bindingModel;local binder=require('pa26_binder');local lib=workspace.library
@@ -2058,19 +2087,9 @@ sceneServices.checkNativeManual=function(raw,input,owned)
     return plan,why,text
 end
 local function prepareNativeChat()
-    if shutdown or not focused or not workspace or keyRecorder or hasUiModal()or optionalRead('isGamePaused')~=false then return end
-    if optionalRead('sampIsChatInputActive')~=true then manualInputPrefix=nil;return end
-    if type(sampGetChatInputText)~='function'or type(sampSetChatInputText)~='function'then return end
-    local enabled=workspace.library.settings.accent_live_input
-    if not enabled and not manualInputPrefix then return end
-    local ok,raw=pcall(sampGetChatInputText);if not ok then return end
-    local prepared,owned=bindingModel.liveSpeech(raw,enabled and workspace.library.profile.accent or'',codec,manualInputPrefix,workspace.library.settings)
-    if not prepared then return end -- Enter/RPC retain their existing validation.
-    if prepared~=raw then
-        local written,result=pcall(sampSetChatInputText,prepared)
-        if not written or result==false then return end
-    end
-    manualInputPrefix=owned
+    -- Accent/conversion/splitting are applied by the existing Enter/RPC path.
+    -- Never read and rewrite the editing buffer every frame.
+    if optionalRead('sampIsChatInputActive')~=true then manualInputPrefix=nil end
 end
 function onWindowMessage(message, wparam, lparam)
     if workspace and sceneServices.chatBridge then
@@ -2307,7 +2326,7 @@ sceneServices.observeMessage=function(text,source,now)
 end
 sceneServices.observeCommand=function(line)
     sceneServices.colleagues:command(line,studioClock)
-    taser:command(line);patrolEvents:command(line,'Введено вручную · попытка',nil)
+    taser:command(line,workspace.executor.queue and workspace.executor.queue.plan.manualCommand~=nil);patrolEvents:command(line,'Введено вручную · попытка',nil)
     workspace.operations:observe(line,'manual',nil,'observed')
 end
 -- A Chat RPC cannot be turned into a Command RPC by returning slash text.
@@ -2440,7 +2459,7 @@ local function connectChatFilters()
             local actual=type(previous)=='table'and previous[1]or raw
             local ok,line=pcall(codec.decode,actual)
             workspace.operationLineOverride=ok and line or false
-            if ok then taser:command(line)end
+            if ok then taser:command(line,workspace.executor.queue and workspace.executor.queue.plan.manualCommand~=nil)end
         end
         return previous
     end
@@ -2474,15 +2493,13 @@ local function connectChatFilters()
         return previous
     end
     events.onSendAimSync=aimHandler
-    for _,name in ipairs({'onSendSpawn','onInitGame','onConnectionClosed','onConnectionLost'}) do
-        local hook={name=name,previous=events[name]}
-        hook.handler=function(...)
+    sceneServices.invalidateLocalScene=function(reason,respawn)
             sceneServices.chatEpoch=sceneServices.chatEpoch+1
             sceneServices.nearby:reset()
             sceneServices.colleagues:reset();sceneServices.copilot:reset('Подключение или жизнь изменились.')
             if sceneServices.chatBridge then sceneServices.chatBridge.pending=nil;sceneServices.chatBridge.seen={}end
             alerts:invalidateLife()
-            patrolSession:interrupt('Персонаж или подключение изменились.')
+            if respawn then patrolSession:interrupt(reason)else patrolSession:cancelQueued(reason)end
             patrolEvents:reset('Жизнь или подключение изменились.')
             identity:clear('Жизнь или подключение изменились. IC-сведения удалены.')
             caseForms:reset('Жизнь или подключение изменились. Процедура отменена.')
@@ -2491,9 +2508,34 @@ local function connectChatFilters()
             runtime:cancel('Персонаж или подключение изменились. Колесо закрыто.')
             workspace:cancel('Персонаж или подключение изменились. Сценарий остановлен.')
             pendingWheelClick=nil
-            if type(hook.previous)=='function' then return hook.previous(...) end
+    end
+    for _,name in ipairs({'onInitGame','onConnectionClosed','onConnectionLost'})do
+        local hook={name=name,previous=events[name]}
+        hook.handler=function(...)
+            local result;if type(hook.previous)=='function'then result=hook.previous(...);if result==false then return false end end
+            sceneServices.localLife:reset();sceneServices.invalidateLocalScene('Подключение изменилось.',false)
+            return result
         end
         events[name]=hook.handler;lifeHooks[#lifeHooks+1]=hook
+    end
+    -- Existing SAMP.Lua mappings were checked in the installed events.lua.
+    -- Observe requests; only main() may confirm a changed world scene.
+    for _,row in ipairs({{'onSendSpawn','spawn_requested'}, {'onSendDeathNotification','death_reported'},
+        {'onRequestSpawnResponse','spawn_approved',1},{'onSetSpawnInfo','spawn_info',4},
+        {'onSetPlayerPos','teleport',1},{'onSetPlayerPosFindZ','teleport',1}})do
+        local hook={name=row[1],previous=events[row[1]],kind=row[2],index=row[3]}
+        hook.handler=function(...)
+            local result;if type(hook.previous)=='function'then result=hook.previous(...);if result==false then return false end end
+            local args=type(result)=='table'and result or{...}
+            sceneServices.localLife:observe(hook.kind,hook.index and args[hook.index]or nil)
+            if hook.kind=='spawn_requested'then
+                if alerts.pending then alerts:decide(false)end
+                sceneServices.nearby:reset()
+                closeForInput('Запрошен спавн. Прежние команды не повторяются.')
+            end
+            return result
+        end
+        events[hook.name]=hook.handler;lifeHooks[#lifeHooks+1]=hook
     end
     previousQuitHandler,previousJoinHandler=events.onPlayerQuit,events.onPlayerJoin
     quitHandler=function(id,reason)
@@ -2525,7 +2567,7 @@ local function connectChatFilters()
     events.onServerMessage=chatHandler
     for _,name in ipairs({'onVehicleStreamIn','onVehicleStreamOut'})do
         local old=events[name]
-        local handler=function(id,...)local result;if type(old)=='function'then result=old(id,...);if result==false then return false end end;sceneServices.vehicle:invalidate(id);return result end
+        local handler=function(id,...)local result;if type(old)=='function'then result=old(id,...);if result==false then return false end end;sceneServices.vehicle:invalidate(id,name);return result end
         events[name]=handler;sceneServices.hooks[#sceneServices.hooks+1]={events=events,key=name,handler=handler,previous=old}
     end
 end
@@ -2537,8 +2579,25 @@ local function updateGame()
     bindingKeyCaptured=keyRecorder~=nil
     local now = getGameTimer()
     studioClock=now
+    if sceneServices.patrolUiRecovery then
+        local p=sceneServices.patrolUiRecovery;sceneServices.patrolUiRecovery=nil;patrolSession:recoverUi(p.active)
+    end
     if sceneServices.chatBridge then sceneServices.chatBridge:tick(now)end
     local ctx = context()
+    do
+        local ped=localPedAvailable()and PLAYER_PED or nil
+        local x,y,z;if ped then x,y,z=optionalRead('getCharCoordinates',ped)end
+        local found,id;if ped then found,id=optionalRead('sampGetPlayerIdByCharHandle',ped)end
+        local nick=found==true and core.validId(id)and optionalRead('sampGetPlayerNickname',id)or nil
+        sceneServices.localLife:tick({session=ctx.session,local_nick=nick or'',ped=ped,alive=ctx.nativeAlive,
+            spawned=optionalRead('sampIsLocalPlayerSpawned'),health=ped and optionalRead('getCharHealth',ped),
+            interior=ped and optionalRead('getCharActiveInterior',ped),x=x,y=y,z=z},now)
+        local life=sceneServices.localLife:view()
+        if life.confirmed and sceneServices.invalidateLocalScene then sceneServices.invalidateLocalScene(life.reason,true)end
+        ctx.incapacitated=life.incapacitated;ctx.alive=ctx.nativeAlive or life.sceneAlive
+        ctx.blocked=ctx.inputBlocked or life.incapacitated or life.transitioning
+        ctx.respawnConfirmed=life.confirmed;ctx.respawnEpoch=life.epoch
+    end
     sceneServices.citySession=ctx.session
     if sceneServices.weaponSession~=ctx.session or sceneServices.weaponPed~=PLAYER_PED or not ctx.alive or not ctx.focused then
         sceneServices.lastSafeWeapon=nil;sceneServices.cefHeldWeaponKeys={}
@@ -2607,7 +2666,7 @@ local function updateGame()
         if ctx.session then metrics.connections = metrics.connections + 1 end
     end
     -- Server login dialogs and its cursor keep priority during connection.
-    if ctx.paused or (ctx.blocked and (not workspace.pending or ctx.chatActive or ctx.dialogActive)) then closeForInput('Открыт серверный ввод. Действие отменено.', true) end
+    if ctx.paused or(ctx.inputBlocked and(not workspace.pending or ctx.chatActive or ctx.dialogActive))then closeForInput('Открыт серверный ввод. Действие отменено.', true) end
     if autoOpenForSession == ctx.session and ctx.session and focused and not ctx.paused and
         not ctx.blocked and ctx.alive and not runtime.wheel and not runtime.queue and not workspace.executor.queue and not workspace.pending then
         showWindow[0] = true
@@ -2715,10 +2774,13 @@ local function updateGame()
     if patrolKey then
         if patrolKey:match('^assist%-')then studioCallbacks.openAssist(patrolKey=='assist-megaphone-window'and'megaphone'or patrolKey:sub(8))end
         if patrolKey:match('^vehicle%-')then
-            studioCallbacks.openAssist('traffic')
-            if patrolKey=='vehicle-select'then local ok,err=sceneServices.vehicle:requestSelection();if not ok then studio:notify(err,'vehicle',false)end
-            elseif patrolKey=='vehicle-pursuit'then sceneServices.copilotUi.offer(studio,studioCallbacks,'pursuit')
-            else require('pa26_vehicle_ui').offer(studio,studioCallbacks,'megaphone_'..patrolKey:match('(%d+)$'),false)end
+            local action=patrolKey=='vehicle-select'and'stop_order'or patrolKey=='vehicle-pursuit'and'pursuit'or'megaphone_'..patrolKey:match('(%d+)$')
+            local select=patrolKey=='vehicle-select'or patrolKey=='vehicle-pursuit'and not sceneServices.vehicle.selected
+            local revision=sceneServices.vehicle.selectionRevision or 0
+            local ok,err=true
+            if select then ok,err=sceneServices.vehicle:requestSelection()end
+            if ok then sceneServices.vehicleHotkey={action=action,select=select,revision=revision,at=now,session=ctx.session}
+            else studio:notify(err,'vehicle',false)end
         end
         if patrolKey=='patrol-events'then studioCallbacks.openPatrolEvents()elseif not patrolKey:match('^vehicle%-')and not patrolKey:match('^assist%-')then studioCallbacks.openPatrol()end
         local a=patrolSession.data.active
@@ -2758,9 +2820,27 @@ local function updateGame()
     sceneServices.colleagues:tick(alertState,now);alertState.colleagues=sceneServices.colleagues:view()
     local hour=optionalRead('getTimeOfDay');alertState.gameHour=core.finite(hour)and hour or nil;alertState.moscowTime=core.moscowTime()
     alertState.patrolActive=patrolSession.data.active~=nil
+    if sceneServices.patrolWasActive and not alertState.patrolActive then
+        patrol:reset()
+        local c=sceneServices.copilot
+        if not c.phase and not c.intent and not c.queued and not sceneServices.vehicle.phase and not sceneServices.vehicle.intent and not sceneServices.vehicle.queued then
+            sceneServices.vehicle:clearTarget('Патруль завершён.');c:reset('Патруль завершён.');c:hideHud()
+        end
+    end
+    sceneServices.patrolWasActive=alertState.patrolActive
     alertState.patrolStatus=patrolSession.data.active and patrolSession.data.active.status or nil
     sceneServices.vehicle:tick(alertState,now)
     sceneServices.copilot:tick(alertState,now)
+    local hot=sceneServices.vehicleHotkey;sceneServices.vehicleHotkey=nil
+    if hot and hot.session==ctx.session and(core.elapsed(now,hot.at)or math.huge)<2000 and not hasUiModal()then
+        if not hot.select or(sceneServices.vehicle.selectionRevision or 0)>hot.revision then
+            if hot.action:match('^megaphone_')then require('pa26_vehicle_ui').offer(studio,studioCallbacks,hot.action,false)
+            else
+                local p,err=sceneServices.copilot:propose(hot.action)
+                if p then sceneServices.copilot.offers={p}else studio:notify(err,'vehicle',false)end
+            end
+        end
+    end
     alertState.taserCombatEnabled=workspace.library.vehicle.copilot.combat_guard;alertState.taserCombatMs=workspace.library.vehicle.copilot.combat_ms;alertState.taserCombatTemplate=workspace.library.vehicle.copilot.combat_warning
     local cv=sceneServices.copilot:view()
     if workspace.library.vehicle.copilot.combat_guard and(cv.combat or cv.car and cv.car.armed or sceneServices.copilot.driverLive and sceneServices.copilot.driverLive.armed)then alertState.taserCombatText=workspace.library.vehicle.copilot.combat_warning end
@@ -2768,8 +2848,11 @@ local function updateGame()
     if alertState.taserCombatEnabled and person and person.armed then alertState.taserCombatText=workspace.library.vehicle.copilot.combat_warning end
     local cm=sceneServices.copilot.widgetMail;sceneServices.copilot.widgetMail=nil
     if cm and cm.life==sceneServices.copilot.life and(core.elapsed(now,cm.at)or math.huge)<500 and not hasUiModal()then
-        local p,err=sceneServices.copilot:propose(cm.action)
-        if p then showQuick[0]=true;studio.vehicleConfirm=p else studio:notify(err,'vehicle',false)end
+        local p,err
+        if cm.action=='hide'then sceneServices.copilot:hideHud()
+        elseif cm.action=='repeat_pause'then sceneServices.copilot:pauseRepeats()
+        else p,err=sceneServices.copilot:propose(cm.action)end
+        if p then studio.vehicleConfirm=p;uiInputReset=true elseif err then studio:notify(err,'vehicle',false)end
     end
     alertState.busy=alertState.busy or(workspace.executor.queue and tostring(workspace.executor.queue))
     sceneServices.evidence:tick(alertState,now)
@@ -2803,6 +2886,7 @@ local function updateGame()
     sceneServices.processWantedInput(alertState,now)
     alertState.busy=alertState.busy or (workspace.executor.queue and tostring(workspace.executor.queue))
     patrolSession:tick(alertState,now)
+    alertState.patrolSuspended=patrolSession.data.active~=nil and patrolSession.suspended==true
     alertState=patrolSession:values(alertState,patrolSession.data.active)
     alerts:updateContext(alertState)
     patrolEvents:tick(alertState,now)
@@ -2811,7 +2895,9 @@ local function updateGame()
     taser:tick(alertState,now)
     alertState.taserCombatText=alertState.taserCombatText or taser:combatWarning()
     alertState.taserActive=taser:activeFor(alertState)
-    alertState.taserRoleItem={name=workspace.library.taser.name,template=workspace.library.taser.draw_template,holster_enabled=true,holster_template=workspace.library.taser.holster_template}
+    alertState.taserRoleItem={name=workspace.library.taser.name,template=workspace.library.taser.draw_template,
+        draw_rp_enabled=workspace.library.taser.draw_rp_enabled~=false and not taser.suppressModeRp,
+        holster_enabled=workspace.library.taser.holster_rp_enabled~=false and not taser.suppressModeRp,holster_template=workspace.library.taser.holster_template}
     alertState.reloadPending=alertState.taserActive and(taser:needsReload()or taser.queued)or false
     alertState.busy=alertState.busy or (workspace.executor.queue and tostring(workspace.executor.queue))
     patrol:tick(alertState,now)
@@ -2899,9 +2985,9 @@ local function updateGame()
     sceneServices.manualActions:tick()
     workspace:tick()
     syncBindingCommands()
-    workspaceFrame.HideCursor=not (showQuick[0] or showTips[0] or sceneServices.showAssist[0]or sceneServices.showWanted[0]or studio:hasWarning())
+    workspaceFrame.HideCursor=not(ownUi()or studio.statusInfo and widgetCursor)
     imgui.DisableInput = shutdown or not focused or ctx.paused or ctx.blocked or
-        ((uiFailed or (not ownUi() and runtime.wheel == nil)) and not hud.editing)
+        ((uiFailed or (not ownUi() and runtime.wheel == nil and not(studio.statusInfo and widgetCursor))) and not hud.editing)
 end
 
 -- Prepare the local chat before yielding to the game/CEF require('pa26_startup'). The old
@@ -3014,17 +3100,17 @@ function main()
         end
         updateGame()
         sceneServices.dispatchNativeCommand(studioClock)
-        if focused and not isGamePaused()and not context().blocked then sceneServices.chatBridge:dispatch(studioClock)end
+        if focused and not isGamePaused()and not context().inputBlocked then sceneServices.chatBridge:dispatch(studioClock)end
         local now=optionalRead('getGameTimer')or studioClock
         if recovery:ready(now,cfg.recovery)and focused and not uiTyping and not hasUiModal()and not isGamePaused()and
             not context().blocked then recoverUi(false)end
         recovery:healthy(now,cfg.recovery)
         if not started then
-            pushLog('v0.42.0: игровой цикл запущен.')
+            pushLog('v'..core.VERSION..': игровой цикл запущен.')
             started = true
         end
         if uiRendered and not drawReported then
-            pushLog('v0.42.0: окно отрисовано.')
+            pushLog('v'..core.VERSION..': окно отрисовано.')
             drawReported = true
         end
     end

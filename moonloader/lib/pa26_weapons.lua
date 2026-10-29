@@ -15,7 +15,7 @@ local function itemFor(s,cfg)
 end
 local function fingerprint(item,cfg)
     return table.concat({item.name,item.template,item.holster_template or '',tostring(item.holster_enabled),
-        tostring(cfg.holster_enabled),tostring(cfg.holster_delay_ms),tostring(cfg.delay_ms),tostring(cfg.cooldown_ms),tostring(cfg.repeat_ms)},'\0')
+        tostring(item.draw_rp_enabled),tostring(cfg.holster_enabled),tostring(cfg.holster_delay_ms),tostring(cfg.delay_ms),tostring(cfg.cooldown_ms),tostring(cfg.repeat_ms)},'\0')
 end
 local function previousItem(a,state,cfg)
     local item=cfg.items[tostring(a.weapon)]
@@ -76,6 +76,10 @@ function Weapons:tick(state,now)
     end
     local c=self.candidate;if not c then return end
     if not item or not item.enabled or key~=c.key or fingerprint(item,cfg)~=c.signature then self.candidate=nil;return end
+    if item.draw_rp_enabled==false then
+        self.drawn={weapon=c.weapon,key=c.key,item=model.copy(item),signature=c.signature}
+        self.candidate=nil;return
+    end
     local age=core.elapsed(now,c.at)
     if not age or age>cfg.delay_ms+10000 then self.candidate=nil;return end
     if age<cfg.delay_ms or state.busy or state.wheel or state.alertPending or state.reloadPending then return end
@@ -98,6 +102,6 @@ function Weapons:validPlan(plan)
         local live=previousItem(a,state,cfg)
         return cfg.holster_enabled and key~=a.drawKey and live and live.enabled and live.holster_enabled and fingerprint(live,cfg)==a.signature or false
     end
-    return item and item.enabled and key==a.drawKey and fingerprint(item,cfg)==a.signature or false
+    return item and item.enabled and item.draw_rp_enabled~=false and key==a.drawKey and fingerprint(item,cfg)==a.signature or false
 end
 return M

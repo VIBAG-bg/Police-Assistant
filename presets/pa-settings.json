@@ -49,7 +49,7 @@
     },
     "recovery": {
       "stable_ms": 60000,
-      "demo_after_recovery": true,
+      "demo_after_recovery": false,
       "enabled": true,
       "delay_ms": 3000,
       "max_attempts": 3
