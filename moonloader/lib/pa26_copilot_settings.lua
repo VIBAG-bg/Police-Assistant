@@ -86,7 +86,7 @@ function M.defaults()
    high_risk="{local_tag}{unit}, провожу остановку повышенного риска 10-66 {vehicle_description}, {occupants_text}, нахожусь в {city}, район {area} ({map_square}), запрашиваю свободные экипажи, Код 3!",
    combat='{local_tag}{unit}, CODE 0! По офицеру открыт огонь! Район {area} ({map_square})! Требуется срочная поддержка всех юнитов!',
    armed='{local_tag}{unit}, водитель {vehicle_description} вооружён. Район {area} ({map_square}), запрашиваю поддержку, Код 3!',
-   finish="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area} ({map_square}), {stop_outcome}, продолжаю патрулирование, Код 4.",
+   finish='{local_tag}{unit}, 10-99 по остановке {vehicle_description} в районе {stop_area} ({stop_map_square}), {stop_outcome}. Продолжаю патрулирование, Код 4.',
    approach_day='подходя к автомобилю, {gender:коснулся|коснулась} ладонью задней левой фары, оставив отпечаток, и {gender:осмотрел|осмотрела} салон.',
    approach_night='достав с пояса тактический фонарик, {gender:коснулся|коснулась} ладонью задней левой фары и {gender:посветил|посветила} лучом в салон автомобиля.',
    taser_warning='Гражданин, остановитесь и держите руки на виду! В случае неподчинения будет применён тайзер!',
@@ -105,9 +105,22 @@ function M.defaults()
  d.stop_ground='none';d.stop_branch='none';d.stop_custom='';d.detention_ground='none';d.detention_custom=''
  d.detention_timers=true;d.lawyer_response_seconds=300;d.lawyer_arrival_seconds=600;d.phone_call_seconds=180
  d.ground_offer=true;d.ground_intro=true;d.ground_ud=false;d.ground_miranda=true;d.ground_channel='/s'
+ d.finish_offer=true;d.window_offer=true;d.window_interaction_distance=4;d.window_reply_ms=60000;d.departure_distance=8
+ d.finish_offer_text='10-55 завершена? Передать 10-99 / Код 4?'
+ d.pursuit_after_finish_text='Подозреваемый уезжает? Начать 10-57 VICTOR?'
+ d.window_question_offer_text='Вы у окна водителя · Спросить, открыто ли оно?'
+ d.window_knock_offer_text='Окно закрыто · Постучаться в водительское окно?'
+ d.window_open_offer_text='Представиться и назвать причину 10-55?'
+ d.templates.window_question='Окно водительской двери открыто?'
+ d.templates.window_hint='Ответьте в /do: например, /do Окно открыто. или /do Окно закрыто.'
+ d.templates.window_knock='{gender:постучался|постучалась} в водительское окно.'
+ d.templates.patrol_continue='{local_tag}{unit}, {patrol_resume} в {city}, район {area} ({map_square}). Экипаж: {crew}, {patrol_moving} на {direction}. Код 4, {patrol_available}.'
+ d.stolen_enabled=true;d.stolen_highlight=true;d.stolen_ttl_ms=600000
+ d.fast_pt_enabled=true;d.fast_pt_distance=50
  d.templates.intro='Здравствуйте. Вас беспокоит {rank} {my_name}, {station}.'
  d.templates.badge='{gender:показал|показала} служебный жетон и удостоверение собеседнику.'
- d.templates.explain_stop='Причина остановки: {stop_ground}. Основание: {ground_article}.'
+ d.templates.explain_stop='{ground_speech}'
+ d.ground_speech=require('pa26_bindings').copy(require('pa26_ground_speech').defaults)
  d.templates.documents='Предъявите, пожалуйста, документы для проверки. Основание: {stop_ground}.'
  d.templates.explain_detention='Вы задержаны. Основание: {detention_ground}. {ground_article}.'
  d.templates.miranda=require('pa26_operational').miranda
@@ -122,6 +135,7 @@ function M.ids(s,lo,hi)
 end
 function M.validate(raw)
  local d=M.defaults();if raw==nil then return d end;if type(raw)~='table'then return nil,'Повреждены настройки Copilot.'end
+ local speeches,why=require('pa26_ground_speech').validate(raw.ground_speech);if not speeches then return nil,why end;d.ground_speech=speeches
  for _,r in ipairs(M.booleans)do if raw[r[1]]~=nil then if type(raw[r[1]])~='boolean'then return nil,'Проверьте переключатель Copilot: '..r[2]end;d[r[1]]=raw[r[1]]end end
  for _,r in ipairs(M.numbers)do if raw[r[1]]~=nil then if not shared.integer(raw[r[1]],r[3],r[4])then return nil,'Проверьте значение Copilot: '..r[2]end;d[r[1]]=raw[r[1]]end end
  for _,r in ipairs(M.texts)do if raw[r[1]]~=nil then local t=shared.text(raw[r[1]],r[3]);if not t or(t==''and r[1]~='select_plate'and r[1]~='stop_custom'and r[1]~='detention_custom')then return nil,'Заполните Copilot: '..r[2]end;d[r[1]]=t end end
@@ -148,18 +162,39 @@ function M.validate(raw)
   end
  end
  if type(raw.templates)=='table'then
+  if raw.templates.stolen_car=='{local_tag}{unit}, {gender:принял|приняла} ориентировку по угону транспорта, выезжаю на поиск в {city}, район {area} ({map_square}), курс {direction}, Код 2.'then d.templates.stolen_car=M.defaults().templates.stolen_car end
+  if raw.templates.explain_stop=='Причина остановки: {stop_ground}. Основание: {ground_article}.'then d.templates.explain_stop='{ground_speech}'end
   local old={stop_order='Водитель автомобиля {model}, немедленно остановитесь у обочины и заглушите двигатель!',tire='Водитель автомобиля {model}, немедленно остановитесь у обочины! В случае неподчинения будет открыт огонь по колёсам!',return_car='Водитель автомобиля {model}, немедленно вернитесь в салон, заглушите двигатель и держите руки на виду! При неподчинении будет применена сила!'}
   local stock=M.defaults().templates
   for key,value in pairs(old)do if raw.templates[key]==value then d.templates[key]=stock[key]end end
+  if raw.templates.finish=='{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area} ({map_square}), {stop_outcome}, продолжаю патрулирование, Код 4.'then
+   d.templates.finish='{local_tag}{unit}, 10-99 по остановке {vehicle_description} в районе {stop_area} ({stop_map_square}), {stop_outcome}. Продолжаю патрулирование, Код 4.'
+  end
  end
  if raw.radio_templates_version~=nil and raw.radio_templates_version~=1 then return nil,'Неизвестная версия реплик Copilot.'end
  if raw.radio_templates_version==nil and type(raw.templates)=='table'then
   local stock=M.defaults().templates;for k,old in pairs(legacyRadio)do if raw.templates[k]==old then d.templates[k]=stock[k]end end
  end
- for _,key in ipairs({'robbery_warning','dispatch_confirmation_note','gas_confirmation_note'})do
+ for _,key in ipairs({'robbery_warning','dispatch_confirmation_note','gas_confirmation_note','finish_offer_text','pursuit_after_finish_text','window_question_offer_text','window_knock_offer_text','window_open_offer_text'})do
   local text=core.stripGender(d[key]):gsub('{([a-z_]+)}',function(k)return M.variables[k]and''or'{'end)
   if text:find('[{}]')then return nil,'Неизвестная переменная в подсказке: '..key end
  end
  return d
 end
+for _,r in ipairs({{'finish_offer','Предлагать завершение 10-55 после общения и возвращения / отъезда'},
+ {'window_offer','Предлагать вопрос об окне при подходе к водителю'}})do M.booleans[#M.booleans+1]=r end
+for _,r in ipairs({{'departure_distance','Перемещение машины для подтверждения отъезда, м',1,100},
+ {'window_interaction_distance','Разговор у водителя: расстояние, м',1,10},{'window_reply_ms','Ожидание ответа об окне, мс',1000,300000}})do M.numbers[#M.numbers+1]=r end
+for _,r in ipairs({{'finish_offer_text','Вопрос о завершении 10-55',512},{'pursuit_after_finish_text','Предложение погони после отказа завершать',512},
+ {'window_question_offer_text','Предложение спросить об окне',512},{'window_knock_offer_text','Предложение постучаться',512},
+ {'window_open_offer_text','Предложение перейти к причине остановки',512}})do M.texts[#M.texts+1]=r end
+for _,r in ipairs({{'window_question','Вопрос водителю об окне'},{'window_hint','Подсказка ответа об окне'},{'window_knock','Постучаться в окно · RP'}})do M.templates[#M.templates+1]=r end
+M.templates[#M.templates+1]={'patrol_continue','Продолжаю патрулирование · без запуска сеанса'}
+for _,k in ipairs({'stolen_summary','stolen_location','stolen_model','stolen_color','stolen_area','stolen_square'})do M.variables[k]=true end
+M.booleans[#M.booleans+1]={'stolen_enabled','Читать серверные ориентировки об угоне'}
+M.booleans[#M.booleans+1]={'stolen_highlight','Выделять приблизительный район угона на существующей сетке'}
+M.numbers[#M.numbers+1]={'stolen_ttl_ms','Срок ориентировки об угоне, мс',1000,3600000}
+M.booleans[#M.booleans+1]={'fast_pt_enabled','Быстрый /pt рядом · только после ДА'}
+M.numbers[#M.numbers+1]={'fast_pt_distance','Быстрый /pt: максимальное расстояние, м',1,50}
+for _,k in ipairs({'stop_area','stop_map_square','ground_speech','patrol_start','patrol_resume','patrol_finish','patrol_moving','patrol_available','unit_crew_count'})do M.variables[k]=true end
 return M

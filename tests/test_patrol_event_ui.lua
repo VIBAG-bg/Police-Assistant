@@ -12,11 +12,12 @@ local function setup(demo,extra)
     local options={demo=demo==true,library=lib,alerts=true,notifications=true,categoryWheel=true}
     for k,v in pairs(extra or {})do options[k]=v end
     local s=fixture(options);s.step();s.page('partners');click(s,'Патруль##Напарники и служба##partners-pagepatrol')
-    click(s,'Начать патруль##patrol-start');click(s,'ДА##confirm-yes');s.step();s.step(1500)
+    click(s,'Начать патруль##patrol-start');s.expectedStart=model.copy(s.workspace.studio.patrolConfirm.prepared.lines);click(s,'ДА##confirm-yes');s.step();s.step(1500)
     click(s,'События##Напарники и служба##partners-pageevents')
     return s
 end
-local s=setup(false);local c=s.patrolEvents;local baseline=#s.sent;eq(baseline,2)
+local s=setup(false);local c=s.patrolEvents;local baseline=#s.sent;eq(baseline,#s.expectedStart);check(baseline>0)
+for i,line in ipairs(s.expectedStart)do eq(s.sent[i].line,line,'Send exactly the start preview, with no invented direction')end
 local st=s.workspace.studio;st.patrolEventKind='custom';s.render();click(s,'Подготовить событие##patrol-event-new')
 check(st.patrolEventForm);eq(st.patrolEventForm.kind,'custom')
 s.edits={['##Дополнительные сведения##patrol-event-details']='Проверка завершена'};s.render();s.edits={}

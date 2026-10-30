@@ -8,6 +8,12 @@ function M.draw(s,ui,data,cb)
  if s.groundPage=='settings'then
   s.preferenceContext=true;s.settingTextChanged=false
   local lib=s.vehicleDraft or model.copy(s.lib.vehicle);local d=lib.copilot
+  s.groundSpeechDefault=s:choice('Реплика по умолчанию для причины##ground-speech-default',s.groundSpeechDefault or'speed',grounds.choices('stop'),ui)
+  local speechId=s.groundSpeechDefault
+  if d.ground_speech[speechId]then
+   d.ground_speech[speechId]=s:field('Готовая фраза · личный стандарт##ground-speech-text','ground:speech-default:'..speechId,d.ground_speech[speechId],8193,true,85)
+   ui.text('Можно использовать переменные Copilot и {gender:остановил|остановила}. Это ваш текст, он не меняет закон или источник статьи.')
+  end
   for _,r in ipairs(prefs.booleans)do if r[1]:match('^ground_')then d[r[1]]=common.check(s,ui,r[2]..'##ground-default-'..r[1],d[r[1]])end end
   d.ground_channel=s:choice('Канал речи##ground-channel',d.ground_channel or'/s',{{'','Обычный чат'},{'/s','Речь /s'}},ui)
   for _,r in ipairs(prefs.templates)do if({intro=true,badge=true,explain_stop=true,documents=true,explain_detention=true,miranda=true,rights_extra=true})[r[1]]then
@@ -33,16 +39,16 @@ function M.draw(s,ui,data,cb)
  for _,r in ipairs(grounds.rows(kind))do
   if r.id~='none'and(q==''or model.casefold(r.title..' '..(r.article or'')):gsub('ё','е'):find(q,1,true))then rows[#rows+1]=r end
  end
- if s.groundSearchSignature~=q..kind then s.groundListPage=1;s.groundSearchSignature=q..kind end
- local pages=math.max(1,math.ceil(#rows/4));s.groundListPage=math.min(pages,s.groundListPage or 1)
- for n=(s.groundListPage-1)*4+1,math.min(#rows,s.groundListPage*4)do local r=rows[n]
+ local order={speed=1,signal=2,wrong_way=3,junction=4,parking=5,bulletin=6}
+ table.sort(rows,function(a,b)local x,y=order[a.id]or 20,order[b.id]or 20;if x~=y then return x<y end;return a.title<b.title end)
+ local im=s.imgui;local height=math.max(90,math.min(220,im.GetIO().DisplaySize.y*.24))
+ local visible=im.BeginChild('Причины##ground-list',im.ImVec2(0,height),true,0)
+ if visible then for _,r in ipairs(rows)do
   if s:button((cfg[kind..'_ground']==r.id and'Выбрано · 'or'')..r.title..' · '..(r.article or'')..'##ground-select-'..r.id,ui)then
    cfg[kind..'_ground']=r.id;if kind=='stop'then cfg.stop_branch='none'end
   end
- end
- ui.text('Страница '..s.groundListPage..' / '..pages)
- if s:button('Предыдущие##ground-list-back',ui)then s.groundListPage=math.max(1,s.groundListPage-1)end
- if s:button('Следующие##ground-list-next',ui)then s.groundListPage=math.min(pages,s.groundListPage+1)end
+ end end
+ im.EndChild()
  local row=grounds.find(kind,cfg[kind..'_ground']);if not row or row.id=='none'then return end
  if row.branches then
   local choices={{'none','Уточните условия'}};for _,b in ipairs(row.branches)do choices[#choices+1]=b end
@@ -51,6 +57,18 @@ function M.draw(s,ui,data,cb)
  if row.id=='custom'then cfg[kind..'_custom']=s:field('Своё фактическое основание##ground-custom','ground:custom:'..kind,cfg[kind..'_custom'],4001,true,80)end
  local ground,why=grounds.ground(kind,cfg[kind..'_ground'],cfg[kind..'_branch'],cfg[kind..'_custom'])
  if not ground then ui.text(why);return end
+ if kind=='stop'then
+  local signature=ground.id..':'..tostring(cfg.stop_branch)..':'..cfg.stop_custom
+  if not f.speechEdited and f.speechSignature~=signature then
+   cfg._ground_speech=nil;local line,err=cb.groundSpeech(f)
+   if not line then ui.text(err);return end
+   f.speech=line;f.speechSignature=signature;s:setBuffer('ground:speech:'..f.request.token,line,8193)
+  end
+  local text=s:field('Что вы скажете водителю? (можно изменить своими словами)##ground-speech','ground:speech:'..f.request.token,f.speech or'',8193,true,85)
+  if text~=f.speech then f.speechEdited=true;f.speech=text end
+  cfg._ground_speech=f.speech
+  if s:button('Подставить стандарт для выбранной причины##ground-speech-reset',ui)then f.speechEdited=false;f.speechSignature=nil end
+ end
  if ground.note then ui.text(ground.note)end
  local ak=kind=='stop'and ground.article:match('^АК ст%. (%d+)$');local article=ak and cb.sanctions().byId['AK:'..ak]
  if article then

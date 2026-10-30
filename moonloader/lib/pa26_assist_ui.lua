@@ -240,7 +240,7 @@ function M.draw(s,ui,data,callbacks)
     end
     if s:button('Настройки чата, переноса RP и команд##assist-chat-settings',ui)and callbacks.openSettings then callbacks.openSettings('chat')end
     if tab=='traffic'then require('pa26_copilot_ui').draw(s,ui,data,callbacks)
-    elseif tab=='patrol'then require('pa26_patrol_ui').draw(s,ui,data,callbacks)
+    elseif tab=='patrol'then require('pa26_patrol_ui').draw(s,ui,data,callbacks,'assist')
     elseif tab=='megaphone'then M.megaphone(s,ui,data,callbacks)
     elseif tab=='evidence'then M.evidence(s,ui,data,callbacks)
     elseif tab=='notices'then M.notices(s,ui,data,callbacks)

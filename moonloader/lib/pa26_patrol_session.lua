@@ -182,6 +182,7 @@ end
 function Session:prepareLine(action,a,s,cfg)
     local values=self:values(s,a,cfg);local template=cfg[action..'_template'];local checked,err=settings.template(template)
     if not checked then return nil,err end
+    checked=require('pa26_report_context').directionTemplate(checked,values)
     values=mapGrid.reportValues(values,checked)
     local missing
     local body=core.expandGender(checked,s.gender):gsub('{([a-z_]+)}',function(key)

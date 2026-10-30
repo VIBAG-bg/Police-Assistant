@@ -7,7 +7,7 @@ M.copy=copy
 M.names={citizen='Мегафон и 10-55',documents='Проверка и бортовой ПК',detention='Погоня и 10-66',frisk='Досмотр и обыск',wanted='Розыск и штрафы',service='Рация и патруль',leadership='Вызовы и руководство',custom='Свои бинды (авто)'}
 M.systemGroups={['copilot-stop_order']='citizen',['copilot-tire']='citizen',['copilot-stop']='citizen',['copilot-explain_stop']='citizen',['assist-megaphone']='citizen',
  ['copilot-pursuit']='detention',['copilot-high_risk']='detention',['copilot-risk_order']='detention',['copilot-return_car']='detention',['copilot-lost']='detention',['copilot-finish']='detention',
- ['copilot-fast_wanted']='wanted',['copilot-pursuit_mark']='wanted'}
+ ['copilot-fast_pt']='wanted',['copilot-patrol_continue']='service',['copilot-fast_wanted']='wanted',['copilot-pursuit_mark']='wanted'}
 function M.fresh(settings,slots)
  settings.wheel_car_separate=true;settings.wheel_car_mode='categories';settings.wheel_car_profile='compact'
  settings.wheel_car_child_limit=6;settings.wheel_car_names=copy(M.names);settings.wheel_car_system_groups=copy(M.systemGroups)

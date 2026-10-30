@@ -1005,7 +1005,7 @@ function Studio:drawPartners(ui,data,callbacks)
     if self:button('Перейти к текущему патрулю и экипажу →##partners-patrol',ui)then callbacks.openPatrol()end
     self.partnerPage=self:choice('Напарники и служба##partners-page',self.partnerPage or 'contacts',{{'contacts','Контакты'},{'patrol','Патруль'},{'events','События'},{'vehicle','Транспорт'}},ui)
     if self.partnerPage=='vehicle'then vehicleUi.draw(self,ui,data,callbacks);return end
-    if self.partnerPage=='patrol'then patrolUi.draw(self,ui,data,callbacks);return end
+    if self.partnerPage=='patrol'then patrolUi.draw(self,ui,data,callbacks,'partners');return end
     if self.partnerPage=='events'then eventUi.draw(self,ui,data,callbacks);return end
     local im=self.imgui; local chosen
     for _,p in ipairs(self.lib.partners) do if im.Selectable(p.nickname..' · '..(p.callsign~='' and p.callsign or 'без позывного')..'##partner'..p.id,self.partner==p.id) then self.partner=p.id; self.cache['partnerNick']=nil; self.cache['partnerCall']=nil end; if p.id==self.partner then chosen=p end end
@@ -1683,6 +1683,13 @@ function Studio:cancelModal()
     self.modalToken=nil; self.modalError=nil
     return pending
 end
+function Studio:declineVehicle()
+    local p=self.vehicleConfirm
+    self:cancelModal()
+    if p and p.report then
+        self.reportEdit={proposal=p,values=require('pa26_bindings').copy(p.reportValues)}
+    end
+end
 function Studio:beginKeyCapture(request)
     local fields={quick_key='Быстрое меню',tips_key='Памятки',cancel_key='Остановка сценария'}
     local current,name='Не назначено',fields[request.field]
@@ -1823,6 +1830,13 @@ function Studio:modalIntent(data)
         local lines={p.target and p.description or p.copilot and'Ручной доклад по выбранному каналу рации.'or'Общее объявление для окружающих.',
             p.target and('Машина ['..p.target.id..'] · GTA модель '..p.target.model_id)or('Реплика: '..(p.label or'Мегафон')),'Y — ДА · N — НЕТ'}
         if p.confirmationNote then table.insert(lines,1,p.confirmationNote)end
+        if p.reportValues then
+            local v=p.reportValues
+            table.insert(lines,1,'Юнит: '..(v.unit or'Не задано')..' · Экипаж: '..(v.crew or'Не задано'))
+            table.insert(lines,2,'Место: '..(v.city or'Не задано')..', '..(v.area or'Не задано')..' ('..(v.map_square or'Не задано')..')')
+            table.insert(lines,3,'Последний курс: '..(v.directionKnown and v.direction or'неизвестно'))
+            lines[#lines+1]='НЕТ — изменить данные этого доклада или отменить. Сохранённый профиль не изменится.'
+        end
         for _,line in ipairs(p.prepared.lines)do lines[#lines+1]=line end
         lines[#lines+1]=p.demo and 'Демо: отправок на сервер нет.'or 'После ДА PA отправит показанные строки по очереди. Результат команды нужно проверить в игре.'
         return {kind='vehicle',token=p.token,title=p.confirmationTitle or(p.target and'Выполнить действие с выбранной машиной?'or p.copilot and'Передать доклад в рацию?'or'Передать общее объявление?'),lines=lines}
@@ -2152,7 +2166,9 @@ function Studio:drawModal(ui,data,callbacks)
                 local no=red((spec.buttons[2]or'НЕТ')..'##confirm-no',width)
                 if intent.kind=='manual_action'then
                     if no or yes then execute(function()return callbacks.manualActionDecide(self.manualAction.token,yes==true)end)end
-                elseif no then close() elseif yes then execute(function() return self:acceptModal(data,callbacks) end) end
+                elseif no then
+                    if intent.kind=='vehicle'then self:declineVehicle();im.CloseCurrentPopup();self.modalVisible=false else close()end
+                elseif yes then execute(function() return self:acceptModal(data,callbacks) end) end
             end
         end
         ui.finish()
@@ -2175,7 +2191,7 @@ function Studio:draw(page,ui,data,callbacks)
     elseif page=='weapons' then self:drawWeapons(ui,data,callbacks)
     elseif page=='extras' then self:drawExtras(ui,data,callbacks)
     elseif page=='recruitment'then self:drawExtras(ui,data,callbacks,true)
-    elseif page=='patrol'then patrolUi.draw(self,ui,data,callbacks)
+    elseif page=='patrol'then patrolUi.draw(self,ui,data,callbacks,'tool')
     elseif page=='patrol_events'then eventUi.draw(self,ui,data,callbacks)
     elseif page=='vehicle'then vehicleUi.draw(self,ui,data,callbacks)
     elseif page=='map'then require('pa26_map_ui').draw(self,ui,data,callbacks)

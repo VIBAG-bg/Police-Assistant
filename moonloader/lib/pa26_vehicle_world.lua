@@ -116,7 +116,10 @@ function M.new(read,codec,ped)
     function api.ownCar()
         local _,_,_,handle=location();if not handle or read('doesVehicleExist',handle)~=true then return end
         local x,y,z=read('getCarCoordinates',handle)
-        if core.finite(x)and core.finite(y)and core.finite(z)then return {handle=handle,x=x,y=y,z=z}end
+        if core.finite(x)and core.finite(y)and core.finite(z)then
+            local ok,id=read('sampGetVehicleIdByCarHandle',handle)
+            return {handle=handle,id=ok==true and id or nil,model_id=read('getCarModel',handle),x=x,y=y,z=z}
+        end
     end
     return api
 end

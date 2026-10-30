@@ -38,6 +38,7 @@ local function reportValues(state,template,enrich)
         local used=template:find('{'..key..'}',1,true)
         local value='';if used then value=model.clean(state[key] or '',key:match('^crew')and 4096 or(key=='area'or key=='location')and 1024 or 240)end
         if not value then return nil,'Неверное поле доклада: '..key end
+        if used and key=='direction'and value==''then value='неизвестно'end
         local tag=key=='local_tag' or key=='prison_tag' or key=='global_tag'
         if value=='' and not tag and template:find('{'..key..'}',1,true) then return nil,'Заполните поле доклада: '..key end
         if tag and value~='' then value=value..' ' end
@@ -52,7 +53,7 @@ function M.prepare(kind,state,cfg,codec,now,life)
     if not state.session or not core.finite(state.ped) or type(state.demo)~='boolean' then return nil,'Персонаж недоступен.' end
     if kind=='code0' and (not core.finite(state.health) or state.health<=0 or state.health>cfg.code0_health) then return nil,'CODE 0 доступен только живому тяжело раненому офицеру: HP ≤ '..cfg.code0_health..'.' end
     local source=routine(kind) and cfg.patrol or cfg
-    local template=source[kind..'_template'];local channel=source[kind..'_channel']
+    local template=require('pa26_report_context').directionTemplate(source[kind..'_template'],state);local channel=source[kind..'_channel']
     if not channel or channel=='' then channel=cfg.channel end
     local values,err=reportValues(state,template);if not values then return nil,err end
     local body=core.expandGender(template,state.gender):gsub('{([a-z_]+)}',function(key)return values[key]end):match('^%s*(.-)%s*$')

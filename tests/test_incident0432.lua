@@ -1,0 +1,41 @@
+local setup=require 'support.copilot_fixture'
+local cp,v,s=setup();s.send('stop_order');s.tick(2000);s.send('stop')
+for _=1,10 do s.car.x=s.car.x+.4;s.tick()end
+check(cp.done.stop);check(cp.stopReportOffered);check(not s.has('stop'),'jitter cannot repeat a completed stop report')
+cp,v,s=setup();s.send('stop_order')
+check(not cp:observeManualCommand('/r Ранее была 10-55.','native'))
+check(not cp:observeManualCommand('/f 10-99, 10-55 завершена.','native'))
+check(cp:observeManualCommand('/f 2-L-1, провожу остановку, 10-55.','native'))
+check(cp.done.stop);check(not s.has('stop'))
+check(not cp:observeManualCommand('/ud 37','native'),'inside cruiser is not contact')
+s.state.inVehicle=false;s.car.distance=3;s.person.distance=2;s.tick()
+check(not cp:observeManualCommand('/udfoo 37','native'));check(not cp:observeManualCommand('/ud 38','native'))
+check(cp:observeManualCommand('/UD 37','native'));check(cp.manualUdDone);check(not cp.done.explain_stop)
+check(cp:observeManualCommand('/ud 37','cef'),'duplicate hook has no additional side effect')
+s.state.inVehicle=true;s.tick();local finish=assert(s.has('finish'));check(not s.has('pursuit'))
+cp:shown(finish.token);check(cp:decide(finish.token,false));check(not s.has('pursuit'),'declining finish while target parked cannot invent flight')
+s.tick();check(not s.has('finish'),'no nagging after an explicit decline')
+s.car.x=15;s.car.distance=35;s.tick();check(s.has('pursuit'),'departure after declined finish offers pursuit')
+-- Complete after a true stream-out using the original stop location.
+cp,v,s=setup();s.send('stop_order');s.state.inVehicle=false;s.car.distance=3;s.person.distance=2;s.tick()
+check(cp:observeManualCommand('/ud 37','executor'))
+s.car=nil;s.unstreamed=true;v:clearTarget('stream out',true);s.state.area='Другой район';s.state.map_square='A-1';s.state.inVehicle=true;s.tick()
+check(cp.car.stale);finish=assert(cp:propose('finish'));local text=table.concat(finish.prepared.lines,'\n')
+-- Stock migration to stop-area template is covered separately; values always retain it.
+eq(cp:values().stop_area,'Doherty');eq(cp:values().stop_map_square,'J-6')
+check(cp:accept(finish));s.tick();local q={plan=s.plans[#s.plans],demo=false};check(cp:validPlan(q.plan));cp:onExecution('completed',q);eq(cp.phase,nil)
+-- Driver ID reuse cannot preserve an old stop or consume an old answer.
+cp,v,s=setup();s.send('stop_order');s.person.name='New_Driver';s.person.generation=1;s.unstreamed=true;s.car=nil;v:clearTarget('stream out',true);s.tick()
+eq(cp.phase,nil);eq(cp.manualUdDone,nil)
+-- Window RP requires a near driver, sent question, and attributable response.
+cp,v,s=setup();s.send('stop_order');s.state.inVehicle=false;s.car.distance=3;s.person.distance=5;s.tick();s.send('approach')
+check(not s.has('explain_stop'));check(not s.has('window_question'),'rear inspection alone is not window proximity')
+s.person.distance=2;s.tick();check(s.has('window_question'));check(not cp:observeWindowReply('Окно открыто. ( Driver_Name )'),'unsent question cannot consume an answer')
+s.send('window_question');check(cp.windowAwait)
+for _,line in ipairs({'Окно открыто. ( Other_Name )','В салоне оружия нет. ( Driver_Name )','Да, закрыто. ( Driver_Name )','Окно открыто и закрыто. ( Driver_Name )'})do check(not cp:observeWindowReply(line))end
+check(cp:observeWindowReply('{FFFFFF}Окно закрыто. ( Driver_Name )'));check(s.has('window_knock'));eq(cp.windowReply,'closed')
+s.send('window_knock');check(s.has('explain_stop'));check(cp:observeWindowReply('Да. (Driver_Name)'));eq(cp.windowReply,'open');check(not s.has('window_knock'))
+local count=0;for _,p in ipairs(cp.offers)do if p.action=='explain_stop'then count=count+1 end end;eq(count,1)
+check(not cp:observeWindowReply('Окно открыто. ( Officer_Test )'))
+cp,v,s=setup();s.send('stop_order');s.state.inVehicle=false;s.car.distance=3;s.person.distance=2;s.tick();s.send('approach');s.send('window_question')
+s.person.generation=2;s.tick();check(not cp:observeWindowReply('Да. ( Driver_Name )'))

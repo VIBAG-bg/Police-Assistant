@@ -1,0 +1,8 @@
+{
+  "source": "Local GTA SA data/info.zon and previously verified English GXT zone labels",
+  "info_sha256": "9396cf9b7bec5a797fa4614ee7ab578d910ed5cdd9d475adfb35801612ec8058",
+  "label_inspection_sha256": "13baeac10749014b203b0cd31b8b7ad66dd2d412b329595c58a08f74b069977b",
+  "representatives": 169,
+  "precision": "approximate district sector: centre of largest labelled rectangle; never vehicle coordinates",
+  "grid": "runtime current user settings; unknown labels are unresolved"
+}

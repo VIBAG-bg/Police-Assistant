@@ -61,7 +61,7 @@ check(tracker:select(person,'one'));tracker:join(37);check(not tracker.target,'R
 local function setup()
  local s={now=1000,cfg=vsettings.defaults(),plans={},stream=true,vehicleLive=true,connected=true,
   state={session='one',ped=1,alive=true,focused=true,paused=false,blocked=false,onDuty=true,radioEnabled=true,
-   demo=false,inVehicle=true,area='Doherty',map_square='J-6',my_nick='Ivan_Petrov',radioText={split_enabled=true,max_lines=3,continuation='...'}}}
+   demo=false,inVehicle=true,area='Doherty',city='Сан-Фиерро',map_square='J-6',my_nick='Ivan_Petrov',radioText={split_enabled=true,max_lines=3,continuation='...'}}}
  s.car={id=142,handle=100,model_id=437,model_name='Coach',color1=0,color2=1,x=0,y=10,z=0,distance=10,driver_known=true,driver_ped=99,driver_id=37,occupants=2}
  s.person={id=37,ped=99,name='Driver_Name',generation=0,armed=false,distance=10,x=0,y=10,z=0}
  local cp

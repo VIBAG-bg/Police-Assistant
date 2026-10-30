@@ -11,6 +11,7 @@ M.keys={{'select_shortcut','Выбрать машину и предложить 
 M.phraseCount=8
 M.phraseConditions={{'any','Всегда'},{'vehicle','Из служебной машины'},{'foot','Пешком'},{'stop','Во время 10-55'},{'pursuit','Во время погони'}}
 for i=1,M.phraseCount do M.keys[#M.keys+1]={'phrase_'..i..'_shortcut','Мегафон · требование '..i}end
+M.keys[#M.keys+1]={'fast_pt_shortcut','Быстрый /pt рядом · предложение ДА/НЕТ'}
 local legacyRadio={traffic_stop_template="{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.",pursuit_template="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}",finish_template="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4."}
 function M.defaults()
     local out={type_names=require('pa26_vehicle_types').defaults(),radio_templates_version=1,enabled=true,require_patrol=false,megaphone_enabled=true,megaphone_require_patrol=false,megaphone_require_duty=true,

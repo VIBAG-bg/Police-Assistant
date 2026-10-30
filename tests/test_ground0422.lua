@@ -34,13 +34,16 @@ local c=C.new({vehicle=v,settings=function()return vehicleCfg.copilot end,profil
  driver=function()return model.copy(person)end,start=function(plan)plans[#plans+1]=plan;return true end})
 local function tick()now=now+500;v:tick(state,now);c:tick(state,now)end
 tick();check(v:selectNearest());tick()
-p=assert(c:propose('approach'));check(c:accept(p));tick();c:onExecution('completed',{plan=plans[1]})
+c.phase='10-55';c:beginIncident();p=assert(c:propose('approach'));check(c:accept(p));tick();c:onExecution('completed',{plan=plans[1]})
+check(not c.groundRequest,'Inspection must not assume that the window is open')
+p=assert(c:propose('window_question'));check(c:accept(p));tick();c:onExecution('completed',{plan=plans[2]});tick()
+check(c:observeWindowReply('Окно открыто. ( Driver_Name )'))
 local navigation;for _,offer in ipairs(c.offers)do if offer.action=='explain_stop'then navigation=offer end end
-check(navigation);check(navigation.navigation);check(not navigation.prepared);check(c:accept(navigation));eq(#plans,1)
+check(navigation);check(navigation.navigation);check(not navigation.prepared);check(c:accept(navigation));eq(#plans,2)
 local req=c.groundRequest;check(req);local draft=model.copy(vehicleCfg.copilot);draft.stop_ground='signal';draft.stop_branch='first';draft.ground_ud=true
 local g=assert(require('pa26_operational').ground('stop','signal','first'));local cat=require('pa26_sanctions').new(TEST_JSON_DECODE(TEST_KNOWLEDGE_JSON))
 require('pa26_sanctions').select(g,cat.byId['AK:41'],1)
 p=assert(c:proposeGround(req,draft,g,'fine'));local speech=table.concat(p.prepared.lines,'\n');check(speech:find('/ud 37',1,true));check(speech:find('Предъявите',1,true))
-check(c:accept(p));tick();c:onExecution('completed',{plan=plans[2]});check(c.lastStopReason);eq(c.lastStopReason.ground.sanction_id,'AK:41');eq(c.groundHandoff.kind,'fine')
+check(c:accept(p));tick();c:onExecution('completed',{plan=plans[3]});check(c.lastStopReason);eq(c.lastStopReason.ground.sanction_id,'AK:41');eq(c.groundHandoff.kind,'fine')
 eq(vehicleCfg.copilot.stop_ground,'none');draft.templates.explain_stop='Changed after acceptance';check(not c.lastStopReason.ground.basis:find('Changed',1,true))
 person.generation=1;tick();check(not c:groundContextValid(req,true));c:reset('New case');check(not c.lastStopReason)

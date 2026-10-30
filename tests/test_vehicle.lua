@@ -48,13 +48,13 @@ v,s=setup();p=assert(v:propose('traffic_stop',true));s.state.busy=true;check(v:a
 s.state.busy=nil;s.tick();eq(#s.plans,1)
 v:onExecution('cancelled',{plan=s.plans[1]});s.tick(5000);eq(#s.plans,1,'No retry after partial cancellation')
 v,s=setup();v:selectNearest();check(v:propose('window'));s.own={handle=50,x=0,y=0,z=0};s.tick();check(not v:propose('approach'))
--- Direction follows actual movement, including reversing, and resets on pause/teleport.
-v,s=setup();s.own={handle=50,x=0,y=0,z=0};s.tick();eq(v:values().direction,s.cfg.stationary)
+-- Direction follows actual movement, including reversing; stopping preserves the last course. Teleports clear it.
+v,s=setup();s.own={handle=50,x=0,y=0,z=0};s.tick();eq(v:values().direction,'неизвестно')
 s.own.y=3;s.tick(300);eq(v:values().direction,'Север')
 s.own.y=0;s.tick(300);eq(v:values().direction,'Юг')
-s.tick(300);eq(v:values().direction,s.cfg.stationary)
-s.own.y=500;s.tick(300);eq(v:values().direction,s.cfg.stationary)
-s.state.paused=true;s.tick();s.state.paused=false;s.tick();eq(v:values().direction,s.cfg.stationary)
+s.tick(300);eq(v:values().direction,'Юг')
+s.own.y=500;s.tick(300);eq(v:values().direction,'неизвестно')
+s.state.paused=true;s.tick();s.state.paused=false;s.tick();eq(v:values().direction,'неизвестно')
 v,s=setup();local values=assert(vehicle.describe(s.cars[1],s.cfg));check(values.vehicle_color:find('Белый',1,true));check(values.vehicle_color:find('Чёрный',1,true))
 s.cfg.color_aliases['1']='Белоснежный';s.cfg.model_aliases['411']='Infernus Custom';values=assert(vehicle.describe(s.cars[1],s.cfg));eq(values.model,'Infernus Custom');eq(values.color_one,'Белоснежный')
 s.cars[1].color1=254;values=assert(vehicle.describe(s.cars[1],s.cfg));eq(values.color_one,s.cfg.unknown_color)

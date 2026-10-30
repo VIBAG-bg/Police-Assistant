@@ -2,7 +2,7 @@ local C=require 'pa26_copilot';local V=require 'pa26_vehicle';local settings=req
 local model=require 'pa26_bindings';local equal=require('pa26_author_presets').equal
 local function setup()
  local s={now=1000,cfg=settings.defaults(),plans={},state={session='test',ped=1,alive=true,focused=true,paused=false,blocked=false,onDuty=true,radioEnabled=true,demo=false,inVehicle=true,
-  area='Doherty',map_square='J-6',my_nick='Ivan_Petrov',gameHour=12,radioText={split_enabled=true,max_lines=3,continuation='...'}}}
+  area='Doherty',city='Сан-Фиерро',map_square='J-6',my_nick='Ivan_Petrov',gameHour=12,radioText={split_enabled=true,max_lines=3,continuation='...'}}}
  s.car={id=142,handle=100,model_id=560,model_name='Sultan',color1=0,color2=0,x=0,y=10,z=0,distance=10,driver_known=true,driver_ped=200,driver_id=37,occupants=2}
  s.person={id=37,ped=200,name='Driver_Name',generation=0,armed=false,distance=5,x=0,y=10,z=0}
  local v=V.new({settings=function()return s.cfg end,profile=function()return{name='Иван Петров',callsign='',department='SFPS'}end,

@@ -11,9 +11,11 @@ M.actions={{'stop_order','10-55 · Мегафон: остановиться у �
 M.actions[#M.actions+1]={'explain_stop','10-55 · Назвать причину и запросить документы'}
 M.actions[#M.actions+1]={'explain_detention','Задержание · Основание и права'}
 M.quick={{'call911','Вызов 9-1-1 · Код 3'},{'arrived','Прибыл на место · опрос граждан'},{'break_report','Перерыв · Код 7, до 15 минут'},{'lost','Потерян · Код 4 АДАМ'}}
+M.quick[#M.quick+1]={'patrol_continue','Продолжаю патрулирование · Код 4'}
 M.dispatchActions=dispatch.actions
-local carFree={call911=true,arrived=true,break_report=true,lost=true,explain_stop=true,documents=true,explain_detention=true}
+local carFree={call911=true,arrived=true,break_report=true,lost=true,patrol_continue=true,finish=true,explain_stop=true,documents=true,explain_detention=true}
 for _,row in ipairs(dispatch.actions)do carFree[row[1]]=true end
+carFree.fast_pt=true
  local labels={stop_order='Машина выбрана · Предложить остановиться?',tire='Погоня продолжается · Предупредить об огне по колёсам?',stop='Машина остановилась · Доложить о 10-55?',return_car='Водитель вышел · Потребовать вернуться?',
  pursuit='Машина уезжает · Начать 10-57 VICTOR?',foot='Водитель убегает · 10-57 FOXTROT?',
  approach='Вы подошли к машине · Осмотреть салон?',high_risk='Машина остановилась после погони · 10-66?',
@@ -28,6 +30,7 @@ local function idSame(a,b)return a and b and a.id==b.id and a.name==b.name and a
 local function coord(c)return c and core.finite(c.x)and core.finite(c.y)and core.finite(c.z)end
 local function distance(a,b)if not coord(a)or not coord(b)then return end;return math.sqrt((a.x-b.x)^2+(a.y-b.y)^2+(a.z-b.z)^2)end
 function M.expand(text,values)
+ text=require('pa26_report_context').directionTemplate(text,values)
  local missing
  local t=core.expandGender(text,values.gender):gsub('{([a-z_]+)}',function(k)
   local v=values[k];if v==nil then missing=k;return''end
@@ -45,11 +48,13 @@ end
 function C:cancel(reason)
  local q=self.queued;self:rememberPartial(q);self.queued=nil;self.intent=nil;self.offers={}
  if q and self.env.cancel then self.env.cancel(q.token,reason)end
+ self.fastPtTarget=nil;self.fastPtLive=nil;self.fastPtLiveAt=nil
 end
 function C:reset(reason)
  self:cancel(reason);self.life=self.life+1;self.phase=nil;self.car=nil;self.driver=nil;self.driverLive=nil;self.motion=nil;self.stillAt=nil
  self.done={};self.dismissed={};self.pinned=nil;self.pendingTaser=false;self.hadDriver=false;self.tireWarnings=0;self.lastMegaphoneAt=nil;self.startedAt=nil;self.lastDamage=nil;self.attackConfirmed=false;self.enteredDangerInPursuit=false;self.lastArea=nil;self.wasDanger=false;self.ownMotion=nil;self.ownStillAt=nil;self.lastDriverPoint=nil
  self.pursuitStarted=false;self.stopReportOffered=false;self.damageMail=nil;self.hiddenLife=nil;self.repeatPaused=false;self.repeatAt=nil;self.lastStopOrderAt=nil;self.lastDriverSeen=nil;self.targetStopped=nil;self.lastStopReason=nil;self.groundRequest=nil;self.groundHandoff=nil
+ self.incident=nil;self.lastCar=nil;self.manualUdDone=nil;self.windowAwait=nil;self.windowQuestion=nil;self.windowReply=nil;self.windowSkipped=nil
 end
 function C:groundNavigation(action)
  local target,stamp
@@ -60,7 +65,7 @@ function C:groundNavigation(action)
  if action=='explain_stop'and not self.car then return nil,'Сначала выберите машину остановки.'end
  self.serial=self.serial+1
  return {navigation=true,token='ground:'..self.life..':'..self.serial,action=action,kind=action=='explain_stop'and'stop'or'detention',
-  label=action=='explain_stop'and'Осмотр выполнен · Представиться и назвать причину 10-55?'or'Выбрать основание задержания?',
+  label=action=='explain_stop'and M.expand(self.env.settings().window_open_offer_text,self:values())or'Выбрать основание задержания?',
   life=self.life,at=self.now,session=self.state.session,ped=self.state.ped,demo=self.state.demo,
   cfg=model.copy(self.env.settings()),vehicleCfg=model.copy(self.env.vehicle.env.settings()),
   groundTarget=model.copy(target),groundStamp=stamp,groundCar=not stamp and model.copy(self.car)or nil}
@@ -113,12 +118,16 @@ end
 function C:values(override)
  local s=self.state;if not s then return nil,'Дождитесь подключения к игре.'end
  local v,err=self.env.vehicle:values(s,self.car);if not v then return nil,err end
- local cfg=override or self.env.settings();local c=self.car or{}
+ local cfg=override or self.env.settings();local c=self.car or self.lastCar or{}
  local colleagues=s.colleagues or{};local profile=self.env.profile()or{}
  if not v.unit or v.unit==''then v.unit=profile.callsign~=''and profile.callsign or colleagues.autoCallsign or'1-L-1'end
  if not v.station or v.station==''then v.station=colleagues.station or'LSPS'end
  if not v.crew or v.crew==''then v.crew=profile.name~=''and profile.name or s.my_name or'Офицер'end
  v.local_tag=v.local_tag or'';v.area=v.area or v.location or'не определён';v.map_square=v.map_square or'не определён';v.direction=v.direction or'не определено';v.city=v.city or'не определён'
+ v.stop_area=self.incident and self.incident.area~=''and self.incident.area or v.area
+ v.stop_map_square=self.incident and self.incident.square~=''and self.incident.square or v.map_square
+ local bulletin=self.env.bulletin and self.env.bulletin(self.now)
+ for key,value in pairs(require('pa26_stolen_bulletin').values(bulletin))do v[key]=value end
  v.occupants=tostring(c.occupants or 0);v.occupants_text=({[0]='салон пуст',[1]='внутри один',[2]='внутри двое',[3]='внутри трое',[4]='внутри четверо'})[c.occupants or 0]or('внутри '..tostring(c.occupants)..' чел.')
  v.vehicle_plate=vehicleModel.plate(c,cfg)
  v.driver_id=self.driver and tostring(self.driver.id)or'';v.driver_name=self.driver and self.driver.name:gsub('_',' ')or'Водитель'
@@ -133,7 +142,9 @@ function C:values(override)
  local detention=grounds.ground('detention',cfg.detention_ground,nil,cfg.detention_custom)
  v.stop_ground=stop and stop.title or'причина не выбрана';v.detention_ground=detention and detention.title or'основание не выбрано'
  v.ground_article=stop and stop.article or'';v.rank=profile.rank~=''and profile.rank or self.state.rank or'офицер';v.my_name=profile.name~=''and profile.name or self.state.my_name or self.state.my_nick or'Офицер'
- return v
+ v.ground_speech=cfg._ground_speech or require('pa26_ground_speech').text(cfg,cfg.stop_ground,v.gender)
+ if not cfg._ground_speech then local speech,err=M.expand(v.ground_speech,v);if not speech then return nil,err end;v.ground_speech=speech end
+ return require('pa26_report_context').apply(v,cfg._report_values)
 end
 function C:prepare(action,override)
  action=dispatch.aliases[action]or action
@@ -142,6 +153,7 @@ function C:prepare(action,override)
  local lines,wires,steps={},{},{};local rpSignature,textSignature
  local function add(channel,text)
   local body,err=M.expand(text,values);if not body then return nil,err end
+  if channel==''and body:match('^%s*[/@]')then return nil,'Текст речи не должен начинаться с команды.'end
   local p
   if channel=='/me'or channel=='/do'or channel=='/try'or channel=='/todo'then p,err=require('pa26_rp_text').line(channel..' '..body,self.env.codec,self.state.rpText,self.state.my_nick)
   else p,err=radio.prepare(channel,body,self.env.codec,self.state.radioText,self.state.rpText,self.state.my_nick)end
@@ -165,12 +177,15 @@ function C:prepare(action,override)
   steps[#steps+1]={kind='message',text=text,wire=w};lines[#lines+1]=text;wires[#wires+1]=w;return true end
  local channel=self.env.vehicle.env.settings().channel;local ok,err
  local dispatchAction=dispatch.byAction[action]
- if dispatchAction then
+ if action=='fast_pt'then
+  if not cfg.fast_pt_enabled or not require('pa26_fast_pt').valid(self.fastPtTarget,self.state,cfg.fast_pt_distance)then return nil,'Цель /pt недоступна в пределах 50 м.'end
+  ok,err=command('/pt '..self.fastPtTarget.id)
+ elseif dispatchAction then
   if not cfg.dispatch_enabled then return nil,'Включите «Вызовы и спецситуации» в настройках Copilot.'end
   if dispatchAction.mega then ok,err=template(dispatchAction.radio,self.env.vehicle.env.settings().megaphone_channel)
   else
    ok=true
-   if cfg.dispatch_rp_enabled then ok,err=explicitRp(self.state.inVehicle and dispatchAction.rp or dispatchAction.foot)end
+   if cfg.dispatch_rp_enabled and not dispatchAction.radioOnly then ok,err=explicitRp(self.state.inVehicle and dispatchAction.rp or dispatchAction.foot)end
    if ok then ok,err=template(dispatchAction.radio,channel)end
   end
  elseif action=='explain_stop'or action=='documents'or action=='explain_detention'then
@@ -179,14 +194,17 @@ function C:prepare(action,override)
   if not ground then return nil,err end
   values.ground_article=ground.article
   ok=true
-  if cfg.ground_intro then
+  if cfg.ground_intro and not self.manualUdDone and not self.done.explain_stop then
    ok,err=template('intro',cfg.ground_channel or'/s');if ok then ok,err=template('badge','/me')end
    if ok and cfg.ground_ud then
     if values.driver_id==''then return nil,'Для /ud нужен установленный собеседник.'end
     ok,err=command('/ud '..values.driver_id)
    end
   end
-  if ok then ok,err=template(action,cfg.ground_channel or'/s')end
+  if ok and action=='explain_stop'and cfg._ground_speech then
+   if type(cfg._ground_speech)~='string'or #cfg._ground_speech>4096 or not cfg._ground_speech:match('%S')or cfg._ground_speech:match('^%s*[/@]')or cfg._ground_speech:find('[%c{}]')or not core.validUtf8(cfg._ground_speech)then return nil,'Проверьте готовую реплику водителю: одна фраза без команд и переменных.'end
+   ok,err=add(cfg.ground_channel or'/s',cfg._ground_speech)
+  elseif ok then ok,err=template(action,cfg.ground_channel or'/s')end
   if ok and action=='explain_stop'then ok,err=template('documents',cfg.ground_channel or'/s')end
   if ok and action=='explain_detention'and cfg.ground_miranda then ok,err=template('miranda',cfg.ground_channel or'/s');if ok then ok,err=template('rights_extra',cfg.ground_channel or'/s')end end
  elseif fast[action]then
@@ -201,6 +219,11 @@ function C:prepare(action,override)
  elseif action=='taser_warning'then
   if not self.driverLive or not core.finite(self.driverLive.distance)or self.driverLive.distance>20 or self.driverLive.armed or cfg.pursuit_armed or self.state.taserCombatText or(self.lastDamage and(core.elapsed(self.now,self.lastDamage)or 0)<=cfg.combat_ms)or(self.env.taserActive and not self.env.taserActive(self.state))then return nil,'В перестрелке, против вооружённого или без активного тайзера предложение отключено.'end
   ok,err=template('taser_warning','/s')
+ elseif action=='window_question'or action=='window_knock'then
+  if self.phase~='10-55'or self.state.inVehicle or not self.driverLive or self.car.stale or
+   not core.finite(self.driverLive.distance)or self.driverLive.distance>cfg.window_interaction_distance then return nil,'Подойдите к установленному водителю текущей остановки.'end
+  ok,err=template(action,action=='window_question'and'/do'or'/me')
+  if ok and action=='window_question'and cfg.window_ooc_hint then ok,err=template('window_hint','/n')end
  elseif action=='approach'then
   if self.state.inVehicle or not self.car or self.car.distance>self.env.vehicle.env.settings().approach_distance then return nil,'Выйдите из машины и подойдите к выбранному автомобилю.'end
   local h=self.state.gameHour;local night=core.finite(h)and(h<6 or h>=21)and cfg.night_flashlight
@@ -222,14 +245,16 @@ end
 function C:previewTemplate(key,cfg)
  local values,err=self:values(cfg);if not values then return nil,err end
  if key=='explain_detention'then local g=require('pa26_operational').ground('detention',cfg.detention_ground,nil,cfg.detention_custom);values.ground_article=g and g.article or'основание не выбрано'end
- local note=({robbery_warning=true,dispatch_confirmation_note=true,gas_confirmation_note=true})[key]
+ local note=({robbery_warning=true,dispatch_confirmation_note=true,gas_confirmation_note=true,finish_offer_text=true,pursuit_after_finish_text=true,window_question_offer_text=true,window_knock_offer_text=true,window_open_offer_text=true})[key]
  local text=note and cfg[key]or cfg.templates[key];if not text then return nil,'Неизвестная реплика.'end
  local body;body,err=M.expand(text,values);if not body then return nil,err end
  if note then return body end
  local channels={explain_stop='/s',documents='/s',explain_detention='/s',miranda='/s',rights_extra='/s',approach_day='/me',approach_night='/me',window='/do',ooc_hint='/n',risk_single='/m',risk_multi='/m',return_car=self.state.inVehicle and'/m'or'/s',stop_order='/m',tire='/m',taser_warning='/s',backup_risk='/mark',backup_combat='/mark'}
+ channels.intro=cfg.ground_channel or'/s';channels.badge='/me';channels.window_question='/do';channels.window_hint='/n';channels.window_knock='/me'
+ for _,k in ipairs({'explain_stop','documents','explain_detention','miranda','rights_extra'})do channels[k]=cfg.ground_channel or'/s'end
  local channel=channels[key]or key=='gas_order'and self.env.vehicle.env.settings().megaphone_channel or self.env.vehicle.env.settings().channel
  if dispatch.isRp(key)then return body end
- local out={};for line in(body..'\n'):gmatch('(.-)\n')do if line~=''then out[#out+1]=channel..' '..line end end;return table.concat(out,'\n')
+ local out={};for line in(body..'\n'):gmatch('(.-)\n')do if line~=''then out[#out+1]=(channel==''and''or channel..' ')..line end end;return table.concat(out,'\n')
 end
 function C:propose(action,options)
  action=dispatch.aliases[action]or action
@@ -238,10 +263,14 @@ function C:propose(action,options)
  local vcfg=v.env.settings();local dispatchAction=dispatch.byAction[action]
  local mega=({stop_order=true,risk_order=true,tire=true,return_car=true})[action]or dispatchAction and dispatchAction.mega
  if mega and not vcfg.megaphone_enabled then return nil,'Включите мегафон в настройках.'end
- local patrol=v.env.patrol and v.env.patrol();local needsPatrol=vcfg.require_patrol or mega and vcfg.megaphone_require_patrol
+ local patrol=v.env.patrol and v.env.patrol();local manualReport=dispatchAction and not dispatchAction.mega or
+  ({call911=true,arrived=true,break_report=true,lost=true,patrol_continue=true,fast_pt=true})[action]
+ local needsPatrol=not manualReport and(vcfg.require_patrol or mega and vcfg.megaphone_require_patrol)or false
  if needsPatrol and(not patrol or patrol.status~='active')then return nil,'Сначала начните патруль или измените условие доступа.'end
  if not carFree[action]and not self.car then return nil,'Сначала выберите видимую машину.'end
- if self.car and self.car.stale and not fast[action]and not carFree[action]and action~='finish'then return nil,'Нужно свежее наблюдение машины. Сохранена только ситуация погони.'end
+ if action=='finish'and not self.phase then return nil,'Нет активной остановки или погони.'end
+ if self.car and self.car.stale and not fast[action]and not carFree[action]and action~='finish'and
+  not(action=='pursuit'and self.incident and self.incident.departed)then return nil,'Нужно свежее наблюдение машины. Сохранена только ситуация.'end
  if self.intent or self.queued then return nil,'Дождитесь текущего действия.'end
  if (action=='explain_stop'or action=='explain_detention')and not options then return self:groundNavigation(action)end
  local prepared,err=self:prepare(action,options and options.cfg);if not prepared then return nil,err end
@@ -253,14 +282,44 @@ function C:propose(action,options)
   if guardRisk then local warning;warning,err=M.expand(cfg.robbery_warning,values);if not warning then return nil,err end;note=warning..'\n\n'..note end
  end
  self.serial=self.serial+1
- return {token='copilot:'..self.life..':'..self.serial,action=action,life=self.life,session=s.session,ped=s.ped,demo=s.demo,at=self.now,
+ local proposal={token='copilot:'..self.life..':'..self.serial,action=action,life=self.life,session=s.session,ped=s.ped,demo=s.demo,at=self.now,
   groundCfg=options and model.copy(options.cfg),groundContext=options and model.copy(options.request),groundData=options and model.copy(options.ground),handoff=options and options.handoff,
   copilot=true,carFree=carFree[action]==true,needsPatrol=needsPatrol,patrol_id=patrol and patrol.id,target=not carFree[action]and model.copy(self.car)or nil,cfg=model.copy(cfg),car=not carFree[action]and model.copy(self.car)or nil,driver=fast[action]and model.copy(self.driver)or nil,prepared=prepared,
   phase=self.phase,label=labels[action]or action,assault=action=='combat_wanted',description=(self:values()or{}).vehicle_description,
   confirmationNote=note,confirmationTitle=guardRisk and'Ограбление бизнеса · проверьте состав патруля'or nil,
-  dispatchAction=dispatchAction~=nil,dispatchRp=dispatchAction~=nil and not dispatchAction.mega and cfg.dispatch_rp_enabled,
+  dispatchAction=dispatchAction~=nil,dispatchRp=dispatchAction~=nil and not dispatchAction.mega and not dispatchAction.radioOnly and cfg.dispatch_rp_enabled,
   inVehicle=s.inVehicle==true,guardRisk=guardRisk,
   vehicleCfg=model.copy(v.env.settings())}
+ local prompt=({finish='finish_offer_text',window_question='window_question_offer_text',window_knock='window_knock_offer_text'})[action]
+ if action=='pursuit'and self.incident and self.incident.finishDeclined then prompt='pursuit_after_finish_text'end
+ if prompt then proposal.label=M.expand(cfg[prompt],self:values())end
+ for _,line in ipairs(prepared.lines)do if line:match('^/[rfdl]%s')or line:match('^/[rf]n%s')then proposal.report=true;break end end
+ if proposal.report then
+  proposal.reportValues=model.copy(self:values(options and options.cfg));proposal.confirmationTitle=proposal.confirmationTitle or'Подтверждение доклада'
+  local effective=options and options.cfg or cfg
+  local reportText=effective.templates[dispatchAction and dispatchAction.radio or action]or''
+  for _,r in ipairs(require('pa26_report_context').fields)do
+   local value=proposal.reportValues[r[1]]
+   if r[1]~='direction'and reportText:find('{'..r[1]..'}',1,true)and(not value or value==''or value=='Не задано'or value=='не определён')then proposal.reportIncomplete='Уточните поле «'..r[2]..'» через НЕТ → изменить данные.'end
+  end
+ end
+ if action=='fast_pt'then
+  proposal.ptTarget=model.copy(self.fastPtTarget)
+  local t=proposal.ptTarget;proposal.label='Пометить /pt '..t.name..' [ID '..t.id..']?'
+  proposal.confirmationNote=math.floor(t.distance)..' м · '..(t.source or'наблюдение PA')..'. Будет передана только /pt ID. Допустимость определяет сервер.'
+ end
+ if action=='dispatch_stolen'or action=='dispatch_stolen_backup'then
+  local bulletin=self.env.bulletin and self.env.bulletin(self.now)
+  proposal.bulletinLocked=true;proposal.bulletinRevision=bulletin and bulletin.revision or false
+ end
+ return proposal
+end
+function C:editReport(p,values)
+ if not p or not p.report or p.life~=self.life or p.session~=self.state.session or p.ped~=self.state.ped or
+  p.demo~=self.state.demo or not self.env.equal(p.cfg,self.env.settings())or not self.env.equal(p.vehicleCfg,self.env.vehicle.env.settings())or
+  p.car and not vehicleModel.same(p.car,self.car)then return nil,'Ситуация или настройки изменились. Выберите доклад заново.'end
+ local cfg=model.copy(p.groundCfg or p.cfg);cfg._report_values=model.copy(values)
+ return self:propose(p.action,{cfg=cfg,request=p.groundContext,ground=p.groundData,handoff=p.handoff})
 end
 function C:valid(p,started)
  local s=self.state;local age=p and core.elapsed(self.now,p.at)
@@ -270,6 +329,11 @@ function C:valid(p,started)
  if p.groundData and self.env.validGroundSource and not self.env.validGroundSource(p.groundData)then return false end
  if p.groundContext and not self:groundContextValid(p.groundContext,true)then return false end
  if p.carFree~=(carFree[p.action]==true)then return false end
+ if p.action=='fast_pt'and not self:validFastPt(p)then return false end
+ if p.bulletinLocked then
+  local bulletin=self.env.bulletin and self.env.bulletin(self.now)
+  if p.bulletinRevision~=(bulletin and bulletin.revision or false)then return false end
+ end
  if p.dispatchRp and p.inVehicle~=(s.inVehicle==true)then return false end
  if p.action=='dispatch_business'and self.env.settings().robbery_guard and p.guardRisk~=(dispatch.officers(s)<self.env.settings().robbery_min_officers)then return false end
  if not p.carFree and(not vehicleModel.same(p.car,self.car)or p.car.color1~=self.car.color1 or p.car.color2~=self.car.color2)then return false end
@@ -284,6 +348,7 @@ function C:valid(p,started)
  return true
 end
 function C:accept(p)
+ if p and p.reportIncomplete then return nil,p.reportIncomplete end
  if p and p.navigation then
   if not self:valid(p)then return nil,'Выбор причины устарел.'end
   self.groundRequest=model.copy(p);self.offers={};return true
@@ -298,6 +363,7 @@ function C:validPlan(plan)
   radio.key(plan)==table.concat(p.prepared.wires,'\0')and not self.state.typing and not self.state.modal or false
 end
 function C:onExecution(kind,q,line)
+ if kind=='sent_line'and not q.demo and not q.plan.demo then self:observeManualCommand(line,'executor')end
  if q.plan.vehicleAction and kind=='completed'then
   local old=self.env.vehicle.queued
   if old and old.token==q.plan.vehicleAction.token and old.target and vehicleModel.same(old.target,self.env.vehicle.selected)then
@@ -321,7 +387,7 @@ function C:onExecution(kind,q,line)
    if p.action=='explain_stop'then self.lastStopReason={ground=model.copy(p.groundData),context=model.copy(p.groundContext)}end
    if p.handoff then self.groundHandoff={kind=p.handoff,ground=model.copy(p.groundData),context=model.copy(p.groundContext)}end
   end
-  if p.action=='approach'and self.env.settings().ground_offer then self:offer('explain_stop')end
+  self:incidentCompleted(p.action,p)
   if p.action=='stop_order'then self.phase=self.phase or'10-55';self.startedAt=self.startedAt or self.now;self.lastStopOrderAt=self.now;self.repeatAt=self.now
   elseif p.action=='stop'then self.phase='10-55';self.stopReportOffered=true
   elseif p.action=='pursuit'then self.phase='Преследование';self.pursuitStarted=true;if not self.done.fast_wanted and not self.done.combat_wanted then self.pinned='fast_wanted'end;self.motion=nil
@@ -348,6 +414,11 @@ function C:shown(token)for _,p in ipairs(self.offers)do if p.token==token then p
 function C:decide(token,yes)
  for i,p in ipairs(self.offers)do if p.token==token and p.seen then
   table.remove(self.offers,i);if yes then return self:accept(p)end
+  if p.action=='finish'and self.incident then
+   self.incident.finishDeclined=true;self.dismissed.finish=true
+   if self.incident.departed then self.incident.pursuitOffered=true;self.dismissed.pursuit=nil;self:offer('pursuit')end
+   return true
+  end
   self.dismissed[p.action]=true;if p.action=='stop_order'or p.action=='tire'then self.repeatAt=self.now end;if fast[p.action]then self.pinned=p.action end;return true
  end end;return nil,'Предложение устарело.'
 end
@@ -369,7 +440,9 @@ function C:tick(s,now)
  if old and(not age or old.session~=s.session or old.ped~=s.ped or old.demo~=s.demo or not s.alive)then self:reset('Сцена изменилась.')end
  self.state=model.copy(s);self.now=now
  local car=self.env.vehicle.selected
- if not car and self.car and self.env.vehicle.retainedByStream and self:inPursuit()and self.driver then
+ if not car and self.car and self.phase=='10-55'then
+  self.lastCar=self.lastCar or model.copy(self.car);self.car=model.copy(self.lastCar);self.car.stale=true;self.car.distance=nil
+ elseif not car and self.car and self.env.vehicle.retainedByStream and self:inPursuit()and self.driver then
   local retained=self:observeDriver(self.driver)
   if retained then self.car.stale=true;self.car.distance=nil
   else self:reset('Наблюдение цели погони потеряно.');self.env.vehicle.phase=nil end
@@ -392,7 +465,10 @@ function C:tick(s,now)
   end
  end
  self.driverLive=self.driver and self:observeDriver(self.driver)or nil
- if self.driver and not idSame(self.driver,self.driverLive)then self.offers={};self.pinned=nil;self.driver=nil;self.driverLive=nil end
+ local account=self.driver and(self.env.driverAccount and self.env.driverAccount(self.driver.id)or self.env.driver(self.driver.id))
+ if account and not idSame(self.driver,account)then self:reset('ID водителя сменил владельца.');self.env.vehicle.phase=nil;return end
+ if self.driver and self.driverLive and not idSame(self.driver,self.driverLive)then self:reset('ID водителя сменил владельца.');self.env.vehicle.phase=nil;return end
+ self:incidentStep(s,now)
  if c.stale then
   self.motion=nil;self.stillAt=nil
   if cfg.fast_wanted and self.pinned and self.driverLive then self:offer(self.pinned)end
@@ -412,14 +488,15 @@ function C:tick(s,now)
  if not self.motion or not sampleAge or moved and moved>=cfg.stationary_delta then self.motion={x=c.x,y=c.y,z=c.z,at=now};self.stillAt=now end
  local still=coord(c)and self.stillAt and(core.elapsed(now,self.stillAt)or 0)or 0
  local stopped=still>=cfg.stop_ms
- if self.targetStopped and not stopped then
+ if self.targetStopped and not stopped and not self.done.stop then
   self.stopReportOffered=false;self.done.stop=nil;self.dismissed.stop=nil
  end
  self.targetStopped=stopped
  if self.phase=='10-55'then
   if cfg.stationary_offer and not self.stopReportOffered and ownStill and c.distance<=cfg.stop_distance and still>=cfg.stop_ms then self:offer('stop')end
   if cfg.approach_offer and not s.inVehicle and c.distance<=self.env.vehicle.env.settings().approach_distance then self:offer('approach')end
-  if cfg.flee_offer and c.distance>cfg.flee_distance and moved and moved>=cfg.stationary_delta then self:offer('pursuit')end
+  if cfg.flee_offer and c.distance>cfg.flee_distance and moved and moved>=cfg.stationary_delta and
+   not(self.manualUdDone or self.done.explain_stop)then self:offer('pursuit')end
  end
  local exited=self.hadDriver and c.driver_known==true and c.driver_id==nil and self.driverLive~=nil
  if exited and cfg.exit_offer and(self.phase=='10-55'or self.phase=='Преследование')then
@@ -464,6 +541,9 @@ function C:view()
   colleagues=self.state and model.copy(self.state.colleagues),pinned=self.pinned,tireWarnings=self.tireWarnings,tireStatus=text,
   duration=math.floor((self.startedAt and core.elapsed(self.now,self.startedAt)or 0)/1000),cooldown=math.max(0,cfg.warning_cooldown_ms-(self.lastMegaphoneAt and(core.elapsed(self.now,self.lastMegaphoneAt)or 0)or cfg.warning_cooldown_ms)),
   moscowTime=self.state and self.state.moscowTime,raidAllowed=self.state and self.state.moscowTime and self.state.moscowTime.hour*60+self.state.moscowTime.min>=cfg.raid_start_hour*60 and self.state.moscowTime.hour*60+self.state.moscowTime.min<cfg.raid_end_hour*60,
-  repeatPaused=self.repeatPaused,combat=combat,attackConfirmed=self.attackConfirmed}
+  repeatPaused=self.repeatPaused,combat=combat,attackConfirmed=self.attackConfirmed,windowActive=self.phase=='10-55',windowAwait=self.windowAwait~=nil,windowReply=self.windowReply,windowSkipped=self.windowSkipped,
+  stolen=self.env.bulletin and self.env.bulletin(self.now)}
 end
+require('pa26_copilot_incident').install(C)
+require('pa26_fast_pt').install(C)
 return M

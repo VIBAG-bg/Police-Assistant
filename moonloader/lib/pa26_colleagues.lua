@@ -37,24 +37,36 @@ function C:observe(line)
  end
 end
 function C:carCrew(s,car,total)
- if not car then return 1 end
+ self.physicalCrew={};if not car then return 1 end
  local r=self.env.read;local cfg=self.env.settings();local count=1
- local contacts={};for _,p in ipairs(self.env.partners()or{})do if type(p.nickname)=='string'then contacts[p.nickname:lower()]=true end end
+ local contacts={};for _,p in ipairs(self.env.partners()or{})do if type(p.nickname)=='string'then contacts[p.nickname:lower()]=p end end
  local skins=require('pa26_copilot_settings').ids(cfg.skin_ids,0,65535)or{}
  local seen={};local scanned=0
- local people=r('getAllChars');if type(people)~='table'then return 1 end
+ local people={}
+ -- Seat reads complement the stream list. They do not use a camera ray through the roof.
+ local driver=r('getDriverOfCar',car);if core.finite(driver)then people[#people+1]=driver end
+ for seat=0,19 do
+  local ped=r('getCharInCarPassengerSeat',car,seat);if core.finite(ped)then people[#people+1]=ped end
+ end
+ for _,ped in pairs(r('getAllChars')or{})do if #people<2048 then people[#people+1]=ped end end
  for _,ped in pairs(people)do scanned=scanned+1;if scanned>2048 then break end
   if ped~=s.ped and core.finite(ped)and not seen[ped]then seen[ped]=true
    if r('doesCharExist',ped)==true and r('isCharDead',ped)==false and r('isCharInAnyCar',ped)==true and r('storeCarCharIsInNoSave',ped)==car then
-    local ok,id=r('sampGetPlayerIdByCharHandle',ped);local back,handle=r('sampGetCharHandleBySampPlayerId',id)
-    if ok==true and back==true and handle==ped and core.validId(id)and r('sampIsPlayerConnected',id)==true and r('sampIsPlayerNpc',id)==false then
+    local ok,id=r('sampGetPlayerIdByCharHandle',ped)
+    if ok==true and core.validId(id)and r('sampIsPlayerConnected',id)==true and r('sampIsPlayerNpc',id)==false then
+     local back,handle=r('sampGetCharHandleBySampPlayerId',id)
+     if back==true and handle==ped then
      local name=r('sampGetPlayerNickname',id);local skin=r('getCharModel',ped)
-     if type(name)=='string'and(contacts[name:lower()]or cfg.uniforms_enabled and skins[skin]or cfg.radio_cache and self.knownColleagues[name:lower()])then count=count+1 end
+     if type(name)=='string'and(contacts[name:lower()]or cfg.uniforms_enabled and skins[skin]or cfg.radio_cache and self.knownColleagues[name:lower()])then
+      count=count+1;local contact=contacts[name:lower()]
+      self.physicalCrew[#self.physicalCrew+1]={id=id,ped=ped,name=name,ic_name=contact and contact.ic_name,contact_id=contact and contact.id}
+     end
+     end
     end
    end
   end
  end
- return math.max(1,math.min(total or 21,count))
+ return math.max(1,math.min(21,count))
 end
 function C:ownSnapshot(s)
  local r=self.env.read;local car=s.inVehicle and r('storeCarCharIsInNoSave',s.ped)or nil
@@ -66,7 +78,7 @@ function C:ownSnapshot(s)
  local automatic=copy(profile);automatic.callsign=''
  local dept=profile.department;local station=type(dept)=='string'and dept~=''and dept~='EPD'and dept or'LSPS'
  return{nearbyOfficers={},nearbyCruisers=0,ownCruiserRole=role,unitMode=mode,cruiserOccupants=occupants,skin=skin,
-  patrolOccupants=patrolCount,unitAuto=M.callsign(automatic,skin,patrolCount,patrolCount>=2),autoCallsign=M.callsign(profile,skin,patrolCount,patrolCount>=2),station=station}
+  patrolOccupants=patrolCount,patrolCrew=copy(self.physicalCrew or{}),unitAuto=M.callsign(automatic,skin,patrolCount,patrolCount>=2),autoCallsign=M.callsign(profile,skin,patrolCount,patrolCount>=2),station=station}
 end
 function C:tick(s,now)
  self.now=now

@@ -67,6 +67,7 @@ function Vehicle:reset(reason)
     self:cancel(reason);self.life=self.life+1;self.selected=nil;self.candidates={};self.phase=nil;self.motion=nil;self.own=nil;self.scanAt=nil
     self.selectionRequest=nil;self.retainedByStream=nil
     self.syncedDriver=nil;self.syncedRevision=nil;self.driverSelectionRevision=nil
+    self.lastDirectionValue=nil;self.directionValue=nil;self.lastOwnIdentity=nil
 end
 function Vehicle:clearTarget(reason,streamLost)
     self.retainedByStream=streamLost==true
@@ -89,16 +90,26 @@ function Vehicle:decorate(c)
 end
 function Vehicle:direction(s,now,cfg)
     local car=self.env.ownCar and self.env.ownCar()
-    self.own=car;self.directionValue=cfg.stationary
-    if not cfg.direction_enabled or not car then self.motion=nil;return end
+    self.own=car
+    if not cfg.direction_enabled then self.motion=nil;self.directionValue=nil;return end
+    if not car then self.motion=nil;self.directionValue=self.lastDirectionValue;return end
+    local identity={handle=car.handle,id=car.id,model_id=car.model_id,generation=car.id and(self.generations[car.id]or 0)}
+    local before=self.lastOwnIdentity
+    if before and(before.handle~=identity.handle or before.id~=identity.id or before.model_id~=identity.model_id or before.generation~=identity.generation)then
+        self.lastDirectionValue=nil;self.motion=nil
+    end
+    self.lastOwnIdentity=identity;self.directionValue=self.lastDirectionValue
     local old=self.motion;local age=old and core.elapsed(now,old.at)
     if old and old.handle==car.handle and age and age>=cfg.motion_ms and age<=5000 then
         local dx,dy=car.x-old.x,car.y-old.y;local distance=math.sqrt(dx*dx+dy*dy)
         if distance>=cfg.stationary_distance and distance<=cfg.max_motion_distance then
-            self.directionValue=M.compass(dx,dy,cfg.directions)or cfg.stationary
+            self.lastDirectionValue=M.compass(dx,dy,cfg.directions)
+            self.directionValue=self.lastDirectionValue
+        elseif distance>cfg.max_motion_distance then
+            self.lastDirectionValue=nil;self.directionValue=nil
         end
     elseif old and old.handle==car.handle and age and age<cfg.motion_ms then
-        self.directionValue=old.direction or cfg.stationary;return
+        return
     end
     self.motion={handle=car.handle,x=car.x,y=car.y,at=now,direction=self.directionValue}
 end
@@ -106,7 +117,11 @@ function Vehicle:values(state,c)
     local out=model.copy(state or self.state or {});local cfg=self.env.settings()
     c=c or self.selected
     for k,v in pairs(self.env.service and self.env.service()or {})do if out[k]==nil or out[k]==''then out[k]=v end end
-    out.direction=cfg.direction_enabled and(self.directionValue or cfg.stationary)or cfg.manual_direction
+    out.direction=cfg.direction_enabled and(self.lastDirectionValue or'')or cfg.manual_direction
+    out.directionKnown=out.direction~=''
+    if not out.directionKnown then out.direction='неизвестно'end
+    local report=require('pa26_report_context').values(out,self.env.profile and self.env.profile(),self.env.reportConfig and self.env.reportConfig())
+    for key,value in pairs(report)do if key=='unit'or key=='crew'or key:match('^patrol_')or key=='unit_crew_count'or not out[key]or out[key]==''then out[key]=value end end
     local profile=self.env.profile and self.env.profile()or{};local nearby=out.colleagues or{}
     if not out.unit or out.unit==''then out.unit=nearby.unitAuto or(profile.callsign~=''and profile.callsign)or nearby.autoCallsign or'1-L-1'end
     if not out.station or out.station==''then out.station=nearby.station or'LSPS'end
@@ -134,6 +149,7 @@ function M.preview(action,cfg,values,codec,split)
     local phrase=slot and cfg.phrases and cfg.phrases[slot]
     if slot and(not phrase or not phrase.enabled)then return nil,'Требование выключено или удалено.'end
     local body=phrase and phrase.template or cfg[action..'_template'];if not body then return nil,'Неизвестное действие транспорта.'end
+    body=require('pa26_report_context').directionTemplate(body,values)
     values=mapGrid.reportValues(values,body,not megaphone(action)and action~='approach'and action~='window')
     local missing;body=core.expandGender(body,values.gender):gsub('{([a-z_]+)}',function(k)
         local v=values[k];local tag=k=='local_tag'or k=='global_tag'or k=='prison_tag'or k=='armed_text'

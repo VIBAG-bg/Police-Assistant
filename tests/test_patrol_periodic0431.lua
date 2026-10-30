@@ -54,7 +54,7 @@ for _,case in ipairs({{1,'male','/f',false},{1,'female','/r',false},{2,'male','/
  local report=textSince(s,first);check(report~='',tostring(s.patrol.error))
  check(report:find(channel..' ',1,true)==1,report)
  check(report:find(occupants==1 and'продолжаю патруль'or'продолжаем патруль',1,true),report)
- check(report:find(occupants==1 and'двигаюсь'or'двигаемся',1,true),report)
+ check(not report:find('на не определено',1,true)and not report:find('на На месте',1,true),'unknown direction is omitted rather than fabricated')
  check(report:find(occupants==1 and(gender=='female'and'доступна'or'доступен')or'доступны',1,true),report)
  check(not report:find('[{}]'),'No raw variables sent');eq(s.patrol.error,nil)
  for _=1,20 do s.step(1000)end

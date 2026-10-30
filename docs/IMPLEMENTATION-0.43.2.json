@@ -1,0 +1,25 @@
+{
+  "release": "0.43.2",
+  "baseline": "0.43.1",
+  "baseline_commit": "d9b05e28c91a9241fc6d8e437a22bf254efecb29",
+  "spec_sha256": "538bffa5753b29d8c59ce2164eb51ae062fe7df2c4942beec42505d935fb1e2c",
+  "installation_authorized": false,
+  "publication_authorized": true,
+  "stage": "validated_ready_to_publish",
+  "updater_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
+  "milestones": [
+    "Stability: navigation, direction, crew, durable incident and finish/pursuit",
+    "Interaction: report confirmation and grouped followups, grounds speech, window replies",
+    "Observations: stolen bulletin, current grid highlight, fast pt and regression"
+  ],
+  "scope_decision": "Implement the full specification; resolve details using existing PA architecture and preserve prior workflows",
+  "milestones_completed": [
+    1,
+    2,
+    3
+  ],
+  "test_groups": 181,
+  "test_checks": 11449832,
+  "live_server_tested": false,
+  "additional_request": "Fix disappearing periodic patrol continuation confirmation and publish 0.43.2 to GitHub; do not install locally"
+}

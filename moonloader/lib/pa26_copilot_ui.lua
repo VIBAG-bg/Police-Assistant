@@ -5,10 +5,38 @@ function M.offer(s,callbacks,action)
  local p,err=callbacks.copilotOffer(action)
  if p then if p.navigation then callbacks.openGround(p)else s.vehicleConfirm=p end else s:notify(err,'vehicle',false)end
 end
+function M.editReport(s,ui,callbacks)
+ if s.reportEdit then
+  local f=s.reportEdit
+  s:settingsHeading(ui,'Изменить данные доклада')
+  ui.text('Проверьте юнит и состав экипажа. Эти правки относятся только к этому докладу; перед отправкой появится новый предпросмотр.')
+  for _,r in ipairs(require('pa26_report_context').fields)do
+   f.values[r[1]]=s:field(r[2]..'##report-edit-'..r[1],f.proposal.token..':'..r[1],f.values[r[1]]or'Не задано',1025,r[1]=='crew',64)
+  end
+  if s:button('Вернуться к предпросмотру##report-edit-preview',ui)then
+   local p,why=callbacks.copilotEditReport(f.proposal,f.values)
+   if p then s.vehicleConfirm=p;s.reportEdit=nil else s:notify(why,'vehicle',false)end
+  end
+  if s:button('Отменить доклад##report-edit-cancel',ui)then s.reportEdit=nil end
+  return true
+ end
+ return false
+end
 function M.quick(s,ui,callbacks,offer)
+ if M.editReport(s,ui,callbacks)then return end
  s:settingsHeading(ui,'Вызовы и спецситуации (RP + Рация)')
  ui.text('Ручная отыгровка полученного вызова: в машине используется терминал, пешком — КПК и рация. Затем идёт доклад. Проверьте место в предпросмотре: это текущие город, район, квадрат и курс офицера. Серверная GPS-метка не устанавливается.')
- for _,r in ipairs(require('pa26_copilot').dispatchActions)do if s:button(r[2]..'##copilot-dispatch-'..r[1],ui)then if offer then offer(r[1])else M.offer(s,callbacks,r[1])end end end
+ local dispatch=require 'pa26_dispatch';s.dispatchExpanded=s.dispatchExpanded or{}
+ for _,r in ipairs(dispatch.primaryActions)do
+  if s:button(r[2]..'##copilot-dispatch-'..r[1],ui)then if offer then offer(r[1])else M.offer(s,callbacks,r[1])end end
+  local group=dispatch.followups[r[1]]
+  if group then
+   if s:button((s.dispatchExpanded[r[1]]and'Скрыть следующие доклады'or'Доклады по этому вызову')..'##dispatch-followups-'..r[1],ui)then s.dispatchExpanded[r[1]]=not s.dispatchExpanded[r[1]]end
+   if s.dispatchExpanded[r[1]]then for _,sub in ipairs(group)do
+    if s:button(sub[2]..'##copilot-dispatch-'..sub[1],ui)then if offer then offer(sub[1])else M.offer(s,callbacks,sub[1])end end
+   end end
+  end
+ end
  s:settingsHeading(ui,'Быстрые доклады')
  ui.text('Каждая кнопка открывает предпросмотр и ДА/НЕТ. Отправки без подтверждения нет. Тексты и канал меняются в «Трафик и погоня → Настройки и тексты». Перерыв — только доклад, без таймера.')
  for _,r in ipairs(require('pa26_copilot').quick)do if s:button(r[2]..'##copilot-quick-'..r[1],ui)then if offer then offer(r[1])else M.offer(s,callbacks,r[1])end end end
@@ -16,6 +44,7 @@ end
 function M.draw(s,ui,data,callbacks)
  local im=s.imgui;local v=data.copilot or{};local c=v.car;local values=v.values or{}
  s.currentNoticeScope='vehicle';s:settingsHeading(ui,'Трафик и погоня')
+ if M.editReport(s,ui,callbacks)then return end
  for _,r in ipairs({{'on_duty','На службе · автофункции PA'},{'enabled','Связь · разрешить доклады PA'}})do
   local value,changed=s:check(r[2]..'##copilot-alert-'..r[1],s.lib.alerts[r[1]])
   if changed then
@@ -27,6 +56,28 @@ function M.draw(s,ui,data,callbacks)
  s.copilotPage=s:choice('Раздел##copilot-page',s.copilotPage or'work',{{'work','Ситуация'},{'grounds','Причина и основание'},{'rights','Задержание и права'},{'settings','Настройки и тексты'}},ui)
  local d=s.vehicleDraft or copy(s.lib.vehicle);local cfg=d.copilot or prefs.defaults();d.copilot=cfg
  if s.copilotPage=='work'then
+  if s:button('Быстрый /pt рядом · ДА/НЕТ##copilot-fast-pt',ui)then callbacks.fastPt()end
+  ui.text('/pt: водитель текущей ситуации, выбранный человек, водитель выбранной машины, затем ближайший видимый человек вне списка коллег. Максимум 50 м; отправка только после ДА.')
+  local bulletin=v.stolen
+  if bulletin then
+   s:settingsHeading(ui,'Ориентировка об угоне')
+   ui.text(bulletin.model..' · '..bulletin.color..' · '..bulletin.area..' · ещё '..bulletin.remaining..' с')
+   ui.text(bulletin.targetLabel or'Квадрат района не установлен. Точной позиции автомобиля в ориентировке нет.')
+   if s:button('Уточнить ориентировку##stolen-edit',ui)then s.stolenDraft=copy(bulletin)end
+   if s.stolenDraft then
+    local draft=s.stolenDraft
+    for _,r in ipairs({{'model','Модель'},{'color','Цвет'},{'area','Район из ориентировки'},{'place','Уточнение места'}})do draft[r[1]]=s:field(r[2]..'##stolen-'..r[1],'stolen:'..draft.revision..':'..r[1],draft[r[1]],513)end
+    if s:button('Применить мои уточнения##stolen-apply',ui)then local ok,why=callbacks.stolenCorrect(draft,draft.revision);if ok then s.stolenDraft=nil;s:notify('Ориентировка уточнена. Перед докладом проверьте новый предпросмотр.','vehicle',false)else s:notify(why,'vehicle',false)end end
+    if s:button('Отменить уточнения##stolen-cancel',ui)then s.stolenDraft=nil end
+   end
+   if s:button('Убрать ориентировку и выделение##stolen-clear',ui)then callbacks.stolenClear();s.stolenDraft=nil end
+  end
+  if v.windowActive then
+   ui.text(v.windowAwait and'Окно: ожидается ответ текущего водителя.'or v.windowReply and('Окно: '..(v.windowReply=='open'and'открыто'or'закрыто')..' · наблюдение / ваша отметка.')or'Окно: ответа нет. Можно продолжать общение вручную.')
+   for _,r in ipairs({{'repeat','Снова спросить об окне · предпросмотр'},{'open','Водитель открыл окно · моя отметка'},{'closed','Водитель не открыл окно · моя отметка'},{'skip','Пропустить вопрос об окне'}})do
+    if s:button(r[2]..'##window-manual-'..r[1],ui)then local ok,why=callbacks.copilotWindow(r[1]);if not ok then s:notify(why or'Нужны текущий водитель и активная остановка.','vehicle',false)end end
+   end
+  end
   if c then
    s:settingsHeading(ui,(values.model or'Машина')..' ['..c.id..'] · '..(v.phase or'Выбрана'))
    ui.text((values.vehicle_color or'Цвет неизвестен')..' · Гос. номер: '..(values.vehicle_plate or'не установлен'))
@@ -77,6 +128,9 @@ function M.draw(s,ui,data,callbacks)
   if v.moscowTime then ui.text(string.format('МСК %02d:%02d · сохранённое окно %02d:00–%02d:00: ',v.moscowTime.hour,v.moscowTime.min,cfg.raid_start_hour,cfg.raid_end_hour)..(v.raidAllowed and'внутри интервала'or'вне интервала'))end
   ui.text('В источнике есть расхождение: регламент 4.3 — 14:00–22:00; 10.9 запрещает 20:00–13:00. Часовой пояс там не указан. Настройка PA — ваша трактовка, а не разрешение на рейд.')
   ui.text('Изменения сохраняются автоматически. Старые значения остальных функций и ваши бинды остаются своими.')
+  ui.text('Быстрый /pt: '..require('pa26_bindings').shortcutName(d.fast_pt_shortcut))
+  if s:button('Назначить клавишу быстрого /pt##copilot-pt-key',ui)then callbacks.capture({kind='feature',group='vehicle',field='fast_pt_shortcut'})end
+  if d.fast_pt_shortcut.key~=0 and s:button('Убрать клавишу /pt##copilot-pt-key-clear',ui)then d.fast_pt_shortcut={key=0,ctrl=false,alt=false,shift=false}end
   d.enabled=s:check('Включить транспортные действия PA##copilot-vehicle-enabled',d.enabled)
   d.require_patrol=s:check('Транспорт только в активном патруле##copilot-vehicle-patrol',d.require_patrol)
   d.megaphone_enabled=s:check('Включить мегафон##copilot-megaphone-enabled',d.megaphone_enabled)
@@ -95,7 +149,7 @@ function M.draw(s,ui,data,callbacks)
   local delta=im.new.float(cfg.stationary_delta);if im.SliderFloat('##copilot-stationary',delta,.05,5)then cfg.stationary_delta=delta[0]end;im.PopItemWidth()
   for _,r in ipairs(prefs.texts)do
    cfg[r[1]]=s:field(r[2]..'##copilot-text-'..r[1],'copilot:text:'..r[1],cfg[r[1]],r[3]*2+1,true,64)
-   if({robbery_warning=true,dispatch_confirmation_note=true,gas_confirmation_note=true})[r[1]]then
+   if({robbery_warning=true,dispatch_confirmation_note=true,gas_confirmation_note=true,finish_offer_text=true,pursuit_after_finish_text=true,window_question_offer_text=true,window_knock_offer_text=true,window_open_offer_text=true})[r[1]]then
     local preview,why=callbacks.copilotPreview(r[1],cfg);ui.text('Предпросмотр: '..tostring(preview or why))
    end
   end

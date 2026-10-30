@@ -83,9 +83,9 @@ end
 for _,inVehicle in ipairs({true,false})do for _,action in ipairs({'dispatch_911','dispatch_stolen','dispatch_business','dispatch_gas','dispatch_bank'})do
  local cp,v,t=setup(false);t.state.inVehicle=inVehicle;t.tick();local p=t.propose(action)
  check(p.carFree and not p.target and not p.car);check(p.dispatchRp);eq(p.inVehicle,inVehicle)
- local text=table.concat(p.prepared.lines,'\n');check(p.prepared.lines[1]:match('^/me '));check(text:find('/do ',1,true));check(text:find('/r ',1,true));check(text:find('Сан-Фиерро',1,true));check(text:find('J-6',1,true))
+ local text=table.concat(p.prepared.lines,'\n');check(p.prepared.lines[1]:match('^/me '));check(text:find('/do ',1,true));check(text:find('/r ',1,true));check(text:find(action=='dispatch_stolen'and'Doherty'or'Сан-Фиерро',1,true),text);check(text:find('J-6',1,true))
  if inVehicle then check(text:find('терминал',1,true));check(not text:find('КПК',1,true))else check(text:find('КПК',1,true));check(not text:find('бортов',1,true))end
- check(not text:find('{',1,true));check(not text:find('принял ',1,true));check(not text:find('/su ',1,true));check(not text:find('/pt ',1,true));check(not text:find('/gps ',1,true))
+ check(not text:find('{',1,true));check(not text:find('принял ',1,true),text);check(not text:find('/su ',1,true));check(not text:find('/pt ',1,true));check(not text:find('/gps ',1,true))
  local radioAt=false
  for i,line in ipairs(p.prepared.lines)do
   local wire=assert(codec.encode(line));check(#wire<=127);eq(wire,p.prepared.wires[i]);check(core.validUtf8(line))
@@ -116,13 +116,13 @@ eq(D.officers(nil),1);eq(D.officers({colleagues={cruiserOccupants=0/0}}),1)
 eq(D.officers({colleagues={cruiserOccupants=2,nearbyOfficers={{},{}}}}),3)
 for _,count in ipairs({1,2,3})do
  local cp,v,t=setup(false);t.state.colleagues.cruiserOccupants=count;t.tick();local p=t.propose('dispatch_business')
- eq(p.guardRisk,count<2);eq(p.confirmationTitle~=nil,count<2)
+ eq(p.guardRisk,count<2);check(p.confirmationTitle~=nil)
  eq(p.confirmationNote:find('3.1 / 10.4',1,true)~=nil,count<2)
  if count<2 then check(p.confirmationNote:find('Jail',1,true));check(p.confirmationNote:find('1 чел.',1,true))end
  t.cfg.copilot.robbery_warning='Проверьте экипаж: {dispatch_officers} из {robbery_min_officers}.'
  check(cp:previewTemplate('robbery_warning',t.cfg.copilot):find(count..' из 2',1,true))
  t.cfg.copilot.robbery_min_officers=3;t.tick();p=t.propose('dispatch_business');eq(p.guardRisk,count<3)
- t.cfg.copilot.robbery_guard=false;t.tick();p=t.propose('dispatch_business');check(not p.guardRisk and not p.confirmationTitle)
+ t.cfg.copilot.robbery_guard=false;t.tick();p=t.propose('dispatch_business');check(not p.guardRisk and p.confirmationTitle=='Подтверждение доклада')
 end
 do
  local cp,v,t=setup(false);local p=t.propose('dispatch_business');t.state.colleagues.cruiserOccupants=2;t.tick();check(not cp:accept(p),'Crew guard must be re-confirmed when the risk changes')
@@ -164,11 +164,12 @@ local f=fixture({demo=false,library=lib,alerts=true,copilot=true});f.step();f.co
 f.physicalDown={[0x73]=true};f.step();f.physicalDown={};f.step();check(f.frames[4].condition())
 for _,page in ipairs({'traffic','patrol'})do
  f.workspace.studio.assistPage=page
+ f.workspace.studio.dispatchExpanded={dispatch_911=true,dispatch_stolen=true,dispatch_business=true,dispatch_gas=true,dispatch_bank=true}
  for _,row in ipairs(D.actions)do
   local before=#f.sent;f.click=row[2]..'##copilot-dispatch-'..row[1];f.render();eq(f.click,nil,'Button missing from '..page)
   local notice=f.workspace.studio.feedback:peek()
   check(f.workspace.studio.vehicleConfirm and f.workspace.studio.vehicleConfirm.dispatchAction,row[1]..': '..tostring(notice and notice.text)..' '..table.concat(f.logs,'\n'));eq(#f.sent,before)
-  f.click='НЕТ##confirm-no';f.render();eq(f.click,nil);check(not f.workspace.studio.vehicleConfirm);f.step();eq(#f.sent,before)
+  f.click='НЕТ##confirm-no';f.render();eq(f.click,nil);check(not f.workspace.studio.vehicleConfirm);f.workspace.studio.reportEdit=nil;f.step();eq(#f.sent,before)
  end
 end
 f.workspace.studio.assistPage='traffic';f.click=D.actions[1][2]..'##copilot-dispatch-dispatch_911';f.render()

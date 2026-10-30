@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.43.1')
+script_version('0.43.2')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -62,7 +62,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.43.1' then
+if #missing > 0 or not core or core.VERSION ~= '0.43.2' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -699,14 +699,26 @@ patrolSession.readScene=function(state,now)
     if not state.session or not state.alive then patrolSession.scene={nearby={},players={}};return end
     local scene=patrolSession.scene or {nearby={},players={}}
     local ids,names,nameList={},{},{}
-    for _,row in ipairs(settings.crew)do for _,contact in ipairs(workspace.library.partners)do
+    local wanted=bindingModel.copy(settings.crew)
+    for _,row in ipairs(studio.patrolSessionDraft and studio.patrolSessionDraft.crew or{})do wanted[#wanted+1]=row end
+    for _,row in ipairs(wanted)do for _,contact in ipairs(workspace.library.partners)do
         if contact.id==row.contact_id then names[contact.nickname:lower()]=true;nameList[#nameList+1]=contact.nickname:lower()end
     end end
     table.sort(nameList);local roster=table.concat(nameList,'\0')
     local age=scene.at and core.elapsed(now,scene.at)
     if scene.session~=state.session or not age or age>=500 or scene.distance~=settings.bind_distance or scene.roster~=roster or scene.enabled~=settings.enabled then
-        scene.nearby=settings.enabled and #settings.crew>0 and state.alive and nearbyVisible(settings.bind_distance)or {}
+        scene.nearby=#wanted>0 and state.alive and nearbyVisible(settings.bind_distance)or {}
         scene.at=now;scene.session=state.session;scene.distance=settings.bind_distance;scene.roster=roster;scene.enabled=settings.enabled
+    end
+    -- A verified teammate in this cruiser does not need a camera ray through its roof.
+    local known={};for _,row in ipairs(scene.nearby)do known[row.id]=true end
+    for _,row in ipairs(state.colleagues and state.colleagues.patrolCrew or{})do
+        if names[row.name:lower()]and not known[row.id]and sceneServices.readDriver then
+            local live=sceneServices.readDriver(row.id)
+            if live and live.name==row.name and core.finite(live.distance)and live.distance<=settings.bind_distance then
+                scene.nearby[#scene.nearby+1]=live;known[live.id]=true
+            end
+        end
     end
     for _,row in ipairs(scene.nearby)do if names[row.name:lower()]then ids[row.id]=true end end
     for _,a in ipairs({patrolSession.data.active or false,patrolSession.intent and patrolSession.intent.record or false,
@@ -772,12 +784,18 @@ sceneServices.vehicle=sceneServices.model.new({settings=function()return workspa
         if ok then workspace.selectedTarget=workspace.targets.target;hud.target=workspace.targets:view()end
         return ok,err
     end,
-    profile=function()return workspace.library.profile end,service=function()return {unit=workspace.library.patrol_session.unit,station=workspace.library.patrol_session.station,crew=workspace.library.profile.name}end,
+    profile=function()return workspace.library.profile end,reportConfig=function()return workspace.library.patrol_session end,
+    service=function()return {unit=workspace.library.patrol_session.unit,station=workspace.library.patrol_session.station,crew=workspace.library.profile.name}end,
     equal=patrolSession.env.equal,patrol=function()return patrolSession.data.active end,start=startAutomatic,
     notice=function(message)studio:notify(message,'vehicle',false)end,
     cancel=function(token,reason)local q=workspace.executor.queue;if q and q.plan.vehicleAction and q.plan.vehicleAction.token==token then workspace.executor:cancel(reason)end end})
 sceneServices.colleagues=require('pa26_colleagues').new({read=optionalRead,settings=function()return workspace.library.vehicle.copilot end,
-    partners=function()return workspace.library.partners end,profile=function()return workspace.library.profile end,
+    partners=function()
+        local contacts=bindingModel.copy(workspace.library.partners)
+        local roster=studio.patrolSessionDraft and studio.patrolSessionDraft.crew or workspace.library.patrol_session.crew
+        for _,p in ipairs(contacts)do for _,r in ipairs(roster or{})do if p.id==r.contact_id then p.ic_name=r.ic_name end end end
+        return contacts
+    end,profile=function()return workspace.library.profile end,
     crew=function()local a=patrolSession.data.active;return a and #(a.crew or{})>0 or false end})
 sceneServices.readDriver=function(id)
     if not core.validId(id)or optionalRead('sampIsPlayerConnected',id)~=true or optionalRead('sampIsPlayerNpc',id)~=false then return end
@@ -805,11 +823,54 @@ workspace.env.targetRetention=function(target)
         c.driver.generation~=(sceneServices.nearby.generations[target.id]or 0)then return end
     return c:retentionFor(c.driver)
 end
+sceneServices.bulletins=require('pa26_stolen_bulletin').new(function()return workspace.library.vehicle.copilot end)
 sceneServices.copilot=require('pa26_copilot').new({vehicle=sceneServices.vehicle,settings=function()return workspace.library.vehicle.copilot end,
+    bulletin=function(now)return sceneServices.bulletins:view(now,workspace.library.map_grid)end,
     profile=function()return workspace.library.profile end,codec=codec,equal=patrolSession.env.equal,driver=sceneServices.readDriver,driverAccount=sceneServices.readDriverAccount,taserActive=function(s)return taser:activeFor(s)end,start=startAutomatic,
     notice=function(message)if sceneServices.userWarning then sceneServices.userWarning(message)end end,
     cancel=function(token,reason)local q=workspace.executor.queue;if q and q.plan.copilotAction and q.plan.copilotAction.token==token then workspace.executor:cancel(reason)end end})
 sceneServices.copilotUi=require 'pa26_copilot_ui'
+sceneServices.refreshFastPt=function(state,now)
+    local c=sceneServices.copilot;local request=sceneServices.fastPtRequest;sceneServices.fastPtRequest=nil
+    if state.typing or state.paused or not state.focused or state.blocked or not state.alive or not state.session then
+        c.fastPtLive=nil;c.fastPtLiveAt=nil;return
+    end
+    if request and state.session and state.alive and state.focused and not state.paused and not state.blocked and not state.typing then
+        local rows={};local limit=workspace.library.vehicle.copilot.fast_pt_distance
+        local function add(expected,source)
+            local fresh=expected and sceneServices.readDriver(expected.id)
+            if fresh and expected.name==fresh.name and(expected.generation==nil or expected.generation==fresh.generation)then fresh.source=source;rows[#rows+1]=fresh end
+        end
+        if c.phase then add(c.driver,'водитель текущей остановки / погони')end
+        add(workspace.selectedTarget,'выбранный человек')
+        local car=sceneServices.vehicle.selected
+        if car and not car.stale and car.driver_id then
+            local driver=sceneServices.readDriver(car.driver_id)
+            if driver and car.driver_ped==driver.ped then driver.source='водитель выбранной машины';rows[#rows+1]=driver end
+        end
+        local colleagues={}
+        for _,p in ipairs(workspace.library.partners or{})do colleagues[p.nickname:lower()]=true end
+        for name in pairs(sceneServices.colleagues.knownColleagues or{})do colleagues[name]=true end
+        for _,p in ipairs((state.colleagues or{}).nearbyOfficers or{})do colleagues[p.name:lower()]=true end
+        local skins=require('pa26_copilot_settings').ids(workspace.library.vehicle.copilot.skin_ids,0,65535)or{}
+        local fallback=nearbyVisible(limit);table.sort(fallback,function(a,b)return a.distance<b.distance end)
+        for _,p in ipairs(fallback)do
+            p.generation=sceneServices.nearby.generations[p.id]or 0;p.visible=true;p.fallback=true;p.source='ближайший видимый человек'
+            p.colleague=colleagues[p.name:lower()]or skins[optionalRead('getCharModel',p.ped)]or false
+            rows[#rows+1]=p
+        end
+        local target=require('pa26_fast_pt').resolve(rows,state,limit)
+        c.fastPtLive=target;c.fastPtLiveAt=now
+        local ok,why=c:requestFastPt(rows);if not ok then studio:notify(why,'vehicle',false)end
+    end
+    local pending=c.intent and c.intent.action=='fast_pt'or c.queued and c.queued.action=='fast_pt'
+    for _,p in ipairs(c.offers)do if p.action=='fast_pt'then pending=true end end
+    if c.fastPtTarget and pending then
+        local fresh=sceneServices.readDriver(c.fastPtTarget.id)
+        if fresh and c.fastPtTarget.fallback and not visiblePed(fresh.ped,workspace.library.vehicle.copilot.fast_pt_distance)then fresh=nil end
+        c.fastPtLive=fresh;c.fastPtLiveAt=now
+    elseif not request then c.fastPtTarget=nil;c.fastPtLive=nil;c.fastPtLiveAt=nil end
+end
 sceneServices.detentionTimers=require('pa26_detention_timers').new({
     settings=function()return workspace.library.vehicle.copilot end,
     target=function()return sceneServices.wantedAccounts:current(workspace.selectedTarget)end,
@@ -990,8 +1051,22 @@ studioCallbacks={
     evidenceArchiveAccept=function(p)return sceneServices.evidence:archive(p)end,
     evidenceRefresh=function()sceneServices.evidence.scanAt=nil end,
     copilotOffer=function(action)return sceneServices.copilot:propose(action)end,
+    fastPt=function()
+        sceneServices.fastPtRequest=true;sceneServices.showAssist[0]=false;showQuick[0]=false;showWindow[0]=false;return true
+    end,
+    copilotEditReport=function(p,values)return sceneServices.copilot:editReport(p,values)end,
+    stolenClear=function()sceneServices.bulletins:clear();return true end,
+    stolenCorrect=function(fields,revision)return sceneServices.bulletins:correct(fields,studioClock,revision)end,
+    copilotWindow=function(answer)
+        if answer=='repeat'then return sceneServices.copilot:repeatWindowQuestion()end
+        return sceneServices.copilot:windowAnswer(answer,true)
+    end,
     openGround=function(p)sceneServices.groundInput=bindingModel.copy(p);return true end,
     groundValid=function(p)return sceneServices.copilot:groundContextValid(p,true)end,
+    groundSpeech=function(f)
+        local values,why=sceneServices.copilot:values(f.cfg);if not values then return nil,why end
+        return require('pa26_copilot').expand(f.cfg.templates.explain_stop,values)
+    end,
     groundPreview=function(f)
         if not sceneServices.copilot:groundContextValid(f.request,true)then return nil,'Выбор человека устарел.'end
         f.cfg._ground_target=f.request.groundTarget
@@ -1100,6 +1175,11 @@ studioCallbacks={
     patrolEventOffer=function(form,report)return patrolEvents:propose(form,report)end,
     patrolEventAccept=function(p)return patrolEvents:accept(p)end,
     openPatrol=function()return studio:requestNavigation(function()openWorkspace('addons',true);menu.tool='patrol';studio.partnerPage='patrol'end,'открыть патруль и экипаж')end,
+    patrolTraffic=function(host)
+        if host=='assist'then studio.assistPage='traffic'
+        elseif host=='partners'then studio.partnerPage='vehicle'
+        else menu.tool='vehicle'end
+    end,
     patrolOffer=function(action)return patrolSession:propose(action)end,
     patrolAccept=function(p)return patrolSession:accept(p)end,
     patrolPause=function()return patrolSession:pause('Пауза по вашему решению.')end,
@@ -1213,6 +1293,7 @@ env.wheelNavigate=function(route,profile,target)
         local catalog=wheelModel.build(workspace.library,env.wheelRevision(),false,state)
         local item=catalog and catalog.bySystem[route.id]
         if not item or item.kind~='copilot'then return false end
+        if item.action=='fast_pt'then return studioCallbacks.fastPt()end
         studioCallbacks.openAssist('traffic')
         if item.action=='rights'then studio.copilotPage='rights'
         else sceneServices.copilotUi.offer(studio,studioCallbacks,item.action)end
@@ -2059,7 +2140,8 @@ end,function()
         if not state then return end
         local settings=workspace.library.map_grid
         local view=sceneServices.mapAdapter:safeView(state,io.DisplaySize.x,io.DisplaySize.y,settings)
-        if view then sceneServices.mapGrid.draw(imgui,menuSmallFont or hudFont,settings,view,sceneServices.mapGrid.cell(settings,state.x,state.y,state.interior))end
+        local bulletin=sceneServices.bulletins:view(studioClock,settings)
+        if view then sceneServices.mapGrid.draw(imgui,menuSmallFont or hudFont,settings,view,sceneServices.mapGrid.cell(settings,state.x,state.y,state.interior),bulletin and bulletin.targetCell,bulletin and bulletin.targetLabel)end
     end)
     if not ok then
         sceneServices.mapAdapter.failed=true;sceneServices.mapAdapter.status='failed'
@@ -2559,11 +2641,16 @@ sceneServices.observeMessage=function(text,source,now)
     if type(text)~='string'or not core.validUtf8(text)then return end
     local visible=text:gsub('{%x%x%x%x%x%x}',''):match('^%s*(.-)%s*$')
     local fresh=not sceneServices.chatBridge or sceneServices.chatBridge:observe(visible,source,now)
-    if fresh then identity:serverMessage(visible);taser:serverMessage(visible);sceneServices.colleagues:observe(visible)end
+    if fresh then
+        identity:serverMessage(visible);taser:serverMessage(visible);sceneServices.colleagues:observe(visible)
+        if sceneServices.copilot then sceneServices.copilot:observeWindowReply(visible)end
+        if sceneServices.bulletins then sceneServices.bulletins:observe(visible,now)end
+    end
     for _,filter in ipairs(workspace.library.filters)do if filter.enabled and visible:sub(1,#filter.prefix)==filter.prefix then return false end end
     if fresh then workspace.operations:onChat(text)end
 end
 sceneServices.observeCommand=function(line)
+    if sceneServices.copilot then sceneServices.copilot:observeManualCommand(line,'outgoing')end
     sceneServices.colleagues:command(line,studioClock)
     taser:command(line,workspace.executor.queue and workspace.executor.queue.plan.manualCommand~=nil);patrolEvents:command(line,'Введено вручную · попытка',nil)
     workspace.operations:observe(line,'manual',nil,'observed')
@@ -2735,7 +2822,7 @@ local function connectChatFilters()
     sceneServices.invalidateLocalScene=function(reason,respawn)
             sceneServices.chatEpoch=sceneServices.chatEpoch+1
             sceneServices.nearby:reset()
-            sceneServices.colleagues:reset();sceneServices.copilot:reset('Подключение или жизнь изменились.')
+            sceneServices.colleagues:reset();sceneServices.bulletins:clear();sceneServices.copilot:reset('Подключение или жизнь изменились.')
             if sceneServices.chatBridge then sceneServices.chatBridge.pending=nil;sceneServices.chatBridge.seen={}end
             alerts:invalidateLife()
             if respawn then patrolSession:interrupt(reason)else patrolSession:cancelQueued(reason)end
@@ -2798,7 +2885,8 @@ local function connectChatFilters()
         if type(previous)=='table'then raw=previous[2]end
         if type(raw)~='string' then return previous end
         local active=false; for _,filter in ipairs(workspace.library.filters) do if filter.enabled then active=true; break end end
-        if not active and not workspace.operations:capturesChat()and not workspace.library.identity.passport_chat and workspace.library.taser.activation~='command'then return previous end
+        if not active and not workspace.operations:capturesChat()and not workspace.library.identity.passport_chat and workspace.library.taser.activation~='command'and
+            not workspace.library.vehicle.copilot.window_offer and not workspace.library.vehicle.copilot.stolen_enabled then return previous end
         local decoded,text=pcall(codec.decode,raw); if not decoded or not core.validUtf8(text) then return previous end
         if sceneServices.observeMessage(text,'native',studioClock)==false then return false end
         return previous
@@ -2877,7 +2965,7 @@ local function updateGame()
         if workspace.library.settings.keep_target_on_interior_change then workspace.targets:sceneChanged()
         else workspace:clearTarget('interior')end
         sceneServices.nearby:reset()
-            sceneServices.colleagues:reset();sceneServices.copilot:reset('Подключение или жизнь изменились.')
+            sceneServices.colleagues:reset();sceneServices.bulletins:clear();sceneServices.copilot:reset('Подключение или жизнь изменились.')
         if sceneServices.aimPicker then sceneServices.aimPicker:reset()end
     end
     sceneServices.targetArea=ctx.session and core.finite(area)and{session=ctx.session,ped=PLAYER_PED,area=area}or nil
@@ -2943,7 +3031,8 @@ local function updateGame()
     alertState.radioText={split_enabled=workspace.library.radio_guard.split_enabled,continuation=workspace.library.radio_guard.continuation,max_lines=workspace.library.radio_guard.max_lines}
     for _,key in ipairs({'local_tag','prison_tag','global_tag','callsign','city','department','rank'}) do alertState[key]=workspace.library.profile[key] end
     alertState.city=sceneServices.mapValues.city or(workspace.library.profile.city~=''and workspace.library.profile.city or nil)
-    alertState.direction=workspace.library.vehicle.direction_enabled and(sceneServices.vehicle.directionValue or workspace.library.vehicle.stationary)or workspace.library.vehicle.manual_direction
+    alertState.direction=workspace.library.vehicle.direction_enabled and(sceneServices.vehicle.lastDirectionValue or'')or workspace.library.vehicle.manual_direction
+    alertState.directionKnown=alertState.direction~=''
     alertState.map_grid=workspace.library.map_grid
     alertState.map_square=sceneServices.mapValues and sceneServices.mapValues.map_square
     alertState.square=sceneServices.mapValues and sceneServices.mapValues.square or nil
@@ -2993,6 +3082,7 @@ local function updateGame()
         patrolRows[#patrolRows+1]={id='patrol-'..row[2],shortcut=workspace.library.patrol_session[row[1]]}
     end
     patrolRows[#patrolRows+1]={id='patrol-events',shortcut=workspace.library.patrol_events.open_shortcut}
+    patrolRows[#patrolRows+1]={id='fast-pt',shortcut=workspace.library.vehicle.fast_pt_shortcut}
     for _,row in ipairs(workspace.library.vehicle.enabled and{{'select_shortcut','vehicle-select'},{'pursuit_shortcut','vehicle-pursuit'}}or {})do
         patrolRows[#patrolRows+1]={id=row[2],shortcut=workspace.library.vehicle[row[1]]}
     end
@@ -3006,10 +3096,13 @@ local function updateGame()
     local vehicleAnswer=confirmationInput:poll({{id='yes',shortcut={key=0x59,ctrl=false,alt=false,shift=false}},{id='no',shortcut={key=0x4e,ctrl=false,alt=false,shift=false}}},
         focused and not ctx.paused and not ctx.blocked and not uiTyping and not studio:hasWarning()and(studio.vehicleConfirm~=nil or studio.assistConfirm~=nil),physicalKeys)
     if vehicleAnswer then
-        if vehicleAnswer=='no'then studio:cancelModal()
+        if vehicleAnswer=='no'then studio:declineVehicle()
         else local ok,err=studio:acceptModal(nil,studioCallbacks);if ok then studio:cancelModal()else studio:notify(err or'Не удалось выполнить действие.')end end
     end
     local patrolKey=confirmationInput:poll(patrolRows,cursorAllowed and not alerts.pending,physicalKeys)
+    if patrolKey then
+        if patrolKey=='fast-pt'then sceneServices.fastPtRequest=true;patrolKey=nil end
+    end
     if patrolKey then
         if patrolKey:match('^assist%-')then studioCallbacks.openAssist(patrolKey=='assist-megaphone-window'and'megaphone'or patrolKey:sub(8))end
         if patrolKey:match('^vehicle%-')then
@@ -3055,8 +3148,9 @@ local function updateGame()
         closeForInput('Остановлено клавишей отмены.');return
     end
     workspace.operations:tick(alertState,now)
-    patrolSession.readScene(alertState,now)
     sceneServices.colleagues:tick(alertState,now);alertState.colleagues=sceneServices.colleagues:view()
+    patrolSession.readScene(alertState,now)
+    alertState.verifiedCrew=patrolSession.data.active and patrolSession.data.active.crew or nil
     local hour=optionalRead('getTimeOfDay');alertState.gameHour=core.finite(hour)and hour or nil;alertState.moscowTime=core.moscowTime()
     alertState.patrolActive=patrolSession.data.active~=nil
     if sceneServices.patrolWasActive and not alertState.patrolActive then
@@ -3069,6 +3163,7 @@ local function updateGame()
     sceneServices.patrolWasActive=alertState.patrolActive
     alertState.patrolStatus=patrolSession.data.active and patrolSession.data.active.status or nil
     sceneServices.vehicle:tick(alertState,now)
+    sceneServices.refreshFastPt(alertState,now)
     sceneServices.copilot:tick(alertState,now)
     sceneServices.processGroundInput()
     local hot=sceneServices.vehicleHotkey;sceneServices.vehicleHotkey=nil

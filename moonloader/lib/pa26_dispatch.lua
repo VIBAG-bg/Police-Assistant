@@ -9,10 +9,14 @@ M.actions={
  {'dispatch_gas','Ограбление АЗС · RP + доклад','robbery_gas'},
  {'gas_order','АЗС · Требование грабителям','gas_order'},
  {'dispatch_bank','Ограбление банка · RP + доклад','robbery_bank'}}
+local followups=require 'pa26_dispatch_followups'
+M.primaryActions={};for i,row in ipairs(M.actions)do M.primaryActions[i]=row end
+M.followups=followups.groups
+for _,row in ipairs(followups.rows)do M.actions[#M.actions+1]=row end
 M.byAction={};M.rpKeys={};M.templates={}
 for _,row in ipairs(M.actions)do
- local item={id=row[1],label=row[2],radio=row[3],mega=row[1]=='gas_order'}
- if not item.mega then
+ local item={id=row[1],label=row[2],radio=row[3],mega=row[1]=='gas_order',radioOnly=row.radioOnly==true}
+ if not item.mega and not item.radioOnly then
   item.rp=row[1]..'_rp';item.foot=row[1]..'_foot_rp'
   M.rpKeys[item.rp]=true;M.rpKeys[item.foot]=true
   M.templates[#M.templates+1]={item.rp,row[2]..' · RP в машине'}
@@ -27,7 +31,7 @@ M.defaults={
  call_911='{local_tag}{unit}, работаю по последнему вызову в 9-1-1, направляюсь на {direction} в {city}, район {area} ({map_square}), Код 3.',
  dispatch_stolen_rp='/me {gender:открыл|открыла} на терминале базу ориентировок по угону транспорта и {gender:загрузил|загрузила} сектор поиска в навигатор.\n/do На дисплее отображены приметы разыскиваемого автомобиля и маршрут следования.',
  dispatch_stolen_foot_rp='/me {gender:открыл|открыла} базу ориентировок на служебном КПК и {gender:изучил|изучила} сведения об угнанном автомобиле.\n/do Приметы автомобиля и сектор поиска отображены на КПК.',
- stolen_car='{local_tag}{unit}, {gender:принял|приняла} ориентировку по угону транспорта, выезжаю на поиск в {city}, район {area} ({map_square}), курс {direction}, Код 2.',
+ stolen_car='{local_tag}{unit}, {gender:принял|приняла} ориентировку по угону {stolen_summary}, выезжаю на поиск в район {stolen_location}. Моё 10-20: {area} ({map_square}), последний курс {direction}, Код 2.',
  dispatch_business_rp='/me {gender:принял|приняла} сигнал тревожной кнопки бизнеса на бортовой терминал и {gender:вывел|вывела} точку вызова на навигатор.\n/do В системе зафиксировано срабатывание сигнализации коммерческого объекта.',
  dispatch_business_foot_rp='/me {gender:принял|приняла} сообщение об ограблении бизнеса по рации и {gender:открыл|открыла} карточку вызова на служебном КПК.\n/do На КПК отображена информация о тревоге коммерческого объекта.',
  robbery_business='{local_tag}{unit}, реагирую на ограбление бизнеса, экипаж: {crew}, направляюсь в {city}, район {area} ({map_square}), курс {direction}, Код 3!',
@@ -38,6 +42,7 @@ M.defaults={
  dispatch_bank_rp='/me {gender:принял|приняла} экстренный сигнал тревоги из хранилища банка на терминал и {gender:активировал|активировала} протокол повышенной готовности.\n/do Координаты банка и сектор оцепления выведены на экран.',
  dispatch_bank_foot_rp='/me {gender:принял|приняла} экстренный вызов об ограблении банка по рации и {gender:открыл|открыла} сведения об объекте на служебном КПК.\n/do На экране КПК отображены место вызова и сведения для оцепления.',
  robbery_bank='{local_tag}{unit}, сработала сигнализация банка, направляюсь в {city}, район {area} ({map_square}), курс {direction}, запрашиваю свободные юниты по Код 3!'}
+for key,text in pairs(followups.templates)do M.defaults[key]=text end
 function M.officers(state)
  local c=state and state.colleagues or{};local occupants=c.cruiserOccupants
  if not core.finite(occupants)then occupants=1 end

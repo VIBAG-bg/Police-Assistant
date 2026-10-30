@@ -1,0 +1,23 @@
+local module=require 'pa26_vehicle';local cfg=require('pa26_vehicle_settings').defaults()
+local car={id=12,handle=90,model_id=596,x=0,y=0,z=0}
+local v=module.new({settings=function()return cfg end,ownCar=function()return car end})
+local s={session='one',ped=1};v:direction(s,1000,cfg);eq(v.directionValue,nil)
+car.y=10;v:direction(s,1400,cfg);eq(v.directionValue,'Север')
+v:direction(s,1800,cfg);eq(v.directionValue,'Север','stopping preserves actual previous motion')
+car.y=0;v:direction(s,2200,cfg);eq(v.directionValue,'Юг','reversing follows movement, not heading')
+car=nil;v:direction(s,2600,cfg);eq(v.directionValue,'Юг','exiting the cruiser preserves the course')
+car={id=12,handle=90,model_id=596,x=0,y=0,z=0};v:direction(s,3000,cfg);eq(v.directionValue,'Юг')
+car.id=13;v:direction(s,3400,cfg);eq(v.directionValue,nil,'a different cruiser does not inherit direction')
+car.x=10;v:direction(s,3800,cfg);eq(v.directionValue,'Восток')
+car.x=1000;v:direction(s,4200,cfg);eq(v.directionValue,nil,'teleport is not observed travel')
+local context=require 'pa26_report_context'
+local values=context.values({inVehicle=true,colleagues={patrolOccupants=1}},{name='Офицер',department='SFPS'},{})
+eq(values.unit,'2-L-1');eq(values.patrol_resume,'продолжаю патруль')
+values=context.values({inVehicle=true,colleagues={patrolOccupants=2,patrolCrew={{name='Partner_Name'}}}},{name='Офицер',department='SFPS'},{})
+eq(values.unit,'2-A-1');eq(values.patrol_resume,'продолжаем патруль');check(values.crew:find('Partner Name',1,true))
+values=context.values({inVehicle=true,colleagues={patrolOccupants=1}},{name='Офицер',department='SFPS',callsign='Мой юнит'},{unit='Ручной'})
+eq(values.unit,'Ручной')
+local body=context.directionTemplate('{local_tag}{unit}, {patrol_resume}, {patrol_moving} на {direction}. Код 4.',{direction='',directionKnown=false})
+check(not body:find('на {direction}',1,true));check(not body:find('не определено',1,true))
+local model=require 'pa26_bindings';local original=require('pa26_copilot_settings').defaults();original.templates.stop='Личный текст.'
+eq(assert(require('pa26_copilot_settings').validate(original)).templates.stop,'Личный текст.')

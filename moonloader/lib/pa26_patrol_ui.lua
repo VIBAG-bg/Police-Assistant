@@ -6,13 +6,16 @@ function M.offer(studio,action,callbacks)
     local proposal,err=callbacks.patrolOffer(action)
     if proposal then studio.patrolConfirm=proposal else studio:notify(err,'patrol_session',false)end
 end
-function M.draw(studio,ui,data,callbacks)
+function M.draw(studio,ui,data,callbacks,host)
     local im=studio.imgui;studio.currentNoticeScope='patrol_session';studio.preferenceContext=true
     local draft=studio.patrolSessionDraft or model.copy(studio.lib.patrol_session)
     local view=data.patrolSession or {};local a=view.active
     studio:settingsHeading(ui,'Сеанс патруля')
     if data.radioState then ui.text('Место: '..(require('pa26_map_grid').location(data.radioState)or 'не определено'))end
-    if studio:button('Трафик-стоп и преследование##patrol-vehicle',ui)then studio.partnerPage='vehicle'end
+    if studio:button('Трафик-стоп и преследование##patrol-vehicle',ui)then
+        if callbacks.patrolTraffic then callbacks.patrolTraffic(host)
+        elseif host=='assist'then studio.assistPage='traffic'else studio.partnerPage='vehicle'end
+    end
     ui.text(a and('№ '..a.id..' · '..(a.status=='paused'and 'Пауза'or 'На службе')..' · '..view.duration)or 'Патруль ещё не начат')
     if a then
         ui.text('Доклад: '..a.report_status);ui.text('Экипаж: '..(view.crew or ''))

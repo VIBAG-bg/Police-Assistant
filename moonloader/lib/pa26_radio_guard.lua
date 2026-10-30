@@ -18,8 +18,11 @@ function M.canTick(s,countDuringInput)
 end
 local dynamic={unit=true,unit_crew_count=true,crew=true,crew_count=true,crew_roles=true,crew_callsigns=true,
     patrol_start=true,patrol_resume=true,patrol_finish=true,patrol_moving=true,patrol_available=true}
+local vehicleFields={model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true,vehicle_description=true}
+local function patrolConsent(t)return t and t.spec.source=='patrol'and t.spec.confirmation==true end
 local function identity(s,template,skipDynamic)
-    local out={};for key in pairs(prefs.radioVariables)do if key~='area'and key~='duration'and key~='direction'and key~='map_square'and key~='location'and key~='square'and not(skipDynamic and dynamic[key])then out[#out+1]=key..'='..tostring(s[key] or '')end end
+    local out={};for key in pairs(prefs.radioVariables)do if key~='area'and key~='city'and key~='duration'and key~='direction'and key~='map_square'and key~='location'and key~='square'and
+        (not vehicleFields[key]or template:find('{'..key..'}',1,true))and not(skipDynamic and dynamic[key])then out[#out+1]=key..'='..tostring(s[key] or '')end end
     table.sort(out);return table.concat(out,'\0')
 end
 local function signature(spec,s,skipDynamic)
@@ -27,12 +30,14 @@ local function signature(spec,s,skipDynamic)
 end
 function M.prepare(spec,s,codec,now,life)
     local template,err=prefs.template(spec.template,prefs.radioVariables);if not template then return nil,err end
+    template=require('pa26_report_context').directionTemplate(template,s)
     if spec.channel~='/r' and spec.channel~='/f' and spec.channel~='/d' then return nil,'Канал автодоклада: /r, /f или /d.'end
     local source=mapGrid.reportValues(s,template)
     local values={}
     for key in pairs(prefs.radioVariables)do
         local used=template:find('{'..key..'}',1,true)
         local v='';if used then v=model.clean(source[key] or '',key:match('^crew')and 4096 or(key=='area'or key=='location')and 1024 or 240)end
+        if used and key=='direction'and v==''then v='неизвестно'end
         if not v then return nil,'Неверное поле: '..key end
         local tag=key=='local_tag' or key=='prison_tag' or key=='global_tag'
         if v=='' and not tag and template:find('{'..key..'}',1,true) then return nil,'Заполните поле: '..key end
@@ -73,6 +78,9 @@ end
 function Guard:finish(t,phase,reason)
     if not t or t.phase=='sent' or t.phase=='cancelled' or t.phase=='handed' then return false end
     t.phase=phase;t.reason=reason
+    if phase=='cancelled'and t.spec.source=='patrol'and self.env.log then
+        self.env.log('Периодический доклад отменён: '..tostring(reason)..' [канал='..tostring(t.spec.channel)..'; этап='..phase..'; token='..t.token..']')
+    end
     if phase=='cancelled' and self.env.cancel then self.env.cancel(t.token)end
     return true
 end
@@ -92,7 +100,7 @@ function Guard:refreshTicket(t,spec)
         t.refreshing=true;self.env.cancel(t.token);t.refreshing=nil
     end
     t.spec=model.copy(spec);t.signature=signature(spec,self.state);t.plan=plan;t.phase='pending'
-    t.accepted=nil;t.confirmAt=nil;t.paintedWire=nil;t.paintedAt=nil;t.bodyAt=self.now
+    t.accepted=nil;t.acceptedPlan=nil;t.confirmAt=nil;t.paintedPlan=nil;t.paintedSignature=nil;t.paintedWire=nil;t.paintedAt=nil;t.bodyAt=self.now
     return true
 end
 function Guard:track(key,spec,remaining)
@@ -112,7 +120,7 @@ function Guard:track(key,spec,remaining)
         t={key=key,token='radio:'..self.life..':'..self.serial,order=self.serial,spec=model.copy(spec),signature=sig,stableSignature=signature(spec,s,true),phase='pending',
             createdAt=self.now,lead=lead(cfg,spec),remaining=remaining,plan=plan,seen=false,bodyAt=self.now}
         self.tickets[key]=t
-    elseif t.phase=='pending' or t.phase=='confirm' then
+    elseif (t.phase=='pending' or t.phase=='confirm')and not t.acceptedPlan then
         local plan,err=M.prepare(spec,s,self.env.codec,self.now,self.life)
         if not plan then self:finish(t,'cancelled',err);return 'invalid',err end
         if radio.key(plan)~=radio.key(t.plan) then t.bodyAt=self.now;t.paintedWire=nil;t.accepted=nil end
@@ -123,8 +131,11 @@ end
 function Guard:ready(key)
     local t=self.tickets[key]
     local age=t and t.paintedAt and core.elapsed(self.now,t.paintedAt)
-    return t and t.phase=='pending' and t.seen and t.lead<=0 and t.remaining<=0 and
-        age and age<=math.max(250,self.dt or 0)+50 and t.paintedWire==radio.key(t.plan) and M.safe(self.state)and not self.state.patrolSuspended or false
+    if not(t and t.phase=='pending'and t.seen and t.lead<=0 and t.remaining<=0 and M.safe(self.state)and not self.state.patrolSuspended)then return false end
+    -- Reaching Y/N must not require the vehicle/location to stop changing.
+    -- No transmission is authorised here; decide() requires a painted preview.
+    if patrolConsent(t)then return true end
+    return age and age<=math.max(250,self.dt or 0)+50 and t.paintedWire==radio.key(t.plan)or false
 end
 function Guard:shown(token)
     local t=self:find(token)
@@ -133,16 +144,22 @@ function Guard:shown(token)
         -- does not restart an already painted prewarning.
         if not t.seen then t.seen=true;t.toastAt=self.now end
         t.paintedWire=radio.key(t.plan);t.paintedAt=self.now
+        if patrolConsent(t)and t.phase=='confirm'then
+            if not t.paintedPlan or radio.key(t.paintedPlan)~=t.paintedWire then t.paintedPlan=model.copy(t.plan)end
+            t.paintedSignature=t.signature
+        end
     end
 end
 function Guard:dispatch(key)
     local t=self.tickets[key]
     if not self:ready(key) then return nil,'Предупреждение ещё не завершено.'end
     if self.state.busy or self.state.wheel or self.state.alertPending or self.state.reloadPending then return nil,'Очередь занята.'end
-    if t.spec.confirmation and not t.accepted then t.phase='confirm';t.confirmAt=nil;t.seen=false;return true,'confirmation' end
-    local plan,err=M.prepare(t.spec,self.state,self.env.codec,self.now,self.life)
+    if t.spec.confirmation and not t.accepted then t.phase='confirm';t.confirmAt=nil;t.seen=false;t.paintedPlan=nil;return true,'confirmation' end
+    local plan,err
+    if t.acceptedPlan then plan=model.copy(t.acceptedPlan);plan.createdAt=self.now
+    else plan,err=M.prepare(t.spec,self.state,self.env.codec,self.now,self.life)end
     if not plan then self:finish(t,'cancelled',err);return nil,err end
-    if radio.key(plan)~=t.paintedWire then return nil,'Предпросмотр обновляется.'end
+    if not t.acceptedPlan and radio.key(plan)~=t.paintedWire then return nil,'Предпросмотр обновляется.'end
     plan.radioGuard={token=t.token,signature=t.signature,life=self.life}
     t.plan=plan;t.phase='queued'
     local ok;ok,err=self.env.start(plan)
@@ -156,7 +173,11 @@ end
 function Guard:decide(token,yes)
     local t=self:find(token);if not t or t.phase~='confirm' or not M.safe(self.state) or self.state.alertPending then return false end
     if not yes then return self:cancel(token)end
-    if t.paintedWire~=radio.key(t.plan)then return false end
+    if patrolConsent(t)then
+        local age=t.paintedAt and core.elapsed(self.now,t.paintedAt)
+        if not t.seen or not age or age>math.max(250,self.dt or 0)+50 or not t.paintedPlan or t.paintedSignature~=t.signature then return false end
+        t.acceptedPlan=model.copy(t.paintedPlan);t.plan=model.copy(t.acceptedPlan)
+    elseif t.paintedWire~=radio.key(t.plan)then return false end
     t.accepted=true;t.phase='pending';return true
 end
 function Guard:tick(state,now)
@@ -177,12 +198,17 @@ function Guard:tick(state,now)
         local current=self:currentSpec(t)
         if not current or(signature(current,state)~=t.signature and not self:refreshTicket(t,current))then self:finish(t,'cancelled','Доклад отключён или данные изменились.')end
         if t.phase=='pending' or t.phase=='confirm' then
-            if self.viewUnavailable or previous and not M.canTick(previous,cfg.count_during_input)and M.canTick(state,cfg.count_during_input)then t.lead=lead(cfg,t.spec);t.seen=false;t.toastAt=nil;t.confirmAt=nil;t.paintedWire=nil;t.accepted=nil;t.phase='pending'end
-            if dt and dt>5000 then t.lead=lead(cfg,t.spec);t.seen=false;t.toastAt=nil;t.paintedWire=nil end
+            if self.viewUnavailable or previous and not M.canTick(previous,cfg.count_during_input)and M.canTick(state,cfg.count_during_input)then
+                t.lead=lead(cfg,t.spec);t.seen=false;t.toastAt=nil;t.confirmAt=nil;t.paintedWire=nil;t.accepted=nil;t.acceptedPlan=nil;t.paintedPlan=nil;t.paintedSignature=nil;t.phase='pending'
+            end
+            if dt and dt>5000 then
+                t.lead=lead(cfg,t.spec);t.seen=false;t.toastAt=nil;t.paintedWire=nil
+                if patrolConsent(t)then t.accepted=nil;t.acceptedPlan=nil;t.paintedPlan=nil;t.paintedSignature=nil;t.phase='pending'end
+            end
             if t.seen and dt and dt<=5000 and M.canTick(state,cfg.count_during_input)and M.canTick(previous,cfg.count_during_input)then t.lead=math.max(0,t.lead-dt)end
             if t.phase=='confirm' and t.seen then
                 t.confirmAt=t.confirmAt or now
-                if core.elapsed(now,t.confirmAt)>=15000 then self:cancel(t.token)end
+                if not patrolConsent(t)and core.elapsed(now,t.confirmAt)>=15000 then self:cancel(t.token)end
             end
         end
     end
@@ -224,6 +250,7 @@ function Guard:validPlan(plan)
     local t=self:find(mark.token)
     if not t or t.phase~='queued' or mark.life~=self.life or mark.signature~=t.signature or not M.safe(self.state)or self.state.patrolSuspended then return false end
     local spec=self:currentSpec(t);if not spec then return false end
+    if t.acceptedPlan then return signature(spec,self.state)==t.signature and radio.key(plan)==radio.key(t.plan)and radio.key(plan)==radio.key(t.acceptedPlan)end
     if t.started then return signature(spec,self.state)==t.signature and radio.key(plan)==radio.key(t.plan)end
     local paintedAge=t.paintedAt and core.elapsed(self.now,t.paintedAt)
     if not paintedAge or paintedAge>math.max(250,self.dt or 0)+50 then return false end

@@ -137,12 +137,12 @@ function M.validView(v)
     end
     return true
 end
-function M.geometry(s,v,current)
+function M.geometry(s,v,current,targetCell,targetLabel)
     local out={lines={},labels={}};if not s.enabled or not M.validView(v)then return out end
     local west,south,east,north=M.bounds(s)
-    local function line(wx1,wy1,wx2,wy2,active)
+    local function line(wx1,wy1,wx2,wy2,active,target)
         local x1,y1=M.project(v,wx1,wy1);local x2,y2=M.project(v,wx2,wy2)
-        if x1 and x2 then local a,b,c,d=M.clip(v,x1,y1,x2,y2);if a then out.lines[#out.lines+1]={a,b,c,d,active=active}end end
+        if x1 and x2 then local a,b,c,d=M.clip(v,x1,y1,x2,y2);if a then out.lines[#out.lines+1]={a,b,c,d,active=active,target=target}end end
     end
     for col=0,s.columns do line(west+col*s.cell_size,north,west+col*s.cell_size,south)end
     for row=0,#s.row_labels do line(west,north-row*s.cell_size,east,north-row*s.cell_size)end
@@ -150,18 +150,24 @@ function M.geometry(s,v,current)
         line(current.west,current.north,current.east,current.north,true);line(current.east,current.north,current.east,current.south,true)
         line(current.east,current.south,current.west,current.south,true);line(current.west,current.south,current.west,current.north,true)
     end
-    local function label(value,wx,wy,active,offsetx,offsety)
+    if targetCell and core.finite(targetCell.west)and core.finite(targetCell.north)and core.finite(targetCell.east)and core.finite(targetCell.south)then
+        line(targetCell.west,targetCell.north,targetCell.east,targetCell.north,false,true);line(targetCell.east,targetCell.north,targetCell.east,targetCell.south,false,true)
+        line(targetCell.east,targetCell.south,targetCell.west,targetCell.south,false,true);line(targetCell.west,targetCell.south,targetCell.west,targetCell.north,false,true)
+    else targetCell=nil end
+    local function label(value,wx,wy,active,offsetx,offsety,target)
         if #out.labels>=M.MAX_LABELS then return end
         local x,y=M.project(v,wx,wy);if not x then return end;x=x+(offsetx or 0);y=y+(offsety or 0)
-        local hw=#value*s.font_size*.4;local hh=s.font_size*.55
+        local chars=0;for _ in value:gmatch('[%z\1-\127\194-\244][\128-\191]*')do chars=chars+1 end
+        local hw=chars*s.font_size*.4;local hh=s.font_size*.55
         if M.inside(v,x-hw,y-hh,2)and M.inside(v,x+hw,y+hh,2)and M.inside(v,x+hw,y-hh,2)and M.inside(v,x-hw,y+hh,2)then
-            out.labels[#out.labels+1]={text=value,x=x,y=y,active=active}
+            out.labels[#out.labels+1]={text=value,x=x,y=y,active=active,target=target}
         end
     end
     local cellpx=s.cell_size*math.min(math.sqrt(v.a*v.a+v.c*v.c),math.sqrt(v.b*v.b+v.d*v.d))
     if s.labels then
         -- Add the current cell first so the label budget can never hide it.
         if current then label(current.label,(current.west+current.east)/2,(current.north+current.south)/2,true)end
+        if targetCell then label(targetLabel or('УГОН: '..targetCell.label),(targetCell.west+targetCell.east)/2,(targetCell.north+targetCell.south)/2,false,0,-s.font_size*1.4,true)end
         if cellpx>=math.max(s.min_label_px,s.font_size*3.7)then
             for row=1,#s.row_labels do for col=1,s.columns do
                 if not current or row~=current.row or col~=current.col then
@@ -177,18 +183,19 @@ function M.geometry(s,v,current)
     end
     return out
 end
-function M.draw(im,font,s,view,current)
-    local g=M.geometry(s,view,current);local list=im.GetBackgroundDrawList();font=font or im.GetFont()
+function M.draw(im,font,s,view,current,targetCell,targetLabel)
+    local g=M.geometry(s,view,current,targetCell,targetLabel);local list=im.GetBackgroundDrawList();font=font or im.GetFont()
     local rgb=({white={1,1,1},blue={.4,.73,1},gold={1,.73,.35}})[s.theme]
     local function color(alpha,active)return im.ColorConvertFloat4ToU32(im.ImVec4(active and .4 or rgb[1],active and .86 or rgb[2],active and .65 or rgb[3],alpha))end
     local lc,tc,hc=color(s.line_alpha),color(s.label_alpha),color(math.max(s.label_alpha,.8),true)
+    local targetColor=im.ColorConvertFloat4ToU32(im.ImVec4(1,.59,.17,math.max(s.label_alpha,.8)))
     local shadow=im.ColorConvertFloat4ToU32(im.ImVec4(0,0,0,s.label_alpha*.9))
-    for _,l in ipairs(g.lines)do list:AddLine(im.ImVec2(l[1],l[2]),im.ImVec2(l[3],l[4]),l.active and hc or lc,l.active and s.line_width+1 or s.line_width)end
+    for _,l in ipairs(g.lines)do list:AddLine(im.ImVec2(l[1],l[2]),im.ImVec2(l[3],l[4]),l.target and targetColor or l.active and hc or lc,(l.active or l.target)and s.line_width+1 or s.line_width)end
     for _,t in ipairs(g.labels)do
         local dim=font:CalcTextSizeA(s.font_size,100000,0,t.text);local x,y=t.x-dim.x/2,t.y-dim.y/2
         if M.inside(view,x,y,1)and M.inside(view,x+dim.x,y+dim.y,1)then
             list:AddTextFontPtr(font,s.font_size,im.ImVec2(x+1,y+1),shadow,t.text)
-            list:AddTextFontPtr(font,s.font_size,im.ImVec2(x,y),t.active and hc or tc,t.text)
+            list:AddTextFontPtr(font,s.font_size,im.ImVec2(x,y),t.target and targetColor or t.active and hc or tc,t.text)
         end
     end
     return #g.lines,#g.labels

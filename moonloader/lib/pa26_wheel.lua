@@ -27,6 +27,8 @@ for _,r in ipairs({{'tire','Предупреждение: колёса','citizen
  {'return_car','Вернуться в салон','detention','car'},{'lost','Потерян · CODE 4 ADAM','detention','car'},
  {'finish','Завершить ситуацию','detention','any'},{'fast_wanted','Розыск по авто 8.1 + /pt','wanted','car'},
  {'call911','Вызов 9-1-1 · Код 3','service','car'},{'arrived','Прибыл на вызов','service','car'}})do M.copilotRows[#M.copilotRows+1]=r end
+M.copilotRows[#M.copilotRows+1]={'fast_pt','Быстрый /pt рядом','wanted','any'}
+M.copilotRows[#M.copilotRows+1]={'patrol_continue','Продолжаю патруль · Код 4','service','any'}
 for _,r in ipairs(M.copilotRows)do M.systemRows[#M.systemRows+1]={'copilot-'..r[1],r[2]}end
 M.systemRows[#M.systemRows+1]={'copilot-pursuit_mark','Розыск / метка погони'}
 function M.context(s)
@@ -141,7 +143,7 @@ function M.build(lib,revision,includeAlerts,serviceState)
         local context=M.context(serviceState);local v=serviceState.copilot or{}
         for _,r in ipairs(M.copilotRows)do if r[4]==context or r[4]=='both'and context~='none'or r[4]=='any'then
             if (r[1]~='approach'and r[1]~='foot'or v.car)and(r[1]~='fast_wanted'or v.pinned=='fast_wanted')then
-                place({kind='copilot',id='copilot-'..r[1],action=r[1],category=r[3],name=r[2],disabled=not serviceState.onDuty,reason='Включите «На службе» в настройках PA.',needsTarget=r[4]=='any'and context=='none'})
+                place({kind='copilot',id='copilot-'..r[1],action=r[1],category=r[3],name=r[2],disabled=not serviceState.onDuty,reason='Включите «На службе» в настройках PA.',needsTarget=r[4]=='any'and context=='none'and r[1]~='fast_pt'and r[1]~='patrol_continue'})
             end
         end end
         if v.pinned and v.car then place({kind='copilot',id='copilot-pursuit_mark',action=v.pinned,category='wanted',name=v.pinned=='pursuit_mark'and'Только /pt'or'Розыск + /pt',needsTarget=false})end
