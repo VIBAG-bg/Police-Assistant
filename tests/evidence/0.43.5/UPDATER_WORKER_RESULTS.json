@@ -1,0 +1,16 @@
+{
+  "personal_edits_preserved": true,
+  "real_package_round_trip": true,
+  "durable_recovery": true,
+  "unicode_personal_names": true,
+  "backup_and_rollback": true,
+  "metadata_and_approval": true,
+  "active_job_recovery": true,
+  "status": "passed",
+  "physical_marker_lock": true,
+  "gta_started": false,
+  "real_game_written": false,
+  "worker_sha256": "4045a42f86e3c18860fa5518a9d92d290fff3c7d931243284b5de3ceda899a22",
+  "native_and_cef": true,
+  "checks": 148
+}

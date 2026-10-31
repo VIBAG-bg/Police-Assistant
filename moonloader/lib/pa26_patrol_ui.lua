@@ -39,7 +39,7 @@ function M.draw(studio,ui,data,callbacks,host)
     im.Separator()
     for _,row in ipairs({{'enabled','Включить сеансы патруля'},{'hud','Показывать патруль в HUD'},
         {'restore_offer','Предлагать восстановление после перезапуска PA'},{'auto_resume_reload','Продолжать патруль после быстрой перезагрузки PA в той же игре'},{'pause_on_crew_change','Пауза при выходе или замене ID напарника'},
-        {'periodic','Периодические доклады в сеансе'},{'reporter_self','Рацию в экипаже веду я'},{'confirmation','Подтверждать каждый периодический доклад'}})do
+        {'count_map_time','Считать активный патруль на карте Esc'},{'periodic','Периодические доклады в сеансе'},{'reporter_self','Рацию в экипаже веду я'},{'confirmation','Подтверждать каждый периодический доклад'}})do
         local v,edit=studio:check(row[2]..'##session-'..row[1],draft[row[1]]);if edit then draft[row[1]]=v end
     end
     for _,r in ipairs({{'interrupt_grace_ms','Подтверждать смену сервера или персонажа, с##session-grace'},{'reload_grace_ms','Перерыв для автовосстановления PA, с##session-reload-grace'}})do
@@ -66,6 +66,9 @@ function M.draw(studio,ui,data,callbacks,host)
     ui.text('IC-имя офицера и позывной берутся из профиля. Район GTA не считается официальным полицейским сектором. Поля и формулировки проверяет игрок.')
     local seconds=im.new.int(draft.interval_ms/1000)
     if im.InputInt('Интервал докладов, с##session-interval',seconds)then draft.interval_ms=seconds[0]*1000 end
+    local gap=im.new.int((draft.map_max_gap_ms or 3600000)/1000)
+    if im.InputInt('Наибольший достоверный перерыв карты, с##session-map-gap',gap)then draft.map_max_gap_ms=gap[0]*1000 end
+    ui.text('На карте Esc время активного патруля идёт, но PA ничего не отправляет. После возврата — не больше одного текущего доклада с обычным подтверждением. Ручная пауза патруля и потеря фокуса время не учитывают. Слишком большой разрыв часов пропускается.')
     local distance=im.new.int(draft.bind_distance)
     if im.InputInt('Проверка напарника рядом, м##session-distance',distance)then draft.bind_distance=distance[0]end
     v,edit=studio:choice('Канал сеанса##session-channel',draft.channel,require('pa26_server_commands').radioChoices,ui)

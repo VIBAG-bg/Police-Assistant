@@ -149,6 +149,7 @@ test_names.append('test_patrol_notice0432.lua')
 test_names.extend(['test_direction0433.lua','test_staff0433.lua','test_streamout0433.lua','test_ground_drafts0433.lua','test_cef_budget0433.lua'])
 test_names.append('test_f9_report_validation.lua')
 test_names.append('test_report_template_validation.lua')
+test_names.extend(['test_patrol_addendum0435.lua','test_chat_alias0435.lua','test_stop_workflow0435.lua','test_mask0435.lua'])
 
 parser.add_argument('--report')
 parser.add_argument('--only', nargs='+', choices=test_names)

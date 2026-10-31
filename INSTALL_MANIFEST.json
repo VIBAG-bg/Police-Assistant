@@ -1,5 +1,5 @@
 {
-  "release": "0.43.4",
+  "release": "0.43.5",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -39,7 +39,7 @@
     },
     {
       "path": "lib\\pa26_bindings.lua",
-      "sha256": "a35513b2ac3188ba868644f699c03a6a860ed9f26ba748d4f123c7af5b5ed63f"
+      "sha256": "94000404fe7d5cd86c3a3dbe0e77ac0cb5ac3d854e12440dda94c366e4fbf5dd"
     },
     {
       "path": "lib\\pa26_case_forms.lua",
@@ -58,8 +58,12 @@
       "sha256": "097f37e4cc8fd35db8d74a31b577eaab8fce8dd62661446438411e8759678ad4"
     },
     {
+      "path": "lib\\pa26_chat_perf.lua",
+      "sha256": "7dee9d93091c8c9d5fcdf032824e6b9d2782b3f8c3bb5346ae08665d1842227a"
+    },
+    {
       "path": "lib\\pa26_chat_text.lua",
-      "sha256": "e8d49ff6ff3e8746e042dbff9dd2e5c24fc8d6e76b08dcf81fb09122c664c9da"
+      "sha256": "46fe144a532027ebc0c5dbed70e5ed830f252b8cc00a7bf9c675a6b70da6fafa"
     },
     {
       "path": "lib\\pa26_colleagues.lua",
@@ -71,19 +75,23 @@
     },
     {
       "path": "lib\\pa26_copilot.lua",
-      "sha256": "ed044b21301b0ed31e72b1d712ee1b5c2b4fcc9ebe5d750be2d7fc0a10db021e"
+      "sha256": "ca063223af796c7b6f2f073de7b9a8bef5c8fd55b23d8c48420dada4f79284b3"
+    },
+    {
+      "path": "lib\\pa26_copilot_incident.lua",
+      "sha256": "a0b7f30b434fc9975468e29c627f9c72ccdf8eae563e53cb0ee1b1f2e8d20262"
     },
     {
       "path": "lib\\pa26_copilot_settings.lua",
-      "sha256": "683e3b51bcf1c62b6e7bdfa598528fb8df86ed24439b7c68f44c977ae3c99fa8"
+      "sha256": "d81456cae73d4cc789d47af489a8507c6bf1288ec5ef6b2d01c42353b78b7846"
     },
     {
       "path": "lib\\pa26_copilot_ui.lua",
-      "sha256": "ace5e63961795b7566a2bd1cf1ad6cd4edcf2fdaf7041f41dc81bd1237e3fa17"
+      "sha256": "ac13971545ce8038fa29430988c0d163641eaf316f8a1cd799f59555ddcfb1f1"
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "d922018e0181e85d1f137a2a7a3c4864781c83e8f5dd225bb7961150a3267943"
+      "sha256": "f1506e9bc223cc87a060e922a6b6ac507abb6b195b87d676a6e8913e40584e3a"
     },
     {
       "path": "lib\\pa26_detention_timers.lua",
@@ -92,6 +100,14 @@
     {
       "path": "lib\\pa26_dispatch.lua",
       "sha256": "336435463e7b382647c981943e9f5ffc2fe661d1eb383696e2ca83bec034532e"
+    },
+    {
+      "path": "lib\\pa26_dispatch_followups.lua",
+      "sha256": "ad776be4b0ed000af7c5a6e8abd49ffd3b5a982193020c40c62025a060830017"
+    },
+    {
+      "path": "lib\\pa26_elapsed_clock.lua",
+      "sha256": "9a7da50105ef789044117a8eac2809abfe2ab38c13214dd4e5c3b59f2cd41da7"
     },
     {
       "path": "lib\\pa26_evidence.lua",
@@ -106,12 +122,20 @@
       "sha256": "a5d153cf752a45b831b2145d270eeba622a07c14080f98dc91347f2d7ed923dc"
     },
     {
+      "path": "lib\\pa26_fast_pt.lua",
+      "sha256": "d9e82eadb2821bb5924cd177621f6e889d9bf7368ca187f2cbb37f3af493572d"
+    },
+    {
       "path": "lib\\pa26_feedback.lua",
       "sha256": "af4586eafd5a324914dfd4e1a7a6894146e99b28db3e6923aec4423e0eb1851f"
     },
     {
       "path": "lib\\pa26_fine_window.lua",
       "sha256": "a0c64621e10becc15f34b61723ede7a284c20432321e6d51746e0ec8fd024a6e"
+    },
+    {
+      "path": "lib\\pa26_ground_speech.lua",
+      "sha256": "f5f6b995c6723669e4295ec704a22d808ffc272bb791176d4ea34e2119517b70"
     },
     {
       "path": "lib\\pa26_ground_window.lua",
@@ -183,7 +207,7 @@
     },
     {
       "path": "lib\\pa26_manual_actions.lua",
-      "sha256": "ff4f0723e9a53083de6fd814009146a2cd28bcc64b237f729e078147d7eb71af"
+      "sha256": "e08f8babf4fb75f819a5356dc6c637e03c91cd5691b06b958642a6b38fbde68c"
     },
     {
       "path": "lib\\pa26_manual_chat.lua",
@@ -239,7 +263,7 @@
     },
     {
       "path": "lib\\pa26_patrol.lua",
-      "sha256": "63acb06f6ae686ae75d4b56789f42a5a996b662c0033a40962ba2df749fe5f30"
+      "sha256": "bed4d53a8bdf59a4f5f22ea67d0119efd3589ceebb803edbad4ae7fd7a24f002"
     },
     {
       "path": "lib\\pa26_patrol_event_settings.lua",
@@ -255,15 +279,15 @@
     },
     {
       "path": "lib\\pa26_patrol_session.lua",
-      "sha256": "d788c4f83fad1c551db864597a56429cc40dd280544e5e7b7f234a9cc390ff42"
+      "sha256": "d11ed46cae809c69e5218a26b5bccb18b23579abd5d304408b6df95ee562716a"
     },
     {
       "path": "lib\\pa26_patrol_settings.lua",
-      "sha256": "e722b1a0e9df7881f7a5718034691432a532ec1ddf4b0141178afe3bafcf0960"
+      "sha256": "0b5fd255f93d56928ac27fb72a8684fad1bbb7f20a71e056876a1c7cbe94d9d8"
     },
     {
       "path": "lib\\pa26_patrol_ui.lua",
-      "sha256": "ea1421905824252becfe045adf6a9cdedecea9989832c1652bbd11dcfc8ea779"
+      "sha256": "b5500d28d0b4706c3390252ab626b368ec38c33ad1da029d89dd47b3678dd9c2"
     },
     {
       "path": "lib\\pa26_preferences.lua",
@@ -287,7 +311,7 @@
     },
     {
       "path": "lib\\pa26_radio_guard.lua",
-      "sha256": "93f2d5548b69cb1ce50bd78c4124abe4cf11cbf69a7e84856b7047ea0057dc4c"
+      "sha256": "5d5fbcf95cc2ed1253226ff60d6ba5ce9fdfc22384e8c341d955a812747f32c8"
     },
     {
       "path": "lib\\pa26_radio_text.lua",
@@ -296,6 +320,10 @@
     {
       "path": "lib\\pa26_recovery.lua",
       "sha256": "b570ae4fde87280cc43b23bc9b9a8bab8c53a640c1172b6e9aa0bb215cd5a7e0"
+    },
+    {
+      "path": "lib\\pa26_report_context.lua",
+      "sha256": "c3c6994103f612c009b570bfc39c37af5862fa68c36f6b77d5c17f0b7138ec86"
     },
     {
       "path": "lib\\pa26_rp_presets.lua",
@@ -342,8 +370,12 @@
       "sha256": "1508afcd41cd3309a145843d6ed7ec63987b507daa06af8bbf12dcc27f6251a7"
     },
     {
+      "path": "lib\\pa26_stolen_bulletin.lua",
+      "sha256": "80bfe712d16ccf4cadadff3b47873e118118045651e959711ba821e2cb1fdf1a"
+    },
+    {
       "path": "lib\\pa26_studio.lua",
-      "sha256": "a9e67a593be76622e368d7cec1a040a4c5b42185a7dc2c61ed00808796100c22"
+      "sha256": "00eb7c1feedad54ee6fc90f46a482191e4036ef02a81c5204c9dce8e90218299"
     },
     {
       "path": "lib\\pa26_target.lua",
@@ -379,7 +411,7 @@
     },
     {
       "path": "lib\\pa26_vehicle.lua",
-      "sha256": "07a5e2318a1acb12723255b867e9ac956a4780912743e61a20bfa8b916c06476"
+      "sha256": "5723455705ae64fe12b70b7cf580745ea93ba542912faf5d54eb8bd6a64d49a9"
     },
     {
       "path": "lib\\pa26_vehicle_names.lua",
@@ -391,7 +423,7 @@
     },
     {
       "path": "lib\\pa26_vehicle_settings.lua",
-      "sha256": "83abcb9c73bc21cd8545e6510704887cdda45e5ad670b9887e01810775016a96"
+      "sha256": "56309351fd88fc41d1b87cd3620ad55877fc8268daea1932a5d2597fb8919d19"
     },
     {
       "path": "lib\\pa26_vehicle_types.lua",
@@ -399,7 +431,7 @@
     },
     {
       "path": "lib\\pa26_vehicle_ui.lua",
-      "sha256": "8f8c31e0e4870093f98371d0e642c81c5465e0d1f0d5b8c4838bc1cbc1b3c192"
+      "sha256": "64006ab2299610dc7ee5d0ef8d45b2358a050b1c5eb0f4ddfefa046d3369107f"
     },
     {
       "path": "lib\\pa26_vehicle_world.lua",
@@ -454,12 +486,16 @@
       "sha256": "9e40b19e1a8dc573d07affa85bfa18907eac6712ccaf69a9187f9b803f9d92fd"
     },
     {
+      "path": "lib\\pa26_zone_bounds.lua",
+      "sha256": "e4a63e0059450f27e7c54c98e834ba8d9e92a2adbdcbc24a6708de7a501abd67"
+    },
+    {
       "path": "pa26_guard.lua",
-      "sha256": "0cb3997f3632b47c62c4f09727b7ea836c0ca3f890982da38690f459bc55e2c8"
+      "sha256": "93c1e0ef75985a23720e673b9ad4cff482b959471699af8d3abc4b27696044df"
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "abbe816a8132e16ebb8a6b483cb11a6ebd752215f480458055785d26a50c8d89"
+      "sha256": "3ffe58b2c7008ec6f1aac72afb3497c5dfea6f2de0b054121ed0b2122f794406"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",
@@ -484,38 +520,6 @@
     {
       "path": "resource\\pa26\\wanted-catalog.json",
       "sha256": "9939d2496f87cfa281faa6ae1dd13e6069f514946a4f11137e6f4b27d55de55a"
-    },
-    {
-      "path": "lib\\pa26_copilot_incident.lua",
-      "sha256": "907bbebac335f650f78365570d09298c01f37456afdb3b934d918415106deea7"
-    },
-    {
-      "path": "lib\\pa26_dispatch_followups.lua",
-      "sha256": "ad776be4b0ed000af7c5a6e8abd49ffd3b5a982193020c40c62025a060830017"
-    },
-    {
-      "path": "lib\\pa26_fast_pt.lua",
-      "sha256": "d9e82eadb2821bb5924cd177621f6e889d9bf7368ca187f2cbb37f3af493572d"
-    },
-    {
-      "path": "lib\\pa26_ground_speech.lua",
-      "sha256": "f5f6b995c6723669e4295ec704a22d808ffc272bb791176d4ea34e2119517b70"
-    },
-    {
-      "path": "lib\\pa26_report_context.lua",
-      "sha256": "7a865e5aac6d254c3358b046d7610d64476998fcf11ea6115d94c116b78b8015"
-    },
-    {
-      "path": "lib\\pa26_stolen_bulletin.lua",
-      "sha256": "80bfe712d16ccf4cadadff3b47873e118118045651e959711ba821e2cb1fdf1a"
-    },
-    {
-      "path": "lib\\pa26_zone_bounds.lua",
-      "sha256": "e4a63e0059450f27e7c54c98e834ba8d9e92a2adbdcbc24a6708de7a501abd67"
-    },
-    {
-      "path": "lib\\pa26_chat_perf.lua",
-      "sha256": "7dee9d93091c8c9d5fcdf032824e6b9d2782b3f8c3bb5346ae08665d1842227a"
     }
   ],
   "cef_files": [
@@ -525,7 +529,7 @@
     },
     {
       "path": "pa26-chat.js",
-      "sha256": "569bcb21e448b12f44d38962b24fb76b235a0157695ecc4418796f0d7a9b5138"
+      "sha256": "e7a6ea494320ba4a6483cbfc9651bc04da0ae7ab7ed2e48a8d169a521d504b43"
     }
   ],
   "setup_files": [

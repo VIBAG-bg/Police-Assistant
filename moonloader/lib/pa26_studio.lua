@@ -1485,6 +1485,7 @@ function Studio:drawProfile(ui,data,callbacks,part)
     ui.text('Если сообщение начинается с ( или ), PA оставит его без акцента. Пробелы перед скобкой тоже учитываются. Скобки внутри обычной фразы ничего не меняют.')
     ui.text('Предпросмотр: '..tostring(brackets and') Привет.'or(live and model.applyAccent(') Привет.',copy.profile.accent)or') Привет.')))
     local dot,dotChanged=self:check('Команды с точкой на русской раскладке##chat-dot-commands',copy.settings.chat_dot_commands)
+    ui.text('Также при отправке: /b .и Привет! → /n Привет! Обычный /b, /n и слова вроде .информация не меняются. Преобразование происходит после Enter; ввод и выделение текста свободны.')
     if dotChanged then self:autoSettings('accent_chat',{'settings','chat_dot_commands'},dot)end
     ui.text('Поставьте одну точку в самом начале поля и сразу напишите команду. При отправке PA заменит точку на / и переведёт только имя команды по клавишам русской раскладки. Аргументы сохранятся. Работает и с выключенным акцентом. Для CEF-чата также нужна включённая поддержка чата лаунчера ниже.')
     ui.text(dot and'Предпросмотр: .к Запрашиваю помощь. → /r Запрашиваю помощь.; .ыефеы → /stats.'or'Предпросмотр: .к Запрашиваю помощь. — перевод команд выключен.')
@@ -1758,7 +1759,7 @@ function Studio:modalIntent(data)
         if n>0 then lines[#lines+1]='Осталось напоминаний о технических звёздах: '..n..'. Они сохранятся. Отключение PA само не снимает розыск; проверьте и завершите пеленгацию по правилам.'end
         return{kind='shutdown',token='shutdown-confirm',title='Отключить Police Assistant?',lines=lines}
     end
-    if self.manualAction then return{kind='manual_action',token='manual-command:'..self.manualAction.token,title='Отыграть действие перед командой?',lines=self.manualAction.lines}end
+    if self.manualAction then return{kind='manual_action',token='manual-command:'..self.manualAction.token,title=self.manualAction.cleanup and'Проверить результат /mask и завершить?'or'Отыграть действие перед командой?',lines=self.manualAction.lines}end
     if self.pendingNavigation then
         local _,lines=self:unsavedChanges()
         lines[#lines+1]='После сохранения: '..self.pendingNavigation.label..'.'
@@ -2045,6 +2046,7 @@ function Studio:drawModal(ui,data,callbacks)
         extraAfterLines=intent and intent.kind=='wanted_appearance_input',
         buttons=intent and intent.kind=='shutdown'and{'ДА — отключить PA','НЕТ — отмена'}or intent and intent.kind=='warning'and{'ОК'}or intent and intent.kind=='changes' and {'Сохранить','Отбросить','Остаться'} or
             intent and intent.kind=='capture' and {'Назначить','Отмена'}or
+            intent and intent.kind=='manual_action'and self.manualAction.cleanup and {'ДА — передать команду завершения','НЕТ — закончить без команды','Отменить всё (Esc) — не отправлять'}or
             intent and intent.kind=='manual_action'and {'ДА — отыграть RP и выполнить','НЕТ — выполнить сразу без RP','Отменить всё (Esc) — не отправлять'}or
             intent and intent.kind=='case_procedure'and self.caseConfirm.phase=='command'and self.caseConfirm.kind=='fine'and {'ДА — выписать штраф','НЕТ — отменить штраф'}or
             intent and intent.kind=='case_procedure'and self.caseConfirm.phase=='command'and {self.caseConfirm.kind=='wanted_list'and 'ДА — открыть /wanted'or(self.caseConfirm.cfg.wanted_send_mode=='direct'and 'ДА — выдать розыск'or 'ДА — открыть список'),self.caseConfirm.kind=='wanted_list'and 'НЕТ — отменить'or 'НЕТ — не выдавать розыск'}or
@@ -2136,7 +2138,7 @@ function Studio:drawModal(ui,data,callbacks)
                 if not refreshed then
                 local width=math.max(1,im.GetContentRegionAvail().x)
                 local yes=green(spec.buttons[1]..'##confirm-yes',width)
-                local no=neutral(spec.buttons[2]..'##confirm-no',width)
+                local no=(self.manualAction.cleanup and red or neutral)(spec.buttons[2]..'##confirm-no',width)
                 local cancel=red(spec.buttons[3]..'##confirm-cancel',width)
                 if cancel then close();callbacks.stop()
                 elseif yes or no then execute(function()return callbacks.manualActionDecide(self.manualAction.token,yes==true)end)end

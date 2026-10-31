@@ -44,7 +44,7 @@ function M.draw(studio,ui,data,callbacks)
     if view.selection_status then ui.text(view.selection_status)end
     im.Separator();studio:settingsHeading(ui,'Настройки транспорта')
     for _,row in ipairs({{'enabled','Трафик-стоп и погоня'},{'require_patrol','Только в активном патруле'},
-        {'front_only','Экран и прямая видимость'},{'occupied_only','Только с игроком за рулём'},{'occupied_priority','Приоритет машин с людьми'},{'sync_driver_target','Водитель — цель биндов'},{'direction_enabled','Направление движения'}})do
+        {'front_only','Экран и прямая видимость'},{'occupied_only','Только с игроком за рулём'},{'occupied_priority','Приоритет машин с людьми'},{'sync_driver_target','Водитель — цель биндов'},{'direction_enabled','Направление движения'},{'direction_on_foot','Пешком использовать последний курс автомобиля'}})do
         local v,edit=studio:check(row[2]..'##vehicle-'..row[1],d[row[1]]);if edit then d[row[1]]=v end
     end
     d.selection_mode=studio:choice('Направление выбора##vehicle-selection-mode',d.selection_mode,{{'auto','Авто: перед машиной или камерой'},{'vehicle','Куда направлена моя машина'},{'camera','Куда смотрит камера'},{'screen','Только видимость на экране'}},ui)

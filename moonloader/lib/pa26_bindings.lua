@@ -208,7 +208,7 @@ function M.submitSpeech(raw,accent,codec,input,settings,ownedPrefix)
     if type(raw)~='string'then return nil,'Поле чата недоступно.'end
     local body=raw
     if ownedPrefix and raw:sub(1,#ownedPrefix)==ownedPrefix then body=raw:sub(#ownedPrefix+1)end
-    if (not settings or settings.chat_dot_commands~=false)and body:sub(1,1)=='.'or
+    if (not settings or settings.chat_dot_commands~=false)and(body:sub(1,1)=='.'or body:match('^%s*/[bB]%s+'))or
         settings and settings.manual_radio_prefix~=false and type(settings.local_tag)=='string'and settings.local_tag~=''and body:match('^ */[rR] ')then
         local utf=input and body:find('[\128-\255]')and core.validUtf8(body)
         local ok,plain=true,body

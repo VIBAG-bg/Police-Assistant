@@ -18,7 +18,7 @@ function M.defaults()
         megaphone_require_radio=false,megaphone_wheel=true,radius=60,retain_distance=200,approach_distance=6,front_only=true,occupied_only=true,scan_ms=250,
         selection_mode='auto',selection_ranking='direction',cone_angle=85,height_tolerance=15,close_radius=15,
         sync_driver_target=true,occupied_priority=true,copilot_migrated=2,
-        direction_enabled=true,manual_direction='',motion_ms=300,stationary_distance=.15,max_motion_distance=100,stationary='На месте',
+        direction_enabled=true,direction_on_foot=false,manual_direction='',motion_ms=300,stationary_distance=.15,max_motion_distance=100,stationary='На месте',
         directions={'Север','Северо-восток','Восток','Юго-восток','Юг','Юго-запад','Запад','Северо-запад'},
         channel='/r',megaphone_channel='/m',confirmation_ms=30000,model_aliases={},color_aliases={},
         pause_patrol_reports=true,pursuit_periodic=true,pursuit_confirmation=true,pursuit_interval_ms=60000,
@@ -67,7 +67,7 @@ function M.validate(raw)
         local n=raw[r[1]];if n==nil then n=out[r[1]]end
         if not shared.integer(n,r[2],r[3])then return nil,'Проверьте настройку выбора: '..r[1]end;out[r[1]]=n
     end
-    for _,k in ipairs({'enabled','require_patrol','front_only','occupied_only','sync_driver_target','occupied_priority','direction_enabled','pause_patrol_reports','pursuit_periodic','pursuit_confirmation'})do
+    for _,k in ipairs({'enabled','require_patrol','front_only','occupied_only','sync_driver_target','occupied_priority','direction_enabled','direction_on_foot','pause_patrol_reports','pursuit_periodic','pursuit_confirmation'})do
         if raw[k]~=nil then if type(raw[k])~='boolean'then return nil,'Неверный переключатель: '..k end;out[k]=raw[k]end
     end
     -- The old transport switch remains authoritative for an old profile.

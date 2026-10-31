@@ -16,6 +16,9 @@ local model=require 'pa26_bindings';local core=require 'pa26_core';local Studio=
 local Session=require 'pa26_patrol_session';local grid=require 'pa26_map_grid'
 local checks,frames,sends=0,0,0
 local function check(v,why)checks=checks+1;assert(v,why)end
+local monotonic=assert(require('pa26_elapsed_clock').windows(ffi),'Windows working-time clock unavailable')
+local prior=monotonic();check(core.finite(prior))
+for i=1,64 do local stamp=monotonic();check(core.finite(stamp)and stamp>=prior,'Native clock regressed');prior=stamp end
 local displays={{640,480},{800,600},{1024,768},{1152,864},{1366,768},{1920,1080},{2560,1440}}
 for _,display in ipairs(displays)do for _,scenario in ipairs({'known-custom','unknown-custom','unknown-stock'})do
  io.DisplaySize=im.ImVec2(display[1],display[2])

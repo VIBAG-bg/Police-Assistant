@@ -1,0 +1,8 @@
+{
+  "legacy_dotnet_path_policy": true,
+  "checks": 35,
+  "real_game_written": false,
+  "rollback": true,
+  "nested_backups": true,
+  "status": "passed"
+}

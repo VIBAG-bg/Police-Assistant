@@ -136,8 +136,10 @@ function Session:collectCrew(cfg)
 end
 function Session:crewText(a)
     local names={a.officer..(a.callsign~=''and(' ('..a.callsign..')')or '')}
+    local seen={[model.casefold(a.officer)]=true}
     for _,r in ipairs(a.crew)do
-        if r.available~=false then names[#names+1]=r.ic_name..(r.callsign~=''and(' ('..r.callsign..')')or '')end
+        local key=model.casefold(r.ic_name)
+        if r.available~=false and not seen[key]then names[#names+1]=r.ic_name..(r.callsign~=''and(' ('..r.callsign..')')or '');seen[key]=true end
     end
     return table.concat(names,', '),#names
 end
@@ -161,7 +163,8 @@ function Session:values(s,a,override)
         if type(grammar[key..'_'..form])~='string'then return nil,'Проверьте форму фразы патруля: '..key..'_'..form end
         out['patrol_'..key]=core.expandGender(grammar[key..'_'..form],s.gender or profile.gender)
     end
-    out.crew,out.crew_count=self:crewText(a);out.crew_count=tostring(out.crew_count)
+    out.crew,out.crew_count=self:crewText(a)
+    out.crewNamesKnown=out.crew_count==count;out.crew_count=tostring(out.crew_count)
     local roles={a.officer};local callsigns={}
     if a.callsign~=''then callsigns[#callsigns+1]=a.callsign end
     for _,r in ipairs(a.crew)do if r.available~=false then
@@ -190,6 +193,7 @@ function Session:prepareLine(action,a,s,cfg)
     local values,err=self:values(s,a,cfg);if not values then return nil,err end
     local template=cfg[action..'_template'];local checked;checked,err=settings.template(template)
     if not checked then return nil,err end
+    if checked:find('{crew}',1,true)and values.crewNamesKnown==false then return nil,'Наблюдаемый экипаж не соответствует подтверждённому IC-составу. Укажите имена в составе патруля и подтвердите его изменение.'end
     checked,err=require('pa26_report_context').directionTemplate(checked,values)
     if not checked then return nil,err end
     values,err=mapGrid.reportValues(values,checked);if not values then return nil,err end
@@ -333,6 +337,7 @@ function Session:effectivePatrol(legacy)
     local out=model.copy(legacy);out.enabled=cfg.enabled and cfg.reporter_self~=false and a~=nil and a.status=='active'and cfg.periodic and not self.awaitingReport
     out.mode=a and a.mode=='prison'and 'prison'or 'police';out.hud=cfg.hud;out.confirmation=cfg.confirmation
     out.session_key=a and tostring(a.id)or 'idle';out.post=a and a.post or cfg.post
+    out.count_map_time=cfg.count_map_time;out.map_max_gap_ms=cfg.map_max_gap_ms
     for _,kind in ipairs({'police','prison'})do out[kind..'_interval_ms']=cfg.interval_ms;out[kind..'_channel']=cfg.channel;out[kind..'_template']=cfg.periodic_template end
     return out
 end
@@ -363,11 +368,11 @@ function Session:recoverUi(wasActive)
         a.status='active';a.reason='';self:changed()
     end
 end
-function Session:tick(state,now)
+function Session:tick(state,now,wall)
     state=state or{}
     if core.elapsed(now,now)==nil then
         self.state=model.copy(state);self.suspended=true;self.suspendedReason='Нет достоверного времени игры.'
-        self.lastNow=nil;self.previousTrusted=false;self:cancelQueued('Таймер недоступен. Подтверждение нужно подготовить заново.');return
+        self.lastNow=nil;self.lastWall=nil;self.previousTrusted=false;self:cancelQueued('Таймер недоступен. Подтверждение нужно подготовить заново.');return
     end
     local previous=self.state;local dt=self.lastNow and core.elapsed(now,self.lastNow)
     self.now=now;self.state=model.copy(state)
@@ -404,9 +409,9 @@ function Session:tick(state,now)
         if a and(not cfg.enabled or state.onDuty==false or state.radioEnabled==false)then
             local reason='Сеанс или служебная связь отключены.'
             if a.status~='paused'or a.reason~=reason or self.queued then self:pause(reason)end
-        elseif a and a.status=='active'and trusted and self.previousTrusted and not restored and dt and dt<=5000 and
-            previous and previous.focused and state.focused and not previous.paused and not state.paused then
-            a.elapsed_ms=math.min(31536000000,a.elapsed_ms+dt);self.dirty=true
+        elseif a and a.status=='active'and trusted and self.previousTrusted and not restored then
+            local elapsed=require('pa26_elapsed_clock').delta(now,self.lastNow,wall,self.lastWall,previous,state,cfg)
+            if elapsed then a.elapsed_ms=math.min(31536000000,a.elapsed_ms+elapsed);self.dirty=true end
         end
         if a and trusted then
             a.client_instance=self.clientInstance or'';a.last_tick=now
@@ -422,7 +427,7 @@ function Session:tick(state,now)
             end
         end
     else self.interruptCandidate=nil end
-    self.previousTrusted=trusted;self.lastNow=now;self:dispatch()
+    self.previousTrusted=trusted;self.lastNow=now;self.lastWall=wall;self:dispatch()
     if not a and self.data.active then self.previousTrusted=baseSafe(state)and state.local_nick==self.data.active.local_nick end
     self:save(false)
 end

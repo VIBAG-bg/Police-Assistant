@@ -19,6 +19,7 @@ function M.apply(values,override)
         if text~=nil then
             if type(text)~='string'or not core.validUtf8(text)or #text>512 or not text:match('%S')or text:find('[%c{}]')then return nil,'Заполните поле «'..r[2]..'» без команд, переносов и переменных.'end
             values[r[1]]=text
+            if r[1]=='crew'then values.crewNamesKnown=true end
             if r[1]=='direction'then values.directionKnown=not unknown[text]end
         end
     end
@@ -27,16 +28,16 @@ end
 function M.values(state,profile,cfg)
     state=state or{};profile=profile or{};cfg=cfg or{}
     local out={};local count=patrol.crewCount(state,state.verifiedCrew)
-    local name=profile.name~=''and profile.name or state.my_name or state.my_nick
+    local name=profile.name~=''and profile.name or state.officer
     if not name or name==''then name='Не задано'end
-    local names={(name:gsub('_',' '))}
+    local names={(name:gsub('_',' '))};local seen={[name:lower()]=true}
     for _,p in ipairs((state.colleagues or{}).patrolCrew or{})do
-        if p.name and #names<count then names[#names+1]=(p.ic_name and p.ic_name~=''and p.ic_name or p.name:gsub('_',' '))end
+        if p.ic_name and p.ic_name~=''and #names<count and not seen[p.ic_name:lower()]then names[#names+1]=p.ic_name;seen[p.ic_name:lower()]=true end
     end
     out.unit=cfg.unit and cfg.unit~=''and cfg.unit or profile.callsign and profile.callsign~=''and profile.callsign or
         patrol.autoUnit(profile,state,count,cfg.unit_number)
     out.station=cfg.station and cfg.station~=''and cfg.station or(state.colleagues or{}).station or profile.department or'Не задано'
-    out.crew=table.concat(names,', ');out.unit_crew_count=tostring(count)
+    out.crew=table.concat(names,', ');out.unit_crew_count=tostring(count);out.crewNamesKnown=name~='Не задано'and #names>=count
     local grammar=cfg.grammar or patrol.grammarDefaults();local form=count>=2 and'team'or'solo'
     for _,key in ipairs({'start','resume','finish','moving','available'})do
         out['patrol_'..key]=core.expandGender(grammar[key..'_'..form],state.gender or profile.gender)

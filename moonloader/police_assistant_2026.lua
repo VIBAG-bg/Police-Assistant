@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.43.4')
+script_version('0.43.5')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -47,6 +47,7 @@ sceneServices.settingsUi=dependency('pa26_settings_ui')
 sceneServices.mapAdapterModule=dependency('pa26_map_adapter')
 sceneServices.chatModule=dependency('pa26_chat_bridge')
 sceneServices.perfModule=dependency('pa26_chat_perf')
+sceneServices.elapsedModule=dependency('pa26_elapsed_clock')
 sceneServices.manualActionModule=dependency('pa26_manual_actions')
 sceneServices.layoutModule=dependency('pa26_keyboard_layout')
 sceneServices.targetModule=dependency('pa26_target')
@@ -63,7 +64,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.43.4' then
+if #missing > 0 or not core or core.VERSION ~= '0.43.5' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -158,6 +159,8 @@ local function pushLog(message)
 end
 
 sceneServices.chatPerf=sceneServices.perfModule.new(sceneServices.perfModule.clock(ffi),pushLog)
+sceneServices.patrolClock=sceneServices.elapsedModule.windows(ffi)
+sceneServices.focusEpoch=0
 menu:configureAssets(getWorkingDirectory() .. '\\resource\\pa26', pushLog)
 
 local function report(message,kind)
@@ -608,6 +611,7 @@ workspace = workspaceModule.new({
     end,
     executionEvent=function(kind,q,line)
         if kind=='sent_line'and sceneServices.colleagues then sceneServices.colleagues:command(line,studioClock)end
+        if sceneServices.manualActions then sceneServices.manualActions:onExecution(kind,q,line)end
         if sceneServices.evidence then sceneServices.evidence:onExecution(kind,q)end
         if sceneServices.copilot then sceneServices.copilot:onExecution(kind,q,line)end
         if sceneServices.vehicle then sceneServices.vehicle:onExecution(kind,q)end
@@ -2287,6 +2291,7 @@ sceneServices.manualActions=sceneServices.manualActionModule.new({codec=codec,no
         local ctx=context();local wire=core.encodeWire(p.raw,codec)
         local noPlan={binding={id=1,name='Ручная /'..p.head,stat='none'},steps={{kind='message',text=p.raw,wire=wire}},lines={p.raw},
             requirements={target=false,closest=false},session=ctx.session,createdAt=studioClock,demo=runtime.demo,has_command=true}
+        if p.cleanup then return wire and noPlan or nil,wire and nil or'Команда завершения не прошла проверку кодировки.',nil end
         if p.passThrough then return nil,nil,noPlan end
         local args,why=model.parseArguments(p.args or'');if not args then return nil,why,noPlan end
         local source=rule.prefer_bind and sceneServices.manualActionModule.source(lib,p.head)
@@ -2433,6 +2438,7 @@ function onWindowMessage(message, wparam, lparam)
     elseif message == 0x0008 or (message == 0x001C and wparam == 0) or
         (message == 0x0006 and wparam % 65536 == 0) then
         focused = false
+        sceneServices.focusEpoch=sceneServices.focusEpoch+1
         sceneServices.nativePendingCommand=nil;sceneServices.manualSpeechAt=nil;sceneServices.nativeRadioSubmit=nil
         confirmationInput:resetMenu()
         sceneServices.assistInput:resetMenu()
@@ -2440,6 +2446,7 @@ function onWindowMessage(message, wparam, lparam)
     elseif message == 0x0007 or (message == 0x001C and wparam ~= 0) or
         (message == 0x0006 and wparam % 65536 ~= 0) then
         focused = true
+        sceneServices.focusEpoch=sceneServices.focusEpoch+1
     elseif message == 0x0100 and wparam == 0x1B and
         (runtime.wheel or runtime.queue or ownUi() or workspace.executor.queue or workspace.pending) then
         if escDismissed then return end
@@ -3053,7 +3060,7 @@ local function updateGame()
     alertState.radioText={split_enabled=workspace.library.radio_guard.split_enabled,continuation=workspace.library.radio_guard.continuation,max_lines=workspace.library.radio_guard.max_lines}
     for _,key in ipairs({'local_tag','prison_tag','global_tag','callsign','city','department','rank'}) do alertState[key]=workspace.library.profile[key] end
     alertState.city=sceneServices.mapValues.city or(workspace.library.profile.city~=''and workspace.library.profile.city or nil)
-    alertState.direction=workspace.library.vehicle.direction_enabled and(sceneServices.vehicle.lastDirectionValue or'')or workspace.library.vehicle.manual_direction
+    alertState.direction=sceneServices.vehicle:reportDirection(alertState)
     alertState.directionKnown=alertState.direction~=''
     alertState.map_grid=workspace.library.map_grid
     alertState.map_square=sceneServices.mapValues and sceneServices.mapValues.map_square
@@ -3247,7 +3254,9 @@ local function updateGame()
     sceneServices.processWantedInput(alertState,now)
     sceneServices.processProcedureInput(alertState,now)
     alertState.busy=alertState.busy or (workspace.executor.queue and tostring(workspace.executor.queue))
-    patrolSession:tick(alertState,now)
+    local patrolWall=sceneServices.patrolClock and sceneServices.patrolClock()
+    alertState.focusEpoch=sceneServices.focusEpoch
+    patrolSession:tick(alertState,now,patrolWall)
     alertState.patrolSuspended=patrolSession.data.active~=nil and patrolSession.suspended==true
     alertState=patrolSession:values(alertState,patrolSession.data.active)
     alerts:updateContext(alertState)
@@ -3262,7 +3271,7 @@ local function updateGame()
         holster_enabled=workspace.library.taser.holster_rp_enabled~=false and not taser.suppressModeRp,holster_template=workspace.library.taser.holster_template}
     alertState.reloadPending=alertState.taserActive and(taser:needsReload()or taser.queued)or false
     alertState.busy=alertState.busy or (workspace.executor.queue and tostring(workspace.executor.queue))
-    patrol:tick(alertState,now)
+    patrol:tick(alertState,now,patrolWall)
     alertState.alertPending=alerts.pending~=nil
     alertState.busy=alertState.busy or (workspace.executor.queue and tostring(workspace.executor.queue))
     weapons:tick(alertState,now)

@@ -32,6 +32,9 @@ local prior=#s.sent;s.workspace.studio.vehicleConfirm=assert(s.copilot:propose('
 s.click='ДА##confirm-yes';s.render();for _=1,12 do s.step(1600)end
 local wanted,pt=0,0
 for _,line in ipairs(s.sent)do if line.line=='/su 37 8 1'then wanted=wanted+1 elseif line.line=='/pt 37'then pt=pt+1 end end
-eq(wanted,1);eq(pt,1);check(not s.workspace.studio.caseConfirm);check(not s.workspace.studio.caseForm)
+eq(wanted,1);eq(pt,0,'Wanted confirmation never authorizes /pt');check(not s.workspace.studio.caseConfirm);check(not s.workspace.studio.caseForm)
+s.workspace.studio.vehicleConfirm=assert(s.copilot:propose('pursuit_mark'));s.render();s.click='ДА##confirm-yes';s.render()
+for _=1,5 do s.step(1600)end
+local marks=0;for _,line in ipairs(s.sent)do if line.line=='/pt 37'then marks=marks+1 end end;eq(marks,1)
 check(not s.hasLog('Ошибка интерфейса'));eq(#s.scopes,0);eq(s.invalidIOReads,0)
 onScriptTerminate(s.script)

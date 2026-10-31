@@ -32,6 +32,10 @@ function M.skipAccent(text,settings)
         settings.chat_dot_commands~=false and text:sub(1,1)=='.'
 end
 function M.dotCommand(text,settings)
+    if type(text)=='string'and not(settings and settings.chat_dot_commands==false)then
+        local body=text:match('^%s*/[bB]%s+%.и%s+(.*)$')or text:match('^%s*/[bB]%s+%.И%s+(.*)$')
+        if body and body:find('%S')and core.validUtf8(text)then return '/n '..body,true end
+    end
     if type(text)~='string'or(settings and settings.chat_dot_commands==false)or text:sub(1,1)~='.'or
         text:sub(2,2)=='.'or not core.validUtf8(text)then return text,false end
     -- Only the initial token is mapped. Arguments are kept byte-for-byte.

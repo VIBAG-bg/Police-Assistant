@@ -56,8 +56,14 @@ for _,r in ipairs({{'ground_offer','После осмотра предложит
 M.templates[#M.templates+1]={'intro','Представление перед причиной остановки'}
 M.templates[#M.templates+1]={'badge','RP · показать жетон / удостоверение'}
 M.variables.stop_ground=true;M.variables.detention_ground=true;M.variables.ground_article=true
+M.booleans[#M.booleans+1]={'immediate_flight_offer','Предлагать 10-57 при подтверждённом побеге, не ожидая все требования'}
+for _,r in ipairs({{'stop_warning_count','10-55: число требований остановиться',1,10},
+ {'stop_warning_cooldown_ms','10-55: интервал предложений /m, мс',1000,60000},
+ {'followup_cooldown_ms','Пауза перед предложением следующего /su или /pt, мс',1000,10000},
+ {'flight_min_samples','Побег: последовательных наблюдений движения',2,5},
+ {'flight_min_speed','Побег: минимум наблюдаемой скорости, м/с',1,50}})do M.numbers[#M.numbers+1]=r end
 function M.defaults()
- local d={pursuit_retention=true,pursuit_retain_distance=300,pursuit_retain_grace_ms=15000,repeat_megaphone=true,auto_plate=true,plate_prefix='SA-',plate_digits=3,legacy_tire_enabled=false,dispatch_enabled=true,dispatch_rp_enabled=true,robbery_guard=true,robbery_min_officers=2,
+ local d={stop_warning_count=3,stop_warning_cooldown_ms=4000,immediate_flight_offer=true,flight_min_samples=2,flight_min_speed=4,followup_cooldown_ms=1000,pursuit_retention=true,pursuit_retain_distance=300,pursuit_retain_grace_ms=15000,repeat_megaphone=true,auto_plate=true,plate_prefix='SA-',plate_digits=3,legacy_tire_enabled=false,dispatch_enabled=true,dispatch_rp_enabled=true,robbery_guard=true,robbery_min_officers=2,
   lost_vehicle_fallback='преследуемому т/с',
   robbery_warning='ВНИМАНИЕ! Пункты 3.1 / 10.4: на ограбление бизнеса нужен патруль минимум из {robbery_min_officers} сотрудников. Нарушение: Jail–Warn. PA оценивает состав в {dispatch_officers} чел. Подтвердите, что выезжаете с напарником; люди рядом или пассажиры сами по себе не подтверждают состав патруля.',
   dispatch_confirmation_note='Подтверждайте фактически полученный RP-вызов. Место и курс в докладе берутся из текущего положения офицера; проверьте их в предпросмотре. Отыгровка не устанавливает серверную GPS-метку.',

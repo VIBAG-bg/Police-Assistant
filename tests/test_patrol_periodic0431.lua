@@ -21,7 +21,14 @@ local function setup(occupants,gender,channel,confirm)
  lib.profile.gender=gender;lib.alerts.on_duty=true;lib.patrol_session.enabled=true
  lib.patrol_session.unit='';lib.patrol_session.interval_ms=600000;lib.patrol_session.channel=channel
  lib.patrol_session.confirmation=confirm==true
+ for i=2,occupants do
+  lib.partners[#lib.partners+1]={id=i-1,nickname='Partner_'..i,callsign=''}
+  lib.patrol_session.crew[#lib.patrol_session.crew+1]={contact_id=i-1,ic_name='Напарник '..i,role='Напарник'}
+ end
+ lib.next_partner_id=occupants
  local s=fixture({library=lib,demo=false,alerts=true,notifications=true,categoryWheel=true})
+ s.patrolSession.env.resolve=function(nick)return{id=tonumber(nick:match('%d+'))+100,name=nick}end
+ s.patrolSession.env.observe=function(id)return{connected=true,name='Partner_'..(id-100)}end
  -- Pin only the observed same-car colleague count. All report preparation,
  -- timer, consent, preview, queue and chat encoding are the production path.
  s.occupants=occupants;local radar=s.colleagues;check(radar)
@@ -61,10 +68,15 @@ for _,case in ipairs({{1,'male','/f',false},{1,'female','/r',false},{2,'male','/
  local endOfReport=#s.sent;check(endOfReport>=first and endOfReport-first<3,'One occurrence has at most three parts')
  for _=1,40 do s.step(1000)end;eq(#s.sent,endOfReport,'No duplicate automatic report')
  if occupants==1 and gender=='male'then
-  -- Crew changes during the next painted prewarning refresh the pending
-  -- report, without restarting the ten-minute clock or sending the old form.
+   -- Newly observed colleagues do not invent IC names: confirm the roster first.
   while s.patrol.remaining>29000 do s.step(1000)end
-  s.occupants=2;s.step(1000);s.chat=true
+   s.occupants=2;s.step(1000)
+   s.workspace.library.partners={{id=1,nickname='Partner_2',callsign=''}};s.workspace.library.next_partner_id=2
+   s.workspace.library.patrol_session.crew={{contact_id=1,ic_name='Напарник 2',role='Напарник'}}
+   local crew=assert(s.patrolSession:propose('crew'));check(s.patrolSession:accept(crew))
+   for _=1,8 do s.step(1500)end;endOfReport=#s.sent
+   while s.patrol.remaining>29000 do s.step(1000)end
+   s.chat=true
   for _=1,35 do s.step(1000)end;eq(#s.sent,endOfReport,'Chat input postpones delivery')
   s.chat=false;for _=1,8 do s.step(1000)end
   local updated=textSince(s,endOfReport+1);check(updated:find('продолжаем патруль',1,true),updated)

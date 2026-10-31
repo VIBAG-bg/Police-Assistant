@@ -1,0 +1,63 @@
+{
+  "status": "measured",
+  "baseline": "0.43.4",
+  "candidate": "0.43.5",
+  "environment": "LuaJIT with project offline game/input fixtures",
+  "game_launched": false,
+  "individual_frame_spikes_measured": false,
+  "actual_input_response_latency_measured": false,
+  "chat_contents_recorded": false,
+  "limitations": "Batch averages include fixture overhead and host scheduling; they are not in-game frame times or input latency.",
+  "before": {
+    "mouse_move_passthrough": {
+      "iterations_per_batch": 100000,
+      "batches": 7,
+      "median_batch_average_ms": 3.22e-07,
+      "maximum_batch_average_ms": 3.4500000000000003e-07
+    },
+    "wm_char_passthrough": {
+      "iterations_per_batch": 100000,
+      "batches": 7,
+      "median_batch_average_ms": 3.22e-07,
+      "maximum_batch_average_ms": 5.36e-07
+    },
+    "typing_keydown": {
+      "iterations_per_batch": 20000,
+      "batches": 7,
+      "median_batch_average_ms": 3.5e-07,
+      "maximum_batch_average_ms": 4.6e-07
+    },
+    "prepared_world_frame": {
+      "iterations_per_batch": 60,
+      "batches": 7,
+      "median_batch_average_ms": 1.8136583333333334,
+      "maximum_batch_average_ms": 2.1192433333333334
+    }
+  },
+  "after": {
+    "mouse_move_passthrough": {
+      "iterations_per_batch": 100000,
+      "batches": 7,
+      "median_batch_average_ms": 3.21e-07,
+      "maximum_batch_average_ms": 3.34e-07
+    },
+    "wm_char_passthrough": {
+      "iterations_per_batch": 100000,
+      "batches": 7,
+      "median_batch_average_ms": 3.23e-07,
+      "maximum_batch_average_ms": 4.4699999999999997e-07
+    },
+    "typing_keydown": {
+      "iterations_per_batch": 20000,
+      "batches": 7,
+      "median_batch_average_ms": 3.5e-07,
+      "maximum_batch_average_ms": 4.6499999999999994e-07
+    },
+    "prepared_world_frame": {
+      "iterations_per_batch": 60,
+      "batches": 7,
+      "median_batch_average_ms": 1.7700233333333335,
+      "maximum_batch_average_ms": 2.109008333333333
+    }
+  }
+}

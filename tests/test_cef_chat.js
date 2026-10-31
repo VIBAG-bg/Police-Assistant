@@ -187,7 +187,7 @@ async function page(delayed=false) {
   finish({ok:true,json:async()=>({schema:1,ack:0,enabled:true,layoutIndicator:true,keyboardLayout:'RU'})});await pending;
   eq(p.elements['pa26-chat-layout'],undefined);eq(p.input.value,'');
   // Manual dot commands: edit freely, convert only on submit, preserve arguments.
-  for(const [raw,expected] of [['.к Запрашиваю помощь.','/r Запрашиваю помощь.'],['.ыефеы','/stats'],
+  for(const [raw,expected] of [['/b .и Привет, как дела?','/n Привет, как дела?'],['  /b   .и   Mixed Привет!','/n Mixed Привет!'],['/b .информация','/b .информация'],['/b .и','/b .и'],['/b .и   ','/b .и   '],['/n Привет!','/n Привет!'],['.к Запрашиваю помощь.','/r Запрашиваю помощь.'],['.ыефеы','/stats'],
       ['.К  Текст.  ','/R  Текст.  '],['.ЫЕФЕЫ','/STATS'],['.unknown123 _текст_ /r .к','/unknown123 _текст_ /r .к']]) {
     p=await page();p.type(raw);eq(p.input.value,raw);const n=p.sent.length;await p.enter();eq(p.sent.length,n+1);eq(p.sent.at(-1)[1],expected);
   }

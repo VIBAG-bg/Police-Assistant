@@ -33,6 +33,10 @@
     return p && p.version === 1 && p.keyboardMap && typeof p.keyboardMap === 'object' ? p : null;
   }
   function dotCommand(text, p) {
+    if (p && p.dotCommands === true) {
+      const ooc=/^\s*\/b\s+\.и\s+(\S[\s\S]*)$/iu.exec(text);
+      if (ooc) return '/n '+ooc[1];
+    }
     if (!p || p.dotCommands !== true || !text.startsWith('.') || text.startsWith('..')) return null;
     const match = /^\.([^ \t\r\n]+)([\s\S]*)$/u.exec(text);
     if (!match) return null;

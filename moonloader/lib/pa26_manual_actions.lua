@@ -6,6 +6,7 @@ local excluded={su=true,wanted=true,r=true,rn=true,f=true,fn=true,d=true,df=true
 local targets={cuff=true,uncuff=true,push=true,hold=true,unhold=true,frisk=true,unmask=true,ticket=true,takelic=true,arrest=true,pt=true,unpt=true}
 M.targetHeads=targets
 local standard={
+ mask='/me аккуратно {gender:расправил|расправила} маску и {gender:натянул|натянула} её на лицо, скрыв свои черты.',
  cuff='/me {gender:снял|сняла} наручники с пояса и {gender:зафиксировал|зафиксировала} их на запястьях задержанного.\n/do Фиксация наручников проверена.',
  uncuff='/me {gender:вставил|вставила} ключ в замок, {gender:расстегнул|расстегнула} наручники и {gender:убрал|убрала} их в подсумок.',
  frisk='/me {gender:надел|надела} перчатки и последовательно {gender:проверил|проверила} одежду и карманы задержанного.',
@@ -25,10 +26,10 @@ local standard={
 function M.specs()
  local out={};for _,row in ipairs(require('pa26_server_commands').commands)do
   local head=row[1]:sub(2);if not excluded[head]then out[#out+1]={head=head,title=row[2],target=targets[head]==true}end
- end;return out
+ end;out[#out+1]={head='mask',title='Надеть маску · подтверждено пользователем',target=false};return out
 end
 function M.defaults()
- local out={enabled=true,rules={},frisk_mode='saved',
+ local out={enabled=true,rules={},mask_delay_ms=700,mask_cleanup_enabled=true,mask_cleanup_command='/offobject',frisk_mode='saved',
   frisk_primary_rp='/me {gender:поставил|поставила} задержанного у опоры и быстрыми движениями без перчаток {gender:прохлопал|прохлопала} верхнюю одежду, торс и ноги на наличие оружия.\n/do Что офицер {gender:мог|могла} нащупать под одеждой задержанного?',
   frisk_full_rp='/me {gender:надел|надела} плотные чёрные резиновые перчатки, тщательно {gender:проверил|проверила} все карманы и обувь задержанного и {gender:выложил|выложила} вещи под камеру крузера.\n/do Предметы, подлежащие изъятию по результатам обыска, подготовлены к упаковке в зип-пакет и бокс для улик.'}
  for _,s in ipairs(M.specs())do out.rules[s.head]={enabled=s.head~='find'and s.head~='taser',prefer_bind=false,
@@ -40,6 +41,11 @@ function M.validate(raw)
  local out=M.defaults();if raw==nil then return out end
  if type(raw)~='table'or type(raw.enabled)~='boolean'or type(raw.rules)~='table'then return nil,'Неверные настройки ручных команд.'end
  out.enabled=raw.enabled;out.frisk_mode=raw.frisk_mode or'saved'
+ if raw.mask_cleanup_enabled~=nil then if type(raw.mask_cleanup_enabled)~='boolean'then return nil,'Проверьте завершение маски.'end;out.mask_cleanup_enabled=raw.mask_cleanup_enabled end
+ out.mask_delay_ms=raw.mask_delay_ms or out.mask_delay_ms
+ if not core.finite(out.mask_delay_ms)or out.mask_delay_ms%1~=0 or out.mask_delay_ms<100 or out.mask_delay_ms>10000 then return nil,'Задержка после /mask: 100–10000 мс.'end
+ out.mask_cleanup_command=raw.mask_cleanup_command or out.mask_cleanup_command
+ if type(out.mask_cleanup_command)~='string'or not out.mask_cleanup_command:match('^/[a-z][a-z0-9_]*$')or #out.mask_cleanup_command>33 or out.mask_cleanup_command=='/mask'then return nil,'Команда завершения маски: имя /команды без аргументов, кроме /mask.'end
  if not({saved=true,primary=true,full=true})[out.frisk_mode]then return nil,'Выберите режим обыска.'end
  for _,key in ipairs({'frisk_primary_rp','frisk_full_rp'})do
   local value=raw[key]or out[key]
@@ -49,7 +55,7 @@ function M.validate(raw)
  end
  local count=0
  for head,r in pairs(raw.rules)do
-  count=count+1
+  count=count+(head=='mask'and 0 or 1)
   if count>64 or not validHead(head)or type(r)~='table'or type(r.enabled)~='boolean'or type(r.prefer_bind)~='boolean'or
    type(r.rp)~='string'or #r.rp>4096 or not core.validUtf8(r.rp)or r.rp:find('[%z\1-\8\11\12\14-\31]')then return nil,'Проверьте ручную команду и её RP-шаблон.'end
   local n=0;for line in(r.rp..'\n'):gmatch('(.-)\n')do if line:find('%S')then
@@ -63,7 +69,7 @@ function M.validate(raw)
   end
   out.rules[head]={enabled=r.enabled,prefer_bind=r.prefer_bind,rp=r.rp}
  end
- count=0;for _ in pairs(out.rules)do count=count+1 end;if count>64 then return nil,'Не больше 64 ручных команд.'end
+ count=0;for head in pairs(out.rules)do if head~='mask'then count=count+1 end end;if count>64 then return nil,'Не больше 64 ручных команд и системной /mask.'end
  return out
 end
 function M.rule(lib,head)
@@ -113,7 +119,7 @@ function Controller:offer(raw,previouslyCaptured)
  head=head and head:lower();if not head or not validHead(head)then return false end
  local active=M.rule(self.env.library(),head)
  if not active and not previouslyCaptured then return false end
- if self.pending or self.env.busy()then self.env.notice('Предыдущее действие PA ещё не завершено. Новая команда не отправлена.');return true end
+ if self.pending or self.cleanupWait or self.env.busy()then self.env.notice('Предыдущее действие PA ещё не завершено. Новая команда не отправлена.');return true end
  if #raw>1024 or not core.validUtf8(raw)or raw:find('%c')then self.env.notice('Неверный текст команды; отправки не было.');return true end
  local wire=core.encodeWire(raw,self.env.codec)
  if not wire then self.env.notice('Команда длиннее лимита или содержит неподдерживаемые символы; она не отправлена.');return true end
@@ -137,11 +143,30 @@ function Controller:friskMode(token,mode)
  local p=self.pending;if not p or p.head~='frisk'or p.token~=token or p.answer~=nil or not({saved=true,primary=true,full=true})[mode]then return nil,'Выбор обыска устарел.'end
  p.frisk_mode=mode;p.displayed=false;p.refresh=true;self.env.close(p.token);return true
 end
-function Controller:cancel()self.pending=nil;self.approved=nil end
+function Controller:cancel()self.pending=nil;self.approved=nil;self.cleanupWait=nil end
+function Controller:onExecution(kind,q,line)
+ local p=self.approved;local mark=q and q.plan and q.plan.manualCommand
+ if not p or not mark or mark.token~=p.token or p.head~='mask'or p.cleanup or p.answer~=true or p.args~=''then return end
+ if kind=='cancelled'then p.maskCancelled=true;self.cleanupWait=nil;return end
+ if (kind=='sent_line'or kind=='preview_line')and line==p.raw then p.maskEmitted=true end
+ if kind~='completed'or not p.maskEmitted or p.maskCancelled or p.cleanupPrepared then return end
+ p.cleanupPrepared=true
+ local cfg=self.env.library().settings.manual_actions
+ if not cfg.mask_cleanup_enabled then return end
+ local copy=require('pa26_patrol_settings').copy(p);self.serial=self.serial+1
+ copy.token=self.serial;copy.cleanup=true;copy.head=cfg.mask_cleanup_command:sub(2);copy.args='';copy.raw=cfg.mask_cleanup_command
+ copy.answer=nil;copy.displayed=nil;copy.plan=nil;copy.noPlan=nil;copy.passThrough=nil;copy.approvedAt=nil;copy.at=self.env.now()
+ self.cleanupWait={proposal=copy,at=copy.at,delay=cfg.mask_delay_ms}
+end
 function Controller:validPlan(plan)
  local p=self.approved;return p and plan.manualCommand and plan.manualCommand.token==p.token and self:fresh(p)or false
 end
 function Controller:tick()
+ if self.cleanupWait then
+  local w=self.cleanupWait;local age=core.elapsed(self.env.now(),w.at)
+  if not age or not self:fresh(w.proposal)then self.cleanupWait=nil;self.env.notice('Завершение маски отменено: игровая сцена изменилась.');return end
+  if age>=w.delay and not self.env.busy()then self.cleanupWait=nil;self.pending=w.proposal end
+ end
  local p=self.pending;if not p then return end
  if not self:fresh(p)then self.pending=nil;self.env.close(p.token);self.env.notice('Ручная команда отменена: игрок, настройки или игровая сцена изменились.');return end
  if p.displayed and p.answer==nil and not self.env.showing(p.token)then self.pending=nil;return end
@@ -149,6 +174,7 @@ function Controller:tick()
  if p.passThrough and p.answer==nil then local _,_,noPlan=self.env.prepare(p);p.noPlan=noPlan;p.answer=false end
  if p.answer~=nil then
   self.pending=nil
+  if p.cleanup and not p.answer then self.approved=nil;self.env.close(p.token);return end
   local plan=p.answer and p.plan or p.noPlan
   if not plan then self.env.notice(p.error or'Не удалось подготовить RP. Команда не отправлена.');return end
   plan.manualCommand={token=p.token};plan.automatic={kind='manual_command'};p.approvedAt=self.env.now();self.approved=p
@@ -156,6 +182,15 @@ function Controller:tick()
  end
  if p.displayed or(s.ownWindow and not p.refresh)or self.env.busy()then return end
  p.plan,p.error,p.noPlan=self.env.prepare(p)
+ if p.cleanup then
+  p.lines={'/mask передана клиенту. Успех команды сервером автоматически не подтверждён.',
+   'Проверьте результат /mask перед передачей '..p.raw..'. Эффект этой команды в вашем клиенте PA проверить не может.',
+   'Не убирайте объект, скрывающий лицо: для RP-маски правила XIV требуют и системную маску, и визуально закрытое лицо.',
+   'ДА — передать только '..p.raw..'. НЕТ или Esc — закончить без дополнительной команды.',
+   p.demo and'ДЕМО: команды останутся только в предпросмотре.'or'Отправка произойдёт только после вашего ДА.'}
+  if p.error then p.lines[#p.lines+1]=p.error end
+  p.displayed=true;self.env.show(p);return
+ end
  p.lines={'Введена команда: '..p.raw,'Команда придержана и ещё НЕ отправлена на сервер.',
   'ДА — сначала отыграть RP ниже, затем отправить '..p.raw,
   'НЕТ — отправить '..p.raw..' сразу без отыгровки.',
@@ -197,6 +232,15 @@ function M.draw(studio,ui)
  studio.manualActionHead=studio:choice('Команда##manual-actions-head',studio.manualActionHead or'cuff',choices,ui)
  local head=studio.manualActionHead;local rule=cfg.rules[head]
  if rule then
+  if head=='mask'then
+   rule.enabled=studio:check('RP-отыгровка при надевании маски##mask-rp',rule.enabled)
+   cfg.mask_cleanup_enabled=studio:check('После /mask предложить отдельное завершение##mask-cleanup',cfg.mask_cleanup_enabled)
+   local delay=studio.imgui.new.int(cfg.mask_delay_ms)
+   if studio.imgui.InputInt('Задержка после /mask, мс##mask-delay',delay)then cfg.mask_delay_ms=delay[0]end
+   cfg.mask_cleanup_command=studio:field('Команда завершения##mask-command','mask-command',cfg.mask_cleanup_command,128)
+   ui.text('Порядок: RP ниже → /mask → задержка → отдельный вопрос перед /offobject. Ответ НЕТ на первый вопрос отправляет только /mask. Успех сервера и сохранность визуальной маски проверяете вы.')
+   if studio:button('Сбросить текст маски##mask-reset',ui)then rule.rp=standard.mask;studio.cache['manual-action-rp:mask']=nil end
+  end
   if head=='frisk'then
    cfg.frisk_mode=studio:choice('Тип обыска##frisk-mode',cfg.frisk_mode,{{'saved','Свой бинд / сохранённый шаблон'},{'primary','Первичный · без перчаток'},{'full','Полный · перчатки и зип-пакет'}},ui)
    for _,r in ipairs({{'frisk_primary_rp','Первичный обыск'},{'frisk_full_rp','Полный обыск'}})do

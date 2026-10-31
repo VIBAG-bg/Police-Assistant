@@ -34,6 +34,7 @@ function M.prepare(spec,s,codec,now,life)
     if type(spec)~='table'or type(spec.name)~='string'or type(s)~='table'then return nil,'Проверьте данные автодоклада.'end
     local template,err=prefs.template(spec.template,prefs.radioVariables);if not template then return nil,err end
     template,err=require('pa26_report_context').directionTemplate(template,s);if not template then return nil,err end
+    if template:find('{crew}',1,true)and s.crewNamesKnown==false then return nil,'Наблюдаемый экипаж не соответствует подтверждённому IC-составу. Укажите IC-имена и подтвердите состав патруля.'end
     if spec.channel~='/r' and spec.channel~='/f' and spec.channel~='/d' then return nil,'Канал автодоклада: /r, /f или /d.'end
     local source;source,err=mapGrid.reportValues(s,template);if not source then return nil,err end
     local values={}
@@ -57,12 +58,14 @@ function M.new(env)return setmetatable({env=env,life=1,serial=0,tickets={},jobs=
 function M.patrolSpec(cfg)
     local kind=cfg.mode
     return {source='patrol',kind=kind,name=kind=='police' and 'Патруль · рация' or 'Охрана тюрьмы · рация',
-        template=cfg[kind..'_template'],channel=cfg[kind..'_channel'],interval_ms=cfg[kind..'_interval_ms'],confirmation=cfg.confirmation}
+        template=cfg[kind..'_template'],channel=cfg[kind..'_channel'],interval_ms=cfg[kind..'_interval_ms'],confirmation=cfg.confirmation,mapDeferred=cfg.map_due==true}
 end
 function Guard:currentSpec(t)
     if t.spec.source=='patrol' and self.env.patrol then
         local cfg=self.env.patrol();if not cfg.enabled or cfg.mode~=t.spec.kind then return nil end
-        return M.patrolSpec(cfg)
+        local spec=M.patrolSpec(cfg)
+        if t.spec.mapDeferred then spec.confirmation=true;spec.mapDeferred=true end
+        return spec
     elseif t.spec.source=='custom' then
         for _,r in ipairs(self.env.settings().custom)do if r.id==t.spec.id and r.enabled then local spec=model.copy(r);spec.source='custom';return spec end end
         return nil
@@ -270,6 +273,7 @@ function Guard:onExecution(kind,q)
     elseif kind=='cancelled' then self:finish(t,'cancelled','Отправка остановлена; повтора нет.')end
 end
 function Guard:candidates()
+    if self.state and self.state.paused then return {}end
     local out={};local cfg=self.env.settings()
     for _,t in pairs(self.tickets)do if t.phase=='pending' or t.phase=='queued' or t.phase=='confirm' then
         local remaining=math.max(t.remaining,t.lead)

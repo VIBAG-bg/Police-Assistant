@@ -1,7 +1,8 @@
 -- One routine clock, main() only. Emergency reports and binders share its queue.
 local core=require 'pa26_core'
+local model=require 'pa26_bindings'
 local M={};local Patrol={};Patrol.__index=Patrol
-local function valid(s)return s and s.session and s.ped and s.alive==true and s.onDuty==true and s.radioEnabled==true end
+local function valid(s)return s and s.session and core.finite(s.ped)and s.alive==true and s.onDuty==true and s.radioEnabled==true end
 local function safe(s)return valid(s) and s.focused==true and s.paused==false and s.blocked==false and
     s.typing~=true and s.recording~=true and s.editingHud~=true and s.draggingHud~=true end
 local function canTick(s,countDuringInput)
@@ -10,7 +11,7 @@ end
 function M.new(env)return setmetatable({env=env,remaining=nil,active=false,cycle=0},Patrol)end
 function Patrol:reset()
     if self.currentKey and self.env.drop then self.env.drop(self.currentKey)end
-    self.cycle=self.cycle+1;self.currentKey=nil;self.state=nil;self.anchor=nil;self.lastNow=nil;self.remaining=nil;self.active=false;self.signature=nil;self.phase='off';self.error=nil;self.loggedError=nil
+    self.cycle=self.cycle+1;self.currentKey=nil;self.state=nil;self.anchor=nil;self.lastNow=nil;self.lastWall=nil;self.mapDue=nil;self.wasPaused=nil;self.remaining=nil;self.active=false;self.signature=nil;self.phase='off';self.error=nil;self.loggedError=nil
 end
 function Patrol:problem(reason,cfg,stage)
     local raw=type(reason)=='string'and reason~=''and reason or'Подготовка доклада не удалась: обработчик не передал причину.'
@@ -21,11 +22,11 @@ function Patrol:problem(reason,cfg,stage)
     if detail~=self.loggedError and self.env.log then pcall(self.env.log,detail)end
     self.loggedError=detail
 end
-function Patrol:tick(state,now)
+function Patrol:tick(state,now,wall)
     local cfg=self.env.settings();local kind=cfg.mode;local interval=cfg[kind..'_interval_ms']
     if not cfg.enabled then self:reset();return end
     if core.elapsed(now,now)==nil then self.lastNow=nil;self.phase='paused';return end
-    if not valid(state)or state.patrolSuspended then self.state=state;self.lastNow=now;self.phase='paused';return end
+    if not valid(state)or state.patrolSuspended then self.state=state;self.lastNow=now;self.lastWall=wall;self.phase='paused';return end
     local signature=table.concat({kind,tostring(interval),tostring(cfg.confirmation),cfg[kind..'_channel'],cfg[kind..'_template'],cfg.post,cfg.session_key or ''},'\0')
     local dt=self.lastNow and core.elapsed(now,self.lastNow)
     local anchor=self.anchor
@@ -33,21 +34,33 @@ function Patrol:tick(state,now)
         (anchor.ped~=state.ped and not(state.local_nick and state.local_nick~=''and state.local_nick==anchor.local_nick))
     if changed then
         if self.currentKey and self.env.drop then self.env.drop(self.currentKey)end
-        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.error=nil;self.loggedError=nil
+        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.mapDue=nil;self.error=nil;self.loggedError=nil
     end
     -- Input postpones delivery, not the clock. Focus/pause and stalls do not
     -- invent elapsed time or create a catch-up burst.
     local policy=not self.env.clockPolicy or self.env.clockPolicy()~=false
-    if not changed and canTick(state,policy)and canTick(self.state,policy)and dt and dt<=5000 then self.remaining=math.max(0,self.remaining-dt)end
-    self.state=state;self.anchor=state;self.lastNow=now;self.signature=signature;self.active=true;self.interval=interval
+    local elapsed=require('pa26_elapsed_clock').delta(now,self.lastNow,wall,self.lastWall,self.state,state,cfg)
+    local count=policy or safe(state)and safe(self.state)
+    if not changed and valid(self.state)and count and elapsed then self.remaining=math.max(0,self.remaining-elapsed)end
+    self.state=state;self.anchor=state;self.lastNow=now;self.lastWall=wall;self.signature=signature;self.active=true;self.interval=interval
     self.phase=not canTick(state,policy)and'paused'or self.remaining>0 and'countdown'or'waiting'
+    -- Map time counts, but creates no preview/modal/command while GTA is paused.
+    if state.paused then
+        if not self.wasPaused and self.currentKey then
+            if self.env.drop then self.env.drop(self.currentKey)end
+            self.cycle=self.cycle+1;self.currentKey=nil
+        end
+        self.wasPaused=true;if self.remaining<=0 then self.mapDue=true end;return
+    end
+    self.wasPaused=false
+    if self.mapDue then cfg=model.copy(cfg);cfg.confirmation=true;cfg.map_due=true end
     local key='patrol:'..kind..':'..self.cycle
     if self.env.preview and self.remaining<=(self.env.lead and self.env.lead()or 30000)then
         self.currentKey=key
         local phase,err=self.env.preview(key,cfg,self.remaining)
         if phase=='cancelled' or phase=='invalid' or phase=='unavailable' or phase=='sent' or phase=='handed'then
             if self.env.retire then self.env.retire(key)end
-            self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.phase='countdown'
+            self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.mapDue=nil;self.phase='countdown'
             if phase=='invalid'or phase=='unavailable'then self:problem(err,cfg,phase)
             else self.error=nil;self.loggedError=nil end
             return
@@ -65,12 +78,12 @@ function Patrol:tick(state,now)
         -- global send interval. Restart only after its terminal outcome.
         if self.env.preview then self.phase=cfg.confirmation and 'confirmation' or 'sending';self.error=nil;return end
         if self.env.retire then self.env.retire(key)end
-        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.phase=cfg.confirmation and 'confirmation' or 'sending';self.error=nil
+        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.mapDue=nil;self.phase=cfg.confirmation and 'confirmation' or 'sending';self.error=nil
     else
         -- Invalid/missing text is displayed and retried no more than once per
         -- interval, rather than flooding chat/logs every frame.
         if self.env.retire then self.env.retire(key)end
-        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.phase='error'
+        self.remaining=interval;self.cycle=self.cycle+1;self.currentKey=nil;self.mapDue=nil;self.phase='error'
         self:problem(err,cfg,'dispatch')
     end
 end

@@ -108,6 +108,7 @@ function M.draw(s,ui,data,callbacks)
   for _,r in ipairs(require('pa26_copilot').actions)do if s:button(r[2]..'##copilot-'..r[1],ui)then offer(r[1])end end
   if v.pinned and s:button((v.pinned=='pursuit_mark'and'Только /pt · без повторного /su'or v.pinned=='combat_wanted'and'Розыск 2.2 + /pt'or'Розыск 8.1 + /pt')..'##copilot-wanted',ui)then offer(v.pinned)end
   if v.phase then
+   ui.text(v.stopWarningStatus or'')
    ui.text(v.tireStatus or'')
    if s:button('/m Предупреждение (+1)##copilot-tire',ui)then offer('tire')end
   end
@@ -192,7 +193,7 @@ function M.reserve(controller,im,hud,fonts,taserHeight)
   rows[#rows+1]='Водитель: '..(v.driver and((v.driver.name or'Игрок')..' ['..v.driver.id..']')or'не установлен')..' · '..(v.car.stale and'последнее наблюдение'or math.floor(v.car.distance or 0)..' м')
  end
  local traffic=v.phase~=nil and v.car~=nil
- if traffic then rows[#rows+1]=v.tireStatus or''end
+ if traffic then rows[#rows+1]=v.phase=='10-55'and(v.stopWarningStatus or'')or(v.tireStatus or'')end
  local text=table.concat(rows,'\n')
  local th=heading:CalcTextSizeA(14*scale,100000,math.max(1,wrap-30*scale),title).y;local bh=font:CalcTextSizeA(12*scale,100000,wrap,text).y
  local h=th+bh+(traffic and 108 or 30)*scale;local base=taserHeight or 0

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "test_updater",
+    "exit_code": 0
+  },
+  {
+    "name": "test_update_legacy_paths",
+    "exit_code": 0
+  },
+  {
+    "name": "test_update_progress",
+    "exit_code": 0
+  },
+  {
+    "name": "test_installer",
+    "exit_code": 0
+  },
+  {
+    "name": "test_installer_legacy_paths",
+    "exit_code": 0
+  },
+  {
+    "name": "test_setup",
+    "exit_code": 0
+  },
+  {
+    "name": "test_setup_window",
+    "exit_code": 0
+  },
+  {
+    "name": "test_setup_launch",
+    "exit_code": 0
+  },
+  {
+    "name": "test_author_install",
+    "exit_code": 0
+  }
+]

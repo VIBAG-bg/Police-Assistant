@@ -52,24 +52,24 @@ function M.autoUnit(profile,state,count,number)
  return(unit:gsub('%d+$',tostring(number or 1)))
 end
 function M.defaults()
-    local out={downed_hp=0,respawn_position_tolerance=10,respawn_distance=100,respawn_evidence_ms=10000,auto_resume_reload=true,interrupt_grace_ms=3000,reload_grace_ms=30000,grammar=M.grammarDefaults(),unit_number=1,radio_templates_version=1,enabled=false,hud=true,restore_offer=true,pause_on_crew_change=true,periodic=true,reporter_self=true,
+    local out={count_map_time=true,map_max_gap_ms=3600000,downed_hp=0,respawn_position_tolerance=10,respawn_distance=100,respawn_evidence_ms=10000,auto_resume_reload=true,interrupt_grace_ms=3000,reload_grace_ms=30000,grammar=M.grammarDefaults(),unit_number=1,radio_templates_version=2,enabled=false,hud=true,restore_offer=true,pause_on_crew_change=true,periodic=true,reporter_self=true,
         confirmation=true,interval_ms=600000,channel='/r',mode='police',station='',unit='',vehicle='',sector='',post='',
         bind_distance=60,crew={},
-        start_template="{local_tag}{unit}, {patrol_start} в {city}, район {area} ({map_square}), {patrol_moving} на {direction}, Код 4, {patrol_available}.",
-        resume_template="{local_tag}{unit}, {patrol_resume} в {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}.",
-        finish_template="{local_tag}{unit}, {patrol_finish} в {city}, район {area} ({map_square}). Время на смене: {duration}, Код 4.",
-        crew_template='{local_tag}{unit}: состав экипажа изменён. Экипаж: {crew}.',
-        periodic_template="{local_tag}{unit}, {patrol_resume} в {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}."}
+        start_template="{local_tag}{unit}, {patrol_start}. Состав: {crew}. {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}.",
+        resume_template="{local_tag}{unit}, {patrol_resume}. Состав: {crew}. {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}.",
+        finish_template="{local_tag}{unit}, {patrol_finish}. Состав: {crew}. {city}, район {area} ({map_square}), последний курс {direction}. Код 4.",
+        crew_template='{local_tag}{unit}, состав изменён: {crew}. {city}, район {area} ({map_square}), последний курс {direction}. Код 4.',
+        periodic_template="{local_tag}{unit}, {patrol_resume}. Состав: {crew}. {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}."}
     for _,row in ipairs(M.shortcutNames)do out[row[1]]={key=0,ctrl=false,alt=false,shift=false}end
     return out
 end
 function M.validate(raw)
     local out=M.defaults();if raw==nil then return out end
     if type(raw)~='table'then return nil,'Повреждены настройки сеанса патруля.'end
-    for _,k in ipairs({'enabled','hud','restore_offer','auto_resume_reload','pause_on_crew_change','periodic','confirmation','reporter_self'})do
+    for _,k in ipairs({'count_map_time','enabled','hud','restore_offer','auto_resume_reload','pause_on_crew_change','periodic','confirmation','reporter_self'})do
         if raw[k]~=nil then if type(raw[k])~='boolean'then return nil,'Неверный переключатель патруля: '..k end;out[k]=raw[k]end
     end
-    for _,row in ipairs({{'respawn_position_tolerance',1,50},{'downed_hp',0,10},{'respawn_distance',20,1000},{'respawn_evidence_ms',1000,60000},{'interrupt_grace_ms',1000,10000},{'reload_grace_ms',1000,120000},{'interval_ms',1000,3600000},{'bind_distance',5,100},{'unit_number',1,999}})do
+    for _,row in ipairs({{'map_max_gap_ms',1000,86400000},{'respawn_position_tolerance',1,50},{'downed_hp',0,10},{'respawn_distance',20,1000},{'respawn_evidence_ms',1000,60000},{'interrupt_grace_ms',1000,10000},{'reload_grace_ms',1000,120000},{'interval_ms',1000,3600000},{'bind_distance',5,100},{'unit_number',1,999}})do
         local n=raw[row[1]]or out[row[1]];if not M.integer(n,row[2],row[3])then return nil,'Неверное значение: '..row[1]end;out[row[1]]=n
     end
     out.channel=raw.channel or out.channel;if out.channel~='/r'and out.channel~='/f'and out.channel~='/d'then return nil,'Канал патруля: /r, /f или /d.'end
@@ -107,12 +107,19 @@ function M.validate(raw)
     local stock=M.defaults()
     local old={start_template='{local_tag}{rank} {officer}, выхожу на смену как {unit}, начинаю патрулирование в {city}, район {area} ({map_square}), двигаюсь на {direction}, Код 4, доступен.',resume_template='{local_tag}{unit}, продолжаю патрулирование в {city}, район {area} ({map_square}), двигаюсь на {direction}. Экипаж: {crew}, Код 4, доступен.',periodic_template='{local_tag}{unit}, продолжаю патрулирование в {city}, район {area} ({map_square}), двигаюсь на {direction}. Экипаж: {crew}, Код 4, доступен.',finish_template='{local_tag}{unit}, заканчиваю патрулирование в {city}, район {area} ({map_square}). Время на смене: {duration}, Код 4.'}
     for key,value in pairs(old)do if raw[key]==value then out[key]=stock[key]end end
-    if raw.radio_templates_version~=nil and raw.radio_templates_version~=1 then return nil,'Неизвестная версия реплик рации.'end
+    if raw.radio_templates_version~=nil and raw.radio_templates_version~=1 and raw.radio_templates_version~=2 then return nil,'Неизвестная версия реплик рации.'end
+    for key,value in pairs(M.legacyTemplates)do if raw[key]==value then out[key]=stock[key]end end
     if raw.radio_templates_version==nil then
         local stock=M.defaults();for k,old in pairs(legacyRadio)do if raw[k]==old then out[k]=stock[k]end end
     end
     return out
 end
+M.legacyTemplates={
+ start_template='{local_tag}{unit}, {patrol_start} в {city}, район {area} ({map_square}), {patrol_moving} на {direction}, Код 4, {patrol_available}.',
+ resume_template='{local_tag}{unit}, {patrol_resume} в {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}.',
+ periodic_template='{local_tag}{unit}, {patrol_resume} в {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}.',
+ finish_template='{local_tag}{unit}, {patrol_finish} в {city}, район {area} ({map_square}). Время на смене: {duration}, Код 4.',
+ crew_template='{local_tag}{unit}: состав экипажа изменён. Экипаж: {crew}.'}
 function M.duration(ms)
     local sec=math.floor(math.max(0,ms or 0)/1000)
     return string.format('%02d:%02d:%02d',math.floor(sec/3600),math.floor(sec/60)%60,sec%60)

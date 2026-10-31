@@ -42,10 +42,18 @@ function M.install(C)
   if not i.own and s.inVehicle then i.own=model.copy(self.env.vehicle.lastOwnIdentity or self.env.vehicle.own)end
   if not c.stale and point(c)then
    local age=i.lastPoint and core.elapsed(now,i.lastPoint.at);local delta=dist(c,i.lastPoint)
+   local moving=age and age>=100 and age<=5000 and delta and delta<=self.env.vehicle.env.settings().max_motion_distance
+   local fleeing=moving and c.driver_id~=nil and self.driverLive and same(self.driver,self.driverLive)and
+    delta*1000/age>=cfg.flight_min_speed and core.finite(c.distance)and core.finite(i.lastPoint.distance)and
+    c.distance>i.lastPoint.distance and (dist(c,i.origin)or 0)>=cfg.departure_distance
+   if age and age>=100 then
+    i.flightSamples=fleeing and(i.flightSamples or 0)+1 or 0
+    i.confirmedFlight=i.flightSamples>=cfg.flight_min_samples
+   end
    if age and age>0 and age<=5000 and delta and delta>=cfg.stationary_delta and delta<=self.env.vehicle.env.settings().max_motion_distance and
     (dist(c,i.origin)or 0)>=cfg.departure_distance then i.departed=true end
-   i.lastPoint={x=c.x,y=c.y,z=c.z,at=now}
-  end
+   if not age or age>=100 then i.lastPoint={x=c.x,y=c.y,z=c.z,distance=c.distance,at=now}end
+  else i.flightSamples=0;i.confirmedFlight=false end
   local contact=self.manualUdDone or self.done.explain_stop
   if contact and not s.inVehicle then i.onFoot=true end
   local own=self.env.vehicle.own
@@ -53,7 +61,7 @@ function M.install(C)
    (i.own.id==nil or own.id==i.own.id)and(i.own.model_id==nil or own.model_id==i.own.model_id)
   local unavailable=self.manualUdDone and c.stale==true
   local canOffer=not s.modal and not s.typing and not s.recording and not s.wheel and not s.alertPending and not s.ownUi and not s.busy
-  if contact and cfg.finish_offer and canOffer and(returned or i.departed or unavailable)then
+  if contact and cfg.finish_offer and canOffer and not(cfg.immediate_flight_offer and i.confirmedFlight)and(returned or i.departed or unavailable)then
    if not i.finishDeclined then remove(self,'pursuit')end
    if i.finishOffered and not i.finishDeclined and not self.intent and not self.queued and(core.elapsed(now,i.finishOfferAt)or 0)>=cfg.toast_ms then
     local present=false;for _,p in ipairs(self.offers)do if p.action=='finish'then present=true;break end end

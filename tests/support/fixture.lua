@@ -811,7 +811,10 @@ local function fixture(options)
         end
         local c=originalAuthor(env);s.authorPresets=c;return c
     end
+    local elapsedClock=require 'pa26_elapsed_clock';local originalElapsedClock=elapsedClock.windows
+    elapsedClock.windows=function()return function()return s.wallTime or s.now end end
     dofile('moonloader/police_assistant_2026.lua')
+    elapsedClock.windows=originalElapsedClock
     cm.new=originalCopilot;colleagues.new=originalColleagues
     author.new=originalAuthor
     evidenceModule.new=originalEvidenceNew;filesModule.new=originalFilesNew

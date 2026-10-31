@@ -99,7 +99,11 @@ function Vehicle:direction(s,now,cfg)
         self.lastDirectionValue=nil;self.motion=nil
     end
     self.lastOwnIdentity=identity;self.directionValue=self.lastDirectionValue
+    if not core.finite(car.x)or not core.finite(car.y)then self.motion=nil;return end
     local old=self.motion;local age=old and core.elapsed(now,old.at)
+    if old and (not age or math.sqrt((car.x-old.x)^2+(car.y-old.y)^2)>cfg.max_motion_distance)then
+        self.lastDirectionValue=nil;self.directionValue=nil;self.motion=nil;old=nil
+    end
     if old and old.handle==car.handle and age and age>=cfg.motion_ms and age<=5000 then
         local dx,dy=car.x-old.x,car.y-old.y;local distance=math.sqrt(dx*dx+dy*dy)
         if distance>=cfg.stationary_distance and distance<=cfg.max_motion_distance then
@@ -113,11 +117,17 @@ function Vehicle:direction(s,now,cfg)
     end
     self.motion={handle=car.handle,x=car.x,y=car.y,at=now,direction=self.directionValue}
 end
+function Vehicle:reportDirection(s,cfg)
+    cfg=cfg or self.env.settings()
+    if not cfg.direction_enabled then return cfg.manual_direction or''end
+    if s and s.inVehicle==false and not cfg.direction_on_foot then return ''end
+    return self.lastDirectionValue or''
+end
 function Vehicle:values(state,c)
     local out=model.copy(state or self.state or {});local cfg=self.env.settings()
     c=c or self.selected
     for k,v in pairs(self.env.service and self.env.service()or {})do if out[k]==nil or out[k]==''then out[k]=v end end
-    out.direction=cfg.direction_enabled and(self.lastDirectionValue or'')or cfg.manual_direction
+    out.direction=self:reportDirection(out,cfg)
     out.directionKnown=out.direction~=''
     if not out.directionKnown then out.direction='неизвестно'end
     local report=require('pa26_report_context').values(out,self.env.profile and self.env.profile(),self.env.reportConfig and self.env.reportConfig())

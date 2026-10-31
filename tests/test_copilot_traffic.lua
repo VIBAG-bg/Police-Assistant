@@ -15,7 +15,9 @@ local function setup()
  s.tick();assert(v:selectNearest());s.tick()
  function s.send(action)
   local p,err=cp:propose(action);check(p,err);local count=#s.plans;check(cp:accept(p));eq(#s.plans,count,'UI consent only queues an intent')
-  s.tick();local plan=s.plans[#s.plans];eq(#s.plans,count+1);check(cp:validPlan(plan));cp:onExecution('completed',{plan=plan,demo=s.state.demo});return plan
+  s.tick();local plan=s.plans[#s.plans];eq(#s.plans,count+1);check(cp:validPlan(plan))
+  for _,line in ipairs(p.prepared.lines)do cp:onExecution(s.state.demo and'preview_line'or'sent_line',{plan=plan,demo=s.state.demo},line)end
+  cp:onExecution('completed',{plan=plan,demo=s.state.demo});return plan
  end
  function s.has(action)for _,p in ipairs(cp.offers)do if p.action==action then return p end end end
  return cp,v,s
@@ -32,9 +34,9 @@ cp,v,s=setup();s.send('stop_order');s.state.inVehicle=false;s.car.distance=5;s.t
 p=assert(cp:propose('approach'));local lines=table.concat(p.prepared.lines,'\n');check(lines:find('фары',1,true));check(lines:find('/do ',1,true));check(lines:find('/n ',1,true));check(not lines:find('фонарик',1,true))
 s.state.gameHour=22;s.tick();p=assert(cp:propose('approach'));check(table.concat(p.prepared.lines,'\n'):find('фонарик',1,true))
 s.cfg.copilot.window_ooc_hint=false;s.tick();p=assert(cp:propose('approach'));check(not table.concat(p.prepared.lines,'\n'):find('/n ',1,true))
-cp,v,s=setup();s.send('stop_order');s.car.distance=30;s.car.x=5;s.tick();check(s.has('pursuit'))
+cp,v,s=setup();s.send('stop_order');for i=1,3 do s.car.distance=10+i*10;s.car.x=i*10;s.tick()end;check(s.has('pursuit'))
 s.send('pursuit');eq(cp.phase,'Преследование');s.tick();p=assert(s.has('fast_wanted'));cp:shown(p.token);check(cp:decide(p.token,false));eq(cp.pinned,'fast_wanted')
-local fast=assert(cp:propose('fast_wanted'));local text=table.concat(fast.prepared.lines,'\n');check(text:find('/su 37 8 1',1,true));check(text:find('/pt 37',1,true));check(not fast.prepared.lines[1]:find('маск',1,true));check(not fast.prepared.lines[1]:find('SA-142',1,true))
+local fast=assert(cp:propose('fast_wanted'));local text=table.concat(fast.prepared.lines,'\n');check(text:find('/su 37 8 1',1,true));check(not text:find('/pt 37',1,true));check(not fast.prepared.lines[1]:find('маск',1,true));check(not fast.prepared.lines[1]:find('SA-142',1,true))
 check(cp:accept(fast));s.tick();local plan=s.plans[#s.plans];check(cp:validPlan(plan));s.person.generation=1;check(not cp:validPlan(plan),'Reused player ID must cancel even between lines')
 cp,v,s=setup();s.send('pursuit');s.car.distance=20;s.tick(50);s.tick(3000);check(s.has('high_risk'))
 local one;s.car.occupants=1;s.tick();one=assert(cp:propose('risk_order'));check(table.concat(one.prepared.lines,'\n'):find('три шага',1,true))
