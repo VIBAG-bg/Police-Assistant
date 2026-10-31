@@ -17,7 +17,7 @@ values=context.values({inVehicle=true,colleagues={patrolOccupants=2,patrolCrew={
 eq(values.unit,'2-A-1');eq(values.patrol_resume,'продолжаем патруль');check(values.crew:find('Partner Name',1,true))
 values=context.values({inVehicle=true,colleagues={patrolOccupants=1}},{name='Офицер',department='SFPS',callsign='Мой юнит'},{unit='Ручной'})
 eq(values.unit,'Ручной')
-local body=context.directionTemplate('{local_tag}{unit}, {patrol_resume}, {patrol_moving} на {direction}. Код 4.',{direction='',directionKnown=false})
+local body=assert(context.directionTemplate(require('pa26_patrol_settings').defaults().periodic_template,{direction='',directionKnown=false}))
 check(not body:find('на {direction}',1,true));check(not body:find('не определено',1,true))
 local model=require 'pa26_bindings';local original=require('pa26_copilot_settings').defaults();original.templates.stop='Личный текст.'
 eq(assert(require('pa26_copilot_settings').validate(original)).templates.stop,'Личный текст.')

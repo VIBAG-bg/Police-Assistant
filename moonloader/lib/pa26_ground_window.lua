@@ -1,6 +1,24 @@
 -- Per-situation draft; persistent defaults and the accepted executor plan stay separate.
 local model=require 'pa26_bindings';local grounds=require 'pa26_operational';local prefs=require 'pa26_copilot_settings'
 local common=require 'pa26_procedure_window';local M={}
+function M.selectSpeech(f,key,signature,generate)
+ f.speechDrafts=f.speechDrafts or{}
+ if f.speechKey then f.speechDrafts[f.speechKey]={text=f.speech,edited=f.speechEdited,signature=f.speechSignature,backup=f.speechBackup}end
+ local row=f.speechDrafts[key]
+ if not row or not row.edited and row.signature~=signature then
+  local text,why=generate();if not text then return nil,why end
+  row={text=text,edited=false,signature=signature,backup=row and row.backup};f.speechDrafts[key]=row
+ end
+ local changed=f.speechKey~=key or f.speech~=row.text
+ f.speechKey=key;f.speech=row.text;f.speechEdited=row.edited;f.speechSignature=row.signature;f.speechBackup=row.backup
+ return changed
+end
+function M.resetSpeech(f,signature,generate)
+ local text,why=generate();if not text then return nil,why end
+ if f.speechEdited then f.speechBackup=f.speech end
+ f.speech=text;f.speechEdited=false;f.speechSignature=signature
+ return text
+end
 function M.draw(s,ui,data,cb)
  local f=s.groundForm;if not f then ui.text('Выберите действие причины остановки или задержания.');return end
  s.currentUi=ui;s.currentNoticeScope='vehicle';s.preferenceContext=false
@@ -58,16 +76,24 @@ function M.draw(s,ui,data,cb)
  local ground,why=grounds.ground(kind,cfg[kind..'_ground'],cfg[kind..'_branch'],cfg[kind..'_custom'])
  if not ground then ui.text(why);return end
  if kind=='stop'then
-  local signature=ground.id..':'..tostring(cfg.stop_branch)..':'..cfg.stop_custom
-  if not f.speechEdited and f.speechSignature~=signature then
-   cfg._ground_speech=nil;local line,err=cb.groundSpeech(f)
-   if not line then ui.text(err);return end
-   f.speech=line;f.speechSignature=signature;s:setBuffer('ground:speech:'..f.request.token,line,8193)
-  end
+  local key=ground.id..':'..tostring(cfg.stop_branch);local signature=key..':'..cfg.stop_custom
+  local function generate()cfg._ground_speech=nil;return cb.groundSpeech(f)end
+  local changed,why=M.selectSpeech(f,key,signature,generate)
+  if changed==nil then ui.text(why);return end
+  if changed then s:setBuffer('ground:speech:'..f.request.token,f.speech,8193)end
+  ui.text('Сейчас выбрано: '..row.title..' · '..(ground.article or'без статьи'))
   local text=s:field('Что вы скажете водителю? (можно изменить своими словами)##ground-speech','ground:speech:'..f.request.token,f.speech or'',8193,true,85)
   if text~=f.speech then f.speechEdited=true;f.speech=text end
+  if f.speechEdited and f.speechSignature~=signature then ui.text('Факты этой причины изменились. Проверьте свой текст или подставьте стандарт ниже.')end
+  if s:button('Подставить стандарт для выбранной причины##ground-speech-reset',ui)then
+   local line,err=M.resetSpeech(f,signature,generate);if not line then ui.text(err);return end
+   s:setBuffer('ground:speech:'..f.request.token,line,8193)
+  end
+  if f.speechBackup and s:button('Вернуть мой прежний текст этой причины##ground-speech-undo',ui)then
+   f.speech=f.speechBackup;f.speechBackup=nil;f.speechEdited=true;s:setBuffer('ground:speech:'..f.request.token,f.speech,8193)
+  end
   cfg._ground_speech=f.speech
-  if s:button('Подставить стандарт для выбранной причины##ground-speech-reset',ui)then f.speechEdited=false;f.speechSignature=nil end
+  f.speechDrafts[f.speechKey]={text=f.speech,edited=f.speechEdited,signature=f.speechSignature,backup=f.speechBackup}
  end
  if ground.note then ui.text(ground.note)end
  local ak=kind=='stop'and ground.article:match('^АК ст%. (%d+)$');local article=ak and cb.sanctions().byId['AK:'..ak]

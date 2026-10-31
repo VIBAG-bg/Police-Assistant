@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.43.2')
+script_version('0.43.3')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -46,6 +46,7 @@ sceneServices.mapGrid=dependency('pa26_map_grid')
 sceneServices.settingsUi=dependency('pa26_settings_ui')
 sceneServices.mapAdapterModule=dependency('pa26_map_adapter')
 sceneServices.chatModule=dependency('pa26_chat_bridge')
+sceneServices.perfModule=dependency('pa26_chat_perf')
 sceneServices.manualActionModule=dependency('pa26_manual_actions')
 sceneServices.layoutModule=dependency('pa26_keyboard_layout')
 sceneServices.targetModule=dependency('pa26_target')
@@ -62,7 +63,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.43.2' then
+if #missing > 0 or not core or core.VERSION ~= '0.43.3' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -156,6 +157,7 @@ local function pushLog(message)
     print('[PA26] ' .. message)
 end
 
+sceneServices.chatPerf=sceneServices.perfModule.new(sceneServices.perfModule.clock(ffi),pushLog)
 menu:configureAssets(getWorkingDirectory() .. '\\resource\\pa26', pushLog)
 
 local function report(message,kind)
@@ -306,6 +308,7 @@ local function context()
         chatActive = chat ~= false, dialogActive = dialog ~= false}
 end
 
+context=sceneServices.chatPerf:wrap('context',context)
 -- Native scene reads only: visible, loaded nearby peds; no online-ID sweep.
 local function bodyPointVisible(cx, cy, cz, x, y, z, inVehicle, ped)
     if isLineOfSightClear(cx, cy, cz, x, y, z, true, true, false, true, false) == true then return true end
@@ -790,6 +793,7 @@ sceneServices.vehicle=sceneServices.model.new({settings=function()return workspa
     notice=function(message)studio:notify(message,'vehicle',false)end,
     cancel=function(token,reason)local q=workspace.executor.queue;if q and q.plan.vehicleAction and q.plan.vehicleAction.token==token then workspace.executor:cancel(reason)end end})
 sceneServices.colleagues=require('pa26_colleagues').new({read=optionalRead,settings=function()return workspace.library.vehicle.copilot end,
+    generation=function(id)return sceneServices.nearby.generations[id]or 0 end,
     partners=function()
         local contacts=bindingModel.copy(workspace.library.partners)
         local roster=studio.patrolSessionDraft and studio.patrolSessionDraft.crew or workspace.library.patrol_session.crew
@@ -1096,7 +1100,7 @@ studioCallbacks={
     taserMode=function(active)return taser:confirmMode(active)end,
     vehicleOffer=function(action,nearest)return sceneServices.vehicle:propose(action,nearest)end,
     vehicleAccept=function(p)if p.copilot then return sceneServices.copilot:accept(p)end;return sceneServices.vehicle:accept(p)end,
-    vehicleClear=function()sceneServices.vehicle:clearTarget('Выбор машины снят вами.')end,
+    vehicleClear=function()sceneServices.vehicle:clearTarget('Выбор машины снят вами.');sceneServices.copilot:reset('Выбор машины снят вами.')end,
     vehicleSelect=function(id)return sceneServices.vehicle:requestSelection(id)end,
     vehiclePreview=function(action,draft)
         local targeted=sceneServices.model.needsTarget(action,draft)
@@ -2154,6 +2158,7 @@ subscriptions[#subscriptions+1]=sceneServices.mapFrame
 
 local function cleanup()
     if shutdown then return end
+    sceneServices.chatPerf:setEnabled(false)
     pcall(studio.flushAutosave,studio,studioCallbacks,true)
     pcall(knowledge.flush,knowledge)
     pcall(patrolSession.save,patrolSession,true)
@@ -2326,21 +2331,26 @@ function onWindowMessage(message, wparam, lparam)
     -- WM_CHAR/IME text and mouse-selection messages pass straight to the HUD.
     if message~=0x100 and message~=0x101 and message~=0x104 and message~=0x105 and
         message~=0x7 and message~=0x8 and message~=0x1C and message~=0x6 then return end
-    if workspace and sceneServices.chatBridge then
+    local keyboard=message==0x100 or message==0x101 or message==0x104 or message==0x105
+    local cefBusy=false
+    if keyboard and workspace and sceneServices.chatBridge then
         local settings=workspace.library.settings;local bridge=sceneServices.chatBridge
-        local allowed=settings.cef_chat_support and settings.cef_chat_weapon_guard and bridge.server~=nil and focused and not shutdown and
-            not ownUi()and not bridge:busy(studioClock)and optionalRead('sampIsChatInputActive')==false and optionalRead('sampIsDialogActive')==false
-        bridge:observeInput(message,wparam,studioClock,allowed)
-        local held=sceneServices.cefHeldWeaponKeys or{};sceneServices.cefHeldWeaponKeys=held
-        if settings.cef_chat_support and settings.cef_chat_weapon_guard and sceneServices.chatModule.weaponKey(message,wparam)and
-            (bridge:inputBusy(studioClock,settings.cef_chat_grace_ms)or message==0x101 and held[wparam])then
-            if type(consumeWindowMessage)=='function'then consumeWindowMessage(true,false)end
-            held[wparam]=message==0x100 or nil
+        if message==0x100 and(wparam==0x75 or wparam==0x54 or wparam==0x0D or wparam==0x1B)then
+            local allowed=(wparam==0x75 or wparam==0x54)and settings.cef_chat_support and settings.cef_chat_weapon_guard and bridge.server~=nil and focused and
+                not ownUi()and not bridge:busy(studioClock)and optionalRead('sampIsChatInputActive')==false and optionalRead('sampIsDialogActive')==false
+            bridge:observeInput(message,wparam,studioClock,allowed)
+        end
+        cefBusy=bridge:inputBusy(studioClock,settings.cef_chat_grace_ms)
+        if settings.cef_chat_support and settings.cef_chat_weapon_guard and sceneServices.chatModule.weaponKey(message,wparam)then
+            local held=sceneServices.cefHeldWeaponKeys or{};sceneServices.cefHeldWeaponKeys=held
+            if cefBusy or message==0x101 and held[wparam]then
+                if type(consumeWindowMessage)=='function'then consumeWindowMessage(true,false)end
+                held[wparam]=message==0x100 or nil
+            end
         end
     end
     if message==0x100 and sceneServices.manual and sceneServices.manual.queue and(wparam==27 or wparam==workspace.library.settings.cancel_key)then sceneServices.manual:cancel('Отменено пользователем.')end
-    if (message==0x100 or message==0x101 or message==0x104 or message==0x105)and not ownUi()and
-        sceneServices.chatBridge and sceneServices.chatBridge:inputBusy(studioClock,workspace.library.settings.cef_chat_grace_ms)and
+    if keyboard and not ownUi()and cefBusy and
         (wparam~=0x0D or optionalRead('sampIsChatInputActive')==false)then return end
     confirmationInput:observeMenu(message,wparam,cfg.main.menu_key,lparam)
     if workspace and sceneServices.assistInput and(message==0x100 or message==0x104 or message==0x101 or message==0x105)then
@@ -2383,7 +2393,7 @@ function onWindowMessage(message, wparam, lparam)
             end
         end
     end
-    local prefix=workspace and workspace.library.settings.accent_live_input and bindingModel.accentPrefix(workspace.library.profile.accent)
+    local prefix=message==0x100 and wparam==0x0D and workspace and workspace.library.settings.accent_live_input and bindingModel.accentPrefix(workspace.library.profile.accent)
     if message==0x0100 and wparam==0x0D and(prefix and prefix~=''or workspace and(workspace.library.settings.chat_dot_commands or workspace.library.settings.manual_radio_prefix))and not shutdown and focused and workspace and hud.connected and not keyRecorder and not hasUiModal()and
         type(sampGetChatInputText)=='function'and type(sampSetChatInputText)=='function'and
         type(sampIsChatInputActive)=='function'and optionalRead('sampIsChatInputActive')==true and optionalRead('isGamePaused')==false then
@@ -2440,6 +2450,12 @@ function onWindowMessage(message, wparam, lparam)
     end
 end
 
+sceneServices.windowHandler=sceneServices.chatPerf:wrap('onWindowMessage',onWindowMessage)
+function onWindowMessage(message,wparam,lparam)
+    -- No profiler call or CEF work on mouse, selection, character/IME messages.
+    if message~=0x100 and message~=0x101 and message~=0x104 and message~=0x105 and message~=0x7 and message~=0x8 and message~=0x1C and message~=0x6 then return end
+    return sceneServices.windowHandler(message,wparam,lparam)
+end
 function onScriptTerminate(script)
     if script == thisScript() then cleanup() end
 end
@@ -2592,7 +2608,10 @@ sceneServices.processGroundInput=function()
    studio:requestNavigation(function()
     if not c:groundContextValid(p,true)then studio:notify('Случай изменился.','vehicle',false);return end
     hideWorkspaceUi();sceneServices.showGround[0]=true;imgui.DisableInput=false;uiInputReset=true
-    studio.groundForm={request=bindingModel.copy(p),cfg=bindingModel.copy(p.cfg)};studio.groundPage='form';studio.groundSearch='';studio.groundListPage=1
+    local key=table.concat({p.session or'',p.life,p.ped,p.groundTarget.id,p.groundTarget.name,p.groundTarget.generation or 0,
+        p.groundCar and p.groundCar.handle or'foot',p.groundCar and p.groundCar.id or''},':')
+    if studio.groundDraftKey~=key then studio.groundSpeechDrafts={};studio.groundDraftKey=key end
+    studio.groundForm={request=bindingModel.copy(p),cfg=bindingModel.copy(p.cfg),speechDrafts=studio.groundSpeechDrafts};studio.groundPage='form';studio.groundSearch='';studio.groundListPage=1
    end,'выбрать основание для этого человека')
   else studio:notify('Водитель или случай изменились. Повторите выбор причины.','vehicle',false)end
  end
@@ -2635,6 +2654,7 @@ local function syncBindingCommands()
         local head=name;local handler=function(args,raw)sceneServices.manualActions:offer(raw or('/'..head..(args~=''and(' '..args)or'')),true)end
         sceneServices.localCommands[name]=handler;sceneServices.manualLocalCommands[name]=handler
     end end end
+    sceneServices.chatCommandsRevision=(sceneServices.chatCommandsRevision or 0)+1
 end
 -- Both chat backends use the same evidence, confirmation and filtering rules.
 sceneServices.observeMessage=function(text,source,now)
@@ -2867,6 +2887,7 @@ local function connectChatFilters()
     quitHandler=function(id,reason)
         workspace.targets:quit(id)
         sceneServices.nearby:invalidate(id)
+        sceneServices.colleagues:invalidate(id)
         patrolSession:playerChanged(id)
         identity:playerChanged(id)
         if type(previousQuitHandler)=='function' then return previousQuitHandler(id,reason) end
@@ -2874,6 +2895,7 @@ local function connectChatFilters()
     joinHandler=function(id,...)
         workspace.targets:join(id)
         sceneServices.nearby:invalidate(id)
+        sceneServices.colleagues:invalidate(id)
         patrolSession:playerChanged(id)
         identity:playerChanged(id)
         if type(previousJoinHandler)=='function' then return previousJoinHandler(id,...) end
@@ -3332,6 +3354,7 @@ local function updateGame()
 end
 
 -- Prepare the local chat before yielding to the game/CEF require('pa26_startup'). The old
+updateGame=sceneServices.chatPerf:wrap('updateGame',updateGame)
 -- placement after the SA:MP gate was too late after a launcher integrity pass.
 sceneServices.readLayout=sceneServices.layoutModule.reader(ffi)
 sceneServices.chatBridge=sceneServices.chatModule.new({fs=storage.fs,assetFs=require('pa26_cef_assets').fs,json=workspace.json,
@@ -3347,10 +3370,15 @@ sceneServices.chatBridge=sceneServices.chatModule.new({fs=storage.fs,assetFs=req
             manual_chat=workspace.library.settings.manual_chat,rp_text=workspace.library.rp_text,nickname=hud.data.nickname}
     end,
     layout=sceneServices.readLayout,
+    inputActive=function()return optionalRead('sampIsChatInputActive')~=false or optionalRead('sampIsDialogActive')~=false or optionalRead('sampIsCursorActive')~=false end,
+    commandsRevision=function()return sceneServices.chatCommandsRevision or 0 end,
     message=function(text,now)sceneServices.observeMessage(text,'cef',now)end,
     command=sceneServices.observeCommand,manual=function(text,key)return sceneServices.manual:offer(text,key)end,
     manualResult=function(key)return key and sceneServices.manual.seen[key]or sceneServices.manual.result end,log=pushLog})
-sceneServices.chatBridge.commands=sceneServices.localCommands;sceneServices.chatBridge:start()
+sceneServices.chatBridge.commands=sceneServices.localCommands
+sceneServices.chatBridge.tick=sceneServices.chatPerf:wrap('bridgeTick',sceneServices.chatBridge.tick)
+sceneServices.chatBridge.exchange=sceneServices.chatPerf:wrap('bridgeExchange',sceneServices.chatBridge.exchange)
+sceneServices.chatBridge:start()
 
 function main()
     for _, name in ipairs(requiredApis) do
@@ -3450,6 +3478,8 @@ function main()
                 if generalSaveFailed then setDemo(previous)end
             end
         end
+        sceneServices.chatPerf:setEnabled(workspace.library.settings.cef_chat_profile)
+        sceneServices.chatPerf:frame()
         updateGame()
         sceneServices.dispatchNativeCommand(studioClock)
         if focused and not isGamePaused()and not context().inputBlocked then sceneServices.chatBridge:dispatch(studioClock)end

@@ -63,10 +63,10 @@ function fn(name){const start=source.indexOf('function '+name+'(');assert(start>
 function loadEndpoint(){const p=path.join(box,'pa26-chat-endpoint.js');if(fs.existsSync(p))vm.runInContext(fs.readFileSync(p,'utf8'),context,{timeout:1000});}
 function fire(name,event={}){event.target ||= field;event.preventDefault=()=>event.prevented=true;event.stopImmediatePropagation=()=>event.stopped=true;
  for(const cb of listeners[name]||[]){cb(event);if(event.stopped)break;}return event;}
-function type(text){panel.open=true;field.value=text;field.selectionStart=field.selectionEnd=text.length;fire('input');}
+function type(text){panel.open=true;field.value=text;field.selectionStart=field.selectionEnd=text.length;fire('focusin');fire('input');}
 // The real HUD key handler calls hideChatInput after sendMessageToChat. The
 // field/panel are test doubles; mirror that verified caller-side close here.
-async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(!e.prevented){context.sendMessageToChat(field.value);panel.open=false;}await wait(90);return e;}
+async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(!e.prevented){context.sendMessageToChat(field.value);panel.open=false;fire('focusout');}await wait(90);return e;}
 (async()=>{
  await until(()=>output.includes('NATIVE32_READY'),'Native bridge did not start');
  eq(fs.readFileSync(path.join(box,'index.html'),'utf8').replace(tag,''),originalHtml,'only the PA tag may change');

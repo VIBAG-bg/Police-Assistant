@@ -1,0 +1,38 @@
+{
+  "baseline": "0.43.2",
+  "baseline_commit": "93ca2a3c707c93ebb79bfd3cb501c0ac2ee8c3a6",
+  "all_reproduced": true,
+  "results": [
+    {
+      "test": "test_direction0433.lua",
+      "reproduced": true,
+      "error": "[string \"<python>\"]:5: check 3\nstack traceback:\n\t[string \"<python>\"]:6: in main chunk\n\t[string \"<python>\"]:5: in function 'check'\nstack traceback:\n\t[string \"<python>\"]:6: in main chunk\n\t[string \"<python>\"]:5: in function 'check'\n\t[C]: in function 'assert'",
+      "new_test_sha256": "a865a9af86548acdd6a98911a25992ea3294b06125cbf430ae3dc338884e053a"
+    },
+    {
+      "test": "test_staff0433.lua",
+      "reproduced": true,
+      "error": "[string \"<python>\"]:5: Civilian passenger cannot satisfy staffing\nstack traceback:\n\t[string \"<python>\"]:2: in main chunk\n\t[string \"<python>\"]:7: in function 'eq'\n\t[string \"<python>\"]:5: in function 'check'\n\t[C]: in function 'assert'",
+      "new_test_sha256": "783f290ba0fb499609251be0881d89a9f7ca867db343691dfbe9622d28878110"
+    },
+    {
+      "test": "test_streamout0433.lua",
+      "reproduced": true,
+      "error": "moonloader/lib/pa26_copilot.lua:228: attempt to compare number with nil\nstack traceback:\n\tmoonloader/lib/pa26_copilot.lua:228: in function 'prepare'\n\tmoonloader/lib/pa26_copilot.lua:347: in function 'valid'\n\tmoonloader/lib/pa26_copilot.lua:475: in function 'tick'\n\ttests/support\\copilot_fixture.lua:17: in function 'tick'\n\t[string \"<python>\"]:7: in function 'stream'\n\t[string \"<python>\"]:10: in main chunk",
+      "new_test_sha256": "f81193d472ef160617d69f434754202abb7ea372fb9ffcbe1d8a9349c6312965"
+    },
+    {
+      "test": "test_ground_drafts0433.lua",
+      "reproduced": true,
+      "error": "[string \"<python>\"]:5: Reason B must not use the edited draft of reason A\nstack traceback:\n\t[string \"<python>\"]:17: in main chunk\n\t[string \"<python>\"]:7: in function 'eq'\n\t[string \"<python>\"]:5: in function 'check'\n\t[C]: in function 'assert'",
+      "new_test_sha256": "502d6343759b063e0a197ce47a936aa2d4376fb130e5758e695689ae718d12f5"
+    },
+    {
+      "test": "test_cef_budget0433.lua",
+      "reproduced": true,
+      "error": "[string \"<python>\"]:5: Unchanged settings must not be revalidated\nstack traceback:\n\t[string \"<python>\"]:8: in main chunk\n\t[string \"<python>\"]:7: in function 'eq'\n\t[string \"<python>\"]:5: in function 'check'\n\t[C]: in function 'assert'",
+      "new_test_sha256": "d9a184a21c16d2d664f92a8fbcc68957651901b4f91150234b784f0f9893b38f"
+    }
+  ],
+  "game_written": false
+}

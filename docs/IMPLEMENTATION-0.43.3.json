@@ -1,0 +1,19 @@
+{
+  "release": "0.43.3",
+  "baseline": "0.43.2",
+  "baseline_commit": "93ca2a3c707c93ebb79bfd3cb501c0ac2ee8c3a6",
+  "scope": [
+    "CEF submit-only work, event-driven input state, bounded reconnect, policy cache, opt-in aggregate profiling",
+    "Known/unknown direction and safe custom-template validation",
+    "Verified police staffing, identity generation and disconnect invalidation",
+    "Current /ud + stream-out finish proposal, no inferred pursuit",
+    "Per-reason speech drafts with manual-text recovery"
+  ],
+  "publication_authorized": true,
+  "installation_authorized": false,
+  "game_acceptance_pending": true,
+  "user_settings_binds_notes_preserved": true,
+  "launcher_main_dll_modified": false,
+  "stage": "local_checks_passed_ready_for_publication",
+  "public_defaults_replaced": false
+}

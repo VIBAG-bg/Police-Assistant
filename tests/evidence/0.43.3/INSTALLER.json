@@ -1,0 +1,27 @@
+{
+  "release": "0.43.3",
+  "status": "passed",
+  "native_install": true,
+  "cef_install": true,
+  "idempotent_patch": true,
+  "preserved_personal_files": true,
+  "personal_backups": true,
+  "verify_only_readonly": true,
+  "rollback_after": [
+    1,
+    37,
+    89,
+    91,
+    92,
+    93,
+    94,
+    97,
+    98,
+    102,
+    103,
+    131
+  ],
+  "manifest_sha256": "AE0CB1B069813727395D6C31DA5D2FC3EFFA38BBCB90C7DF0A047E014DEACB6E",
+  "installer_sha256": "E3DF4BC1D3A29CC5926EC8E0D552B946B01FD0B0F7A0521CC475536D36992486",
+  "real_game_written": false
+}

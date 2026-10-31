@@ -1,0 +1,18 @@
+{
+  "released_0432": [
+    {
+      "name": "Police-Assistant-v0.43.2.zip",
+      "github_download_verified": true,
+      "archive_sha256": "21344a9c026220f2145d91b7d75a60a1cc3082dbc62caa422bd63fdb506dfb13",
+      "adapter_sha256": "c0090b45567709146a4c289d846cc901ccc0a86b79afdc22c79c4904d2fedda6"
+    },
+    {
+      "name": "pa26-update.zip",
+      "github_download_verified": true,
+      "archive_sha256": "91b785c2291d4b8c6ad14972c960d4ba60d8b2760e58f09ac521c7af9cd53c44",
+      "adapter_sha256": "c0090b45567709146a4c289d846cc901ccc0a86b79afdc22c79c4904d2fedda6"
+    }
+  ],
+  "current_adapter_sha256": "569bcb21e448b12f44d38962b24fb76b235a0157695ecc4418796f0d7a9b5138",
+  "original_main_dll_modified": false
+}

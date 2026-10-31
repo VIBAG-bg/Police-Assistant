@@ -179,15 +179,29 @@
     return !!(panel && !panel.hidden && panel.isConnected !== false && panel.classList.contains('active') && visible(panel, true));
   }
   function panelOpen() {
-    const panel=doc.getElementById('chatInput');
+    const panel=state.observedPanel || doc.getElementById('chatInput');
     return !!(panel && !panel.hidden && panel.isConnected!==false && panel.classList.contains('active'));
   }
-  function inputChanged() { state.visibleCache = new WeakMap(); state.inputDirty = true; exchange(); }
+  function inputChanged(records) {
+    if(Array.isArray(records) && records.length && records.every(record => record.type==='attributes' &&
+        record.target && typeof record.target.getAttribute==='function' && record.oldValue===record.target.getAttribute(record.attributeName))) return;
+    state.inputDirty = true;
+    if (state.inputScheduled || state.stopped) return;
+    state.inputScheduled = true;
+    // Focus/class changes are coalesced after the HUD finishes its own event.
+    // No input, beforeinput, selectionchange or mousemove listener is installed.
+    Promise.resolve().then(() => {
+      state.inputScheduled = false;
+      if (state.stopped) return;
+      hookInput(); readInput(); syncFieldLimit(); updateLayoutBadge();
+      if(state.inputSequence!==state.publishedInputSequence)exchange();
+    });
+  }
   function guardDigit(event) {
     if (!(/^[0-9]$/u.test(event.key || '') || /^(Digit|Numpad)[0-9]$/u.test(event.code || '') ||
         event.keyCode >= 48 && event.keyCode <= 57 || event.keyCode >= 96 && event.keyCode <= 105)) return;
     const c = config();
-    if (state.stopped || c && (!c.enabled || c.weaponGuard === false) || state.inputGuardDisabled || !panelOpen() || event.target !== field()) return;
+    if (state.stopped || c && (!c.enabled || c.weaponGuard === false) || state.inputGuardDisabled || !panelOpen() || event.target !== state.guardedField) return;
     if (/^[0-9]$/u.test(event.key || '') || /^(Digit|Numpad)[0-9]$/u.test(event.code || '') ||
         event.keyCode >= 48 && event.keyCode <= 57 || event.keyCode >= 96 && event.keyCode <= 105) {
       // Keep the input's default editing and WM_CHAR; stop only HUD bubbling.
@@ -199,10 +213,25 @@
     const panel = doc.getElementById('chatInput'), el = field();
     if (panel !== state.observedPanel) {
       if (state.inputObserver) state.inputObserver.disconnect();
+      if (state.ancestorObserver) state.ancestorObserver.disconnect();
       state.observedPanel = panel;
       if (panel && typeof root.MutationObserver === 'function') {
         state.inputObserver = new root.MutationObserver(inputChanged);
-        state.inputObserver.observe(panel, {attributes: true, attributeFilter: ['class', 'style', 'hidden']});
+        state.inputObserver.observe(panel, {attributes: true, attributeOldValue:true, attributeFilter: ['class', 'style', 'hidden']});
+        if (panel.parentElement) {
+          state.ancestorObserver=new root.MutationObserver(inputChanged);
+          for(let node=panel.parentElement,depth=0;node && depth<32;node=node.parentElement,depth++)
+            state.ancestorObserver.observe(node,{attributes:true,attributeOldValue:true,attributeFilter:['class','style','hidden']});
+        }
+      }
+    }
+    const dialog = doc.getElementById('Dialog');
+    if (dialog !== state.observedDialog) {
+      if (state.dialogObserver) state.dialogObserver.disconnect();
+      state.observedDialog = dialog;
+      if (dialog && typeof root.MutationObserver === 'function') {
+        state.dialogObserver = new root.MutationObserver(inputChanged);
+        state.dialogObserver.observe(dialog, {attributes:true, attributeOldValue:true, attributeFilter:['class','style','hidden']});
       }
     }
     if (el && el !== state.guardedField) {
@@ -222,12 +251,27 @@
     try { dialog = visible(doc.getElementById('Dialog'), true) && typeof root.isDialogActive === 'function' && root.isDialogActive() === true; } catch (_) { dialog = false; }
     const el = doc.activeElement;
     const typing = !!(el !== field() && visible(el) && !el.disabled && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/u.test(el.tagName)));
-    return {chat: active(), dialog, busy: active() || dialog || typing || state.cefFocused};
+    const chat = active();
+    return {chat, dialog, busy: chat || dialog || typing || state.cefFocused};
+  }
+  function readInput() {
+    if (state.inputDirty || !state.input) {
+      state.visibleCache = new WeakMap();
+      const previous=state.input,next=inputState();
+      if(!previous || previous.chat!==next.chat || previous.busy!==next.busy || previous.dialog!==next.dialog)
+        state.inputSequence=(state.inputSequence || 0)+1;
+      state.input = next; state.fieldVisible=next.chat && visible(state.guardedField);state.inputDirty = false;
+    }
+    return state.input;
   }
   function updateLayoutBadge() {
-    const c = config(), el = field();
+    const c = config(), el = state.guardedField;
     const code = c && c.enabled && c.layoutIndicator === true && c.keyboardLayout;
-    if (state.stopped || !active() || !visible(el) || typeof code !== 'string' || !/^[A-Z]{2,3}$/u.test(code)) {
+    const show = !state.stopped && readInput().chat && state.fieldVisible && !!el && typeof code === 'string' && /^[A-Z]{2,3}$/u.test(code);
+    const signature = show ? code : '';
+    if (state.badgeField === el && state.badgeCode === signature && (!state.layoutBadge || state.layoutBadge.isConnected !== false && state.layoutBadge.parentElement === el.parentElement)) return;
+    state.badgeField=el; state.badgeCode=signature;
+    if (!show) {
       if (state.layoutBadge) { state.layoutBadge.remove(); state.layoutBadge = null; }
       return;
     }
@@ -276,12 +320,8 @@
     }
   }
   function prepare() {
-    // Advisory only: never modify the user's text, selection or scroll position.
-    syncFieldLimit();updateLayoutBadge();
-    const el=field();if (!el || state.composing || !active() || state.stopped) return;
-    const result=submitted(el.value);
-    notice(state.recoveryNotice || result.error || (result.parts && result.parts.length>1 ?
-      'После Enter: '+result.parts.length+' части, целые слова и ... на стыках.' : ''));
+    // Compatibility entry point for old diagnostics. Editing is owned by CEF.
+    // Validation, splitting and useful error messages run at submission only.
   }
   function enqueue(kind, text, color, session = state.config && state.config.session) {
     if (!config() || !state.config.enabled || typeof text !== 'string' || text.length > 4096) return false;
@@ -302,8 +342,9 @@
     if (typeof cef.set_focus === 'function') {
       const originalFocus = cef.set_focus;
       cef.set_focus = function (focus, ...args) {
-        state.cefFocused = focus === true || focus === 1;
-        const result = originalFocus.call(this, focus, ...args); exchange(); return result;
+        const next=focus === true || focus === 1,changed=next!==state.cefFocused;
+        state.cefFocused = next;
+        const result = originalFocus.call(this, focus, ...args); if(changed)inputChanged();return result;
       };
     }
     cef.on = function (name, callback, ...rest) {
@@ -319,8 +360,10 @@
       }
       return originalOn.call(this, name, callback, ...rest);
     };
-    cef.emit = function (name, text, ...args) {
-      if (name !== 'HandleHudSendMessage') return originalEmit.call(this,name,text,...args);
+    cef.emit = function () {
+      // Preserve even zero/one arguments, receiver and return value verbatim.
+      if (arguments[0] !== 'HandleHudSendMessage') return originalEmit.apply(this, arguments);
+      const [name, text, ...args] = arguments;
       state.submits = state.submits.filter(ticket => clock() - ticket.at <= 5000);
       const index = typeof text === 'string' ? state.submits.findIndex(ticket => ticket.text === text ||
         !ticket.manual && command(ticket.text) && command(text) && ticket.text.replace(/^\s*\S+/u,'') === text.replace(/^\s*\S+/u,'')) : -1;
@@ -354,7 +397,7 @@
     if (state.hooked || typeof root.sendMessageToChat !== 'function') return;
     const original = root.sendMessageToChat;
     root.sendMessageToChat = function (text, ...args) {
-      if (typeof text !== 'string' || !active()) return original.call(this, text, ...args);
+      if (state.stopped || typeof text !== 'string' || !active()) return original.call(this, text, ...args);
       if (state.composing) return;
       if (state.manualPending) { notice('Предыдущее сообщение ещё отправляется. Новый ввод сохранён.');return; }
       const body = state.owned && text.startsWith(state.owned) ? text.slice(state.owned.length) : text;
@@ -373,23 +416,27 @@
   }
   async function exchange() {
     if (!state.url || state.pending || state.stopped) return;
-    state.inputDirty = false;
     state.pending = true;
+    const input=readInput(),inputSequence=state.inputSequence || 0;
+    state.publishedInputSequence=inputSequence;
     const abort = new root.AbortController();
     const timeout = root.setTimeout(() => abort.abort(), 1500);
     try {
       const url = state.url;
       const response = await root.fetch(url, {method: 'POST', cache: 'no-store', signal: abort.signal,
-        headers: {'Content-Type': 'application/json'}, body: JSON.stringify({schema: 1, page, ...inputState(), events: state.queue.slice(0, 24),
-          diagnostics: !state.diagnostics ? undefined : {field: !!field(), sendHook: state.hooked,
+        headers: {'Content-Type': 'application/json'}, body: JSON.stringify({schema: 1, page, ...input, events: state.queue.slice(0, 24),
+          policyRevision: state.config && state.config.policyRevision,
+          diagnostics: !state.diagnostics ? undefined : {field: !!state.guardedField && state.guardedField.isConnected!==false, sendHook: state.hooked,
             accentConfigured: !!prefix(), applied: state.applied, submitted: state.submitted, rejected: state.rejected}})});
       if (!response.ok) throw Error('http_' + response.status);
       const value = await response.json();
       if (state.stopped || url !== state.url) return;
       if (!value || value.schema !== 1 || !Number.isSafeInteger(value.ack) || typeof value.enabled !== 'boolean') throw Error('bad_response');
       state.queue = state.queue.filter(event => event.id > value.ack);
-      state.config = value; state.until = clock() + 2000; state.failures = 0; state.lastError = ''; state.diagnostics = value.diagnostics !== false;
-      state.inputGuardDisabled = !value.enabled || value.weaponGuard === false;
+      if (value.policyUnchanged === true && (!state.config || value.policyRevision !== state.config.policyRevision)) throw Error('bad_response');
+      state.config = value.policyUnchanged === true ? {...state.config, ...value} : value;
+      state.until = clock() + 2000; state.failures = 0; state.lastError = ''; state.diagnostics = state.config.diagnostics !== false;
+      state.inputGuardDisabled = !value.enabled || state.config.weaponGuard === false;
       state.lastChatText = textPolicy();
       const receipt=value.manualResult,pending=state.manualPending;
       if (pending && receipt && receipt.key === pending.key) {
@@ -399,24 +446,33 @@
         state.manualPending=null;recoverManual(pending.raw,'Подключение изменилось. Проверьте чат перед повтором сохранённого текста.',false);
       }
       if (state.manualPending && clock()-state.manualPending.at>60000) { const raw=state.manualPending.raw;state.manualPending=null;recoverManual(raw,'Подтверждение PA не получено. Текст сохранён; проверьте чат перед повтором.',false); }
-      syncFieldLimit();updateLayoutBadge();
+      if (value.policyUnchanged !== true) syncFieldLimit();
+      updateLayoutBadge();
     } catch (error) {
       state.failures++;
+      if(state.failures===1)state.endpointAttempt=undefined;
       const code = error && /^(http_\d{3}|bad_response)$/u.test(error.message) ? error.message : 'network';
       if (state.lastError !== code && state.diagnostics) {
         state.lastError = code;
         if (root.console && typeof root.console.warn === 'function') root.console.warn('[PA26 CEF] exchange_failed: ' + code);
       }
       if (state.failures >= 3) { state.config = null; state.until = 0; state.queue = []; }
-    } finally { root.clearTimeout(timeout); state.pending = false; if (state.inputDirty && !state.stopped) root.setTimeout(exchange, 0); }
+    } finally {
+      root.clearTimeout(timeout); state.pending = false;
+      if(!state.stopped){if(state.inputDirty)inputChanged();else if((state.inputSequence || 0)!==inputSequence)Promise.resolve().then(exchange);}
+    }
   }
   let endpointLoading = false;
   function loadEndpoint() {
     if (endpointLoading || state.stopped || state.url && config() && state.failures===0) return;
+    const now = clock();
+    if (state.endpointAttempt !== undefined && now >= state.endpointAttempt && now-state.endpointAttempt < Math.min(10000,2500*Math.max(1,state.failures))) return;
+    state.endpointAttempt=now;
     endpointLoading = true;
     const script = doc.createElement('script');
     script.src = 'pa26-chat-endpoint.js?pa26=' + root.Date.now();
-    const done = () => { endpointLoading = false; script.remove(); };
+    const timeout=root.setTimeout(() => done(),2000);
+    const done = () => { root.clearTimeout(timeout);endpointLoading = false; script.remove(); };
     script.onload = done; script.onerror = done;
     (doc.head || doc.documentElement).appendChild(script);
   }
@@ -426,20 +482,24 @@
       if (typeof value !== 'string' || !/^http:\/\/127\.0\.0\.1:\d{1,5}\/[a-f0-9]{48}\/exchange$/u.test(value)) return;
       const port = Number(value.split(':')[2].split('/')[0]);
       if (port < 1 || port > 65535) return;
-      if (value !== state.url) { state.url = value; state.config = null; state.queue = []; state.until = 0; updateLayoutBadge(); }
+      if (value !== state.url) {
+        if(state.manualPending){const raw=state.manualPending.raw;state.manualPending=null;recoverManual(raw,'Подключение PA изменилось. Проверьте уже переданные части перед повтором; исходный текст сохранён.',false);}
+        state.url = value; state.config = null; state.queue = []; state.until = 0; updateLayoutBadge();
+      }
       exchange();
     },
     // Exposed for bounded, offline tests; no page-wide network or game API is exposed.
-    wireSize, prepare, exchange, inputState, updateLayoutBadge, manualSubmission, submitted, manualBusy:()=>!!state.manualPending,
-    stop() { if (state.manualPending) recoverManual(state.manualPending.raw,'PA остановлен. Проверьте уже переданные части перед повтором.',false);const input=field();if (input && state.originalMaxLength !== undefined) input.maxLength=state.originalMaxLength;state.stopped = true;if (state.inputObserver) state.inputObserver.disconnect();state.config = null; state.lastChatText = null; state.until = 0; updateLayoutBadge(); }
+    wireSize, prepare, exchange() { state.inputDirty=true;return exchange(); }, inputState() { state.visibleCache=new WeakMap();return inputState(); }, updateLayoutBadge() { hookInput();state.inputDirty=true;updateLayoutBadge(); }, manualSubmission, submitted, manualBusy:()=>!!state.manualPending,
+    stop() { if (state.manualPending) recoverManual(state.manualPending.raw,'PA остановлен. Проверьте уже переданные части перед повтором.',false);const input=field();if (input && state.originalMaxLength !== undefined) input.maxLength=state.originalMaxLength;state.stopped = true;if (state.inputObserver) state.inputObserver.disconnect();if(state.dialogObserver)state.dialogObserver.disconnect();if(state.ancestorObserver)state.ancestorObserver.disconnect();if(root.clearInterval)root.clearInterval(state.heartbeat);state.config = null; state.lastChatText = null; state.until = 0; updateLayoutBadge(); }
   };
   hookCef();
   // Text, selection and caret are owned by the HUD. Analyze only on submission.
   doc.addEventListener('compositionstart', event => { if (event.target === field()) state.composing = true; }, true);
   doc.addEventListener('compositionend', event => { if (event.target === field()) state.composing = false; }, true);
   doc.addEventListener('keydown', event => {
+    if (state.stopped) return;
     if (event.key === 'F6' || event.key === 'Escape' || (event.key === 't' || event.key === 'T') && !panelOpen()) {
-      inputChanged(); root.setTimeout(() => { hookInput(); inputChanged(); }, 0);
+      inputChanged();
     }
     if (event.key !== 'Enter') return;
     hookSubmit();
@@ -455,12 +515,19 @@
       }
     }
   }, true);
-  doc.addEventListener('focusin', () => { hookInput();state.visibleCache=new WeakMap();syncFieldLimit();exchange(); }, true);
-  doc.addEventListener('focusout', () => root.setTimeout(exchange, 0), true);
+  doc.addEventListener('focusin', inputChanged, true);
+  doc.addEventListener('focusout', inputChanged, true);
   doc.addEventListener('DOMContentLoaded', () => { hookInput(); hookSubmit(); loadEndpoint(); });
-  root.setInterval(() => { hookInput(); hookSubmit(); exchange(); updateLayoutBadge(); if (!active() && (!field() || !field().value.startsWith(state.owned))) state.owned = ''; }, 250);
-  root.setInterval(loadEndpoint, 2500);
+  state.heartbeat=root.setInterval(() => {
+    if (state.stopped) return;
+    // Only discovery/reconnection and a small lease heartbeat. No draft reads,
+    // style queries, geometry or layout writes while the editor is unchanged.
+    if (!state.hooked) hookSubmit();
+    if (!state.observedPanel || state.observedPanel.isConnected===false || state.guardedField && state.guardedField.isConnected===false) inputChanged();
+    exchange(); updateLayoutBadge();loadEndpoint();
+  }, 750);
   hookInput();
+  state.inputDirty=true;readInput();
   if (doc.readyState !== 'loading') { hookSubmit(); loadEndpoint(); }
   return api;
 });

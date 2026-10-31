@@ -30,7 +30,7 @@ local function signature(spec,s,skipDynamic)
 end
 function M.prepare(spec,s,codec,now,life)
     local template,err=prefs.template(spec.template,prefs.radioVariables);if not template then return nil,err end
-    template=require('pa26_report_context').directionTemplate(template,s)
+    template,err=require('pa26_report_context').directionTemplate(template,s);if not template then return nil,err end
     if spec.channel~='/r' and spec.channel~='/f' and spec.channel~='/d' then return nil,'Канал автодоклада: /r, /f или /d.'end
     local source=mapGrid.reportValues(s,template)
     local values={}

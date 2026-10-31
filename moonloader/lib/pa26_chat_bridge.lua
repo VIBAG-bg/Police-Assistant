@@ -53,8 +53,11 @@ end
 function Bridge:start()
     if self.server or self.closed then return self.server~=nil end
     if self.env.settings().enabled~=true then self:setStatus('disabled','setting_disabled');return false end
-    local installed,reason=self:installed()
-    if not installed then self:setStatus('not_installed',reason);return false end
+    if not self.assetVerified then
+        local installed,reason=self:installed()
+        if not installed then self:setStatus('not_installed',reason);return false end
+        self.assetVerified=true
+    end
     local token=self.env.token and self.env.token();if type(token)~='string'or #token~=48 or token:find('[^a-f0-9]')then return self:fail('token')end
     local ok,socket=pcall(self.env.socket or require,'socket');if not ok or type(socket)~='table'then return self:fail('socket_module')end
     local server=call(socket,'tcp');if not server then return self:fail('socket_create')end
@@ -112,6 +115,38 @@ function Bridge:observe(text,source,now)
     if not match then fresh[#fresh+1]={text=text,source=source,at=now}end
     while #fresh>64 do table.remove(fresh,1)end;self.seen=fresh
     return not match
+end
+local function configurationKey(settings,commands,revision)
+    local parts={}
+    local function add(value)
+        local text=tostring(value);parts[#parts+1]=type(value)..':'..#text..':'..text
+    end
+    for _,key in ipairs({'enabled','accentEnabled','accent','diagnostics','profileInput','layoutIndicator','weaponGuard',
+        'accent_skip_brackets','chat_dot_commands','manual_radio_prefix','local_tag','nickname'})do add(settings[key])end
+    for _,key in ipairs({'enabled','max_parts','interval_ms'})do add((settings.manual_chat or{})[key])end
+    for _,key in ipairs({'revision','enabled','speech_enabled','display_limit','body_limit','margin','me_extra','do_extra',
+        'fallback_nickname','max_lines','todo_action_limit','marker','preview_text'})do add((settings.rp_text or{})[key])end
+    for _,key in ipairs(require('pa26_rp_settings').channels)do add(((settings.rp_text or{}).channels or{})[key])end
+    for _,text in ipairs(settings.filters or{})do add(text)end
+    add('commands')
+    local names
+    if revision~=nil then add(revision)else
+        names={};for name in pairs(commands)do names[#names+1]=name end;table.sort(names)
+        for _,name in ipairs(names)do add(name)end
+    end
+    return table.concat(parts,'|'),names
+end
+function Bridge:configuration(settings)
+    local key,names=configurationKey(settings,self.commands,call(self.env,'commandsRevision'))
+    if key~=self.configurationKey then
+        if not names then names={};for name in pairs(self.commands)do names[#names+1]=name end;table.sort(names)end
+        self.configurationRevision=(self.configurationRevision or 0)+1
+        self.configurationKey=key
+        self.configurationValue={accentEnabled=settings.accentEnabled==true,layoutIndicator=settings.layoutIndicator==true,
+            weaponGuard=settings.weaponGuard~=false,chatText=chatText.policy(settings),accent=settings.accent or'',
+            filters=settings.filters or{},diagnostics=settings.diagnostics==true,profileInput=settings.profileInput==true,localCommands=names}
+    end
+    return self.configurationValue,self.configurationRevision
 end
 function Bridge:exchange(raw,now)
     local decoded,value=pcall(self.env.json.decode,raw)
@@ -176,11 +211,14 @@ function Bridge:exchange(raw,now)
         layout=call(self.env,'layout')
         if type(layout)~='string'or not layout:match('^[A-Z][A-Z][A-Z]?$')then layout=nil end
     end
-    local response={schema=1,ack=page.ack,session=self.env.session and self.env.session()or nil,enabled=settings.enabled==true,accentEnabled=settings.accentEnabled==true,
-        layoutIndicator=settings.layoutIndicator==true,weaponGuard=settings.weaponGuard~=false,keyboardLayout=layout,chatText=chatText.policy(settings),
-        accent=settings.accent or'',filters=settings.filters or{},diagnostics=settings.diagnostics==true,localCommands={}}
+    local configuration,revision=self:configuration(settings)
+    local response={schema=1,ack=page.ack,session=self.env.session and self.env.session()or nil,enabled=settings.enabled==true,
+        keyboardLayout=layout,policyRevision=revision}
+    -- Old adapters continue receiving the full contract. New adapters renew the
+    -- input lease without repeatedly validating/serializing the same policy.
+    if value.policyRevision==revision then response.policyUnchanged=true;response.keyboardLayout=layout or false
+    else for key,item in pairs(configuration)do response[key]=item end end
     response.manualResult=call(self.env,'manualResult',page.manualResult and page.manualResult.key)or page.manualResult
-    for name in pairs(self.commands)do response.localCommands[#response.localCommands+1]=name end;table.sort(response.localCommands)
     return self.env.json.encode(response)
 end
 local function response(status,body,origin)
@@ -221,10 +259,13 @@ function Bridge:tick(now)
     local elapsed=self.assetAt and core.elapsed(now,self.assetAt)
     -- File verification/repair never runs while a browser input owns the scene.
     -- Check the cheap deadline before constructing settings or touching disk.
-    if self.env.assetFs and(not self.assetAt or not elapsed or elapsed>=M.ASSET_CHECK_MS)and
-        not self:inputBusy(now)and self.env.settings().enabled==true then
+    if self.env.assetFs and(not self.assetAt or not elapsed or elapsed>=M.ASSET_CHECK_MS)and not self:inputBusy(now)then
         self.assetAt=now
+        -- An expired CEF lease is not proof that editing ended. A native input
+        -- owner also defers disk work. The deadline still advances when disabled.
+        if not call(self.env,'inputActive')and self.env.settings().enabled==true then
         local installed,reason=self:installed()
+        self.assetVerified=installed==true
         if self.assetReason~=reason then
             self.assetReason=reason
             if not installed then self:diagnose('asset_check='..tostring(reason))end
@@ -234,6 +275,7 @@ function Bridge:tick(now)
             if self.endpointWriteFailed~=not ok then
                 self.endpointWriteFailed=not ok;self:diagnose(ok and'endpoint_restored'or'endpoint_repair_failed')
             end
+        end
         end
     end
     self.waitStarted=self.waitStarted or now

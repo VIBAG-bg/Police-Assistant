@@ -44,10 +44,17 @@ M.defaults={
  robbery_bank='{local_tag}{unit}, сработала сигнализация банка, направляюсь в {city}, район {area} ({map_square}), курс {direction}, запрашиваю свободные юниты по Код 3!'}
 for key,text in pairs(followups.templates)do M.defaults[key]=text end
 function M.officers(state)
- local c=state and state.colleagues or{};local occupants=c.cruiserOccupants
- if not core.finite(occupants)then occupants=1 end
- local nearby=type(c.nearbyOfficers)=='table'and #c.nearbyOfficers or 0
- return math.max(1,math.min(21,math.floor(occupants)),nearby+1)
+ local c=state and state.colleagues or{};local seen={};local count=1
+ -- Occupancy and saved contacts are never staffing evidence. Each row is
+ -- freshly identity-checked by the colleague sampler and carries provenance.
+ for _,rows in ipairs({c.patrolCrew or{},c.nearbyOfficers or{}})do for _,row in ipairs(rows)do
+  if row.verifiedPolice==true and core.validId(row.id)and type(row.name)=='string'and row.name~=''then
+   local known=seen[row.id]
+   if known==nil then seen[row.id]=row.name;count=count+1
+   elseif known~=row.name and known~=false then seen[row.id]=false;count=count-1 end
+  end
+ end end
+ return math.min(1004,count)
 end
 function M.isRp(key)return M.rpKeys[key]or key=='wanted_rp'or key=='combat_rp'end
 function M.validRp(text)

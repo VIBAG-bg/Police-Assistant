@@ -111,11 +111,13 @@ for _,key in ipairs({'dispatch_911_rp','dispatch_911_foot_rp','dispatch_gas_rp',
   local cfg=cpPrefs.defaults();cfg.templates[key]=bad;check(not cpPrefs.validate(cfg),key..' must reject arbitrary server commands/variables')
  end
 end
--- Guard estimates use max, not addition (the same colleague can be in both lists).
+-- Staffing requires verified identities, deduplicated across both lists.
 eq(D.officers(nil),1);eq(D.officers({colleagues={cruiserOccupants=0/0}}),1)
-eq(D.officers({colleagues={cruiserOccupants=2,nearbyOfficers={{},{}}}}),3)
+eq(D.officers({colleagues={cruiserOccupants=2,nearbyOfficers={{},{}}}}),1)
 for _,count in ipairs({1,2,3})do
- local cp,v,t=setup(false);t.state.colleagues.cruiserOccupants=count;t.tick();local p=t.propose('dispatch_business')
+ local cp,v,t=setup(false);t.state.colleagues.cruiserOccupants=count;t.state.colleagues.patrolCrew={}
+ for i=2,count do t.state.colleagues.patrolCrew[#t.state.colleagues.patrolCrew+1]={id=40+i,name='Officer_'..i,verifiedPolice=true}end
+ t.tick();local p=t.propose('dispatch_business')
  eq(p.guardRisk,count<2);check(p.confirmationTitle~=nil)
  eq(p.confirmationNote:find('3.1 / 10.4',1,true)~=nil,count<2)
  if count<2 then check(p.confirmationNote:find('Jail',1,true));check(p.confirmationNote:find('1 чел.',1,true))end
@@ -125,9 +127,9 @@ for _,count in ipairs({1,2,3})do
  t.cfg.copilot.robbery_guard=false;t.tick();p=t.propose('dispatch_business');check(not p.guardRisk and p.confirmationTitle=='Подтверждение доклада')
 end
 do
- local cp,v,t=setup(false);local p=t.propose('dispatch_business');t.state.colleagues.cruiserOccupants=2;t.tick();check(not cp:accept(p),'Crew guard must be re-confirmed when the risk changes')
+ local cp,v,t=setup(false);local p=t.propose('dispatch_business');t.state.colleagues.cruiserOccupants=2;t.state.colleagues.patrolCrew={{id=44,name='Officer_Test',verifiedPolice=true}};t.tick();check(not cp:accept(p),'Crew guard must be re-confirmed when the risk changes')
  p=t.propose('dispatch_business');check(cp:accept(p));t.tick(1);local plan=t.plans[#t.plans];check(cp:validPlan(plan))
- cp:onExecution('sent_line',{plan=plan},plan.lines[1]);t.state.colleagues.cruiserOccupants=1;t.tick(1);check(not cp:validPlan(plan),'Guard remains checked between RP/radio lines')
+ cp:onExecution('sent_line',{plan=plan},plan.lines[1]);t.state.colleagues.cruiserOccupants=1;t.state.colleagues.patrolCrew={};t.tick(1);check(not cp:validPlan(plan),'Guard remains checked between RP/radio lines')
 end
 -- Fresh context is checked at consent AND between executor lines.
 for _,change in ipairs({'vehicle','session','focus','mode','text','channel','duty','typing'})do

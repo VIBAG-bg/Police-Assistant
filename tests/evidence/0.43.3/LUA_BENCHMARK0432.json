@@ -1,0 +1,33 @@
+{
+  "game_started": false,
+  "keyboard": {
+    "counts": {
+      "workspace_cancel": 0,
+      "modal_reset": 0,
+      "asset_checks": 0,
+      "native_reads": 0,
+      "runtime_cancel": 0
+    },
+    "calls": 9000,
+    "cpu_ms": 6.000000000000227
+  },
+  "game_written": false,
+  "typing_frames": {
+    "counts": {
+      "workspace_cancel": 0,
+      "modal_reset": 0,
+      "asset_checks": 0,
+      "native_reads": 24000,
+      "runtime_cancel": 1200
+    },
+    "calls": 600,
+    "cpu_ms": 262.9999999999999
+  },
+  "source_sha256": {
+    "moonloader/police_assistant_2026.lua": "a0fe2a5557467e90bf8a9e0e0413dd2a78eaa1bcec41fc33f7df1830e55f1064",
+    "moonloader/lib/pa26_chat_bridge.lua": "9e8cf21c9e84b8cef4ff62b99c124480a92148b36dee231140b1c2be9918ec3d",
+    "cef/assets/hud/pa26-chat.js": "c0090b45567709146a4c289d846cc901ccc0a86b79afdc22c79c4904d2fedda6"
+  },
+  "cleanup_included_in_counters": false,
+  "synthetic_game_apis": true
+}

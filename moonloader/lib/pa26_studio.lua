@@ -1528,6 +1528,9 @@ function Studio:drawProfile(ui,data,callbacks,part)
     if cefReason then ui.text(cefReason)end
     local cefLog,cefLogChanged=self:check('Диагностика чата##cef-chat-diagnostics',copy.settings.cef_chat_diagnostics)
     if cefLogChanged then self:autoSettings('cef_chat',{'settings','cef_chat_diagnostics'},cefLog)end
+    local perf,perfChanged=self:check('Замер задержек CEF и кадров (временно)##cef-chat-profile',copy.settings.cef_chat_profile)
+    if perfChanged then self:autoSettings('cef_chat',{'settings','cef_chat_profile'},perf)end
+    ui.text('По умолчанию выключен. Раз в 30 секунд пишет только времена и счётчики в журнал PA / moonloader.log: кадры, цикл PA, контекст, клавиши и мост. Переписка не записывается. Для сравнения повторите ту же сцену с PA и без него; браузерные замеры отдельно не доказывают плавность в GTA.')
     ui.text('Записывает этап подключения и причины сбоев в moonloader.log. Текст переписки, сам акцент и секретный адрес не записываются. Счётчики означают подготовку и передачу сообщения чату, а не принятие сервером.')
     self:autosaveHint(ui,'cef_chat')
     self:autosaveHint(ui,'accent_chat')

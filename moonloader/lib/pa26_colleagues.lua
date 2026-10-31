@@ -20,8 +20,21 @@ function M.callsign(profile,skin,occupants,crew)
  local info=M.pdSkins[skin];station=station or((dept==''or dept=='EPD')and'1')or(info and({LSPS='1',SFPS='2',LVPS='3'})[info.station])or'1'
  return station..(((occupants or 1)>=2 or crew==true)and'-A-1'or'-L-1')
 end
-function M.new(env)return setmetatable({env=env,knownColleagues={},findNames={},snapshot={nearbyOfficers={},nearbyCruisers=0}},C)end
-function C:reset()self.knownColleagues={};self.findNames={};self.findAt=nil;self.scanAt=nil;self.snapshot={nearbyOfficers={},nearbyCruisers=0}end
+function M.new(env)return setmetatable({env=env,knownColleagues={},radioOfficers={},findNames={},snapshot={nearbyOfficers={},nearbyCruisers=0}},C)end
+function C:reset()self.knownColleagues={};self.radioOfficers={};self.findNames={};self.findAt=nil;self.scanAt=nil;self.snapshot={nearbyOfficers={},nearbyCruisers=0}end
+function C:invalidate(id)
+ if not core.validId(id)then return end
+ for name,row in pairs(self.radioOfficers)do if row.id==id then self.radioOfficers[name]=nil;self.knownColleagues[name]=nil end end
+ local function prune(rows)for i=#(rows or{}),1,-1 do if rows[i].id==id then table.remove(rows,i)end end end
+ prune(self.physicalCrew);prune(self.snapshot.patrolCrew);prune(self.snapshot.nearbyOfficers)
+ self.snapshot.patrolOccupants=1+#(self.snapshot.patrolCrew or{})
+ self.scanAt=nil
+end
+function C:verifiedPolice(cfg,name,id,skin,skins)
+ if cfg.uniforms_enabled and skins and skins[skin]then return true end
+ local row=self.radioOfficers[name:lower()]
+ return cfg.radio_cache and row and row.id==id and row.generation==(self.env.generation and self.env.generation(id)or 0)or false
+end
 function C:command(line,now)if type(line)=='string'and line:lower():match('^/find%s*$')then self.findAt=now end end
 function C:observe(line)
  local cfg=self.env.settings();if not cfg.radio_cache or type(line)~='string'or #line>1024 then return end
@@ -29,7 +42,11 @@ function C:observe(line)
  local radio=line:match('^%[R%]')or line:match('^%[F%]')or line:match('^%[Рация%]')or line:match('^%[Фракция%]')
  local nick=line:match('([A-Za-z][A-Za-z_]+)%[%d+%]')or line:match('([A-Za-z][A-Za-z_]+)%(%d+%)')or line:match('([A-Za-z][A-Za-z_]+):')
  if nick and #nick<=24 then
-  if radio then local n=0;for _ in pairs(self.knownColleagues)do n=n+1 end;if n<1004 then self.knownColleagues[nick:lower()]=true end
+  if radio then local n=0;for _ in pairs(self.knownColleagues)do n=n+1 end;if n<1004 then
+   self.knownColleagues[nick:lower()]=true
+   local id=tonumber(line:match(nick..'%[(%d+)%]')or line:match(nick..'%((%d+)%)'))
+   if core.validId(id)then self.radioOfficers[nick:lower()]={id=id,generation=self.env.generation and self.env.generation(id)or 0}end
+  end
   elseif line:match('^%- ')and line:find('[Телефон:',1,true)then
    self.findNames[nick:lower()]=true;local age=self.findAt and core.elapsed(self.now,self.findAt)
    if age and age<=cfg.find_cache_window_ms then self.knownColleagues[nick:lower()]=true end
@@ -59,7 +76,8 @@ function C:carCrew(s,car,total)
      local name=r('sampGetPlayerNickname',id);local skin=r('getCharModel',ped)
      if type(name)=='string'and(contacts[name:lower()]or cfg.uniforms_enabled and skins[skin]or cfg.radio_cache and self.knownColleagues[name:lower()])then
       count=count+1;local contact=contacts[name:lower()]
-      self.physicalCrew[#self.physicalCrew+1]={id=id,ped=ped,name=name,ic_name=contact and contact.ic_name,contact_id=contact and contact.id}
+      self.physicalCrew[#self.physicalCrew+1]={id=id,ped=ped,name=name,ic_name=contact and contact.ic_name,contact_id=contact and contact.id,
+       verifiedPolice=self:verifiedPolice(cfg,name,id,skin,skins)and true or false}
      end
      end
     end
@@ -103,7 +121,8 @@ function C:tick(s,now)
       local nick=r('sampGetPlayerNickname',id);local skin=r('getCharModel',ped)
       if type(nick)=='string'and #nick<=24 and(cfg.uniforms_enabled and skins[skin]or cfg.radio_cache and self.knownColleagues[nick:lower()]or buddies[nick:lower()])then
        recognized[ped]=true
-       rows[#rows+1]={id=id,name=nick,skin=skin,role_label=M.pdSkins[skin]and M.pdSkins[skin].label or'Коллега из чата / контактов',distance=distance}
+       rows[#rows+1]={id=id,name=nick,skin=skin,role_label=M.pdSkins[skin]and M.pdSkins[skin].label or'Коллега из чата / контактов',distance=distance,
+        verifiedPolice=self:verifiedPolice(cfg,nick,id,skin,skins)and true or false}
       end
      end
     end

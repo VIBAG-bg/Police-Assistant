@@ -1,0 +1,103 @@
+{
+  "status": "measured",
+  "browser": "Chromium 112",
+  "os": "win32",
+  "viewport": "1152x864",
+  "real_browser_input": true,
+  "history_rows": 1500,
+  "loopback_metadata_test_server": true,
+  "live_gta_measured": false,
+  "limitations": "Chat-shaped fixture, not launcher CEF or a running GTA. Input-to-frame is a renderer proxy, not physical display latency. Sequential paths and host scheduling may affect timings.",
+  "rows": [
+    {
+      "mode": "disabled",
+      "adapter_sha256": null,
+      "elapsed_ms": 15020.1545,
+      "cycles": 11,
+      "selection_checks": 22,
+      "exactly_once_checks": 44,
+      "operations": {
+        "styles": 0,
+        "rects": 0,
+        "requests": 0,
+        "valueReads": 44
+      },
+      "inputs": 396,
+      "frames": 901,
+      "input_to_next_frame_ms": {
+        "p50": 7.200000017881393,
+        "p95": 14.900000005960464,
+        "max": 16.80000001192093
+      },
+      "frame_ms": {
+        "p50": 16.666000000000167,
+        "p95": 16.666000000001077,
+        "p99": 16.666000000001077,
+        "max": 16.666000000001077,
+        "over33": 0,
+        "over100": 0
+      },
+      "long_tasks": 0
+    },
+    {
+      "mode": "0.43.2",
+      "adapter_sha256": "c0090b45567709146a4c289d846cc901ccc0a86b79afdc22c79c4904d2fedda6",
+      "elapsed_ms": 15353.7156,
+      "cycles": 11,
+      "selection_checks": 22,
+      "exactly_once_checks": 44,
+      "operations": {
+        "styles": 825,
+        "rects": 244,
+        "requests": 210,
+        "valueReads": 88
+      },
+      "inputs": 396,
+      "frames": 921,
+      "input_to_next_frame_ms": {
+        "p50": 7.600000023841858,
+        "p95": 14.699999988079071,
+        "max": 16.5
+      },
+      "frame_ms": {
+        "p50": 16.666000000000167,
+        "p95": 16.666000000001077,
+        "p99": 16.666000000001077,
+        "max": 16.666000000001077,
+        "over33": 0,
+        "over100": 0
+      },
+      "long_tasks": 0
+    },
+    {
+      "mode": "0.43.3",
+      "adapter_sha256": "569bcb21e448b12f44d38962b24fb76b235a0157695ecc4418796f0d7a9b5138",
+      "elapsed_ms": 900465.7877999999,
+      "cycles": 665,
+      "selection_checks": 1330,
+      "exactly_once_checks": 2660,
+      "operations": {
+        "styles": 26621,
+        "rects": 8169,
+        "requests": 8313,
+        "valueReads": 5320
+      },
+      "inputs": 23940,
+      "frames": 53964,
+      "input_to_next_frame_ms": {
+        "p50": 7.799999982118607,
+        "p95": 14.900000005960464,
+        "max": 131
+      },
+      "frame_ms": {
+        "p50": 16.66599999999744,
+        "p95": 16.66600000008475,
+        "p99": 16.66600000008475,
+        "max": 83.32999999995809,
+        "over33": 18,
+        "over100": 0
+      },
+      "long_tasks": 3
+    }
+  ]
+}

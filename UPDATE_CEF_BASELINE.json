@@ -4,8 +4,8 @@
   "policy": "Reviewed adapter update; protocol-1 workers 0.40.3+ skip CEF on native installs and require the official HUD main hash on launcher installs.",
   "hashes": {
     "pa26-chat-endpoint.js": "dafae2adea0cd37d9aae06d45012279c0d4371af956e0b67d90468bb5647cfc8",
-    "pa26-chat.js": "c0090b45567709146a4c289d846cc901ccc0a86b79afdc22c79c4904d2fedda6"
+    "pa26-chat.js": "569bcb21e448b12f44d38962b24fb76b235a0157695ecc4418796f0d7a9b5138"
   },
   "include_assets": true,
-  "adapter_review": "0.43.1: draft analysis only on Enter/Send, no live input preview, no endpoint reload while healthy; protocol-1 workers and official HUD main remain unchanged."
+  "adapter_review": "0.43.3: event-driven focus/visibility, cached metadata leases, submit-only transformation, transparent unrelated CEF calls; protocol 1 and official HUD main/DLL unchanged. Pending real GTA acceptance."
 }

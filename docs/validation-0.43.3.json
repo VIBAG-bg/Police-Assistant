@@ -1,0 +1,116 @@
+{
+  "release": "0.43.3",
+  "base_release": "0.43.2",
+  "date": "2026-10-31",
+  "status": "local_engineering_checks_passed_game_acceptance_pending",
+  "lua_groups": 186,
+  "lua_checks": 11449882,
+  "syntax_files": 335,
+  "cef_js_checks": 560,
+  "cef_native32_checks": 109,
+  "previous_worker_checks": 318,
+  "installer_rollback_points": [
+    1,
+    37,
+    89,
+    91,
+    92,
+    93,
+    94,
+    97,
+    98,
+    102,
+    103,
+    131
+  ],
+  "legacy_leaf_checks": 4298,
+  "source_articles_preserved": 1073,
+  "baseline_failures_reproduced": 5,
+  "cef_adapter_sha256": "569bcb21e448b12f44d38962b24fb76b235a0157695ecc4418796f0d7a9b5138",
+  "cef_bridge_sha256": "097f37e4cc8fd35db8d74a31b577eaab8fce8dd62661446438411e8759678ad4",
+  "update_package_sha256": "2bc5e416c6a32b031f2d4de0d817f7790393344b91c618cdbc88384ab7919339",
+  "browser_soak": {
+    "mode": "0.43.3",
+    "adapter_sha256": "569bcb21e448b12f44d38962b24fb76b235a0157695ecc4418796f0d7a9b5138",
+    "elapsed_ms": 900465.7877999999,
+    "cycles": 665,
+    "selection_checks": 1330,
+    "exactly_once_checks": 2660,
+    "operations": {
+      "styles": 26621,
+      "rects": 8169,
+      "requests": 8313,
+      "valueReads": 5320
+    },
+    "inputs": 23940,
+    "frames": 53964,
+    "input_to_next_frame_ms": {
+      "p50": 7.799999982118607,
+      "p95": 14.900000005960464,
+      "max": 131
+    },
+    "frame_ms": {
+      "p50": 16.66599999999744,
+      "p95": 16.66600000008475,
+      "p99": 16.66600000008475,
+      "max": 83.32999999995809,
+      "over33": 18,
+      "over100": 0
+    },
+    "long_tasks": 3
+  },
+  "browser_limitations": "Chat-shaped fixture, not launcher CEF or a running GTA. Input-to-frame is a renderer proxy, not physical display latency. Sequential paths and host scheduling may affect timings.",
+  "lua_benchmark": {
+    "game_written": false,
+    "typing_frames": {
+      "calls": 600,
+      "cpu_ms": 258,
+      "counts": {
+        "asset_checks": 0,
+        "native_reads": 24000,
+        "runtime_cancel": 1200,
+        "workspace_cancel": 0,
+        "modal_reset": 0
+      }
+    },
+    "game_started": false,
+    "keyboard": {
+      "calls": 9000,
+      "cpu_ms": 6.000000000000005,
+      "counts": {
+        "asset_checks": 0,
+        "native_reads": 0,
+        "runtime_cancel": 0,
+        "workspace_cancel": 0,
+        "modal_reset": 0
+      }
+    },
+    "source_sha256": {
+      "moonloader/police_assistant_2026.lua": "438fb30597d079ea04f601ba65e22bd2a0d36975b1b0e87841c1f1a5ea86adb5",
+      "moonloader/lib/pa26_chat_bridge.lua": "097f37e4cc8fd35db8d74a31b577eaab8fce8dd62661446438411e8759678ad4",
+      "cef/assets/hud/pa26-chat.js": "569bcb21e448b12f44d38962b24fb76b235a0157695ecc4418796f0d7a9b5138"
+    },
+    "cleanup_included_in_counters": false,
+    "synthetic_game_apis": true
+  },
+  "real_game_written": false,
+  "game_started": false,
+  "live_server_tested": false,
+  "windows7_vm_tested": false,
+  "publication_authorized": true,
+  "local_installation_authorized": false,
+  "performance_acceptance": "Pending 15-minute comparison in the actual Exsellent client. Rare browser spikes remain recorded; no claim of zero added game latency.",
+  "evidence_sha256": {
+    "BROWSER_PERFORMANCE.json": "b3aa94a0deff82c21fb4f8e732aaea573401c8f978cf25bdd725054f708aa7d7",
+    "CEF_BROWSER_RESULTS.json": "c22eab5c37407075a00b977f562d42afcb0bd5694a2852f74c7453a16e9661d3",
+    "CEF_NATIVE32_RESULTS.json": "9e11d97fca95c8bf25e3f0612e6e61fa8dd42646a9e456717ae3062626571efe",
+    "CEF_PROVENANCE.json": "9fd82b7e8a01d1404b5d72ac5f4f78bb5161b36e959719a85974d370373b2cf8",
+    "INSTALLER.json": "0336d475511a0ebcba5a13b11b74c8a0c25ddef7c5df9b27739c815492bef317",
+    "LUA_BENCHMARK.json": "a91f0eb80bfdf5ea261a61839e654cec803e114cf7eb8c33ba991a8648a81176",
+    "LUA_BENCHMARK0432.json": "72de4bfeaa525c1d1f3ed4868d46567ecca9ec803e0547fbe63b736382a00e55",
+    "PRESERVATION.json": "262b0bc3a7a5601ba43603277e1ad324323b675dd77dac978f58f7576477c958",
+    "PREVIOUS_WORKER.json": "3a3facbaa7f82335d513ead87e1b9ace73717f181ff7652337043762f27233fb",
+    "REGRESSION.json": "cdba5cc1cb57daa4d8bc57362bf437984c51f22402ba955019abfc9f42b3a654",
+    "REPRODUCTION.json": "e73be4709c57cbb7f481550558396b6ebde1f675feb1eb725f020c7ae66e3e6c"
+  }
+}

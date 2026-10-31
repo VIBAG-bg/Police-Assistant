@@ -1,0 +1,22 @@
+local d=require 'pa26_dispatch'
+eq(d.officers({colleagues={cruiserOccupants=2,patrolOccupants=1}}),1,'Civilian passenger cannot satisfy staffing')
+eq(d.officers({colleagues={cruiserOccupants=21}}),1)
+eq(d.officers({colleagues={patrolOccupants=2}}),1,'Unknown roster has no police provenance')
+local a={id=37,name='Officer_Name',verifiedPolice=true};local b={id=38,name='Civilian_Name',verifiedPolice=false}
+eq(d.officers({colleagues={patrolCrew={a,b},nearbyOfficers={a,b}}}),2,'Same verified officer is counted once')
+eq(d.officers({colleagues={patrolCrew={b},nearbyOfficers={b}}}),1)
+eq(d.officers({colleagues={nearbyOfficers={{id=39,name='Unknown_Name'}}}}),1)
+eq(d.officers({colleagues={patrolCrew={},nearbyOfficers={}}}),1)
+eq(d.officers({colleagues={patrolCrew={a},nearbyOfficers={{id=37,name='Reused_Id',verifiedPolice=true}}}}),1,'Conflicting cached identities cannot create extra officers')
+local cfg=require('pa26_copilot_settings').defaults();cfg.uniforms_enabled=false
+local generation=0;local c=require('pa26_colleagues').new({settings=function()return cfg end,generation=function()return generation end})
+check(not c:verifiedPolice(cfg,'Officer_Name',37,280,{}))
+c:observe('[R] Officer_Name[37]: Доклад.');check(c:verifiedPolice(cfg,'Officer_Name',37,0,{}))
+check(not c:verifiedPolice(cfg,'Officer_Name',38,0,{}),'New server ID cannot reuse old radio evidence')
+check(not c:verifiedPolice(cfg,'Other_Name',37,0,{}),'Reused ID cannot inherit another nickname')
+generation=1;check(not c:verifiedPolice(cfg,'Officer_Name',37,0,{}),'A new identity generation revokes old evidence')
+c:observe('[R] Officer_Name[37]: Новый доклад.');check(c:verifiedPolice(cfg,'Officer_Name',37,0,{}))
+c.snapshot={nearbyOfficers={a},patrolCrew={a},patrolOccupants=2};c:invalidate(37)
+eq(#c.snapshot.nearbyOfficers,0);eq(#c.snapshot.patrolCrew,0);eq(d.officers({colleagues=c:view()}),1);check(not c:verifiedPolice(cfg,'Officer_Name',37,0,{}))
+c:reset();check(not c:verifiedPolice(cfg,'Officer_Name',37,0,{}))
+c:command('/find',1000);c.now=1001;c:observe('- Civilian_Name(38) [Телефон: 1]');check(not c:verifiedPolice(cfg,'Civilian_Name',38,0,{}),'Find results and saved contacts are not police evidence')

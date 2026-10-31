@@ -2,6 +2,10 @@
 local patrol=require 'pa26_patrol_settings'
 local core=require 'pa26_core'
 local M={}
+local unknown={['']=true,['неизвестно']=true,['не определено']=true,['не определён']=true,['не определен']=true}
+function M.directionKnown(values)
+ return values.directionKnown~=false and type(values.direction)=='string'and not unknown[values.direction]
+end
 M.fields={{'unit','Юнит'},{'crew','Экипаж'},{'city','Город'},{'area','Район'},{'map_square','Квадрат'},{'direction','Последний курс'}}
 function M.apply(values,override)
     if override==nil then return values end
@@ -11,7 +15,7 @@ function M.apply(values,override)
         if text~=nil then
             if type(text)~='string'or not core.validUtf8(text)or #text>512 or not text:match('%S')or text:find('[%c{}]')then return nil,'Заполните поле «'..r[2]..'» без команд, переносов и переменных.'end
             values[r[1]]=text
-            if r[1]=='direction'then values.directionKnown=text~='неизвестно'end
+            if r[1]=='direction'then values.directionKnown=not unknown[text]end
         end
     end
     return values
@@ -36,8 +40,23 @@ function M.values(state,profile,cfg)
     return out
 end
 local function replace(text,needle,value)return(text:gsub(needle:gsub('([^%w])','%%%1'),value))end
-function M.directionTemplate(text,values)
-    if values.directionKnown~=false and values.direction and values.direction~=''and values.direction~='не определено'then return text end
+local stock
+function M.stockTemplate(text)
+ if not stock then
+  stock={}
+  local function collect(value)
+   if type(value)=='table'then for _,child in pairs(value)do collect(child)end
+   elseif type(value)=='string'then stock[value]=true;for line in(value..'\n'):gmatch('(.-)\n')do if line~=''then stock[line]=true end end end
+  end
+  for _,name in ipairs({'pa26_copilot_settings','pa26_vehicle_settings','pa26_patrol_settings'})do collect(require(name).defaults())end
+  collect(require('pa26_preferences').patrolDefaults())
+ end
+ return stock[text]==true
+end
+function M.directionTemplate(text,values,isStock)
+    if M.directionKnown(values)or not text:find('{direction}',1,true)then return text end
+    if isStock==nil then isStock=M.stockTemplate(text)end
+    if not isStock then return nil,'Курс не наблюдался. В вашем шаблоне есть {direction}: уточните курс в данных доклада либо измените шаблон. Личный текст сохранён.'end
     -- Omit direction-dependent clauses of stock and unchanged legacy wording.
     for _,clause in ipairs({', {patrol_moving} на {direction}',', двигаюсь на {direction}',
         ', двигаемся на {direction}',', последний курс {direction}',', курс {direction}',
@@ -45,7 +64,7 @@ function M.directionTemplate(text,values)
     text=replace(text,'{patrol_moving} на {direction}','{patrol_moving}')
     text=replace(text,'направляюсь на {direction} в','направляюсь в')
     text=replace(text,'Двигаюсь на {direction}, ','')
-    text=replace(text,'на {direction}','')
+    if text:find('{direction}',1,true)then return nil,'Для этого доклада нужен наблюдавшийся курс. Уточните данные перед отправкой.'end
     return text
 end
 return M

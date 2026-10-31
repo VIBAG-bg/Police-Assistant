@@ -30,7 +30,7 @@ local function idSame(a,b)return a and b and a.id==b.id and a.name==b.name and a
 local function coord(c)return c and core.finite(c.x)and core.finite(c.y)and core.finite(c.z)end
 local function distance(a,b)if not coord(a)or not coord(b)then return end;return math.sqrt((a.x-b.x)^2+(a.y-b.y)^2+(a.z-b.z)^2)end
 function M.expand(text,values)
- text=require('pa26_report_context').directionTemplate(text,values)
+ local why;text,why=require('pa26_report_context').directionTemplate(text,values);if not text then return nil,why end
  local missing
  local t=core.expandGender(text,values.gender):gsub('{([a-z_]+)}',function(k)
   local v=values[k];if v==nil then missing=k;return''end
@@ -135,7 +135,7 @@ function C:values(override)
  v.my_firstname=(profile.name~=''and profile.name or s.my_name or s.my_nick or'Офицер'):gsub('_',' '):match('^%S+')or'Офицер'
  if not self.car then v.vehicle_description=cfg.lost_vehicle_fallback end
  v.dispatch_officers=dispatch.officers(s);v.robbery_min_officers=cfg.robbery_min_officers
- v.officers=#(colleagues.nearbyOfficers or{})+1;v.min_officers=cfg.min_officers
+ v.officers=dispatch.officers(s);v.min_officers=cfg.min_officers
  v.warnings=self.tireWarnings;v.warning_count=cfg.warning_count;v.ooc_warning_count=cfg.ooc_warning_count
  local grounds=require 'pa26_operational'
  local stop=grounds.ground('stop',cfg.stop_ground,cfg.stop_branch,cfg.stop_custom)
@@ -225,7 +225,7 @@ function C:prepare(action,override)
   ok,err=template(action,action=='window_question'and'/do'or'/me')
   if ok and action=='window_question'and cfg.window_ooc_hint then ok,err=template('window_hint','/n')end
  elseif action=='approach'then
-  if self.state.inVehicle or not self.car or self.car.distance>self.env.vehicle.env.settings().approach_distance then return nil,'Выйдите из машины и подойдите к выбранному автомобилю.'end
+  if self.state.inVehicle or not self.car or self.car.stale or not core.finite(self.car.distance)or self.car.distance>self.env.vehicle.env.settings().approach_distance then return nil,'Выйдите из машины и подойдите к выбранному автомобилю.'end
   local h=self.state.gameHour;local night=core.finite(h)and(h<6 or h>=21)and cfg.night_flashlight
   ok,err=template(night and'approach_night'or'approach_day','/me');if ok then ok,err=template('window','/do')end
   if ok and cfg.window_ooc_hint then ok,err=template('ooc_hint','/n')end
@@ -293,6 +293,9 @@ function C:propose(action,options)
  local prompt=({finish='finish_offer_text',window_question='window_question_offer_text',window_knock='window_knock_offer_text'})[action]
  if action=='pursuit'and self.incident and self.incident.finishDeclined then prompt='pursuit_after_finish_text'end
  if prompt then proposal.label=M.expand(cfg[prompt],self:values())end
+ if action=='finish'and self.car and self.car.stale then
+  proposal.confirmationNote='Машина сейчас вне наблюдения. В предпросмотре сохранены последние данные машины и место этой остановки; потеря наблюдения не доказывает побег.'
+ end
  for _,line in ipairs(prepared.lines)do if line:match('^/[rfdl]%s')or line:match('^/[rf]n%s')then proposal.report=true;break end end
  if proposal.report then
   proposal.reportValues=model.copy(self:values(options and options.cfg));proposal.confirmationTitle=proposal.confirmationTitle or'Подтверждение доклада'

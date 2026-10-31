@@ -51,9 +51,17 @@ function M.install(C)
   local own=self.env.vehicle.own
   local returned=contact and i.onFoot and s.inVehicle and own and i.own and own.handle==i.own.handle and
    (i.own.id==nil or own.id==i.own.id)and(i.own.model_id==nil or own.model_id==i.own.model_id)
-  if contact and cfg.finish_offer and(returned or i.departed)then
-   remove(self,'pursuit')
-   if not i.finishOffered then i.finishOffered=true;self:offer('finish')
+  local unavailable=self.manualUdDone and c.stale==true
+  local canOffer=not s.modal and not s.typing and not s.recording and not s.wheel and not s.alertPending and not s.ownUi and not s.busy
+  if contact and cfg.finish_offer and canOffer and(returned or i.departed or unavailable)then
+   if not i.finishDeclined then remove(self,'pursuit')end
+   if i.finishOffered and not i.finishDeclined and not self.intent and not self.queued and(core.elapsed(now,i.finishOfferAt)or 0)>=cfg.toast_ms then
+    local present=false;for _,p in ipairs(self.offers)do if p.action=='finish'then present=true;break end end
+    if not present then i.finishOffered=nil end
+   end
+   if not i.finishOffered then
+    self:offer('finish')
+    for _,p in ipairs(self.offers)do if p.action=='finish'then i.finishOffered=true;i.finishOfferAt=now;break end end
    elseif i.finishDeclined and i.departed and not i.pursuitOffered then i.pursuitOffered=true;self.dismissed.pursuit=nil;self:offer('pursuit')end
   end
   if self.windowAwait then

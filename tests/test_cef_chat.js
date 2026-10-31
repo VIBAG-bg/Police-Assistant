@@ -42,7 +42,7 @@ async function page(delayed=false) {
     MutationObserver:class {constructor(cb){this.cb=cb;observers.push(this);}observe(target,options){this.target=target;this.options=options;this.live=true;}disconnect(){this.live=false;}},
     AbortController, setTimeout(cb,ms) {timers.set(++sequence,{cb,ms,at:now+ms});return sequence;},clearTimeout(id) {timers.delete(id);},
     setInterval(cb,ms) {timers.set(++sequence,{cb,ms,interval: true});return sequence;},
-    cef: {on(name,cb) {callbacks[name] = cb;},emit(...args) {sent.push(args);},set_focus() {}},
+    cef: {on(name,cb) {callbacks[name] = cb;},emit(...args) {sent.push(args);return this;},set_focus() {}},
     isDialogActive: () => false};
   let config = {schema:1,session:'one',enabled:true,accentEnabled:true,accent:prefix,filters:[],localCommands:['pa26','pa26demo'],chatText};
   let failure = false,responseStatus=200,malformed=false,hang=false;
@@ -171,7 +171,7 @@ async function page(delayed=false) {
     await p.config({keyboardLayout:code});eq(p.elements['pa26-chat-layout'],undefined,'invalid or missing language stays hidden');
   }
   await p.config({keyboardLayout:'RU'});p.offline(true);p.time(2100);
-  for(const timer of p.timers.values())if(timer.interval&&timer.ms===250)timer.cb();
+  for(const timer of p.timers.values())if(timer.interval&&timer.ms===750)timer.cb();
   eq(p.elements['pa26-chat-layout'],undefined,'stale badge disappears even while a request is pending');await flush();
   p.offline(false);await p.exchange();eq(p.elements['pa26-chat-layout'].textContent,'RU','connection recovers');
   await p.config({enabled:false});eq(p.elements['pa26-chat-layout'],undefined);
@@ -270,9 +270,9 @@ async function page(delayed=false) {
   eq(p.input.caretWrites,initialCaret);eq(p.input.selectionStart,3);eq(p.input.scrollLeft,340);
   eq([...p.timers.values()].filter(t=>!t.interval&&t.ms===150).length,0,'no live text-processing timers');
   eq(p.requests.length,requestsBeforeTyping,'typing is independent of loopback requests');
-  const endpointTimer=[...p.timers.values()].find(t=>t.interval&&t.ms===2500),loads=p.stats.endpointLoads;
+  const endpointTimer=[...p.timers.values()].find(t=>t.interval&&t.ms===750),loads=p.stats.endpointLoads;
   endpointTimer.cb();eq(p.stats.endpointLoads,loads,'healthy connections do not reload endpoint scripts');
-  p.offline(true);await p.exchange();endpointTimer.cb();eq(p.stats.endpointLoads,loads+1,'a failed connection can discover a replacement endpoint');p.offline(false);await p.exchange();
+  p.offline(true);await p.exchange();p.time(3000);endpointTimer.cb();eq(p.stats.endpointLoads,loads+1,'a failed connection can discover a replacement endpoint');p.offline(false);await p.exchange();
   p.type('Привет',2);p.runTimers(150);await flush();
   eq(p.input.value,'Привет');eq(p.input.selectionStart,2);
   p.type('Очень длинное слово '.repeat(20),5);const held=p.input.value;await p.enter();
@@ -331,7 +331,7 @@ async function page(delayed=false) {
   // Input mutations publish immediately, including the final state if an
   // earlier request is still pending. Typed digits stay in the input element.
   p=await page();eq(p.observers.length,1);eq(p.observers[0].target,p.panel);
-  eq(p.observers[0].options,{attributes:true,attributeFilter:['class','style','hidden']});
+  eq(p.observers[0].options,{attributes:true,attributeOldValue:true,attributeFilter:['class','style','hidden']});
   let observedInput=false;p.root.document.addEventListener('keydown',()=>{observedInput=true;},false);
   p.type('Номер 123');
   for(const key of ['0','1','9'])for(const type of ['keydown','keyup']) {
@@ -341,7 +341,7 @@ async function page(delayed=false) {
   eq(p.fire('keydown',{key:'a'}).bubbleStopped,undefined);eq(p.fire('keydown',{key:'1',target:{tagName:'INPUT'}}).bubbleStopped,undefined);
   await p.config({weaponGuard:false});observedInput=false;eq(p.fire('keydown',{key:'1'}).bubbleStopped,undefined);eq(observedInput,true);
   p.time(2200);eq(p.fire('keydown',{key:'1'}).bubbleStopped,undefined,'Explicit OFF survives an expired bridge reply');
-  await p.config({weaponGuard:true});p.panel.open=false;eq(p.fire('keydown',{key:'1'}).bubbleStopped,undefined);
+  await p.config({weaponGuard:true});p.panel.open=false;eq(p.fire('keydown',{key:'1'}).bubbleStopped,undefined);p.mutate();await flush();
   let beforeMutation=p.requests.length;p.panel.open=true;p.mutate();await flush();eq(p.requests.length,beforeMutation+1);
   eq(JSON.parse(p.requests.at(-1).options.body).chat,true);
   beforeMutation=p.requests.length;p.panel.open=false;p.mutate();await flush();eq(p.requests.length,beforeMutation+1);eq(JSON.parse(p.requests.at(-1).options.body).chat,false);
@@ -355,6 +355,29 @@ async function page(delayed=false) {
   eq(p.sent.length,emitted+1,'native single-line emit happens while HTTP remains pending');
   eq(p.sent.at(-1)[1],prefix+' Короткое сообщение.');
   finishReply({ok:true,json:async()=>({schema:1,ack:0,enabled:true,session:'one'})});await hanging;
+  // Non-chat CEF calls are a transparent pass-through, including arity/this.
+  p=await page();const receiver={test:true};const start={...p.stats},requests=p.requests.length;
+  eq(p.root.cef.emit.call(receiver),receiver);eq(p.sent.at(-1),[]);
+  eq(p.root.cef.emit.call(receiver,'OtherEvent'),receiver);eq(p.sent.at(-1),['OtherEvent']);
+  const payload={get draft(){throw Error('unrelated payload must not be inspected');}};
+  eq(p.root.cef.emit.call(receiver,'OtherEvent',payload,undefined,5),receiver);eq(p.sent.at(-1)[1],payload);eq(p.sent.at(-1).length,4);
+  await flush();eq(p.requests.length,requests);eq(p.stats.textReads,start.textReads);eq(p.stats.styleReads,start.styleReads);
+  p.root.cef.set_focus(true);await flush();const stableFocus=p.requests.length;
+  for(let i=0;i<2000;i++)p.root.cef.set_focus(true);await flush();eq(p.requests.length,stableFocus,'Repeated focus state must not cause IPC work');
+  p=await page();const heartbeat=[...p.timers.values()].find(t=>t.interval&&t.ms===750);const stable={...p.stats};
+  for(let i=0;i<20;i++){p.time(750);heartbeat.cb();await flush();}
+  eq(p.stats.textReads,stable.textReads,'Stable leases never read the draft');eq(p.stats.styleReads,stable.styleReads,'Stable leases never force style');eq(p.stats.rectReads,stable.rectReads,'Stable leases never force geometry');
+  const unchanged={...p.stats},unchangedRequests=p.requests.length;
+  p.panel.getAttribute=()=> 'active';
+  for(let i=0;i<10000;i++)p.observers[0].cb([{type:'attributes',target:p.panel,attributeName:'class',oldValue:'active'}]);
+  await flush();eq(p.requests.length,unchangedRequests,'Redundant HUD attribute writes cannot wake IPC');eq(p.stats.styleReads,unchanged.styleReads);eq(p.stats.rectReads,unchanged.rectReads);eq(p.stats.textReads,unchanged.textReads);
+  p.mutate();await flush();eq(p.requests.length,unchangedRequests,'A visibility refresh with identical ownership does not publish again');
+  const beforePrepare={...p.stats};p.type('слово '.repeat(60));const reads=p.stats.textReads;
+  for(let i=0;i<100;i++)p.api.prepare();eq(p.stats.textReads,reads,'Legacy preview entry point cannot analyze editing text');
+  // Compact metadata cannot override cached safety settings or invent a policy.
+  await p.config({policyRevision:4,weaponGuard:false});await p.config({policyUnchanged:true,policyRevision:4,keyboardLayout:false});
+  eq(p.fire('keydown',{key:'1'}).bubbleStopped,undefined);eq(p.elements['pa26-chat-layout'],undefined);
+  await p.config({policyUnchanged:true,policyRevision:5});eq(p.warnings.at(-1),'[PA26 CEF] exchange_failed: bad_response');
   const fs=require('node:fs'),crypto=require('node:crypto');
   fs.writeFileSync(require('node:path').join(__dirname,'CEF_BROWSER_RESULTS.json'),JSON.stringify({status:'passed',checks,
     adapter_sha256:crypto.createHash('sha256').update(fs.readFileSync(require('node:path').join(__dirname,'../cef/assets/hud/pa26-chat.js'))).digest('hex'),
