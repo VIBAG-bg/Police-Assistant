@@ -1,0 +1,37 @@
+{
+  "revision": "2026-10-31-settings-1",
+  "program_version": "0.43.4",
+  "baseline_commit": "42da3941535e69885619cfac503a1d8c98b78119",
+  "public_settings_sha256": "06eb98412020c67800ee9abb8049d8897b7e43fb15206978980a1923628f9445",
+  "captured_at_utc": "2026-10-31T16:00:53.802589+00:00",
+  "game_written": false,
+  "notes_read": false,
+  "binds_changed": false,
+  "runtime_unchanged": true,
+  "installer_code_unchanged": true,
+  "stock_notes_unchanged": true,
+  "fresh_demo_mode": false,
+  "privacy_scan": "passed",
+  "private_data_excluded": [
+    "profile",
+    "partners",
+    "wanted_reminders",
+    "filters",
+    "assist.history",
+    "local screenshot folder",
+    "update preferences",
+    "notes",
+    "personal knowledge"
+  ],
+  "regression": {
+    "groups": 8,
+    "checks": 1750727,
+    "syntax_files": 338,
+    "status": "passed"
+  },
+  "author_install": {
+    "checks": 29,
+    "status": "passed"
+  },
+  "program_update_sha256": "e9532af28306eaefbe0130fcd9d0c0d59781c785948f884c669a0df31c62d6b6"
+}

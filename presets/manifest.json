@@ -9,12 +9,13 @@
       "size": 98330
     },
     "pa-settings.json": {
-      "sha256": "e73e434057dafe1db52134b7d8ff5510bf55979ec75fa4b78297e7ed73c4f14d",
-      "size": 68719
+      "sha256": "06eb98412020c67800ee9abb8049d8897b7e43fb15206978980a1923628f9445",
+      "size": 102347
     },
     "baseline.json": {
       "sha256": "070b440081266945321bede19da9d931a1f7f27d3ef4cffa20597a59119069e3",
       "size": 75967
     }
-  }
+  },
+  "settings_revision": "2026-10-31-settings-1"
 }

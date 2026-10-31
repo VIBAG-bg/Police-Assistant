@@ -1,277 +1,85 @@
 {
-  "format": "police-assistant.author-settings",
   "config": {
-    "introduce": {
-      "do_text": "Удостоверение раскрыто: данные и фотография видны собеседнику.",
-      "enabled": true,
-      "me": "остановившись рядом, достал служебное удостоверение и раскрыл его перед собеседником.",
-      "command": ""
-    },
-    "release": {
-      "do_text": "Наручники убраны в подсумок.",
-      "enabled": true,
-      "me": "вставив ключ в замок, расстегнул наручники и убрал их в подсумок на поясе.",
-      "command": ""
-    },
-    "widget": {
-      "time_source": "local",
-      "y": 363,
-      "visible": true,
-      "scale": 1,
-      "x": 2282
+    "cuff": {
+      "me": "придерживая руку саспекта, достал наручники и аккуратно защёлкнул их на запястьях.",
+      "command": "/cuff {id}",
+      "do_text": "Браслеты наручников зафиксированы и не пережимают запястья.",
+      "enabled": true
     },
     "frisk": {
-      "do_text": "Что удалось обнаружить при досмотре саспекта?",
-      "enabled": true,
       "me": "надев перчатки, аккуратно проверил одежду и карманы саспекта.",
-      "command": "/frisk {id}"
+      "command": "/frisk {id}",
+      "do_text": "Что удалось обнаружить при досмотре саспекта?",
+      "enabled": true
     },
-    "cuff": {
-      "do_text": "Браслеты наручников зафиксированы и не пережимают запястья.",
-      "enabled": true,
-      "me": "придерживая руку саспекта, достал наручники и аккуратно защёлкнул их на запястьях.",
-      "command": "/cuff {id}"
-    },
-    "documents": {
-      "do_text": "Готов ли собеседник предъявить документ?",
-      "enabled": true,
-      "me": "оглянувшись по сторонам, обратился к собеседнику с просьбой предъявить паспорт.",
-      "command": ""
+    "introduce": {
+      "me": "остановившись рядом, достал служебное удостоверение и раскрыл его перед собеседником.",
+      "command": "",
+      "do_text": "Удостоверение раскрыто: данные и фотография видны собеседнику.",
+      "enabled": true
     },
     "main": {
       "radial_key": 88,
-      "schema": 2,
-      "show_on_connect": true,
-      "max_distance": 5.0040001869202,
-      "demo_mode": false,
       "interval_ms": 1500,
+      "demo_mode": false,
+      "schema": 2,
+      "max_distance": 5.0040001869202,
+      "show_on_connect": true,
       "menu_key": 120
+    },
+    "release": {
+      "me": "вставив ключ в замок, расстегнул наручники и убрал их в подсумок на поясе.",
+      "command": "",
+      "do_text": "Наручники убраны в подсумок.",
+      "enabled": true
+    },
+    "documents": {
+      "me": "оглянувшись по сторонам, обратился к собеседнику с просьбой предъявить паспорт.",
+      "command": "",
+      "do_text": "Готов ли собеседник предъявить документ?",
+      "enabled": true
+    },
+    "wanted": {
+      "me": "сверив известные сведения, внёс данные в служебный терминал и открыл форму поиска.",
+      "command": "/wanted {id}",
+      "do_text": "На экране терминала открыта форма запроса.",
+      "enabled": true
     },
     "recovery": {
       "stable_ms": 60000,
-      "demo_after_recovery": false,
-      "enabled": true,
+      "demo_after_recovery": true,
       "delay_ms": 3000,
-      "max_attempts": 3
+      "max_attempts": 3,
+      "enabled": true
     },
-    "wanted": {
-      "do_text": "На экране терминала открыта форма запроса.",
-      "enabled": true,
-      "me": "сверив известные сведения, внёс данные в служебный терминал и открыл форму поиска.",
-      "command": "/wanted {id}"
+    "widget": {
+      "y": 409,
+      "time_source": "local",
+      "visible": true,
+      "scale": 1,
+      "x": 2278
     }
   },
-  "schema": 1,
   "settings": {
-    "format": "police-assistant.settings",
-    "schema": 1,
     "data": {
-      "vehicle": {
-        "phrase_2_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "retain_distance": 200,
-        "confirmation_ms": 30000,
-        "pursuit_interval_ms": 60000,
-        "phrase_1_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "megaphone_template": "Водитель автомобиля {model}, говорит {station}. Немедленно остановитесь у обочины и выключите двигатель.",
-        "megaphone_wheel": true,
-        "window_template": "Открыто ли окно со стороны водителя?",
-        "phrase_4_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "phrases": [
-          {
-            "target": "vehicle",
-            "channel": "/m",
-            "condition": "vehicle",
-            "enabled": true,
-            "name": "Остановиться",
-            "template": "Водитель автомобиля {model}, говорит {station}. Остановитесь у обочины и выключите двигатель."
-          },
-          {
-            "target": "vehicle",
-            "channel": "/m",
-            "condition": "vehicle",
-            "enabled": true,
-            "name": "Оставаться в машине",
-            "template": "Водитель авто {model}, оставайтесь в машине. Держите руки на руле и ожидайте указаний сотрудника {station}."
-          },
-          {
-            "target": "vehicle",
-            "channel": "/m",
-            "condition": "vehicle",
-            "enabled": true,
-            "name": "Освободить дорогу",
-            "template": "Говорит {station}. Водитель автомобиля {model}, освободите дорогу для служебного транспорта."
-          },
-          {
-            "target": "none",
-            "channel": "/m",
-            "condition": "vehicle",
-            "enabled": true,
-            "name": "Уступите дорогу",
-            "template": "Говорит {station}. Уступите дорогу служебному транспорту и освободите полосу движения."
-          },
-          {
-            "target": "none",
-            "channel": "/m",
-            "condition": "vehicle",
-            "enabled": true,
-            "name": "Прижмитесь к обочине",
-            "template": "Говорит {station}. Водители, снизьте скорость и прижмитесь к обочине. Пропустите служебный транспорт."
-          },
-          {
-            "target": "none",
-            "channel": "/m",
-            "condition": "vehicle",
-            "enabled": true,
-            "name": "Освободите территорию",
-            "template": "Говорит {station}. Освободите территорию и держитесь на безопасном расстоянии. Следуйте нашим указаниям!"
-          },
-          {
-            "target": "vehicle",
-            "channel": "/m",
-            "condition": "any",
-            "enabled": false,
-            "name": "Требование 7",
-            "template": "Водитель автомобиля {model}, говорит {station}."
-          },
-          {
-            "target": "vehicle",
-            "channel": "/m",
-            "condition": "any",
-            "enabled": false,
-            "name": "Требование 8",
-            "template": "Водитель автомобиля {model}, говорит {station}."
-          }
-        ],
-        "enabled": true,
-        "megaphone_require_patrol": false,
-        "pursuit_shortcut": {
-          "alt": true,
-          "ctrl": false,
-          "shift": false,
-          "key": 56
-        },
-        "description_template": "{model}, цвет: {vehicle_color}",
-        "unknown_model": "Модель не определена",
-        "phrase_3_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "selection_mode": "auto",
-        "pursuit_template": "{local_tag}{unit}, начинаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}. Экипаж: {crew}.",
-        "phrase_7_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "traffic_stop_template": "{local_tag}{unit}, провожу трафик-стоп 10-55. {vehicle_description}. Экипаж: {crew}. Район: {area}. Далее недоступен.",
-        "directions": [
-          "Север",
-          "Северо-восток",
-          "Восток",
-          "Юго-восток",
-          "Юг",
-          "Юго-запад",
-          "Запад",
-          "Северо-запад"
-        ],
-        "megaphone_shortcut": {
-          "alt": true,
-          "ctrl": false,
-          "shift": false,
-          "key": 57
-        },
-        "front_only": true,
-        "pursuit_periodic_template": "{local_tag}{unit}, продолжаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}.",
-        "pursuit_periodic": true,
-        "phrase_8_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "stationary": "На месте",
-        "channel": "/r",
-        "pursuit_confirmation": true,
-        "approach_distance": 6,
-        "unknown_color": "Цвет не определён",
-        "color_separator": "/",
-        "approach_template": "подойдя к машине, коснулся заднего фонаря и, держа руку у кобуры, направился к водителю.",
-        "occupied_only": true,
-        "stationary_distance": 0.15,
-        "manual_direction": "",
-        "height_tolerance": 0,
-        "pause_patrol_reports": true,
-        "radius": 40,
-        "motion_ms": 300,
-        "megaphone_enabled": true,
-        "direction_enabled": true,
-        "megaphone_channel": "/m",
-        "scan_ms": 250,
-        "cone_angle": 65,
-        "finish_template": "{local_tag}{unit}, остановка / преследование {model} завершено. Район: {area}. Далее доступен.",
-        "select_shortcut": {
-          "alt": true,
-          "ctrl": false,
-          "shift": false,
-          "key": 55
-        },
-        "model_aliases": {},
-        "megaphone_require_duty": true,
-        "max_motion_distance": 100,
-        "phrase_6_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "selection_ranking": "direction",
-        "require_patrol": true,
-        "color_aliases": {},
-        "megaphone_require_radio": false,
-        "phrase_5_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        }
-      },
       "radio_guard": {
-        "split_enabled": true,
-        "continuation": "...",
-        "next_id": 1,
-        "lead_ms": 30000,
-        "max_lines": 6,
         "skip_shortcut": {
           "alt": true,
           "ctrl": false,
           "shift": false,
           "key": 78
         },
+        "toast_ms": 10000,
+        "split_enabled": true,
+        "continuation": "...",
+        "lead_ms": 30000,
+        "next_id": 1,
+        "max_lines": 6,
         "custom": {},
-        "toast_ms": 10000
+        "count_during_input": true
       },
+      "schema": 1,
       "operations": {
-        "confirm_ms": 60000,
-        "demo": true,
-        "history_limit": 200,
         "chat_window_ms": 10000,
         "manual": true,
         "capture_chat": false,
@@ -295,320 +103,491 @@
           "unhold",
           "setmark"
         ],
-        "enabled": false
+        "enabled": false,
+        "confirm_ms": 60000,
+        "demo": true,
+        "history_limit": 200
       },
-      "settings": {
-        "manual_radio_prefix": true,
-        "retain_distance": 20,
-        "cef_chat_support": true,
-        "compact": false,
-        "opacity": 0.8299999833107,
-        "updates": {
-          "check_on_start": false,
-          "include_prerelease": false,
-          "timeout_seconds": 30,
-          "repository": "VIBAG-bg/Police-Assistant",
-          "enabled": true,
-          "show_progress_window": true
-        },
-        "aim_select_delay_ms": 150,
-        "aim_select_control": "mouse",
-        "wheel_child_limit": 10,
-        "wheel_mode": "categories",
-        "manual_chat": {
-          "max_parts": 3,
-          "interval_ms": 1500,
-          "enabled": true
-        },
-        "quick_key": 121,
-        "retain_grace_ms": 1500,
-        "interaction_notices": true,
-        "keep_target_on_interior_change": true,
-        "aim_select_enabled": true,
-        "ask_screenshot_path": false,
-        "chat_dot_commands": true,
-        "window_layout": {
-          "wanted_separate": true,
-          "remember": true,
-          "revision": 1,
-          "initial_percent": 70,
-          "windows": {
-            "quick": {
-              "displayH": 1440,
-              "y": 357,
-              "displayW": 2560,
-              "height": 700,
-              "x": 905,
-              "width": 780
-            },
-            "main": {
-              "displayH": 1440,
-              "y": 108,
-              "displayW": 2560,
-              "height": 1263,
-              "x": 38,
-              "width": 2222
-            },
-            "assist": {
-              "displayH": 1440,
-              "y": 320,
-              "displayW": 2560,
-              "height": 800,
-              "x": 780,
-              "width": 1000
-            },
-            "wanted": {
-              "displayH": 1440,
-              "y": 497,
-              "displayW": 2560,
-              "height": 577,
-              "x": 444,
-              "width": 1792
-            }
-          }
-        },
-        "wheel_profile": "full",
-        "accent_live_input": true,
-        "cef_chat_diagnostics": true,
-        "wheel_enabled": true,
-        "manual_actions": {
-          "rules": {
-            "frisk": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:надел|надела} перчатки и последовательно {gender:проверил|проверила} одежду и карманы задержанного."
-            },
-            "clear": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебную базу и {gender:оформил|оформила} запрос на прекращение розыска."
-            },
-            "arrest": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:оформил|оформила} материалы задержания и {gender:передал|передала} их вместе с задержанным дежурному."
-            },
-            "unmask": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me аккуратно {gender:снял|сняла} маску с лица задержанного и {gender:убрал|убрала} её в пакет для имущества."
-            },
-            "takelic": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:оформил|оформила} изъятие водительского удостоверения и {gender:внёс|внесла} сведения в служебную запись."
-            },
-            "take": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:надел|надела} перчатки, {gender:подготовил|подготовила} пакеты для изъятого имущества и {gender:приступил|приступила} к оформлению протокола."
-            },
-            "skip": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Выдать пропуск."
-            },
-            "unskip": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Забрать пропуск."
-            },
-            "hold": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:взял|взяла} задержанного под локоть и {gender:подготовился|подготовилась} сопроводить его за собой."
-            },
-            "unhold": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:остановился|остановилась} и {gender:отпустил|отпустила} руку сопровождаемого."
-            },
-            "setmark": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:ввёл|ввела} известный по RP номер телефона в служебный терминал и {gender:запросил|запросила} пеленгацию.\n/do На терминале отображается запрос на определение местоположения по сигналу телефона."
-            },
-            "cuff": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:снял|сняла} наручники с пояса и {gender:зафиксировал|зафиксировала} их на запястьях задержанного.\n/do Фиксация наручников проверена."
-            },
-            "break": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Установить барьер."
-            },
-            "uncuff": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:вставил|вставила} ключ в замок, {gender:расстегнул|расстегнула} наручники и {gender:убрал|убрала} их в подсумок."
-            },
-            "taser": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Использовать тайзер."
-            },
-            "unpt": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:передал|передала} диспетчеру сведения о завершении преследования и {gender:закрыл|закрыла} запись в терминале."
-            },
-            "fwarnoff": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Выдать выговор оффлайн."
-            },
-            "fmission": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Задания фракции."
-            },
-            "fwarn": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Выдать выговор."
-            },
-            "pt": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:активировал|активировала} служебный терминал и {gender:передал|передала} диспетчеру сведения о начале преследования."
-            },
-            "black": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Добавить в чёрный список."
-            },
-            "blackcheck": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Проверить на наличие в чёрном списке."
-            },
-            "ticket": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:заполнил|заполнила} постановление о штрафе, {gender:сверил|сверила} внесённые сведения и {gender:подготовил|подготовила} его к выдаче."
-            },
-            "unblack": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Убрать из чёрного списка."
-            },
-            "ud": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:достал|достала} служебное удостоверение, {gender:раскрыл|раскрыла} его и {gender:продемонстрировал|продемонстрировала} собеседнику."
-            },
-            "fmenu": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Информация о фракции."
-            },
-            "division": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Выдать дивизион."
-            },
-            "undivision": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Забрать дивизион."
-            },
-            "push": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} дверь служебного автомобиля и, придерживая задержанного, {gender:усадил|усадила} его внутрь."
-            },
-            "uninvite": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Уволить из организации."
-            },
-            "mark": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Отправить запрос."
-            },
-            "invite": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Принять в организацию."
-            },
-            "find": {
-              "enabled": true,
-              "prefer_bind": true,
-              "rp": "/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: Посмотреть онлайн фракции."
-            }
+      "vehicle": {
+        "sync_driver_target": true,
+        "pursuit_confirmation": true,
+        "copilot": {
+          "robbery_guard": true,
+          "stop_distance": 25,
+          "stop_ground": "none",
+          "dispatch_confirmation_note": "Подтверждайте фактически полученный RP-вызов. Место и курс в докладе берутся из текущего положения офицера; проверьте их в предпросмотре. Отыгровка не устанавливает серверную GPS-метку.",
+          "combat_guard": true,
+          "ooc_warning_count": 1,
+          "taser_offer": true,
+          "danger_zones": "Ganton,Idlewood,East Los Santos,Jefferson,Glen Park,Willowfield,Las Colinas,Los Flores,East Beach,Playa del Seville,El Corona,Little Mexico",
+          "ground_intro": true,
+          "count_legacy_phrases": "1",
+          "pursuit_retention": true,
+          "finish_offer_text": "10-55 завершена? Передать 10-99 / Код 4?",
+          "vehicle_models": "596,597,598,599,490,528,427",
+          "risk_stop_ms": 2500,
+          "ground_offer": true,
+          "tire_partial": "Предупреждения: {warnings}/{ooc_warning_count} OOC · {warnings}/{warning_count} Мануал. Проверьте прочие условия применения силы.",
+          "warning_count": 5,
+          "flee_distance": 25,
+          "risk_distance": 35,
+          "pursuit_armed": false,
+          "stolen_highlight": true,
+          "hud": true,
+          "plate_prefix": "SA-",
+          "skin_ids": "300,301,267,280,281,282,283,284,285,288,295,211,265,266,306,307",
+          "stationary_offer": true,
+          "fast_pt_enabled": true,
+          "fast_pt_distance": 50,
+          "ghetto_warning": "Правило 9.3 / 10.28: опасный район, сотрудников рядом: {officers} из {min_officers}. Задержание меньшим составом допускается при продолжении погони сюда. Проверьте обстоятельства и действующую редакцию правил.",
+          "fast_wanted": true,
+          "plate_digits": 3,
+          "raid_start_hour": 14,
+          "window_interaction_distance": 4,
+          "detention_custom": "",
+          "exit_offer": true,
+          "radio_cache": true,
+          "stationary_delta": 0.4,
+          "templates": {
+            "dispatch_bank_backup": "{local_tag}{unit}, код 211 в банке, район {area} ({map_square}), запрашиваю 10-70, свободные экипажи по Код 3!",
+            "stop": "{local_tag}{unit}, провожу остановку {vehicle_description} в {city}, район {area} ({map_square}), направление: {direction}, {occupants_text}, Код 4.",
+            "rights_extra": "Вы вправе обжаловать задержание. Основание и защитник разъясняются незамедлительно.\nЗвонок предоставляется до ареста, не более трёх минут, в присутствии сотрудника.\nАдвоката вызываем до ареста: ожидаем ответ пять минут, при ответе — прибытие десять минут.",
+            "intro": "Здравствуйте. Вас беспокоит {rank} {my_name}, {station}.",
+            "dispatch_stolen_clear": "{local_tag}{unit}, сектор поиска в районе {area} ({map_square}) проверен, угнанный транспорт не обнаружен. 10-99, Код 4, продолжаю патрулирование.",
+            "dispatch_911_clear": "{local_tag}{unit}, вызов 9-1-1 в районе {area} ({map_square}) проверен, нарушений не обнаружено. 10-99, продолжаю патрулирование, Код 4.",
+            "stop_order": "Водитель {vehicle_type_gen} {model}, цвет: {vehicle_color}, остановитесь у обочины и заглушите двигатель!",
+            "dispatch_bank_clear": "{local_tag}{unit}, ситуация у банка в районе {area} ({map_square}) урегулирована, 10-99. Код 4.",
+            "backup_combat": "CODE 0! Нападение на офицера в районе {area} ({map_square}), нужна срочная помощь!",
+            "robbery_gas": "{local_tag}{unit}, реагирую на ограбление АЗС, экипаж: {crew}, направляюсь в {city}, район {area} ({map_square}), курс {direction}, Код 3!",
+            "dispatch_business_rp": "/me {gender:принял|приняла} сигнал тревожной кнопки бизнеса на бортовой терминал и {gender:вывел|вывела} точку вызова на навигатор.\n/do В системе зафиксировано срабатывание сигнализации коммерческого объекта.",
+            "dispatch_business_arrived": "{local_tag}{unit}, экипаж: {crew}, прибыл к бизнесу по тревоге в районе {area} ({map_square}). Код 6, проверяю объект и периметр.",
+            "call_911": "{local_tag}{unit}, работаю по последнему вызову в 9-1-1, направляюсь на {direction} в {city}, район {area} ({map_square}), Код 3.",
+            "window_question": "Окно водительской двери открыто?",
+            "lost": "{local_tag}{unit}, по {vehicle_description} объявляю Код 4 АДАМ. Потерян в районе {area} ({map_square}), последний курс — {direction}.",
+            "dispatch_gas_clear": "{local_tag}{unit}, ситуация на АЗС в районе {area} ({map_square}) урегулирована, 10-99. Продолжаю патрулирование, Код 4.",
+            "armed": "{local_tag}{unit}, водитель {vehicle_description} вооружён. Район {area} ({map_square}), запрашиваю поддержку, Код 3!",
+            "backup_risk": "10-66 / CODE 3! Остановка повышенного риска {vehicle_description}, район {area} ({map_square})!",
+            "finish": "{local_tag}{unit}, 10-99 по остановке {vehicle_description} в районе {stop_area} ({stop_map_square}), {stop_outcome}. Продолжаю патрулирование, Код 4.",
+            "dispatch_business_clear": "{local_tag}{unit}, тревога бизнеса в районе {area} ({map_square}) проверена, ситуация урегулирована. 10-99, Код 4.",
+            "dispatch_business_foot_rp": "/me {gender:принял|приняла} сообщение об ограблении бизнеса по рации и {gender:открыл|открыла} карточку вызова на служебном КПК.\n/do На КПК отображена информация о тревоге коммерческого объекта.",
+            "badge": "{gender:показал|показала} служебный жетон и удостоверение собеседнику.",
+            "call911": "{local_tag}{unit}, работаю по последнему вызову в 9-1-1, направляюсь на {direction} в район {area} ({map_square}), Код 3.",
+            "approach_day": "подходя к автомобилю, {gender:коснулся|коснулась} ладонью задней левой фары, оставив отпечаток, и {gender:осмотрел|осмотрела} салон.",
+            "dispatch_gas_rp": "/me {gender:получил|получила} сигнал тревоги с автозаправочной станции на терминал и {gender:проложил|проложила} маршрут перехвата.\n/do Бортовая система передала координаты ограбления АЗС.",
+            "combat_rp": "/me {gender:передал|передала} диспетчеру сведения о подтверждённом вооружённом нападении на офицера и {gender:запросил|запросила} розыск установленного нападавшего.",
+            "taser_warning": "Гражданин, остановитесь и держите руки на виду! В случае неподчинения будет применён тайзер!",
+            "dispatch_gas_foot_rp": "/me {gender:принял|приняла} по рации сообщение об ограблении АЗС и {gender:уточнил|уточнила} место вызова на служебном КПК.\n/do Информация об ограблении АЗС доступна на экране КПК.",
+            "window_hint": "Ответьте в /do: например, /do Окно открыто. или /do Окно закрыто.",
+            "dispatch_911_backup": "{local_tag}{unit}, по вызову 9-1-1 в районе {area} ({map_square}) требуется поддержка. 10-70, запрашиваю свободные экипажи, Код 3.",
+            "ooc_hint": "Ответьте в /do на мой вопрос (например: /do В салоне оружия нет.)",
+            "explain_detention": "Вы задержаны. Основание: {detention_ground}. {ground_article}.",
+            "stolen_car": "{local_tag}{unit}, {gender:принял|приняла} ориентировку по угону {stolen_summary}, выезжаю на поиск в район {stolen_location}. Моё 10-20: {area} ({map_square}), последний курс {direction}, Код 2.",
+            "arrived": "{local_tag}{unit}, {gender:прибыл|прибыла} на место вызова в районе {area} ({map_square}), опрашиваю граждан, Код 4.",
+            "dispatch_bank_foot_rp": "/me {gender:принял|приняла} экстренный вызов об ограблении банка по рации и {gender:открыл|открыла} сведения об объекте на служебном КПК.\n/do На экране КПК отображены место вызова и сведения для оцепления.",
+            "approach_night": "достав с пояса тактический фонарик, {gender:коснулся|коснулась} ладонью задней левой фары и {gender:посветил|посветила} лучом в салон автомобиля.",
+            "wanted_rp": "/me {gender:зажал|зажала} кнопку тангенты рации и {gender:передал|передала} диспетчеру ориентировку: {vehicle_description}, гос. номер «{vehicle_plate}».\n/do Диспетчеру передан запрос на проверку регистрационных данных и объявление установленного водителя в розыск за неподчинение.",
+            "robbery_business": "{local_tag}{unit}, реагирую на ограбление бизнеса, экипаж: {crew}, направляюсь в {city}, район {area} ({map_square}), курс {direction}, Код 3!",
+            "gas_order": "Полиция! Всем участникам ограбления АЗС немедленно оставаться на своих местах, бросить оружие и поднять руки! В случае неподчинения будет открыт огонь!",
+            "pursuit": "{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Двигаюсь на {direction}, {city}, район {area} ({map_square}), {tac}, Код 3.{armed_text}",
+            "patrol_continue": "{local_tag}{unit}, {patrol_resume} в {city}, район {area} ({map_square}). Экипаж: {crew}, {patrol_moving} на {direction}. Код 4, {patrol_available}.",
+            "risk_single": "Водитель {model}, заглушите двигатель, вытащите ключи из замка зажигания и выбросьте их в окно!\nМедленно откройте дверь снаружи, выйдите с поднятыми руками спиной к офицерам и поднимите верхнюю одежду!\nСделайте три шага влево от машины и лягте на землю на живот! Любое резкое движение — огонь на поражение!",
+            "break_report": "{local_tag}{unit}, {gender:взял|взяла} Код 7 (до 15 минут).",
+            "dispatch_stolen_foot_rp": "/me {gender:открыл|открыла} базу ориентировок на служебном КПК и {gender:изучил|изучила} сведения об угнанном автомобиле.\n/do Приметы автомобиля и сектор поиска отображены на КПК.",
+            "dispatch_gas_arrived": "{local_tag}{unit}, экипаж: {crew}, прибыл по тревоге на АЗС в районе {area} ({map_square}). Код 6, контролирую обстановку.",
+            "dispatch_business_backup": "{local_tag}{unit}, код 211 у бизнеса в районе {area} ({map_square}), требуется поддержка! Запрашиваю 10-70, свободные экипажи по Код 3.",
+            "return_car": "Водитель {vehicle_type_gen} {model}, цвет: {vehicle_color}, вернитесь на место водителя, заглушите двигатель и держите руки на виду!",
+            "dispatch_stolen_rp": "/me {gender:открыл|открыла} на терминале базу ориентировок по угону транспорта и {gender:загрузил|загрузила} сектор поиска в навигатор.\n/do На дисплее отображены приметы разыскиваемого автомобиля и маршрут следования.",
+            "robbery_bank": "{local_tag}{unit}, сработала сигнализация банка, направляюсь в {city}, район {area} ({map_square}), курс {direction}, запрашиваю свободные юниты по Код 3!",
+            "combat": "{local_tag}{unit}, CODE 0! По офицеру открыт огонь! Район {area} ({map_square})! Требуется срочная поддержка всех юнитов!",
+            "dispatch_911_rp": "/me {gender:принял|приняла} входящий вызов 9-1-1 на терминале и {gender:построил|построила} маршрут на GPS-навигаторе.\n/do Координаты вызова 9-1-1 зафиксированы в бортовой системе.",
+            "window_knock": "{gender:постучался|постучалась} в водительское окно.",
+            "foot": "{local_tag}{unit}, подозреваемый покинул {model}, веду пешую погоню 10-57 FOXTROT в {city}, район {area} ({map_square}), двигаюсь на {direction}, {tac}, Код 3!{armed_text}",
+            "miranda": "Вы имеете право хранить молчание, всё что вы скажете, может и будет использовано против вас в суде.\nВы имеете право на один телефонный звонок. Вы имеете право на адвоката.\nЕсли вы не можете оплатить услуги частного адвоката, то Вам будет предоставленный государственный адвокат.Вам ясны ваши права?",
+            "dispatch_gas_backup": "{local_tag}{unit}, вооружённые лица на АЗС в районе {area} ({map_square}), требуется поддержка! 10-70, свободные экипажи по Код 3.",
+            "dispatch_bank_rp": "/me {gender:принял|приняла} экстренный сигнал тревоги из хранилища банка на терминал и {gender:активировал|активировала} протокол повышенной готовности.\n/do Координаты банка и сектор оцепления выведены на экран.",
+            "risk_multi": "Водитель {model}, заглушите двигатель, вытащите ключи из замка зажигания и выбросьте их в окно!\nВодитель и пассажиры, выходите из машины строго ПО ОДНОМУ с поднятыми руками спиной к офицерам!\nЛожитесь на живот в метре от дороги в шахматном порядке! Любое резкое движение — огонь на поражение!",
+            "dispatch_911_arrived": "{local_tag}{unit}, экипаж: {crew}, прибыл по вызову 9-1-1 в район {area} ({map_square}). Код 6, проверяю обстановку и опрашиваю граждан.",
+            "documents": "Предъявите, пожалуйста, документы для проверки. Основание: {stop_ground}.",
+            "dispatch_stolen_arrived": "{local_tag}{unit}, экипаж: {crew}, прибыл в сектор поиска угнанного транспорта, 10-20: {area} ({map_square}). Код 6, осматриваю район.",
+            "dispatch_stolen_backup": "{local_tag}{unit}, обнаружен транспорт {stolen_summary} в районе {area} ({map_square}); запрашиваю 10-70, свободные экипажи по Код 3.",
+            "explain_stop": "{ground_speech}",
+            "high_risk": "{local_tag}{unit}, провожу остановку повышенного риска 10-66 {vehicle_description}, {occupants_text}, нахожусь в {city}, район {area} ({map_square}), запрашиваю свободные экипажи, Код 3!",
+            "dispatch_bank_arrived": "{local_tag}{unit}, экипаж: {crew}, прибыл к банку по тревоге в районе {area} ({map_square}). Код 6, контролирую периметр.",
+            "tire": "Водитель {vehicle_type_gen} {model}, цвет: {vehicle_color}, остановитесь! При неподчинении будет открыт огонь по колёсам!",
+            "dispatch_911_foot_rp": "/me {gender:принял|приняла} вызов 9-1-1 на портативной рации и {gender:проверил|проверила} место вызова на служебном КПК.\n/do Сведения о вызове 9-1-1 отображены на экране КПК.",
+            "window": "{gender:Мог|Могла} ли {my_firstname} увидеть оружие или запрещённые предметы в салоне автомобиля?"
           },
-          "enabled": true
+          "scan_ms": 500,
+          "tire_zero": "Предупреждения: 0/{ooc_warning_count} OOC · 0/{warning_count} Мануал. Счётчик не разрешает огонь.",
+          "find_cache_window_ms": 10000,
+          "toast_ms": 30000,
+          "foot_distance": 12,
+          "window_question_offer_text": "Вы у окна водителя · Спросить, открыто ли оно?",
+          "lost_vehicle_fallback": "преследуемому т/с",
+          "backup_mark": false,
+          "auto_plate": true,
+          "tac_channel": "TAC 1",
+          "always_show_on_duty": true,
+          "warning_cooldown_ms": 5000,
+          "legacy_tire_enabled": false,
+          "dispatch_enabled": true,
+          "select_plate": "",
+          "colleagues_enabled": true,
+          "min_officers": 3,
+          "window_knock_offer_text": "Окно закрыто · Постучаться в водительское окно?",
+          "combat_ms": 10000,
+          "window_ooc_hint": true,
+          "robbery_min_officers": 2,
+          "gas_confirmation_note": "Пункт 8.2: требование предъявляют на месте, пока ограбление АЗС продолжается. Предупреждение не разрешает автоматически открывать огонь: основания и ограничения применения силы проверяются отдельно. Пешком выберите доступный канал /s в настройках мегафона, если /m недоступен.",
+          "repeat_megaphone": true,
+          "adam_driver_mute_radio": true,
+          "ghetto_guard": true,
+          "stop_outcome": "проведена беседа",
+          "radio_templates_version": 1,
+          "stolen_ttl_ms": 600000,
+          "lawyer_response_seconds": 300,
+          "approach_offer": true,
+          "night_flashlight": true,
+          "combat_warning": "В активной перестрелке тайзер запрещён (п. 5.5 / 10.15); исключения и направление применения проверьте по правилам.",
+          "colleague_radius": 50,
+          "departure_distance": 8,
+          "dispatch_rp_enabled": true,
+          "pursuit_retain_grace_ms": 15000,
+          "enabled": true,
+          "robbery_warning": "ВНИМАНИЕ! Пункты 3.1 / 10.4: на ограбление бизнеса нужен патруль минимум из {robbery_min_officers} сотрудников. Нарушение: Jail–Warn. PA оценивает состав в {dispatch_officers} чел. Подтвердите, что выезжаете с напарником; люди рядом или пассажиры сами по себе не подтверждают состав патруля.",
+          "ground_miranda": true,
+          "window_reply_ms": 60000,
+          "finish_offer": true,
+          "lawyer_arrival_seconds": 600,
+          "ground_channel": "/s",
+          "ground_ud": false,
+          "tire_done": "Предупреждения выполнены: {warnings}/{warning_count}. Место, угрозу и разрешение на огонь проверяет офицер.",
+          "window_offer": true,
+          "pursuit_after_finish_text": "Подозреваемый уезжает? Начать 10-57 VICTOR?",
+          "stop_branch": "none",
+          "stop_custom": "",
+          "detention_ground": "none",
+          "window_open_offer_text": "Представиться и назвать причину 10-55?",
+          "high_risk_offer": true,
+          "flee_offer": true,
+          "detention_timers": true,
+          "phone_call_seconds": 180,
+          "pursuit_retain_distance": 300,
+          "stop_ms": 1500,
+          "ground_speech": {
+            "parking": "Причина остановки — нарушение правил остановки или парковки.",
+            "insurance": "Мне необходимо проверить сведения об обязательном страховании вашего автомобиля.",
+            "bulletin": "Ваш автомобиль похож на транспорт из поступившей ориентировки. Мне нужно уточнить данные.",
+            "wrong_way": "Вы выехали на встречную полосу. Давайте уточним, что произошло.",
+            "intoxicated": "Причина остановки — установленные в этой ситуации признаки управления в состоянии опьянения.",
+            "left_accident": "Я {gender:остановил|остановила} вас, чтобы уточнить обстоятельства оставления места ДТП.",
+            "defect": "Я {gender:заметил|заметила} признаки технической неисправности. Мне необходимо уточнить состояние автомобиля.",
+            "junction": "Я {gender:остановил|остановила} вас, чтобы уточнить обстоятельства проезда перекрёстка.",
+            "registration": "Я {gender:остановил|остановила} вас для уточнения регистрационных данных транспортного средства.",
+            "sobriety_check": "Манера управления вызвала у меня вопросы. Мне необходимо уточнить обстоятельства и проверить документы.",
+            "speed": "Я {gender:остановил|остановила} вас, поскольку вы превысили установленную скорость движения.",
+            "signal": "Я {gender:остановил|остановила} вас, потому что вы проехали на запрещающий сигнал светофора.",
+            "exam_refusal": "Мне необходимо уточнить обстоятельства вашего отказа от законного освидетельствования."
+          },
+          "stolen_enabled": true,
+          "raid_end_hour": 22,
+          "uniforms_enabled": true
         },
-        "tips_key": 123,
-        "wheel_system_groups": {
-          "shots": "frisk",
-          "sos": "frisk",
-          "procedure-fine": "wanted",
-          "code0": "frisk",
-          "assist-megaphone": "detention",
-          "procedure-mark": "detention"
+        "phrase_6_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
         },
-        "cef_layout_indicator": true,
-        "wheel_names": {
-          "detention": "Траффик-стоп / Авто",
-          "documents": "Подозреваемый",
-          "custom": "Личные бинды",
-          "frisk": "Доклады / Обращения",
-          "wanted": "Розыск / штрафы"
+        "phrases": [
+          {
+            "template": "Водитель автомобиля {model}, говорит {station}. Остановитесь у обочины и выключите двигатель.",
+            "name": "Остановиться",
+            "target": "vehicle",
+            "channel": "/m",
+            "condition": "vehicle",
+            "enabled": true
+          },
+          {
+            "template": "Водитель авто {model}, оставайтесь в машине. Держите руки на руле и ожидайте указаний сотрудника {station}.",
+            "name": "Оставаться в машине",
+            "target": "vehicle",
+            "channel": "/m",
+            "condition": "vehicle",
+            "enabled": true
+          },
+          {
+            "template": "Говорит {station}. Водитель автомобиля {model}, освободите дорогу для служебного транспорта.",
+            "name": "Освободить дорогу",
+            "target": "vehicle",
+            "channel": "/m",
+            "condition": "vehicle",
+            "enabled": true
+          },
+          {
+            "template": "Говорит {station}. Уступите дорогу служебному транспорту и освободите полосу движения.",
+            "name": "Уступите дорогу",
+            "target": "none",
+            "channel": "/m",
+            "condition": "vehicle",
+            "enabled": true
+          },
+          {
+            "template": "Говорит {station}. Водители, снизьте скорость и прижмитесь к обочине. Пропустите служебный транспорт.",
+            "name": "Прижмитесь к обочине",
+            "target": "none",
+            "channel": "/m",
+            "condition": "vehicle",
+            "enabled": true
+          },
+          {
+            "template": "Говорит {station}. Освободите территорию и держитесь на безопасном расстоянии. Следуйте нашим указаниям!",
+            "name": "Освободите территорию",
+            "target": "none",
+            "channel": "/m",
+            "condition": "vehicle",
+            "enabled": true
+          },
+          {
+            "template": "Водитель автомобиля {model}, говорит {station}.",
+            "name": "Требование 7",
+            "target": "vehicle",
+            "channel": "/m",
+            "condition": "any",
+            "enabled": false
+          },
+          {
+            "template": "Водитель автомобиля {model}, говорит {station}.",
+            "name": "Требование 8",
+            "target": "vehicle",
+            "channel": "/m",
+            "condition": "any",
+            "enabled": false
+          }
+        ],
+        "color_aliases": {},
+        "megaphone_require_radio": false,
+        "phrase_5_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
         },
-        "cancel_key": 35,
-        "accent_skip_brackets": true,
-        "wheel_car_separate": true,
-        "wheel_car_mode": "categories",
-        "wheel_car_profile": "compact",
-        "wheel_car_child_limit": 6,
-        "wheel_car_names": {
-          "citizen": "Мегафон и 10-55",
-          "documents": "Проверка и бортовой ПК",
-          "detention": "Погоня и 10-66",
-          "frisk": "Досмотр и обыск",
-          "wanted": "Розыск и штрафы",
-          "service": "Рация и патруль",
-          "leadership": "Вызовы и руководство",
-          "custom": "Свои бинды (авто)"
+        "phrase_2_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
         },
-        "wheel_car_system_groups": {
-          "copilot-stop_order": "citizen",
-          "copilot-tire": "citizen",
-          "copilot-stop": "citizen",
-          "copilot-explain_stop": "citizen",
-          "assist-megaphone": "citizen",
-          "copilot-pursuit": "detention",
-          "copilot-high_risk": "detention",
-          "copilot-risk_order": "detention",
-          "copilot-return_car": "detention",
-          "copilot-lost": "detention",
-          "copilot-finish": "detention",
-          "copilot-fast_wanted": "wanted",
-          "copilot-pursuit_mark": "wanted"
+        "megaphone_template": "Водитель автомобиля {model}, говорит {station}. Немедленно остановитесь у обочины и выключите двигатель.",
+        "scan_ms": 250,
+        "finish_template": "{local_tag}{unit}, остановка / преследование {model} завершено. Район: {area}. Далее доступен.",
+        "pursuit_template": "{local_tag}{unit}, начинаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}. Экипаж: {crew}.",
+        "window_template": "Открыто ли окно со стороны водителя?",
+        "phrase_3_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
         },
-        "wheel_car_order": {}
+        "phrase_1_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "color_separator": "/",
+        "occupied_only": true,
+        "megaphone_wheel": true,
+        "confirmation_ms": 30000,
+        "phrase_4_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "description_template": "{vehicle_type} {model}, цвет: {vehicle_color}",
+        "radio_templates_version": 1,
+        "copilot_migrated": 2,
+        "megaphone_require_patrol": false,
+        "pursuit_shortcut": {
+          "alt": true,
+          "ctrl": false,
+          "shift": false,
+          "key": 56
+        },
+        "occupied_priority": true,
+        "unknown_model": "Модель не определена",
+        "phrase_7_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "direction_enabled": true,
+        "traffic_stop_template": "{local_tag}{unit}, провожу трафик-стоп 10-55. {vehicle_description}. Экипаж: {crew}. Район: {area}. Далее недоступен.",
+        "enabled": true,
+        "directions": [
+          "Север",
+          "Северо-восток",
+          "Восток",
+          "Юго-восток",
+          "Юг",
+          "Юго-запад",
+          "Запад",
+          "Северо-запад"
+        ],
+        "megaphone_shortcut": {
+          "alt": true,
+          "ctrl": false,
+          "shift": false,
+          "key": 57
+        },
+        "pursuit_interval_ms": 60000,
+        "selection_ranking": "direction",
+        "cone_angle": 65,
+        "front_only": true,
+        "close_radius": 15,
+        "fast_pt_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "pursuit_periodic": true,
+        "phrase_8_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "stationary": "На месте",
+        "retain_distance": 200,
+        "approach_distance": 6,
+        "megaphone_require_duty": true,
+        "unknown_color": "Цвет не определён",
+        "channel": "/f",
+        "approach_template": "подойдя к машине, коснулся заднего фонаря и, держа руку у кобуры, направился к водителю.",
+        "require_patrol": true,
+        "stationary_distance": 0.15,
+        "manual_direction": "",
+        "height_tolerance": 0,
+        "pause_patrol_reports": true,
+        "pursuit_periodic_template": "{local_tag}{unit}, продолжаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}.",
+        "selection_mode": "auto",
+        "radius": 150,
+        "megaphone_enabled": true,
+        "motion_ms": 300,
+        "max_motion_distance": 100,
+        "megaphone_channel": "/m",
+        "model_aliases": {},
+        "select_shortcut": {
+          "alt": true,
+          "ctrl": false,
+          "shift": false,
+          "key": 55
+        },
+        "type_names": {
+          "special": {
+            "name": "спецтранспорт",
+            "genitive": "спецтранспорта"
+          },
+          "unknown": {
+            "name": "транспортное средство",
+            "genitive": "транспортного средства"
+          },
+          "car": {
+            "name": "автомобиль",
+            "genitive": "автомобиля"
+          },
+          "bike": {
+            "name": "мотоцикл",
+            "genitive": "мотоцикла"
+          },
+          "trailer": {
+            "name": "прицеп",
+            "genitive": "прицепа"
+          },
+          "bus": {
+            "name": "автобус",
+            "genitive": "автобуса"
+          },
+          "quad": {
+            "name": "квадроцикл",
+            "genitive": "квадроцикла"
+          },
+          "boat": {
+            "name": "судно",
+            "genitive": "судна"
+          },
+          "heli": {
+            "name": "вертолёт",
+            "genitive": "вертолёта"
+          },
+          "van": {
+            "name": "фургон",
+            "genitive": "фургона"
+          },
+          "truck": {
+            "name": "грузовик",
+            "genitive": "грузовика"
+          },
+          "plane": {
+            "name": "самолёт",
+            "genitive": "самолёта"
+          },
+          "bicycle": {
+            "name": "велосипед",
+            "genitive": "велосипеда"
+          },
+          "train": {
+            "name": "рельсовый транспорт",
+            "genitive": "рельсового транспорта"
+          }
+        }
       },
       "recruitment": {
-        "land": true,
-        "min_lawfulness": 0,
-        "weapon": true,
-        "water": false,
         "medical": true,
         "min_age": 18,
         "min_level": 3,
-        "air": false
+        "air": false,
+        "land": true,
+        "min_lawfulness": 0,
+        "weapon": true,
+        "water": false
       },
       "nearby": {
-        "enabled": true,
-        "distance": 20,
         "interval_ms": 500,
-        "max_people": 8
+        "distance": 20,
+        "max_people": 8,
+        "enabled": true
       },
       "next_partner_id": 1,
       "alerts": {
+        "patrol": {
+          "confirmation": true,
+          "police_channel": "/r",
+          "police_interval_ms": 600000,
+          "prison_template": "{prison_tag}Продолжаю службу в охране тюрьмы. Пост: {post}.",
+          "police_template": "{local_tag}Продолжаю патруль. 10-20: {area}.",
+          "enabled": false,
+          "post": "",
+          "prison_channel": "/r",
+          "prison_interval_ms": 600000,
+          "mode": "police",
+          "hud": true
+        },
+        "code0_channel": "",
+        "on_duty": true,
+        "code1_channel": "",
+        "timeout_ms": 15000,
+        "include_sd": false,
+        "help_command": "",
+        "enabled": true,
+        "help_source": "",
+        "sos_channel": "",
+        "code0_enabled": true,
+        "shots_enabled": true,
         "code0_template": "{local_tag}CODE 0. Офицер тяжело ранен, нужна срочная помощь. 10-20: {area}.",
         "code4_channel": "",
         "channel": "/r",
@@ -617,797 +596,137 @@
         "code4_enabled": false,
         "auto_shots": true,
         "sos_template": "{local_tag}10-70. Требуется поддержка. 10-20: {area}.",
-        "timeout_ms": 15000,
+        "shots_channel": "/r",
         "shots_template": "{local_tag}Shots fired. По мне открыли огонь. Мой 10-20: {area}.",
+        "help_verified": false,
         "cooldown_ms": 30000,
-        "enabled": true,
         "code1_enabled": false,
         "code4_template": "{local_tag}CODE 4. Помощь больше не требуется. 10-20: {area}.",
-        "sos_channel": "",
+        "help_enabled": false,
         "code0_health": 25,
         "help_delay_ms": 1500,
-        "auto_code0": false,
-        "patrol": {
-          "prison_interval_ms": 600000,
-          "mode": "police",
-          "confirmation": true,
-          "police_channel": "/r",
-          "police_interval_ms": 600000,
-          "prison_template": "{prison_tag}Продолжаю службу в охране тюрьмы. Пост: {post}.",
-          "police_template": "{local_tag}Продолжаю патруль. 10-20: {area}.",
-          "hud": true,
-          "post": "",
-          "enabled": false,
-          "prison_channel": "/r"
-        },
-        "code0_channel": "",
-        "on_duty": true,
-        "code1_channel": "",
-        "shots_channel": "/r",
-        "include_sd": false,
-        "help_command": "",
-        "help_verified": false,
-        "help_source": "",
-        "help_enabled": false,
-        "code0_enabled": true,
-        "shots_enabled": true
+        "auto_code0": false
       },
       "rp_text": {
-        "speech_enabled": true,
-        "fallback_nickname": 24,
+        "marker": "...",
+        "body_limit": 90,
+        "preview_text": "достал служебное удостоверение, развернул его перед собеседником и дал возможность ознакомиться с данными, после чего убрал удостоверение обратно.",
         "revision": 2,
+        "me_extra": 1,
+        "enabled": true,
+        "speech_enabled": true,
+        "display_limit": 115,
+        "margin": 6,
+        "do_extra": 3,
+        "max_lines": 8,
+        "fallback_nickname": 24,
+        "todo_action_limit": 60,
         "channels": {
           "": true,
-          "/bkn": true,
-          "/s": true,
-          "/df": true,
-          "/fn": true,
           "/l": true,
           "/f": true,
           "/ln": true,
           "/d": true,
           "/b": true,
-          "/n": true,
+          "/fn": true,
           "/r": true,
           "/m": true,
-          "/rn": true
-        },
-        "max_lines": 8,
-        "body_limit": 90,
-        "marker": "...",
-        "todo_action_limit": 60,
-        "me_extra": 1,
-        "preview_text": "достал служебное удостоверение, развернул его перед собеседником и дал возможность ознакомиться с данными, после чего убрал удостоверение обратно.",
-        "enabled": true,
-        "display_limit": 115,
-        "margin": 6,
-        "do_extra": 3
-      },
-      "schema": 1,
-      "map_grid": {
-        "separator": "-",
-        "highlight": true,
-        "columns": 24,
-        "north": 3000,
-        "min_label_px": 50,
-        "pause_map": true,
-        "label_alpha": 0.88,
-        "auto_square": false,
-        "labels": true,
-        "report_area": true,
-        "location_template": "{area}, квадрат {map_square}",
-        "enabled": true,
-        "row_labels": "ABCDEFGHIJKLMNOPQRSTUVWX",
-        "cell_size": 250,
-        "column_start": 1,
-        "line_alpha": 0.32,
-        "theme": "white",
-        "west": -3000,
-        "hud": true,
-        "line_width": 1,
-        "radar": true,
-        "axis_labels": true,
-        "font_size": 12
-      },
-      "weapon_warning": {
-        "mode": "toast",
-        "channel": "/s",
-        "taser_template": "Предупреждаю: остановитесь и подчинитесь законным требованиям иначе будет применён тайзер!",
-        "no_accent": true,
-        "delay_ms": 2000,
-        "remember_ms": 120000,
-        "shortcut": {
-          "alt": true,
-          "ctrl": false,
-          "shift": false,
-          "key": 87
-        },
-        "firearm_template": "Оставайтесь на месте и поднимите руки! В случаи неповиновения предупреждаю о применении оружия!",
-        "enabled": true,
-        "trigger": "aim",
-        "cooldown_ms": 30000,
-        "items": {
-          "33": true,
-          "29": true,
-          "27": true,
-          "38": true,
-          "34": true,
-          "31": true,
-          "24": true,
-          "28": true,
-          "22": true,
-          "32": true,
-          "25": true,
-          "23": true,
-          "30": true,
-          "26": true
-        },
-        "trigger_revision": 1,
-        "toast_ms": 10000
-      },
-      "taser": {
-        "command": "/tazer",
-        "holster_template": "убедившись в безопасности, зафиксировал {weapon} в специальном креплении и застегнул фиксатор.",
-        "name": "Taser X26",
-        "auto_reload": true,
-        "capacity": 2,
-        "inactive_reply": "",
-        "activation": "weapon",
-        "reply_timeout_ms": 10000,
-        "enabled": true,
-        "reload_template": "извлёк использованные картриджи, установил два новых и проверил крепление тайзера.",
-        "hud": true,
-        "active_reply": "",
-        "cooldown_ms": 5000,
-        "weapon_id": 23,
-        "draw_template": "осмотревшись, извлёк {weapon} из специального крепления и направил его в сторону саспекта."
-      },
-      "partners": {},
-      "profile": {
-        "callsign": "",
-        "gender": "male",
-        "local_tag": "",
-        "global_tag": "",
-        "timezone": "local",
-        "closest_plate": "",
-        "case_number": "",
-        "square": "",
-        "city": "",
-        "rank": "",
-        "name": "",
-        "prison_tag": "",
-        "my_plate": "",
-        "department": "",
-        "accent": "",
-        "select_plate": ""
-      },
-      "identity": {
-        "passport_revision": 2,
-        "passport_chat": true,
-        "passport_flexible": true,
-        "passport_distance": 30,
-        "passport_phrase": "достал паспорт и показал его",
-        "passport_diagnostics": true,
-        "passport_server": "",
-        "enabled": true,
-        "expiry_ms": 1800000,
-        "retain_after_switch": false
-      },
-      "filters": {},
-      "wanted_reminders": {},
-      "alert_shortcuts": {
-        "shots": {
-          "alt": true,
-          "ctrl": false,
-          "shift": false,
-          "key": 50
-        },
-        "sos": {
-          "alt": true,
-          "ctrl": false,
-          "shift": false,
-          "key": 49
-        },
-        "code4": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "code0": {
-          "alt": true,
-          "ctrl": false,
-          "shift": false,
-          "key": 51
-        },
-        "code1": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        }
-      },
-      "weapons": {
-        "items": {
-          "46": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Парашют",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "поправил лямки парашюта и проверил крепления страховочной системы."
-          },
-          "36": {
-            "holster_template": "опустил {weapon} и, проверив крепления, аккуратно убрал оружие.",
-            "name": "Heat Seeker",
-            "enabled": false,
-            "holster_enabled": true,
-            "template": "взяв {weapon}, устроил пусковую установку на плече и осмотрелся."
-          },
-          "37": {
-            "holster_template": "опустил {weapon} и, проверив крепления, аккуратно убрал оружие.",
-            "name": "Flamethrower",
-            "enabled": false,
-            "holster_enabled": true,
-            "template": "взял огнемёт за рукоятки и осмотрел пространство перед собой."
-          },
-          "18": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Коктейль Молотова",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взял бутылку с зажигательной смесью и осторожно удержал её в руке."
-          },
-          "1": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Кастет",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "надев кастет, сжал кулак и оглянулся по сторонам."
-          },
-          "12": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Vibrator 1",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взял предмет «{weapon}» в руку и осмотрелся."
-          },
-          "8": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Катана",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "придерживая ножны, плавно извлёк катану и опустил клинок."
-          },
-          "17": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Газовая граната",
-            "enabled": true,
-            "holster_enabled": false,
-            "template": "достав газовую гранату из подсумка, осмотрел её корпус и удержал в руке."
-          },
-          "39": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Заряд C4",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "достал заряд C4 и осмотрел его корпус."
-          },
-          "3": {
-            "holster_template": "опустив дубинку, вернул её на поясное крепление и осмотрелся по сторонам.",
-            "name": "Дубинка",
-            "enabled": true,
-            "holster_enabled": true,
-            "template": "сняв дубинку с поясного крепления, перехватил рукоять и осмотрелся по сторонам."
-          },
-          "15": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Трость",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взял трость за рукоять и опёрся на неё."
-          },
-          "2": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Клюшка для гольфа",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "перехватив рукоять клюшки, опустил её перед собой и осмотрелся."
-          },
-          "42": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Огнетушитель",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взял огнетушитель за рукоятку и осмотрел пломбу."
-          },
-          "14": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Цветы",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "аккуратно взял букет за стебли и поправил цветы."
-          },
-          "13": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Vibrator 2",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взял предмет «{weapon}» в руку и осмотрелся."
-          },
-          "34": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "Sniper Rifle",
-            "enabled": true,
-            "holster_enabled": true,
-            "template": "сняв {weapon} с плеча, проверил хват и осмотрелся по сторонам."
-          },
-          "31": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "M4",
-            "enabled": true,
-            "holster_enabled": true,
-            "template": "сняв {weapon} с плеча, убрал предохранитель и осмотрелся по сторонам."
-          },
-          "24": {
-            "holster_template": "убедившись в безопасности, убрал {weapon} в кобуру и застегнул фиксатор.",
-            "name": "Desert Eagle",
-            "enabled": true,
-            "holster_enabled": true,
-            "template": "держа руку у кобуры, осмотрелся и аккуратно извлёк пистолет {weapon}."
-          },
-          "28": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "Micro SMG",
-            "enabled": false,
-            "holster_enabled": true,
-            "template": "снял {weapon} с ремня, перехватил рукоять и осмотрелся по сторонам."
-          },
-          "22": {
-            "holster_template": "убедившись в безопасности, убрал {weapon} в кобуру и застегнул фиксатор.",
-            "name": "Colt 45",
-            "enabled": true,
-            "holster_enabled": true,
-            "template": "оглянувшись по сторонам, аккуратно извлёк {weapon} из кобуры и проверил хват."
-          },
-          "32": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "Tec-9",
-            "enabled": true,
-            "holster_enabled": true,
-            "template": "взяв {weapon}, проверил хват и направил ствол в безопасную сторону."
-          },
-          "25": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "Shotgun",
-            "enabled": true,
-            "holster_enabled": true,
-            "template": "сняв {weapon} с плеча, проверил хват и перевёл оружие в боевое положение."
-          },
-          "23": {
-            "holster_template": "убедившись в безопасности, убрал {weapon} в кобуру и застегнул фиксатор.",
-            "name": "Тайзер",
-            "enabled": true,
-            "holster_enabled": true,
-            "template": "оглянувшись по сторонам, извлёк {weapon} из кобуры и проверил хват."
-          },
-          "30": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "AK-47",
-            "enabled": false,
-            "holster_enabled": true,
-            "template": "сняв {weapon} с плеча, выключил предохранитель и осмотрелся по сторонам."
-          },
-          "26": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "Sawn-off Shotgun",
-            "enabled": false,
-            "holster_enabled": true,
-            "template": "достав обрез {weapon}, крепко перехватил рукоять и осмотрелся."
-          },
-          "33": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "Rifle",
-            "enabled": false,
-            "holster_enabled": true,
-            "template": "сняв {weapon} с плеча, проверил хват и осмотрелся по сторонам."
-          },
-          "29": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "MP5",
-            "enabled": true,
-            "holster_enabled": true,
-            "template": "снял {weapon} с ремня, выключил предохранитель и проверил обстановку вокруг."
-          },
-          "27": {
-            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
-            "name": "Combat Shotgun",
-            "enabled": false,
-            "holster_enabled": true,
-            "template": "сняв {weapon} с плеча, проверил хват и перевёл оружие в боевое положение."
-          },
-          "38": {
-            "holster_template": "опустил {weapon} и, проверив крепления, аккуратно убрал оружие.",
-            "name": "Minigun",
-            "enabled": false,
-            "holster_enabled": true,
-            "template": "крепко перехватил рукоятки {weapon} и направил стволы в безопасную сторону."
-          },
-          "4": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Нож",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "достав нож из ножен, уверенно перехватил рукоять и опустил клинок."
-          },
-          "40": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Детонатор",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "достав детонатор, осмотрел его и удержал в ладони."
-          },
-          "10": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Dildo 1",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взял предмет «{weapon}» в руку и осмотрелся."
-          },
-          "5": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Бейсбольная бита",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взяв бейсбольную биту, поправил хват и оглянулся вокруг."
-          },
-          "41": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Баллончик",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взяв баллончик, снял защитный колпачок и осмотрел распылитель."
-          },
-          "11": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Dildo 2",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взял предмет «{weapon}» в руку и осмотрелся."
-          },
-          "7": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Бильярдный кий",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "перехватил кий за рукоять и осмотрелся по сторонам."
-          },
-          "44": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Прибор ночного видения",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взяв прибор ночного видения, проверил его крепления."
-          },
-          "43": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Камера",
-            "enabled": true,
-            "holster_enabled": false,
-            "template": "взяв камеру, поправил ремень и проверил объектив."
-          },
-          "45": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Тепловизор",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взяв тепловизор, проверил его крепления."
-          },
-          "9": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Бензопила",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взяв бензопилу за рукоятки, проверил хват и осмотрелся."
-          },
-          "6": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Лопата",
-            "enabled": false,
-            "holster_enabled": false,
-            "template": "взял лопату за черенок и опустил её перед собой."
-          },
-          "16": {
-            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
-            "name": "Граната",
-            "enabled": true,
-            "holster_enabled": false,
-            "template": "снял гранату с поясного крепления и осмотрелся, оставив чеку на месте."
-          },
-          "35": {
-            "holster_template": "опустил {weapon} и, проверив крепления, аккуратно убрал оружие.",
-            "name": "Rocket Launcher",
-            "enabled": false,
-            "holster_enabled": true,
-            "template": "взяв {weapon}, устроил гранатомёт на плече и проверил пространство перед собой."
-          }
-        },
-        "repeat_ms": 10000,
-        "holster_enabled": true,
-        "enabled": true,
-        "cooldown_ms": 5000,
-        "delay_ms": 3000,
-        "holster_delay_ms": 1500
-      },
-      "patrol_session": {
-        "resume_template": "{local_tag}{unit}: продолжаю патрулирование. Экипаж: {crew}. 10-20: {area}.",
-        "vehicle": "",
-        "sector": "",
-        "station": "LSPS",
-        "unit": "A-001",
-        "crew": {},
-        "toggle_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "restore_offer": true,
-        "pause_on_crew_change": true,
-        "periodic_template": "{local_tag}{unit}: продолжаю службу. Экипаж: {crew}. 10-20: {area}.",
-        "enabled": true,
-        "mode": "police",
-        "pause_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "confirmation": true,
-        "finish_template": "{local_tag}{unit}: патрулирование завершено.",
-        "interval_ms": 600000,
-        "start_template": "{local_tag}{unit}: начинаю патрулирование. Экипаж: {crew}. 10-20: {area}.",
-        "post": "",
-        "finish_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "periodic": true,
-        "hud": true,
-        "crew_template": "{local_tag}{unit}: состав экипажа изменён. Экипаж: {crew}.",
-        "channel": "/r",
-        "bind_distance": 60,
-        "reporter_self": true
-      },
-      "procedures": {
-        "wanted_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "mark_wheel": true,
-        "wanted_reminder_show_ms": 20000,
-        "wanted_send_mode": "direct",
-        "wanted_open_command": "/su {id}",
-        "wanted_label": "Розыск",
-        "fine_enabled": true,
-        "wanted_suggest_ooc": true,
-        "wanted_generic_appearance_rp": "/me зажал кнопку тангенты рации и передал диспетчеру известные приметы подозреваемого.\n/do В запросе на подготовку ориентировки указан повод: {game_reason}.",
-        "enabled": false,
-        "mark_enabled": true,
-        "wanted_passport_rp": "/me сверил паспортные данные на имя {ic_name} и подготовил карточку ориентировки.\n/do В запросе диспетчеру указан повод: {game_reason}.",
-        "wanted_list_command": "/wanted",
-        "fine_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "wanted_allow_remote": true,
-        "mark_command": "",
-        "fine_command": "",
-        "wanted_enabled": true,
-        "wanted_intercept": true,
-        "wanted_each_trait": false,
-        "wanted_passport_number_rp": "/do В служебной записи указан номер паспорта: {passport_number}.",
-        "fine_unmasked": true,
-        "wanted_ooc_rp": "/me открыв служебный терминал, внёс сведения о розыске и проверил запись.",
-        "wanted_reminder_title": "Проверьте OOC-звёзды",
-        "wanted_id_as_passport": true,
-        "wanted_require_life_ack": true,
-        "wanted_direct_command": "/su {id} {game_category} {game_item}",
-        "wanted_foot_intro_rp": "/me достал служебный КПК, активировал защищённый терминал и открыл карточку ориентировки.",
-        "wanted_car_intro_rp": "/me повернувшись к бортовому компьютеру, авторизовался в служебной базе и открыл карточку ориентировки.",
-        "fine_appearance_rp": "/me сверив известные сведения, приступил к оформлению постановления о штрафе.",
-        "wanted_reminder_enabled": true,
-        "wanted_source": "",
-        "fine_wheel": true,
-        "wanted_quick": true,
-        "allow_ooc": true,
-        "mark_verified": false,
-        "wanted_autofill_passport": true,
-        "wanted_assistant_enabled": true,
-        "fine_verified": false,
-        "fine_source": "",
-        "wanted_verified": false,
-        "mark_source": "",
-        "mark_ic_rp": "/me ввёл известный номер {phone_number} в бортовой терминал и отправил запрос.\n/do На экране терминала отображается запрос на определение местоположения.",
-        "mark_ooc_rp": "/me открыв служебный терминал, отправил запрос на определение местоположения.\n/do Запрос передан; на экране терминала отображается ожидание ответа.",
-        "wanted_reminder_text": "Проверьте результат серверного выбора. Если вы выдали OOC-звёзды, снимите их вручную после нужного этапа. PA не подтверждает выдачу и не отправляет /clear.",
-        "mark_label": "Пеленгация",
-        "wanted_command": "",
-        "wanted_wheel": true,
-        "fine_passport_rp": "/me сверив паспортные данные на имя {ic_name}, приступил к оформлению постановления о штрафе.",
-        "wanted_reminder_snooze_ms": 60000,
-        "mark_quick": true,
-        "wanted_traits_rp": "/todo Приметы подозреваемого: {appearance}*обращаясь по рации к диспетчеру.\n/do В запросе на подготовку ориентировки указан повод: {game_reason}.",
-        "wanted_list_rp": "/me открыв {device}, просмотрел список разыскиваемых.",
-        "fine_label": "Штраф",
-        "wanted_appearance_rp": "/me зажал кнопку тангенты рации и передал диспетчеру известные приметы подозреваемого: {appearance}.",
-        "mark_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "fine_quick": true,
-        "delay_ms": 1500,
-        "wanted_reminder_delay_ms": 15000
-      },
-      "assist": {
-        "open_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 115
-        },
-        "evidence_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "interaction": {
-          "identity": "ID или личность игрока изменились.",
-          "session": "Подключение к серверу изменилось.",
-          "started_detail": "Саспект выбран.",
-          "local_unavailable": "Ваш персонаж недоступен.",
-          "ended_ms": 15000,
-          "disconnected_ms": 20000,
-          "started_ms": 10000,
-          "ended_title": "Взаимодействие завершено",
-          "disconnected": "Игрок вышел с сервера.",
-          "other_detail": "Выбор снят.",
-          "started_title": "Взаимодействие начато",
-          "timer": "Игровой таймер изменился.",
-          "manual": "Выбор снят вручную.",
-          "distance": "Игрок слишком далеко.",
-          "max_cards": 3,
-          "changed": "Выбран другой игрок."
-        },
-        "training": {
-          "enabled": true,
-          "next_id": 1,
-          "limit": 10,
-          "department": "all",
-          "cards": {},
-          "progress": {}
-        },
-        "megaphone_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 188
-        },
-        "training_shortcut": {
-          "alt": false,
-          "ctrl": false,
-          "shift": false,
-          "key": 0
-        },
-        "history": {},
-        "evidence": {
-          "time_source": "",
-          "prompt": "Нажмите F8 в игре, затем откройте помощник и укажите полный путь к созданному снимку.",
-          "confirmation_ms": 30000,
-          "delay_ms": 1500,
-          "timeout_ms": 60000,
-          "time_verified": false,
-          "time_command": "/time",
-          "enabled": false,
-          "file_hint": "Полный путь к новому PNG или JPG. PA проверит файл; нажатие клавиши само по себе не считается сохранённым снимком.",
-          "time_enabled": false
+          "/rn": true,
+          "/n": true,
+          "/bkn": true,
+          "/s": true,
+          "/df": true
         }
       },
       "patrol_events": {
+        "followup_enabled": true,
+        "toast_template": "Попытка {command}. Результат сервера ещё не подтверждён. Открыть проверку события «{event}»?",
         "followup_limit": 4,
         "duplicate_ms": 5000,
         "force_reminder_enabled": true,
         "suggest_commands": true,
         "followup_snooze_ms": 30000,
         "events": {
-          "custom": {
-            "command": "",
-            "name": "Своё событие",
-            "channel": "/r",
-            "require_target": false,
-            "enabled": true,
-            "suggest": false,
-            "template": "{unit}: {details}. 10-20: {area}."
-          },
-          "frisk": {
-            "command": "frisk",
-            "name": "Досмотр",
-            "channel": "/r",
-            "require_target": true,
-            "enabled": true,
-            "suggest": true,
-            "template": "{unit}: досмотр {subject} завершён. 10-20: {area}."
-          },
-          "pursuit_foot": {
-            "command": "",
-            "name": "Пешая погоня",
-            "channel": "/r",
-            "require_target": true,
-            "enabled": true,
-            "suggest": false,
-            "template": "{unit}: 10-57 FOXTROT, {subject}. 10-20: {area}."
-          },
-          "force_used": {
-            "command": "",
-            "name": "Применение силы",
-            "channel": "/r",
-            "require_target": true,
-            "enabled": true,
-            "suggest": false,
-            "template": "{unit}: применена сила к {subject}. {details}. 10-20: {area}."
-          },
-          "jail": {
-            "command": "arrest",
-            "name": "Доставка в тюрьму",
-            "channel": "/r",
-            "require_target": true,
-            "enabled": true,
-            "suggest": true,
-            "template": "{unit}: {subject} доставлен в тюрьму. Основание: {basis}."
-          },
-          "pursuit_vehicle": {
-            "command": "",
-            "name": "Погоня за транспортом",
-            "channel": "/r",
-            "require_target": true,
-            "enabled": true,
-            "suggest": false,
-            "template": "{unit}: 10-57 VICTOR, {subject}. 10-20: {area}."
-          },
           "traffic_stop": {
+            "template": "{unit}: остановка транспорта, {subject}. 10-20: {area}.",
             "command": "",
             "name": "Остановка транспорта",
-            "channel": "/r",
-            "require_target": true,
             "enabled": true,
             "suggest": false,
-            "template": "{unit}: остановка транспорта, {subject}. 10-20: {area}."
+            "require_target": true,
+            "channel": "/r"
           },
           "handover": {
+            "template": "{unit}: задержанный {subject} передан {destination}.",
             "command": "",
             "name": "Передача задержанного",
-            "channel": "/r",
-            "require_target": true,
             "enabled": true,
             "suggest": false,
-            "template": "{unit}: задержанный {subject} передан {destination}."
-          },
-          "detention": {
-            "command": "cuff",
-            "name": "Задержание",
-            "channel": "/r",
             "require_target": true,
+            "channel": "/r"
+          },
+          "frisk": {
+            "template": "{unit}: досмотр {subject} завершён. 10-20: {area}.",
+            "command": "frisk",
+            "name": "Досмотр",
             "enabled": true,
             "suggest": true,
-            "template": "{unit}: задержан {subject}. Основание: {basis}."
+            "require_target": true,
+            "channel": "/r"
+          },
+          "custom": {
+            "template": "{unit}: {details}. 10-20: {area}.",
+            "command": "",
+            "name": "Своё событие",
+            "enabled": true,
+            "suggest": false,
+            "require_target": false,
+            "channel": "/r"
+          },
+          "detention": {
+            "template": "{unit}: задержан {subject}. Основание: {basis}.",
+            "command": "cuff",
+            "name": "Задержание",
+            "enabled": true,
+            "suggest": true,
+            "require_target": true,
+            "channel": "/r"
+          },
+          "pursuit_foot": {
+            "template": "{unit}: 10-57 FOXTROT, {subject}. 10-20: {area}.",
+            "command": "",
+            "name": "Пешая погоня",
+            "enabled": true,
+            "suggest": false,
+            "require_target": true,
+            "channel": "/r"
+          },
+          "force_used": {
+            "template": "{unit}: применена сила к {subject}. {details}. 10-20: {area}.",
+            "command": "",
+            "name": "Применение силы",
+            "enabled": true,
+            "suggest": false,
+            "require_target": true,
+            "channel": "/r"
+          },
+          "jail": {
+            "template": "{unit}: {subject} доставлен в тюрьму. Основание: {basis}.",
+            "command": "arrest",
+            "name": "Доставка в тюрьму",
+            "enabled": true,
+            "suggest": true,
+            "require_target": true,
+            "channel": "/r"
+          },
+          "pursuit_vehicle": {
+            "template": "{unit}: 10-57 VICTOR, {subject}. 10-20: {area}.",
+            "command": "",
+            "name": "Погоня за транспортом",
+            "enabled": true,
+            "suggest": false,
+            "require_target": true,
+            "channel": "/r"
           }
         },
         "remind_clear": true,
@@ -1426,15 +745,1012 @@
         "toast_hint": "Предложение само ничего не записывает и не отправляет в рацию.",
         "require_patrol": true,
         "followup_title": "Проверка после события",
+        "toast_ms": 10000,
         "followup_ms": 20000,
         "toast_enabled": true,
         "followup_ttl_ms": 300000,
         "rights_reminder": "Когда обстановка позволяет, проверьте, разъяснили ли вы человеку причину задержания и его права. Одного нажатия команды для этого недостаточно.",
-        "followup_enabled": true,
+        "enabled": false
+      },
+      "map_grid": {
+        "radar": true,
+        "axis_labels": true,
+        "auto_city": true,
+        "font_size": 12,
+        "separator": "-",
+        "enabled": true,
+        "columns": 24,
+        "auto_square": false,
+        "min_label_px": 50,
+        "pause_map": true,
+        "label_alpha": 0.88,
+        "report_area": true,
+        "labels": true,
+        "north": 3000,
+        "location_template": "{area}, квадрат {map_square}",
+        "west": -3000,
+        "row_labels": "ABCDEFGHIJKLMNOPQRSTUVWX",
+        "cell_size": 250,
+        "column_start": 1,
+        "line_alpha": 0.32,
+        "theme": "white",
+        "line_width": 1,
+        "highlight": true,
+        "hud": true
+      },
+      "weapon_warning": {
+        "no_accent": true,
+        "trigger": "aim",
+        "items": {
+          "32": true,
+          "25": true,
+          "23": true,
+          "30": true,
+          "26": true,
+          "33": true,
+          "29": true,
+          "27": true,
+          "38": true,
+          "34": true,
+          "31": true,
+          "24": true,
+          "28": true,
+          "22": true
+        },
+        "trigger_revision": 1,
+        "toast_ms": 10000,
+        "enabled": true,
+        "channel": "/s",
+        "cooldown_ms": 30000,
+        "taser_template": "Предупреждаю: остановитесь и подчинитесь законным требованиям иначе будет применён тайзер!",
+        "shortcut": {
+          "alt": true,
+          "ctrl": false,
+          "shift": false,
+          "key": 87
+        },
+        "delay_ms": 2000,
+        "remember_ms": 120000,
+        "mode": "toast",
+        "firearm_template": "Оставайтесь на месте и поднимите руки! В случаи неповиновения предупреждаю о применении оружия!"
+      },
+      "procedures": {
+        "wanted_list_rp": "/me открыв {device}, просмотрел список разыскиваемых.",
+        "wanted_appearance_rp": "/me зажал кнопку тангенты рации и передал диспетчеру известные приметы подозреваемого: {appearance}.",
+        "wanted_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "mark_wheel": true,
+        "allow_ooc": true,
+        "wanted_send_mode": "direct",
+        "clear_chain_rp": "/me {gender:открыл|открыла} служебный терминал и {gender:снял|сняла} временную техническую отметку после завершения пеленгации.\n/do В запросе указано снятие только временных OOC-звёзд; результат необходимо проверить по базе.",
+        "fine_enabled": true,
+        "wanted_passport_rp": "/me сверил паспортные данные на имя {ic_name} и подготовил карточку ориентировки.\n/do В запросе диспетчеру указан повод: {game_reason}.",
+        "fine_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "mark_enabled": true,
+        "wanted_enabled": true,
+        "clear_enabled": true,
+        "fine_source": "Подтверждено пользователем 29.10.2026: /ticket ID сумма причина",
+        "wanted_id_as_passport": true,
+        "wanted_direct_command": "/su {id} {game_category} {game_item}",
+        "wanted_reminder_delay_ms": 15000,
+        "wanted_label": "Розыск",
+        "wanted_list_command": "/wanted",
+        "fine_wheel": true,
+        "wanted_verified": false,
+        "wanted_foot_intro_rp": "/me достал служебный КПК, активировал защищённый терминал и открыл карточку ориентировки.",
+        "wanted_generic_appearance_rp": "/me зажал кнопку тангенты рации и передал диспетчеру известные приметы подозреваемого.\n/do В запросе на подготовку ориентировки указан повод: {game_reason}.",
+        "wanted_reminder_title": "Проверьте OOC-звёзды",
+        "mark_command": "",
+        "fine_quick": true,
+        "mark_intercept": true,
+        "mark_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "delay_ms": 1500,
+        "mark_source": "",
+        "mark_label": "Пеленгация",
+        "clear_command": "",
+        "fine_command": "/ticket {id} {amount} {basis}",
+        "wanted_reminder_show_ms": 20000,
+        "fine_passport_rp": "/me сверив паспортные данные на имя {ic_name}, приступил к оформлению постановления о штрафе.",
+        "mark_ic_rp": "/me ввёл известный номер {phone_number} в бортовой терминал и отправил запрос.\n/do На экране терминала отображается запрос на определение местоположения.",
+        "wanted_traits_rp": "/todo Приметы подозреваемого: {appearance}*обращаясь по рации к диспетчеру.\n/do В запросе на подготовку ориентировки указан повод: {game_reason}.",
+        "wanted_open_command": "/su {id}",
+        "fine_verified": true,
+        "fine_intercept": true,
+        "wanted_wheel": true,
+        "clear_verified": false,
+        "clear_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "fine_label": "Штраф",
+        "clear_source": "",
+        "wanted_autofill_passport": true,
+        "wanted_each_trait": false,
+        "wanted_suggest_ooc": true,
+        "wanted_allow_remote": true,
+        "wanted_passport_number_rp": "/do В служебной записи указан номер паспорта: {passport_number}.",
+        "wanted_ooc_rp": "/me открыв служебный терминал, внёс сведения о розыске и проверил запись.",
+        "wanted_car_intro_rp": "/me повернувшись к бортовому компьютеру, авторизовался в служебной базе и открыл карточку ориентировки.",
+        "wanted_reminder_enabled": true,
+        "wanted_source": "",
+        "wanted_require_life_ack": true,
+        "wanted_quick": true,
+        "mark_verified": false,
+        "wanted_assistant_enabled": true,
+        "fine_unmasked": true,
+        "wanted_intercept": true,
+        "wanted_reminder_snooze_ms": 60000,
+        "wanted_reminder_text": "Проверьте результат серверного выбора. Если вы выдали OOC-звёзды, снимите их вручную после нужного этапа. PA не подтверждает выдачу и не отправляет /clear.",
+        "wanted_command": "",
+        "fine_appearance_rp": "/me сверив известные сведения, приступил к оформлению постановления о штрафе.",
+        "pm_rate": 0,
+        "mark_ooc_rp": "/me открыв служебный терминал, отправил запрос на определение местоположения.\n/do Запрос передан; на экране терминала отображается ожидание ответа.",
         "enabled": false,
-        "toast_template": "Попытка {command}. Результат сервера ещё не подтверждён. Открыть проверку события «{event}»?",
-        "toast_ms": 10000
+        "mark_quick": true,
+        "clear_wheel": true,
+        "clear_quick": true,
+        "clear_label": "Снять технические OOC-звёзды"
+      },
+      "partners": {},
+      "profile": {
+        "department": "",
+        "select_plate": "",
+        "square": "",
+        "local_tag": "",
+        "timezone": "local",
+        "global_tag": "",
+        "closest_plate": "",
+        "case_number": "",
+        "accent": "",
+        "city": "",
+        "name": "",
+        "rank": "",
+        "gender": "male",
+        "prison_tag": "",
+        "my_plate": "",
+        "callsign": ""
+      },
+      "patrol_session": {
+        "respawn_distance": 100,
+        "crew": {},
+        "reporter_self": true,
+        "resume_template": "{local_tag}{unit}, продолжаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}, квадрат {map_square}.. Направление: {direction}.",
+        "vehicle": "",
+        "sector": "",
+        "unit_number": 1,
+        "station": "LSPS",
+        "toggle_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "reload_grace_ms": 30000,
+        "restore_offer": true,
+        "periodic_template": "{local_tag}{unit}, продолжаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}, квадрат {map_square}.. Направление: {direction}.",
+        "respawn_position_tolerance": 10,
+        "auto_resume_reload": true,
+        "bind_distance": 60,
+        "radio_templates_version": 1,
+        "mode": "police",
+        "confirmation": true,
+        "enabled": true,
+        "post": "",
+        "channel": "/f",
+        "interval_ms": 600000,
+        "pause_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "finish_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "interrupt_grace_ms": 3000,
+        "grammar": {
+          "resume_team": "продолжаем патруль",
+          "finish_team": "заканчиваем патруль",
+          "available_team": "доступны",
+          "resume_solo": "продолжаю патруль",
+          "finish_solo": "заканчиваю патруль",
+          "start_solo": "начинаю патруль",
+          "available_solo": "{gender:доступен|доступна}",
+          "moving_solo": "двигаюсь",
+          "moving_team": "двигаемся",
+          "start_team": "начинаем патруль"
+        },
+        "unit": "",
+        "respawn_evidence_ms": 10000,
+        "pause_on_crew_change": true,
+        "downed_hp": 0,
+        "start_template": "{local_tag}{unit}, начинаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}, квадрат {map_square}. Далее доступны.",
+        "hud": true,
+        "periodic": true,
+        "finish_template": "{local_tag}{unit}, патрулирование завершено. Экипаж: {crew}.",
+        "crew_template": "{local_tag}{unit}: состав экипажа изменён. Экипаж: {crew}."
+      },
+      "filters": {},
+      "taser": {
+        "inactive_reply": "",
+        "activation": "weapon",
+        "reply_timeout_ms": 10000,
+        "holster_rp_enabled": true,
+        "reload_template": "извлёк использованные картриджи, установил два новых и проверил крепление тайзера.",
+        "hud": true,
+        "active_reply": "",
+        "command": "/tazer",
+        "reload_rp_enabled": true,
+        "capacity": 2,
+        "draw_rp_enabled": true,
+        "holster_template": "убедившись в безопасности, зафиксировал {weapon} в специальном креплении и застегнул фиксатор.",
+        "weapon_id": 23,
+        "draw_template": "осмотревшись, извлёк {weapon} из специального крепления и направил его в сторону саспекта.",
+        "name": "Taser X26",
+        "auto_reload": true,
+        "cooldown_ms": 5000,
+        "enabled": true
+      },
+      "identity": {
+        "passport_revision": 2,
+        "passport_chat": true,
+        "enabled": true,
+        "passport_flexible": true,
+        "passport_distance": 30,
+        "passport_phrase": "достал паспорт и показал его",
+        "passport_server": "",
+        "passport_diagnostics": true,
+        "expiry_ms": 1800000,
+        "retain_after_switch": false
+      },
+      "weapons": {
+        "cooldown_ms": 5000,
+        "holster_enabled": true,
+        "enabled": true,
+        "items": {
+          "1": {
+            "template": "надев кастет, сжал кулак и оглянулся по сторонам.",
+            "holster_enabled": false,
+            "name": "Кастет",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "35": {
+            "template": "взяв {weapon}, устроил гранатомёт на плече и проверил пространство перед собой.",
+            "holster_enabled": true,
+            "name": "Rocket Launcher",
+            "holster_template": "опустил {weapon} и, проверив крепления, аккуратно убрал оружие.",
+            "enabled": false
+          },
+          "33": {
+            "template": "сняв {weapon} с плеча, проверил хват и осмотрелся по сторонам.",
+            "holster_enabled": true,
+            "name": "Rifle",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": false
+          },
+          "32": {
+            "template": "взяв {weapon}, проверил хват и направил ствол в безопасную сторону.",
+            "holster_enabled": true,
+            "name": "Tec-9",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": true
+          },
+          "29": {
+            "template": "снял {weapon} с ремня, выключил предохранитель и проверил обстановку вокруг.",
+            "holster_enabled": true,
+            "name": "MP5",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": true
+          },
+          "4": {
+            "template": "достав нож из ножен, уверенно перехватил рукоять и опустил клинок.",
+            "holster_enabled": false,
+            "name": "Нож",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "34": {
+            "template": "сняв {weapon} с плеча, проверил хват и осмотрелся по сторонам.",
+            "holster_enabled": true,
+            "name": "Sniper Rifle",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": true
+          },
+          "31": {
+            "template": "сняв {weapon} с плеча, убрал предохранитель и осмотрелся по сторонам.",
+            "holster_enabled": true,
+            "name": "M4",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": true
+          },
+          "24": {
+            "template": "держа руку у кобуры, осмотрелся и аккуратно извлёк пистолет {weapon}.",
+            "holster_enabled": true,
+            "name": "Desert Eagle",
+            "holster_template": "убедившись в безопасности, убрал {weapon} в кобуру и застегнул фиксатор.",
+            "enabled": true
+          },
+          "28": {
+            "template": "снял {weapon} с ремня, перехватил рукоять и осмотрелся по сторонам.",
+            "holster_enabled": true,
+            "name": "Micro SMG",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": false
+          },
+          "22": {
+            "template": "оглянувшись по сторонам, аккуратно извлёк {weapon} из кобуры и проверил хват.",
+            "holster_enabled": true,
+            "name": "Colt 45",
+            "holster_template": "убедившись в безопасности, убрал {weapon} в кобуру и застегнул фиксатор.",
+            "enabled": true
+          },
+          "7": {
+            "template": "перехватил кий за рукоять и осмотрелся по сторонам.",
+            "holster_enabled": false,
+            "name": "Бильярдный кий",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "44": {
+            "template": "взяв прибор ночного видения, проверил его крепления.",
+            "holster_enabled": false,
+            "name": "Прибор ночного видения",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "43": {
+            "template": "взяв камеру, поправил ремень и проверил объектив.",
+            "holster_enabled": false,
+            "name": "Камера",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": true
+          },
+          "45": {
+            "template": "взяв тепловизор, проверил его крепления.",
+            "holster_enabled": false,
+            "name": "Тепловизор",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "9": {
+            "template": "взяв бензопилу за рукоятки, проверил хват и осмотрелся.",
+            "holster_enabled": false,
+            "name": "Бензопила",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "6": {
+            "template": "взял лопату за черенок и опустил её перед собой.",
+            "holster_enabled": false,
+            "name": "Лопата",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "16": {
+            "template": "снял гранату с поясного крепления и осмотрелся, оставив чеку на месте.",
+            "holster_enabled": false,
+            "name": "Граната",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": true
+          },
+          "27": {
+            "template": "сняв {weapon} с плеча, проверил хват и перевёл оружие в боевое положение.",
+            "holster_enabled": true,
+            "name": "Combat Shotgun",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": false
+          },
+          "46": {
+            "template": "поправил лямки парашюта и проверил крепления страховочной системы.",
+            "holster_enabled": false,
+            "name": "Парашют",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "36": {
+            "template": "взяв {weapon}, устроил пусковую установку на плече и осмотрелся.",
+            "holster_enabled": true,
+            "name": "Heat Seeker",
+            "holster_template": "опустил {weapon} и, проверив крепления, аккуратно убрал оружие.",
+            "enabled": false
+          },
+          "37": {
+            "template": "взял огнемёт за рукоятки и осмотрел пространство перед собой.",
+            "holster_enabled": true,
+            "name": "Flamethrower",
+            "holster_template": "опустил {weapon} и, проверив крепления, аккуратно убрал оружие.",
+            "enabled": false
+          },
+          "18": {
+            "template": "взял бутылку с зажигательной смесью и осторожно удержал её в руке.",
+            "holster_enabled": false,
+            "name": "Коктейль Молотова",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "12": {
+            "template": "взял предмет «{weapon}» в руку и осмотрелся.",
+            "holster_enabled": false,
+            "name": "Vibrator 1",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "8": {
+            "template": "придерживая ножны, плавно извлёк катану и опустил клинок.",
+            "holster_enabled": false,
+            "name": "Катана",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "17": {
+            "template": "достав газовую гранату из подсумка, осмотрел её корпус и удержал в руке.",
+            "holster_enabled": false,
+            "name": "Газовая граната",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": true
+          },
+          "39": {
+            "template": "достал заряд C4 и осмотрел его корпус.",
+            "holster_enabled": false,
+            "name": "Заряд C4",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "3": {
+            "template": "сняв дубинку с поясного крепления, перехватил рукоять и осмотрелся по сторонам.",
+            "holster_enabled": true,
+            "name": "Дубинка",
+            "holster_template": "опустив дубинку, вернул её на поясное крепление и осмотрелся по сторонам.",
+            "enabled": true
+          },
+          "15": {
+            "template": "взял трость за рукоять и опёрся на неё.",
+            "holster_enabled": false,
+            "name": "Трость",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "2": {
+            "template": "перехватив рукоять клюшки, опустил её перед собой и осмотрелся.",
+            "holster_enabled": false,
+            "name": "Клюшка для гольфа",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "42": {
+            "template": "взял огнетушитель за рукоятку и осмотрел пломбу.",
+            "holster_enabled": false,
+            "name": "Огнетушитель",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "14": {
+            "template": "аккуратно взял букет за стебли и поправил цветы.",
+            "holster_enabled": false,
+            "name": "Цветы",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "13": {
+            "template": "взял предмет «{weapon}» в руку и осмотрелся.",
+            "holster_enabled": false,
+            "name": "Vibrator 2",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "26": {
+            "template": "достав обрез {weapon}, крепко перехватил рукоять и осмотрелся.",
+            "holster_enabled": true,
+            "name": "Sawn-off Shotgun",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": false
+          },
+          "10": {
+            "template": "взял предмет «{weapon}» в руку и осмотрелся.",
+            "holster_enabled": false,
+            "name": "Dildo 1",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "5": {
+            "template": "взяв бейсбольную биту, поправил хват и оглянулся вокруг.",
+            "holster_enabled": false,
+            "name": "Бейсбольная бита",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "11": {
+            "template": "взял предмет «{weapon}» в руку и осмотрелся.",
+            "holster_enabled": false,
+            "name": "Dildo 2",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "40": {
+            "template": "достав детонатор, осмотрел его и удержал в ладони.",
+            "holster_enabled": false,
+            "name": "Детонатор",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "41": {
+            "template": "взяв баллончик, снял защитный колпачок и осмотрел распылитель.",
+            "holster_enabled": false,
+            "name": "Баллончик",
+            "holster_template": "закончив использовать предмет, аккуратно убрал его и осмотрелся по сторонам.",
+            "enabled": false
+          },
+          "25": {
+            "template": "сняв {weapon} с плеча, проверил хват и перевёл оружие в боевое положение.",
+            "holster_enabled": true,
+            "name": "Shotgun",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": true
+          },
+          "23": {
+            "template": "оглянувшись по сторонам, извлёк {weapon} из кобуры и проверил хват.",
+            "holster_enabled": true,
+            "name": "Тайзер",
+            "holster_template": "убедившись в безопасности, убрал {weapon} в кобуру и застегнул фиксатор.",
+            "enabled": true
+          },
+          "30": {
+            "template": "сняв {weapon} с плеча, выключил предохранитель и осмотрелся по сторонам.",
+            "holster_enabled": true,
+            "name": "AK-47",
+            "holster_template": "поставил {weapon} на предохранитель и, придерживая ремень, вернул оружие за плечо.",
+            "enabled": false
+          },
+          "38": {
+            "template": "крепко перехватил рукоятки {weapon} и направил стволы в безопасную сторону.",
+            "holster_enabled": true,
+            "name": "Minigun",
+            "holster_template": "опустил {weapon} и, проверив крепления, аккуратно убрал оружие.",
+            "enabled": false
+          }
+        },
+        "delay_ms": 3000,
+        "repeat_ms": 10000,
+        "holster_delay_ms": 1500
+      },
+      "assist": {
+        "open_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 115
+        },
+        "megaphone_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 188
+        },
+        "training": {
+          "limit": 10,
+          "cards": {},
+          "progress": {},
+          "department": "all",
+          "next_id": 1,
+          "enabled": true
+        },
+        "interaction": {
+          "started_title": "Взаимодействие начато",
+          "manual": "Выбор снят вручную.",
+          "max_cards": 3,
+          "changed": "Выбран другой игрок.",
+          "identity": "ID или личность игрока изменились.",
+          "session": "Подключение к серверу изменилось.",
+          "started_detail": "Саспект выбран.",
+          "local_unavailable": "Ваш персонаж недоступен.",
+          "ended_ms": 15000,
+          "distance": "Игрок слишком далеко.",
+          "ended_title": "Взаимодействие завершено",
+          "started_ms": 10000,
+          "disconnected": "Игрок вышел с сервера.",
+          "other_detail": "Выбор снят.",
+          "disconnected_ms": 20000,
+          "timer": "Игровой таймер изменился."
+        },
+        "training_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "history": {},
+        "evidence": {
+          "auto_scan": true,
+          "time_source": "",
+          "confirmation_ms": 30000,
+          "timeout_ms": 60000,
+          "idle_scan_ms": 5000,
+          "enabled": false,
+          "scan_ms": 500,
+          "file_hint": "Полный путь к новому PNG или JPG. PA проверит файл; нажатие клавиши само по себе не считается сохранённым снимком.",
+          "prompt": "Нажмите F8 в игре, затем откройте помощник и укажите полный путь к созданному снимку.",
+          "time_enabled": false,
+          "delay_ms": 1500,
+          "screens_dir": "",
+          "time_verified": false,
+          "time_command": "/time"
+        },
+        "evidence_shortcut": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        }
+      },
+      "wanted_reminders": {},
+      "alert_shortcuts": {
+        "code1": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "code4": {
+          "alt": false,
+          "ctrl": false,
+          "shift": false,
+          "key": 0
+        },
+        "code0": {
+          "alt": true,
+          "ctrl": false,
+          "shift": false,
+          "key": 51
+        },
+        "shots": {
+          "alt": true,
+          "ctrl": false,
+          "shift": false,
+          "key": 50
+        },
+        "sos": {
+          "alt": true,
+          "ctrl": false,
+          "shift": false,
+          "key": 49
+        }
+      },
+      "settings": {
+        "quick_key": 121,
+        "retain_grace_ms": 1500,
+        "interaction_notices": true,
+        "keep_target_on_interior_change": true,
+        "updates": {
+          "enabled": true,
+          "check_on_start": false,
+          "include_prerelease": false,
+          "show_progress_window": true,
+          "timeout_seconds": 30,
+          "repository": "VIBAG-bg/Police-Assistant"
+        },
+        "ask_screenshot_path": false,
+        "wheel_car_system_groups": {
+          "procedure-fine": "wanted",
+          "code0": "frisk",
+          "assist-megaphone": "detention",
+          "procedure-mark": "detention",
+          "shots": "frisk",
+          "sos": "frisk"
+        },
+        "window_layout": {
+          "fine_separate": true,
+          "windows": {
+            "assist": {
+              "displayH": 1440,
+              "y": 285,
+              "displayW": 2560,
+              "height": 839,
+              "x": 792,
+              "width": 680
+            },
+            "tips": {
+              "displayH": 1440,
+              "y": 340,
+              "displayW": 2560,
+              "height": 760,
+              "x": 800,
+              "width": 960
+            },
+            "ground": {
+              "displayH": 1440,
+              "y": 144,
+              "displayW": 2560,
+              "height": 1152,
+              "x": 890,
+              "width": 780
+            },
+            "wanted": {
+              "displayH": 1440,
+              "y": 497,
+              "displayW": 2560,
+              "height": 577,
+              "x": 444,
+              "width": 1792
+            },
+            "main": {
+              "displayH": 1440,
+              "y": 216,
+              "displayW": 2560,
+              "height": 1008,
+              "x": 384,
+              "width": 1792
+            },
+            "quick": {
+              "displayH": 1440,
+              "y": 370,
+              "displayW": 2560,
+              "height": 700,
+              "x": 890,
+              "width": 780
+            }
+          },
+          "initial_percent": 70,
+          "wanted_separate": true,
+          "remember": true,
+          "revision": 1,
+          "mark_separate": true
+        },
+        "tips_key": 123,
+        "wheel_child_limit": 10,
+        "wheel_car_order": {},
+        "wheel_car_child_limit": 10,
+        "cef_chat_grace_ms": 350,
+        "wheel_system_groups": {
+          "procedure-fine": "wanted",
+          "code0": "frisk",
+          "assist-megaphone": "detention",
+          "procedure-mark": "detention",
+          "shots": "frisk",
+          "sos": "frisk"
+        },
+        "manual_radio_prefix": true,
+        "cef_chat_weapon_guard": true,
+        "wheel_edit_enabled": true,
+        "accent_skip_brackets": true,
+        "wheel_car_profile": "full",
+        "aim_select_control": "mouse",
+        "wheel_names": {
+          "documents": "Подозреваемый",
+          "frisk": "Доклады / Обращения",
+          "custom": "Личные бинды",
+          "detention": "Траффик-стоп / Авто",
+          "wanted": "Розыск / штрафы"
+        },
+        "manual_chat": {
+          "max_parts": 3,
+          "interval_ms": 1500,
+          "enabled": true
+        },
+        "cef_chat_profile": false,
+        "shutdown_message": "Police Assistant полностью отключён до перезахода в игру.",
+        "retain_distance": 20,
+        "chat_dot_commands": true,
+        "cef_chat_diagnostics": true,
+        "wheel_order": {},
+        "manual_actions": {
+          "rules": {
+            "break": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:открыл|открыла} багажник крузера и высунув заграждение в виде барьера, {gender:установил|установила} его."
+            },
+            "find": {
+              "enabled": false,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные, {gender:нажал|нажала} на кнопку \" База данных сотрудников\"."
+            },
+            "clear": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:открыл|открыла} служебную базу и {gender:оформил|оформила} запрос на прекращение розыска."
+            },
+            "cuff": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:снял|сняла} наручники с пояса и {gender:зафиксировал|зафиксировала} их на запястьях задержанного.\n/do Фиксация наручников проверена."
+            },
+            "uncuff": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:вставил|вставила} ключ в замок, {gender:расстегнул|расстегнула} наручники и {gender:убрал|убрала} их в подсумок."
+            },
+            "taser": {
+              "enabled": false,
+              "prefer_bind": true,
+              "rp": "/me ухватил тайзер в правую руку."
+            },
+            "arrest": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:оформил|оформила} материалы задержания и {gender:передал|передала} их вместе с задержанным дежурному."
+            },
+            "unmask": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me аккуратно {gender:снял|сняла} маску с лица задержанного и {gender:убрал|убрала} её в пакет для имущества."
+            },
+            "fmission": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные, {gender:нажал|нажала} на кнопку \"Информация\"."
+            },
+            "take": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:надел|надела} перчатки, {gender:подготовил|подготовила} пакеты для изъятых предметов и изъяв предметы и запечатав зип-лок пакет, {gender:приступил|приступила} к оформлению протокола."
+            },
+            "skip": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Выдать пропуск.\""
+            },
+            "unskip": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Анулировать пропуск\"."
+            },
+            "blackcheck": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и введя \"{select_name}\", {gender:нажал|нажала} на кнопку \"Проверить на наличие в чёрном списке\"."
+            },
+            "ticket": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:заполнил|заполнила} постановление о штрафе, {gender:сверил|сверила} внесённые сведения и {gender:подготовил|подготовила} его к выдаче."
+            },
+            "setmark": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me зайдя в федеральную базу розыска, просмотрев личные данные разыскиваемого, {gender:ввёл|ввела} его номер телефона в служебный терминал и {gender:запросил|запросила} пеленгацию.\n/do На терминале отобразился запрос на определение местоположения по сигналу телефона, и высвечивается ответ от спутника."
+            },
+            "unblack": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Убрать из чёрного списка\"."
+            },
+            "ud": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:достал|достала} служебное удостоверение, {gender:раскрыл|раскрыла} его и {gender:продемонстрировал|продемонстрировала} собеседнику."
+            },
+            "fmenu": {
+              "enabled": false,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные, {gender:нажал|нажала} на кнопку \"Информация\"."
+            },
+            "division": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Выдать дивизион\"."
+            },
+            "undivision": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Изменить дивизион\"."
+            },
+            "push": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:открыл|открыла} дверь служебного автомобиля и, придерживая задержанного, {gender:усадил|усадила} его внутрь."
+            },
+            "uninvite": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Удалить личное дело\"."
+            },
+            "mark": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Отправить запрос\"."
+            },
+            "frisk": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:надел|надела} перчатки и последовательно {gender:проверил|проверила} одежду и карманы задержанного."
+            },
+            "invite": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Зачислить в академию департамента\".\n/me взяв с сумкки висящий на плече новую форму, рацию и бейджик, передал их {select_firstname} в руки."
+            },
+            "unhold": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:остановился|остановилась} и {gender:отпустил|отпустила} руку сопровождаемого."
+            },
+            "hold": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:взял|взяла} задержанного под локоть и {gender:подготовился|подготовилась} сопроводить его за собой."
+            },
+            "black": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Добавить в чёрный список\"."
+            },
+            "pt": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:активировал|активировала} служебный терминал и {gender:передал|передала} диспетчеру сведения о начале преследования."
+            },
+            "fwarn": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Выдать дисциплинарное взыскание.\""
+            },
+            "takelic": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:оформил|оформила} изъятие водительского удостоверения и {gender:внёс|внесла} сведения в служебный планшет."
+            },
+            "fwarnoff": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Выдать дисциплинарное взыскание.\""
+            },
+            "unpt": {
+              "enabled": true,
+              "prefer_bind": true,
+              "rp": "/me {gender:передал|передала} диспетчеру сведения о завершении преследования и {gender:закрыл|закрыла} запись в терминале."
+            }
+          },
+          "frisk_mode": "saved",
+          "frisk_full_rp": "/me {gender:надел|надела} плотные чёрные резиновые перчатки, тщательно {gender:проверил|проверила} все карманы и обувь задержанного и {gender:выложил|выложила} вещи под камеру крузера.\n/do Предметы, подлежащие изъятию по результатам обыска, подготовлены к упаковке в зип-пакет и бокс для улик.",
+          "frisk_primary_rp": "/me {gender:поставил|поставила} задержанного у опоры и быстрыми движениями без перчаток {gender:прохлопал|прохлопала} верхнюю одежду, торс и ноги на наличие оружия.\n/do Что офицер {gender:мог|могла} нащупать под одеждой задержанного?",
+          "enabled": true
+        },
+        "opacity": 0.8299999833107,
+        "cef_layout_indicator": true,
+        "cef_chat_weapon_lock": true,
+        "aim_select_delay_ms": 150,
+        "compact": false,
+        "wheel_car_mode": "categories",
+        "cef_chat_support": true,
+        "accent_live_input": false,
+        "wheel_profile": "full",
+        "cancel_key": 35,
+        "wheel_enabled": true,
+        "wheel_car_names": {
+          "documents": "Подозреваемый",
+          "frisk": "Доклады / Обращения",
+          "custom": "Личные бинды",
+          "detention": "Траффик-стоп / Авто",
+          "wanted": "Розыск / штрафы"
+        },
+        "wheel_car_separate": true,
+        "wheel_mode": "categories",
+        "aim_select_enabled": true
       }
-    }
-  }
+    },
+    "format": "police-assistant.settings",
+    "schema": 1
+  },
+  "format": "police-assistant.author-settings",
+  "schema": 1
 }
