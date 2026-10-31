@@ -1,5 +1,5 @@
 {
-  "release": "0.43.3",
+  "release": "0.43.4",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -83,7 +83,7 @@
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "21d387edcc186e2d01019a2e902c1e20fd320dfa8daee63e4f63710504a120dc"
+      "sha256": "d922018e0181e85d1f137a2a7a3c4864781c83e8f5dd225bb7961150a3267943"
     },
     {
       "path": "lib\\pa26_detention_timers.lua",
@@ -455,11 +455,11 @@
     },
     {
       "path": "pa26_guard.lua",
-      "sha256": "f6d45a322a58ba950615e4490fc8ab1936d646fde3e2f48b6a7a7b92b8696614"
+      "sha256": "0cb3997f3632b47c62c4f09727b7ea836c0ca3f890982da38690f459bc55e2c8"
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "438fb30597d079ea04f601ba65e22bd2a0d36975b1b0e87841c1f1a5ea86adb5"
+      "sha256": "abbe816a8132e16ebb8a6b483cb11a6ebd752215f480458055785d26a50c8d89"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",

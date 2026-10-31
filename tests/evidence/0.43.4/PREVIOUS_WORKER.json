@@ -1,0 +1,22 @@
+﻿{
+    "package_sha256":  "e9532af28306eaefbe0130fcd9d0c0d59781c785948f884c669a0df31c62d6b6",
+    "checks":  318,
+    "release":  "0.43.4",
+    "official_hud_read_only":  true,
+    "baseline":  "0.43.3",
+    "previous_worker_sha256":  "4045a42f86e3c18860fa5518a9d92d290fff3c7d931243284b5de3ceda899a22",
+    "real_game_written":  false,
+    "status":  "passed",
+    "cases":  [
+                  {
+                      "environment":  "native",
+                      "protected_files":  6,
+                      "installed_files":  128
+                  },
+                  {
+                      "environment":  "launcher",
+                      "protected_files":  7,
+                      "installed_files":  130
+                  }
+              ]
+}

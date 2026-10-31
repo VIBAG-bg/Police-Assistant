@@ -1,0 +1,13 @@
+{
+  "release": "0.43.4",
+  "baseline": "0.43.3",
+  "baseline_commit": "42f90ffc3697c73dd68d0de28418e94223148587",
+  "reviewed_fix_commit": "0ef276913c26842865641ee252414d777c52450a",
+  "scope": "Release the tested F9/report validation fix as a new version; no local installation",
+  "publication_authorized": true,
+  "installation_authorized": false,
+  "runtime_changes": "Exactly the reviewed eight-module fix and three files with version-only changes",
+  "updater_platform_sha256": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
+  "personal_data_and_defaults_preserved": true,
+  "live_game_acceptance_pending": true
+}

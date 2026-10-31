@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "release": "0.43.4",
+  "baseline": "0.43.3",
+  "legacy_leaf_checks": 4301,
+  "accepted_untouched_contract_upgrade": [],
+  "migration_idempotent": true,
+  "source_articles_preserved": 1073,
+  "rules_radio_and_source_registry_preserved": true,
+  "unchanged_files": [
+    "moonloader/lib/pa26_update_platform.lua",
+    "moonloader/resource/pa26/updater/pa26-update.ps1",
+    "cef/assets/hud/pa26-chat-endpoint.js",
+    "moonloader/config/police_assistant_2026.ini",
+    "tools/pa-setup.ps1",
+    "tools/pa-setup-window.ps1",
+    "tools/pa-start.ps1",
+    "tools/pa-seed-presets.ps1"
+  ],
+  "local_game_updated": false,
+  "public_preset_legacy_values_preserved": true
+}

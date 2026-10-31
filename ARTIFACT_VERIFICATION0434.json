@@ -1,0 +1,19 @@
+{
+  "release": "0.43.4",
+  "status": "passed",
+  "assets": [
+    {
+      "name": "Police-Assistant-v0.43.4.zip",
+      "size": 6561615,
+      "sha256": "f708ec9919cc25699d1087498a4cf6df3e8ab6f46d8e03b736a123fa9b639a88",
+      "zip_integrity": "passed"
+    },
+    {
+      "name": "pa26-update.zip",
+      "size": 5733502,
+      "sha256": "e9532af28306eaefbe0130fcd9d0c0d59781c785948f884c669a0df31c62d6b6",
+      "zip_integrity": "passed"
+    }
+  ],
+  "real_game_written": false
+}

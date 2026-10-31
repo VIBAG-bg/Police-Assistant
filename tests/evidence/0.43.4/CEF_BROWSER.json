@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "checks": 560,
+  "adapter_sha256": "569bcb21e448b12f44d38962b24fb76b235a0157695ecc4418796f0d7a9b5138",
+  "test_sha256": "33f7d9710ae84c1485e6922f360c029a0c647e45e98d7b6682f80aec96fd1dbd",
+  "game_launched": false
+}
