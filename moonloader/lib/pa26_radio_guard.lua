@@ -26,13 +26,16 @@ local function identity(s,template,skipDynamic)
     table.sort(out);return table.concat(out,'\0')
 end
 local function signature(spec,s,skipDynamic)
-    return table.concat({spec.name,spec.template,spec.channel,tostring(spec.confirmation),tostring(spec.interval_ms),identity(s,spec.template,skipDynamic),mapGrid.reportPolicy(s,spec.template)},'\0')
+    if type(spec)~='table'or type(spec.name)~='string'or type(spec.channel)~='string'or type(s)~='table'then return nil,'Проверьте данные автодоклада.'end
+    local policy,err=mapGrid.reportPolicy(s,spec.template);if policy==nil then return nil,err end
+    return table.concat({spec.name,spec.template,spec.channel,tostring(spec.confirmation),tostring(spec.interval_ms),identity(s,spec.template,skipDynamic),policy},'\0')
 end
 function M.prepare(spec,s,codec,now,life)
+    if type(spec)~='table'or type(spec.name)~='string'or type(s)~='table'then return nil,'Проверьте данные автодоклада.'end
     local template,err=prefs.template(spec.template,prefs.radioVariables);if not template then return nil,err end
     template,err=require('pa26_report_context').directionTemplate(template,s);if not template then return nil,err end
     if spec.channel~='/r' and spec.channel~='/f' and spec.channel~='/d' then return nil,'Канал автодоклада: /r, /f или /d.'end
-    local source=mapGrid.reportValues(s,template)
+    local source;source,err=mapGrid.reportValues(s,template);if not source then return nil,err end
     local values={}
     for key in pairs(prefs.radioVariables)do
         local used=template:find('{'..key..'}',1,true)
@@ -106,7 +109,8 @@ end
 function Guard:track(key,spec,remaining)
     local s=self.state;local cfg=self.env.settings()
     if not s or not core.finite(remaining) then return 'unavailable' end
-    local t=self.tickets[key];local sig=signature(spec,s)
+    local t=self.tickets[key];local sig,signatureError=signature(spec,s)
+    if not sig then if t then self:finish(t,'cancelled',signatureError)end;return 'invalid',signatureError end
     if t and t.signature~=sig and not self:refreshTicket(t,spec)then self:finish(t,'cancelled','Данные доклада изменились.');return 'cancelled'end
     if not t then
         -- Producers have at most one occurrence; completed old cycles are pruned.
@@ -270,12 +274,17 @@ function Guard:candidates()
     for _,t in pairs(self.tickets)do if t.phase=='pending' or t.phase=='queued' or t.phase=='confirm' then
         local remaining=math.max(t.remaining,t.lead)
         local full=not t.toastAt or (core.elapsed(self.now,t.toastAt)or 0)<cfg.toast_ms or t.phase=='confirm'
+        local locationHint='Текст и канал из сохранённых настроек'
+        if t.spec.template:find('{area}',1,true)or t.spec.template:find('{location}',1,true)then
+            local values,err=mapGrid.reportValues(self.state,t.spec.template)
+            locationHint=values and('Место на момент отправки: '..tostring(values[t.spec.template:find('{location}',1,true)and'location'or'area']or'не определено'))or err
+        end
         out[#out+1]={owner='radio',token=t.token,title=t.phase=='confirm' and 'Передать доклад?'or t.spec.name,
             body=table.concat(t.plan.lines,'\n'),mode=t.phase=='confirm' and 'confirm' or 'radio',full=full,unseen=not t.seen,
             priority=t.phase=='confirm' and 70 or 40,serial=t.order,remaining=remaining,
             status=t.phase=='queued' and 'Ожидает отправки · ещё можно отменить' or not M.canTick(self.state,cfg.count_during_input)and 'Отсчёт на паузе' or
                 remaining>0 and ('Доклад через '..math.ceil(remaining/1000)..' с')or self.state.incapacitated and'Доклад готов · ожидает восстановления персонажа'or not M.safe(self.state)and'Доклад готов · ожидает закрытия чата или окна'or'Ожидает свободную очередь',
-            hint=(t.spec.template:find('{area}',1,true)or t.spec.template:find('{location}',1,true))and('Место на момент отправки: '..tostring(mapGrid.reportValues(self.state,t.spec.template)[t.spec.template:find('{location}',1,true)and 'location'or 'area'] or 'не определено'))or 'Текст и канал из сохранённых настроек',
+            hint=locationHint,
             yes='Передать',no='Отменить',shortcut=cfg.skip_shortcut}
     end end
     table.sort(out,function(a,b)if a.remaining==b.remaining then return a.serial<b.serial end;return a.remaining<b.remaining end)

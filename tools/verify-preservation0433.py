@@ -71,7 +71,7 @@ for group in ('articles','rules','radio','sources'):
         assert clean==original,(group,key)
         if group=='articles':articles+=1
 assert (ROOT/'moonloader/resource/pa26/knowledge-base.json').read_bytes()==(base/'moonloader/resource/pa26/knowledge-base.json').read_bytes()
-report={'status':'passed','release':'0.43.3','baseline':'0.43.2','legacy_leaf_checks':count,
+report={'status':'passed','release':'0.43.3','baseline':json.loads((base/'INSTALL_MANIFEST.json').read_text('utf-8-sig'))['release'],'legacy_leaf_checks':count,
  'accepted_untouched_contract_upgrade':sorted(changed),'migration_idempotent':True,
  'source_articles_preserved':articles,'rules_radio_and_source_registry_preserved':True,
  'unchanged_files':unchanged,'local_game_updated':False}

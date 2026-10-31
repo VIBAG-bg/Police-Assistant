@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "checks": 1260,
+  "frames": 84,
+  "screen_sizes": 7,
+  "game_written": false,
+  "game_started": false,
+  "command_sends": 0,
+  "source_sha256": {
+    "moonloader/lib/pa26_alerts.lua": "4176da7842e5bbfff43b08a8d8e1b58cbc82d01d625f7e11a3691df641c478b4",
+    "moonloader/lib/pa26_map_grid.lua": "2eb8b393c4459da070924263e028386038244e4df5d4ea05f35f281717eb9cf4",
+    "moonloader/lib/pa26_patrol_events.lua": "b97d6f78c43f7c78897fd2c7f14f451edf86c1577cc217c68a3cffafe3cb619e",
+    "moonloader/lib/pa26_patrol_session.lua": "d788c4f83fad1c551db864597a56429cc40dd280544e5e7b7f234a9cc390ff42",
+    "moonloader/lib/pa26_patrol_ui.lua": "ea1421905824252becfe045adf6a9cdedecea9989832c1652bbd11dcfc8ea779",
+    "moonloader/lib/pa26_radio_guard.lua": "93f2d5548b69cb1ce50bd78c4124abe4cf11cbf69a7e84856b7047ea0057dc4c",
+    "moonloader/lib/pa26_report_context.lua": "7a865e5aac6d254c3358b046d7610d64476998fcf11ea6115d94c116b78b8015",
+    "moonloader/lib/pa26_vehicle.lua": "07a5e2318a1acb12723255b867e9ac956a4780912743e61a20bfa8b916c06476",
+    "tests/test_f9_validation_native32.lua": "a5b2d03240627f7bf08fe490cb0c32f7430def7526a5e2fede5ef32b78353535"
+  },
+  "scene_is_simulated": true,
+  "native_runtime": "Installed x86 LuaJIT/ImGui; no GTA process"
+}

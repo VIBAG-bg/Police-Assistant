@@ -7,7 +7,7 @@
     },
     {
       "path": "lib\\pa26_alerts.lua",
-      "sha256": "467aadfdf92a0d39a05745f1e9126465495a546a79c022dd1fa0054db3d4d5c6"
+      "sha256": "4176da7842e5bbfff43b08a8d8e1b58cbc82d01d625f7e11a3691df641c478b4"
     },
     {
       "path": "lib\\pa26_assist_settings.lua",
@@ -195,7 +195,7 @@
     },
     {
       "path": "lib\\pa26_map_grid.lua",
-      "sha256": "c7301b93ba47f5090adb6bddfd504be0fc1d7a7df055781542d7956da900c2d5"
+      "sha256": "2eb8b393c4459da070924263e028386038244e4df5d4ea05f35f281717eb9cf4"
     },
     {
       "path": "lib\\pa26_map_ui.lua",
@@ -251,11 +251,11 @@
     },
     {
       "path": "lib\\pa26_patrol_events.lua",
-      "sha256": "bec84e7fb61480583341fcd3596e32c172d25b9e9656e2003dbcf1c1e77dbd76"
+      "sha256": "b97d6f78c43f7c78897fd2c7f14f451edf86c1577cc217c68a3cffafe3cb619e"
     },
     {
       "path": "lib\\pa26_patrol_session.lua",
-      "sha256": "43006711b1a5984541c12cbc77048212dfbe88c2543db8f19906818040a3ad66"
+      "sha256": "d788c4f83fad1c551db864597a56429cc40dd280544e5e7b7f234a9cc390ff42"
     },
     {
       "path": "lib\\pa26_patrol_settings.lua",
@@ -263,7 +263,7 @@
     },
     {
       "path": "lib\\pa26_patrol_ui.lua",
-      "sha256": "fec29f75deaeb7babafb6561ab2264212b8f6798736906b69623968fd9ac2b94"
+      "sha256": "ea1421905824252becfe045adf6a9cdedecea9989832c1652bbd11dcfc8ea779"
     },
     {
       "path": "lib\\pa26_preferences.lua",
@@ -287,7 +287,7 @@
     },
     {
       "path": "lib\\pa26_radio_guard.lua",
-      "sha256": "ff2988fa1758ef077e002a3d1d6b5691d7348beb10ab84423a0bb35615077a7d"
+      "sha256": "93f2d5548b69cb1ce50bd78c4124abe4cf11cbf69a7e84856b7047ea0057dc4c"
     },
     {
       "path": "lib\\pa26_radio_text.lua",
@@ -379,7 +379,7 @@
     },
     {
       "path": "lib\\pa26_vehicle.lua",
-      "sha256": "7d6e3b77568e46fc21de206fc83ce46f4d3380d5fd98b60df064a3d4962c0c35"
+      "sha256": "07a5e2318a1acb12723255b867e9ac956a4780912743e61a20bfa8b916c06476"
     },
     {
       "path": "lib\\pa26_vehicle_names.lua",
@@ -503,7 +503,7 @@
     },
     {
       "path": "lib\\pa26_report_context.lua",
-      "sha256": "c812a96dcf9bd9fb2ffda377d9e51bb3aa3e259caa9e753735c652be8ce2fbeb"
+      "sha256": "7a865e5aac6d254c3358b046d7610d64476998fcf11ea6115d94c116b78b8015"
     },
     {
       "path": "lib\\pa26_stolen_bulletin.lua",

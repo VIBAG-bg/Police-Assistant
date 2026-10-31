@@ -172,15 +172,18 @@ function Events:bindTarget(form)
     return true
 end
 function Events:line(form,cfg)
-    local row=cfg.events[form.kind];if not row then return nil,'Неизвестное событие.'end
+    if type(form)~='table'or type(cfg)~='table'or type(cfg.events)~='table'or type(self.state)~='table'then return nil,'Нет данных события для доклада.'end
+    local row=cfg.events[form.kind];if type(row)~='table'then return nil,'Неизвестное событие.'end
     local template,err=prefs.template(row.template);if not template then return nil,err end
     local values=model.copy(self.state or {})
     for _,k in ipairs({'subject','basis','destination','details'})do
         values[k]=shared.text(form[k]or '',240);if not values[k]then return nil,'Неверный текст: '..k end
     end
-    values=mapGrid.reportValues(values,template)
+    template,err=require('pa26_report_context').directionTemplate(template,values);if not template then return nil,err end
+    values,err=mapGrid.reportValues(values,template);if not values then return nil,err end
     local missing
     local body=core.expandGender(template,self.state.gender):gsub('{([a-z_]+)}',function(k)
+        if values[k]~=nil and type(values[k])~='string'and not core.finite(values[k])then missing=k;return ''end
         local v=shared.text(tostring(values[k]or ''),1024);local tag=k=='local_tag'or k=='prison_tag'or k=='global_tag'
         if not v or v==''and not tag then missing=k;return ''end
         return tag and v~=''and(v..' ')or v

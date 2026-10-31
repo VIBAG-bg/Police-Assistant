@@ -1,0 +1,1295 @@
+{
+  "resource_sha256": {
+    "moonloader/resource/pa26/knowledge-base.json": "e0c05b15af8eec391f1a3ec415ad4aee9c4494fcc30b52c995831fcc3411373f",
+    "moonloader/resource/pa26/knowledge-policy.json": "c96c06ca3611ff03f2214c6cebd8efafa77deb98bb546c4a9d11e78506efa75b",
+    "moonloader/config/police_assistant_2026.ini": "4978ee9d1c47fc0301641c846294d2538e34bba8d9c941cdca584d3cd363e6c5",
+    "cef/assets/hud/pa26-chat-endpoint.js": "dafae2adea0cd37d9aae06d45012279c0d4371af956e0b67d90468bb5647cfc8",
+    "cef/assets/hud/pa26-chat.js": "569bcb21e448b12f44d38962b24fb76b235a0157695ecc4418796f0d7a9b5138",
+    "moonloader/resource/pa26/updater/pa26-update.ps1": "4045a42f86e3c18860fa5518a9d92d290fff3c7d931243284b5de3ceda899a22"
+  },
+  "runtime": "LuaJIT 2.1 (lupa.luajit21)",
+  "syntax_files": 338,
+  "lua_source_sha256": {
+    "moonloader/lib/pa26_alerts.lua": "4176da7842e5bbfff43b08a8d8e1b58cbc82d01d625f7e11a3691df641c478b4",
+    "moonloader/lib/pa26_assist_settings.lua": "093666773ee210b25b4c4b42a3bb311ad698fd0731ac7508628486b1b0e46370",
+    "moonloader/lib/pa26_assist_ui.lua": "38b6969b6dee8c44a1484fe709f0831acef66d45aa3a1032159462b0757f4c61",
+    "moonloader/lib/pa26_author_controller.lua": "53d68b2faaae8fbde8f54643360c66d6f191059e47cb21bc8f047c07d347a6e7",
+    "moonloader/lib/pa26_author_io.lua": "163e7c2f9ab82c1be88762667e6ef81237e3ef0fb6c2863c66e25866bb1a9d6a",
+    "moonloader/lib/pa26_author_presets.lua": "827e36e91d6f4db93901c9af892101820f06f43f6b78f2dc63dbbd4c7288af1a",
+    "moonloader/lib/pa26_author_store.lua": "16fd5748a43081aaefa348dc7595da69a18c851582d468cde94a8d2e1decee5d",
+    "moonloader/lib/pa26_binder.lua": "9f7153afc690443a67bad9bb030e4ff1d139bed0614e3a8348d8d9fc9d2f9e6b",
+    "moonloader/lib/pa26_bindings.lua": "a35513b2ac3188ba868644f699c03a6a860ed9f26ba748d4f123c7af5b5ed63f",
+    "moonloader/lib/pa26_case_forms.lua": "53a8e822eddc964552495e62c4cb07c7b093ebfb25e2853730f5b725ae719beb",
+    "moonloader/lib/pa26_case_ui.lua": "2dbe0c9c925f8f074bf04e4a582c3b27457da593dbf615c34e491f1a9f605d59",
+    "moonloader/lib/pa26_cef_assets.lua": "beacfa48f593527010189f3d8599a5f5b5b874e42001ac62891c288dd5695fdd",
+    "moonloader/lib/pa26_chat_bridge.lua": "097f37e4cc8fd35db8d74a31b577eaab8fce8dd62661446438411e8759678ad4",
+    "moonloader/lib/pa26_chat_perf.lua": "7dee9d93091c8c9d5fcdf032824e6b9d2782b3f8c3bb5346ae08665d1842227a",
+    "moonloader/lib/pa26_chat_text.lua": "e8d49ff6ff3e8746e042dbff9dd2e5c24fc8d6e76b08dcf81fb09122c664c9da",
+    "moonloader/lib/pa26_colleagues.lua": "3a5f502e90c22e0105ea56b2d8a2c0532fc968c0434abc1d9f7ca37d809cfedf",
+    "moonloader/lib/pa26_config.lua": "d8e3ec3002f80b989d063e620c14d74dec917c45d2d3445238cea025828a0948",
+    "moonloader/lib/pa26_copilot.lua": "ed044b21301b0ed31e72b1d712ee1b5c2b4fcc9ebe5d750be2d7fc0a10db021e",
+    "moonloader/lib/pa26_copilot_incident.lua": "907bbebac335f650f78365570d09298c01f37456afdb3b934d918415106deea7",
+    "moonloader/lib/pa26_copilot_settings.lua": "683e3b51bcf1c62b6e7bdfa598528fb8df86ed24439b7c68f44c977ae3c99fa8",
+    "moonloader/lib/pa26_copilot_ui.lua": "ace5e63961795b7566a2bd1cf1ad6cd4edcf2fdaf7041f41dc81bd1237e3fa17",
+    "moonloader/lib/pa26_core.lua": "21d387edcc186e2d01019a2e902c1e20fd320dfa8daee63e4f63710504a120dc",
+    "moonloader/lib/pa26_detention_timers.lua": "a29d025953b028657feff9cbdb4f7698ab42fc51a390fd1dcfe01e44ddbf90be",
+    "moonloader/lib/pa26_dispatch.lua": "336435463e7b382647c981943e9f5ffc2fe661d1eb383696e2ca83bec034532e",
+    "moonloader/lib/pa26_dispatch_followups.lua": "ad776be4b0ed000af7c5a6e8abd49ffd3b5a982193020c40c62025a060830017",
+    "moonloader/lib/pa26_evidence.lua": "8fc4aad01ef7e7e5ac0459f942ee3befab24ea797489ca4a6eb352bbd1b83e95",
+    "moonloader/lib/pa26_evidence_files.lua": "a67f1cdf6545f998535f36e9df774da9be3c1133264cebb580dcc3691cde2e15",
+    "moonloader/lib/pa26_executor.lua": "a5d153cf752a45b831b2145d270eeba622a07c14080f98dc91347f2d7ed923dc",
+    "moonloader/lib/pa26_fast_pt.lua": "d9e82eadb2821bb5924cd177621f6e889d9bf7368ca187f2cbb37f3af493572d",
+    "moonloader/lib/pa26_feedback.lua": "af4586eafd5a324914dfd4e1a7a6894146e99b28db3e6923aec4423e0eb1851f",
+    "moonloader/lib/pa26_fine_window.lua": "a0c64621e10becc15f34b61723ede7a284c20432321e6d51746e0ec8fd024a6e",
+    "moonloader/lib/pa26_ground_speech.lua": "f5f6b995c6723669e4295ec704a22d808ffc272bb791176d4ea34e2119517b70",
+    "moonloader/lib/pa26_ground_window.lua": "3fbaac431d52a944260e70875b00b60dd8d56a3b55cf2faf11bec9d0804b1fce",
+    "moonloader/lib/pa26_hud.lua": "8a91f9a7a1c06ed73cf9ea4b2f043d9272e3a258296900775e302cd2a640d853",
+    "moonloader/lib/pa26_identity.lua": "816fd203f799abcf59ea86a4039480af4fc9728f9648a0834c889cdc47a7d15c",
+    "moonloader/lib/pa26_identity_ui.lua": "8b35cfae8dd7cb138e2f200107b04398c55e1b4b1976119b15a14bb6ac78b5f7",
+    "moonloader/lib/pa26_important_data.lua": "87bd23e9af1f618e80742e6327331a7c57d02d8cad38dee196760002e69d9894",
+    "moonloader/lib/pa26_input.lua": "f5bff44064e5c164713d89372f0d6335cd440af8f635994ce079bef70586e8d5",
+    "moonloader/lib/pa26_interface_settings.lua": "7435e0f0a4a4dba1a084e043eaa2413c518151d8f11318d99aef7c70956f2619",
+    "moonloader/lib/pa26_journal.lua": "fad9de40518214912ae05930d05eb17e6fad428c3925e330b7dd1beedb86f440",
+    "moonloader/lib/pa26_keyboard_layout.lua": "afc67dfd57abf17aa2a4dbd4d09287584001a0177408471a600f16366d744a0c",
+    "moonloader/lib/pa26_knowledge.lua": "815a20fc4abc325f22f58256bed5a1b41f371de42568bf974d09d3b1a1fd5324",
+    "moonloader/lib/pa26_knowledge_editor_ui.lua": "deac08dcf80ce7cc4bf7a8a66632b7e875d65b9f6985e4e858f7ea0036f152d2",
+    "moonloader/lib/pa26_knowledge_edits.lua": "8671d4497c63dac1d077dae34b780d6afdfa09c1272a03516806fa79d92596d3",
+    "moonloader/lib/pa26_knowledge_important.lua": "c15d64e8f5f6cb322adeb03eb5c2341d9948eb526d31d3eead9a818e529d0c81",
+    "moonloader/lib/pa26_knowledge_important_ui.lua": "71be885c4fbcfa2fce0f262a99d1d67213c0b3a27d4ce2f1150d30b32a859b98",
+    "moonloader/lib/pa26_knowledge_ui.lua": "b8c6b5464d636510007d9d27bde1c127ed95a4a9c7ae22f509483266e665e754",
+    "moonloader/lib/pa26_library.lua": "68c00692e2474664ab97d2637294932e9e9fd6db28636e71cdb6ec1f40bd95eb",
+    "moonloader/lib/pa26_local_life.lua": "dbad9dc534706e91036d784f0c126cf1c676357594ddd535efdf319d3c0c6d3a",
+    "moonloader/lib/pa26_manual_actions.lua": "ff4f0723e9a53083de6fd814009146a2cd28bcc64b237f729e078147d7eb71af",
+    "moonloader/lib/pa26_manual_chat.lua": "1a38d09e8c9c36e217e88b83717bf3fb69e098ec2fbbca409ba6c8c5befbb2a2",
+    "moonloader/lib/pa26_map_adapter.lua": "ad2cb3a1da78229c3fec7ea702083e5913c9726851704494ee0853e7263d625b",
+    "moonloader/lib/pa26_map_grid.lua": "2eb8b393c4459da070924263e028386038244e4df5d4ea05f35f281717eb9cf4",
+    "moonloader/lib/pa26_map_ui.lua": "a7dd61ae8698ec1976268346ee249d2589a0b2d60bf584784b3b87faa406b974",
+    "moonloader/lib/pa26_mark_window.lua": "7e6338f0de80ba9f6ee39ab7de78a3b01bc16fc702d2bb7a425c32e753b3d224",
+    "moonloader/lib/pa26_menu.lua": "a93c2a55a7dad7ef54cf48e0f3813aa968389e7598fe6e80b7533d37f70aafde",
+    "moonloader/lib/pa26_nearby.lua": "00142835deefa020566bbdab6c4aa89d0569022917b7f93747cf6be3d68fa8e4",
+    "moonloader/lib/pa26_notifications.lua": "ad5917cb8db4691d6e97e73f402aace05b8546c798a60cc907dc68dc9ba54078",
+    "moonloader/lib/pa26_operation_settings.lua": "fddabe07355dc539122d899fcada029256e8f5f6a31a4a93e74f9f24c4d7f030",
+    "moonloader/lib/pa26_operation_ui.lua": "8ffd09ad692a7cf937295da7ac1b4b2e9ad3df69da3aefd4ae6ab62ce66e829d",
+    "moonloader/lib/pa26_operational.lua": "8d37c458f553d9c6c76d3e084cede391dfa04acca3a2a6a368250fa743367d92",
+    "moonloader/lib/pa26_operational_ui.lua": "2ad1ea934f443cea5093369d4c347570b38ce4548a986602b15d85e0e29afcba",
+    "moonloader/lib/pa26_operations.lua": "6f93331ca455ecc5e018c9e4de458e234ddae3e2992f85820f7cf320558703cb",
+    "moonloader/lib/pa26_patrol.lua": "63acb06f6ae686ae75d4b56789f42a5a996b662c0033a40962ba2df749fe5f30",
+    "moonloader/lib/pa26_patrol_event_settings.lua": "fd91f0443d72048d684b1336206afc850411d167f537d432711bf303c090ee48",
+    "moonloader/lib/pa26_patrol_event_ui.lua": "63bfebb99527671f26d0bfd96d4ebf9aede94c5d1798c5b2c60841f72ec6b68e",
+    "moonloader/lib/pa26_patrol_events.lua": "b97d6f78c43f7c78897fd2c7f14f451edf86c1577cc217c68a3cffafe3cb619e",
+    "moonloader/lib/pa26_patrol_session.lua": "d788c4f83fad1c551db864597a56429cc40dd280544e5e7b7f234a9cc390ff42",
+    "moonloader/lib/pa26_patrol_settings.lua": "e722b1a0e9df7881f7a5718034691432a532ec1ddf4b0141178afe3bafcf0960",
+    "moonloader/lib/pa26_patrol_ui.lua": "ea1421905824252becfe045adf6a9cdedecea9989832c1652bbd11dcfc8ea779",
+    "moonloader/lib/pa26_preferences.lua": "0e4d8485dc1f6cdc0bb86bbe70f5ea34bf22c3dd8206b97e0961089534f61e42",
+    "moonloader/lib/pa26_procedure_flow.lua": "481d903c38b1def203d0215dc52f3ade9d508a9380e4b7f37d3baa972012c91c",
+    "moonloader/lib/pa26_procedure_input.lua": "c718fc30207a51ea5363af7e4bf8d2ad0357c9a76dc5e2b86dcfb5cd861af82f",
+    "moonloader/lib/pa26_procedure_settings.lua": "56d28d4e80c47818e0f42e003ad553f5fa995684e6dc95ff0a4d4d3db578c88e",
+    "moonloader/lib/pa26_procedure_window.lua": "f78934d80d412d2ba34cd8647c715564708519cd3b1a2a53024947664bbcd33a",
+    "moonloader/lib/pa26_radio_guard.lua": "93f2d5548b69cb1ce50bd78c4124abe4cf11cbf69a7e84856b7047ea0057dc4c",
+    "moonloader/lib/pa26_radio_text.lua": "390c587abb825a9aa53b681946c9b37a75f308ae34a655232f2a344d3dc220a3",
+    "moonloader/lib/pa26_recovery.lua": "b570ae4fde87280cc43b23bc9b9a8bab8c53a640c1172b6e9aa0bb215cd5a7e0",
+    "moonloader/lib/pa26_report_context.lua": "7a865e5aac6d254c3358b046d7610d64476998fcf11ea6115d94c116b78b8015",
+    "moonloader/lib/pa26_rp_presets.lua": "7583d4219d7794debbf54bba40c27f3bd50989827d4b9b59e742fd6cd4cb19e4",
+    "moonloader/lib/pa26_rp_settings.lua": "db8578b8f0ec1c2344e6c6be36f873885bb231a90485823375f35370f9db5616",
+    "moonloader/lib/pa26_rp_text.lua": "cd6023006df794bf870e0c62f0fb47c2d8b0034fc25f62fbac6a34883ffce92f",
+    "moonloader/lib/pa26_rp_ui.lua": "9732524a20dc618b4beeb2b8a400ae208ac5c42d4f1954c3c116054c4a234d4e",
+    "moonloader/lib/pa26_runtime.lua": "76b97a4ba19870c10517745c1ccfc8fb35b3dc9a4a9a709709e6a3fe44177186",
+    "moonloader/lib/pa26_sanctions.lua": "537107802c8bf541201c69eaa51532c5cabb8001d1256197562dcaa2b3768705",
+    "moonloader/lib/pa26_screens.lua": "429a43d0e834e9b5e1df2701e291878e523ad5b38df63ec886a923fa1a85387a",
+    "moonloader/lib/pa26_server_commands.lua": "a685ea4bf7c5671d18e069be2e176fcfbf60c357b6aad0aa32de911dec4bc0f9",
+    "moonloader/lib/pa26_settings_ui.lua": "8ce38aca6a9aaec594a830905b59a12c682ff551e24d21b67661ac75c4e8b215",
+    "moonloader/lib/pa26_shutdown.lua": "fdde870e1247dc4601cfda304b297cd66932d1a0c5fdc014bb12536d235a8815",
+    "moonloader/lib/pa26_startup.lua": "1508afcd41cd3309a145843d6ed7ec63987b507daa06af8bbf12dcc27f6251a7",
+    "moonloader/lib/pa26_stolen_bulletin.lua": "80bfe712d16ccf4cadadff3b47873e118118045651e959711ba821e2cb1fdf1a",
+    "moonloader/lib/pa26_studio.lua": "a9e67a593be76622e368d7cec1a040a4c5b42185a7dc2c61ed00808796100c22",
+    "moonloader/lib/pa26_target.lua": "7239b6ca84ba5c57386b7b603abac092e28d7d0eb6824e017797c0eeee7c8da2",
+    "moonloader/lib/pa26_taser.lua": "50addf3499c871210b768f8e9aab49342c2609a9e74d694ccd23bb31e50c053b",
+    "moonloader/lib/pa26_text_editor.lua": "a2cb4c5e032972a9fc0c5f337ade44d0f14e1637b11c07926d776e081f6d9671",
+    "moonloader/lib/pa26_training.lua": "a650d014e23eda4d31e316eb17fb7770c3c6e6011adf0d25d195a39f462e7acf",
+    "moonloader/lib/pa26_update_platform.lua": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
+    "moonloader/lib/pa26_update_ui.lua": "be879f8e30c2a8c9080c01237aa5f97801dc0da2ed74ddb19770701e6c1af61d",
+    "moonloader/lib/pa26_updater.lua": "d2f624791f7b945ee3ac880b5e1ce76c48143925fc0d4a50cbeb9dc867640542",
+    "moonloader/lib/pa26_user_files.lua": "5775351287a8914e3447199a6217720d0cc1bce5972adc6e140ea7b3bbbaca19",
+    "moonloader/lib/pa26_vehicle.lua": "07a5e2318a1acb12723255b867e9ac956a4780912743e61a20bfa8b916c06476",
+    "moonloader/lib/pa26_vehicle_names.lua": "5bac957cfde6c77bbbd2c31dae96aa6b645bbd746c6dabdc2db33d981ccde780",
+    "moonloader/lib/pa26_vehicle_palette.lua": "140e71bb7681559fa6a361e6b55b03b2f1708783577efdc64897923dab3de461",
+    "moonloader/lib/pa26_vehicle_settings.lua": "83abcb9c73bc21cd8545e6510704887cdda45e5ad670b9887e01810775016a96",
+    "moonloader/lib/pa26_vehicle_types.lua": "694414a5dedb9d0719afb962cb4941abd9715734829340c5f2f828f6ec7d24d2",
+    "moonloader/lib/pa26_vehicle_ui.lua": "8f8c31e0e4870093f98371d0e642c81c5465e0d1f0d5b8c4838bc1cbc1b3c192",
+    "moonloader/lib/pa26_vehicle_world.lua": "df996342f8f316e9a1d8b731ef755f359ca73cd2d30f4cf654a3ee8de9da73fd",
+    "moonloader/lib/pa26_wanted_accounts.lua": "3aaa2c8680e099ab973a775ac89fc6d484b2cce699159dc5d9b97ab069f3cb32",
+    "moonloader/lib/pa26_wanted_catalog.lua": "4982e972159d0d8788e8e323cc05c64e6ba4f8bffe4ab0daa8a255d2928001c4",
+    "moonloader/lib/pa26_wanted_ui.lua": "496a8ac36ca7e009ebd0e2bad327ba249bc01283128b5432aebe62bb7b07189f",
+    "moonloader/lib/pa26_wanted_window.lua": "a7374396d944c4624c3d0e96fd6fa4b29473569bb29d51069c8f661c94e8aa0b",
+    "moonloader/lib/pa26_weapon_warning.lua": "624f45e7d4bdce9be1967370941166b08e7f2b5fe96a9b61a62249e3e3312c93",
+    "moonloader/lib/pa26_weapons.lua": "c2a9808b42de4ccb94d236ae18bd2973b10a0459e61cb581cda5f1d760c878a5",
+    "moonloader/lib/pa26_wheel.lua": "6d02692c0df778ee0d147075d01d4c6a8b28445f95a1be7fcf19107decc34db7",
+    "moonloader/lib/pa26_wheel_edit.lua": "0b16903012fca2112f9b6d77d40f86b84dbb2005caf3f67ac86770b71126563e",
+    "moonloader/lib/pa26_wheel_order.lua": "96572fdc2487e73fdce7cbc45ab90eb29b894f7eb13ba9ed519f7aab71521b70",
+    "moonloader/lib/pa26_wheel_scope.lua": "02599ec5706a53dbfd3119b96b7daf4d849ac3a19b3fda4c36e63f00bdb5feaf",
+    "moonloader/lib/pa26_window_layout.lua": "1bd237d35ced5944e579624c40df6477a48ccd915e1577270dad0aa59b2f12bb",
+    "moonloader/lib/pa26_workspace.lua": "9e40b19e1a8dc573d07affa85bfa18907eac6712ccaf69a9187f9b803f9d92fd",
+    "moonloader/lib/pa26_zone_bounds.lua": "e4a63e0059450f27e7c54c98e834ba8d9e92a2adbdcbc24a6708de7a501abd67",
+    "moonloader/pa26_guard.lua": "f6d45a322a58ba950615e4490fc8ab1936d646fde3e2f48b6a7a7b92b8696614",
+    "moonloader/police_assistant_2026.lua": "438fb30597d079ea04f601ba65e22bd2a0d36975b1b0e87841c1f1a5ea86adb5",
+    "tests/bench_cef_input.lua": "e6091f55bce469c1c0cc09b4a0be038b7e04d7ab50d1103ea1edab8ba17ec31b",
+    "tests/support/copilot_fixture.lua": "b732faccc57624183f59c235c8dcd6cd87de26e19437a8641c5afe40895879b4",
+    "tests/support/fixture.lua": "e33e5111bb746349959424f62e01f3b36733c86fac2f0af500d9a7ee71d67d66",
+    "tests/support/knowledge_reader.lua": "a20ec74530eaff46adb4bcbb745106c5d6f866b3e06963e46281376cf9555b1c",
+    "tests/support/ui_routes.lua": "435b1992559b7c31a62678a68ee7a8ceea6039f179765187630d99dc39bc9d7d",
+    "tests/test_accent.lua": "962f99e67595f577c220115516be843fe6195d52804344d05bd2e65d3c9de2a7",
+    "tests/test_action_preferences.lua": "0bbda6b0db815b302858e2279a4a2b93f2fafe29177224d5ec7e79f0ff8b1af7",
+    "tests/test_aim_selection.lua": "788d8a7424b74d86200fa6f71ab6339fb84f38b4d421726a8b27395049e11ecf",
+    "tests/test_aim_warning_layout.lua": "92167a00ef1982edea0282bf71bdbb751eaaaa6740dcb377357e18c8e7a1c0e4",
+    "tests/test_alerts.lua": "9e61e8a9aa92833b37a1ed0dcafe4658467b1e34df6b6440dad34d8b4360df47",
+    "tests/test_alerts_ui.lua": "3dfdbf2364d362f5f6caa3a47fcc6c51b2a9bec2ebcf87a7d8d28bed546960ef",
+    "tests/test_assist_settings.lua": "ff3a6f0dabc96206d0663f70087e4a36dc9ecfa05edd0c549c5d694fb8bed29f",
+    "tests/test_assist_ui.lua": "3894c052bcbed9b70303126c75dcc978f069b872055ccdb5f8af48f9ea18f14d",
+    "tests/test_author_native32.lua": "f1763b51097e074bccf42d6902c90e03ca756288900651dfd6b7808a69622f62",
+    "tests/test_author_presets.lua": "1a00314671fd709494349334a7d50d30ed9e8c5e5d3490439f9ea7a0f6cf4e09",
+    "tests/test_autosave.lua": "04421381d2bc226a50d3be2f310f14007d733ba264c482ace0b62b42126a4e3a",
+    "tests/test_binder_controls.lua": "e8d67473552f5c08c8f2a6c02e37eb2e75a3d2ba53892041bda46f713d41a72a",
+    "tests/test_binding_dialogs.lua": "651638479146cfb26c1ff3a32791c5d3dc8325745872486c1bcaa49317caad30",
+    "tests/test_binding_ux.lua": "63e47470e3e1aa746b79f9cbb09d89ec691a33d6a642d9ae33316c2b1adab169",
+    "tests/test_bindings.lua": "6d0c09768183d23c8e3a591186f3f17aa514917867facd302db87a899632ef43",
+    "tests/test_case_forms.lua": "6c78ed2c3d43402ec26d3f72f497fafcf3ba8bfcba9df84a71397f861e8099b7",
+    "tests/test_case_ui.lua": "78ca3308bd9f598dfa6f50c679f97feda4fcb92ed7b1e383773c4fbb308035b5",
+    "tests/test_category_wheel.lua": "f810e34b782c7192a70132ebe2bfd3bb29e7a92e8e0c2c0ce830b2899a8e9dc1",
+    "tests/test_category_wheel_ui.lua": "7dbbb5cbfcc822712872f07ae08ec79e56665b8d02fc5217c611fdbb7bd8ddb2",
+    "tests/test_cef_assets.lua": "b4af298e814981571cf303d24520bb6156acdd5a5a298d2f0d735da04942fa75",
+    "tests/test_cef_budget0433.lua": "d9a184a21c16d2d664f92a8fbcc68957651901b4f91150234b784f0f9893b38f",
+    "tests/test_cef_input_performance0431.lua": "7affa0029ca97c9b703186fd196f0ec041ffcd305566d5aa6d54473b8c84918f",
+    "tests/test_cef_integration.lua": "0f92dffa305089ef4be4ec58dee97175b7628ab47fa36b6782f2dce8d1027ef5",
+    "tests/test_chat_bridge.lua": "a849253920367f440eca6410358930a5520cc26782cfc862db2341eac610484e",
+    "tests/test_chat_bridge_startup.lua": "2ac1394a6ca73260b5784e841d35883050fff61dcc4b361b9394785caed0f03a",
+    "tests/test_chat_input.lua": "7d797ac50e37512928a2f217d12ed75d6a5627ba665205ffcd83087e47d34f0a",
+    "tests/test_chat_text.lua": "a42ef102444f136b278f588b0b24e496176d4415f6b2bc7a9e23460454fdbafa",
+    "tests/test_choice_controls.lua": "6ff76031c017daf59f878da7dae95a50ce84f7764e30eff542fcc68374b38550",
+    "tests/test_colleagues.lua": "bcce9b2f400a56c0ac0cc753bdcc6115fa7cc5533d0f79e7ab17dd8a4fd3394f",
+    "tests/test_command_taser.lua": "ec684052afdaedbd4418e190bb54b9fbb8fb71938f6ebaffe59cc5126b8d9856",
+    "tests/test_config.lua": "291143a5a3c588c0346b85a593e69800e16112b9ad067daf00dbc3f04285b1df",
+    "tests/test_confirmation_input.lua": "a8554df137d0bf79136f136a871ba312bc1507bdf23e52bfdb02fd3df4bc9f23",
+    "tests/test_copilot_main.lua": "240171c843311444553c1e815d907e3148fd979317451046a5993f121cba4273",
+    "tests/test_copilot_native32.lua": "320dfb0e79334c17abcdb68db8a410b2ce40603763588bec9e7ec66f36f73d5f",
+    "tests/test_copilot_refinements.lua": "17690da28987307f6eabd0f2afff61d38c4029c8e4a03c9cee99f9efb0816e20",
+    "tests/test_copilot_traffic.lua": "82e7da346f9f4ad1ccf7767931937787a81d264d7cededbbdd4fbb6056766427",
+    "tests/test_core.lua": "beacda964cbfc709524260fdaa43a0f823c3ec1086d7a660de23ae5b9fba9e38",
+    "tests/test_crew0432.lua": "bf84bee77191c9c71747947874ee97626895f997932d64aa3440000ce9dd05b5",
+    "tests/test_critical_reports.lua": "945cc9fe66fc6fff972625693bbeed44f21d83e967e6df7547b846305fbb1a62",
+    "tests/test_dependencies_native32.lua": "b2d58c382b070980b7354d8dd7df387ee343bc3e9df6f271d6a4417dfdebdc93",
+    "tests/test_direction0432.lua": "a74a8e3e27fe1516fb79996628b967fcae62920673e66a4a7c688c693778e894",
+    "tests/test_direction0433.lua": "a865a9af86548acdd6a98911a25992ea3294b06125cbf430ae3dc338884e053a",
+    "tests/test_dispatch0412.lua": "f795f7758225ccb4e137f7e57066b19c6dd17b85d395b8b04c9eed42b8f21285",
+    "tests/test_downed_scene.lua": "fb62a6e956a9709005277a0715afe9b65b03d7016d9310cd88fe24ad0fdddf55",
+    "tests/test_draft_lifecycle.lua": "616a8a7083a0eebd12feaf8cf6af8ac03cbf43554f43dbec51403dcabdb0bca7",
+    "tests/test_dual_wheel.lua": "dc4bf8a52802c9266b2657ea21fa910618507ed084da390bfaee7a01e0a729c3",
+    "tests/test_editor0370.lua": "767583e994c411a6316a314283cff9055188c9b5a06481adcfce9c31bdf0717d",
+    "tests/test_editor_access.lua": "bf14a11a25f1c6396a9f902e3640a6f23b4bcb5b58c4af7fe1810a69a50ae712",
+    "tests/test_editor_native32.lua": "3ce71dfbfa89900204fc6fa4e147728fc99f86f37b16db6a00c2b7e8a75f199b",
+    "tests/test_evidence.lua": "1dff5f7a3a0df0ea612ef500343d7126d67c2b0f2eae861786fcc121172e3c13",
+    "tests/test_evidence_files.lua": "4d48d7e89f150780fe4fe804c1cdf6d4f4b4c03f3eca8e2cf313d37cac273a0b",
+    "tests/test_evidence_screens.lua": "f042b5e67e93d31c8706ac0ff211bc940d114e8c4a61de58f6fcf268959b609b",
+    "tests/test_extra_popups_native32.lua": "39badf298eb9267cd2aee03508ab5a11a0dd79e6ecbdc35133a24eeb0b56aed7",
+    "tests/test_f9_report_validation.lua": "51bfd28b65e674ed3a83f69646d5c5570978675995ccd46d1f274f41a4e415d7",
+    "tests/test_f9_validation_native32.lua": "a5b2d03240627f7bf08fe490cb0c32f7430def7526a5e2fede5ef32b78353535",
+    "tests/test_feedback.lua": "03723238f419b908d88a4342fdb1590f4a090968911d3f6c0cc352df62dbbf11",
+    "tests/test_followups.lua": "d8a6753429712eda7c5deb004e56544ecc04c1ddba9de12c6fb6173bc0f59e22",
+    "tests/test_force_followup.lua": "b71006bd2a7dce0182c06b569a4193f36c5281cf7cb3dbc3859ec92d51d8a992",
+    "tests/test_gender040.lua": "5254a42a53ec572f2307465931f5ee58c47e5ba838ee84d81d4de88df00ad625",
+    "tests/test_general_megaphone.lua": "88056fd67576453492b9e3f31521bd65869bcffd32e2821ab050d286c1b639be",
+    "tests/test_general_megaphone_ui.lua": "7898c9c9a16e641354ab09bc23098d707afd972ca7eac7a866e7ff35a39e1ea7",
+    "tests/test_ground0422.lua": "1e003bf5a95e8308df4250c5986d9cb23de1e4704033db46559433922ea260b2",
+    "tests/test_ground_drafts0433.lua": "502d6343759b063e0a197ce47a936aa2d4376fb130e5758e695689ae718d12f5",
+    "tests/test_gui_key_capture.lua": "33df97433db963b782c0f49ae4ee1bc47bf06bba050a39e3d8c5d307fed4f06e",
+    "tests/test_helpers_shortcut.lua": "f4c4f4b9844846272303db22ece73c144d7e78b7771f89425863e567285f06c6",
+    "tests/test_hotfix0404.lua": "467f6f3991d13f794f787fc1ca2b1e7d5b0eac8c528ba863c5a92c1bd0be09d3",
+    "tests/test_hotfix0404_native32.lua": "de52035ec16be16be5ba046d6fde1925ba2796d5e1de223aa2f84afac243d6ba",
+    "tests/test_hotfix0421.lua": "55f9ad4f9d051dcbe6648fae7886f0855474132f3acd085e775b2f1b4063106c",
+    "tests/test_hotfix0421_patrol.lua": "c8f8657ee813a0d0b146dc8a2e1feb4d964bdfdb43ee7ad3d851ae877b970355",
+    "tests/test_hotfix0423_native32.lua": "e60cc93355b92c6f9cf20f470907556699e99d468334566e464038c81cd026a5",
+    "tests/test_hotfix_native32.lua": "dc43f6eab7d4c9b39c4cffb9306781b0aefc48c31805f1bddbfb05916c0bb756",
+    "tests/test_hud.lua": "25149f1b7bab4d22377ad37e91a8fdde6510b96d5d02633f984bbb95abef3c5c",
+    "tests/test_hud_close.lua": "7055e06bc6037c3deb1aaffb9243dc374cda1c0bbf813a84e9cab7ea73fe78f3",
+    "tests/test_identity.lua": "017d045deda061aa87c64e82f1eddf8ba423bd67825538501c3da232e48de65e",
+    "tests/test_identity_ui.lua": "fb65b8dd92337a41eb346b714696fca4c7137907bcc94c3dbc10ab32821b58c1",
+    "tests/test_important_native32.lua": "735f109c0a5f0c2d973d36211dd4817cbe837d4e92a672ed5b54217b728569c4",
+    "tests/test_incident0432.lua": "2d98c07f2770a1c0751833748a39e42069f2324d813149c1106c31206621c05f",
+    "tests/test_intentional_shutdown0431.lua": "b8ca59b346c7ee0072ef54299f7f0d02523edfee4d48bbeacf4dcee5f83d09ce",
+    "tests/test_interaction.lua": "365421f85015f340ad5a2771d9eab94f37147c88641f8c4967cfa76f6ce2a9e8",
+    "tests/test_interaction_preferences.lua": "2221c8d659f1afcb37c6678eb65584e2438423d8dadd04242c9865527bba5584",
+    "tests/test_interior_selection.lua": "c1c99ade7543ea971dcf4685cdd76ac4470a8c34600b97639b69a34482093bba",
+    "tests/test_keyboard_layout.lua": "ca73648827f38044a1da3df4ffdb49e22e07e4d359d651f1dc72407d3299905e",
+    "tests/test_keyboard_layout_native32.lua": "b5f0c9f3619d0653b9851df278786ae12071c4b3750aa50cf0c41a898db869c7",
+    "tests/test_knowledge.lua": "2e9d95b853149520f3b88cda743e7aff8426ef3f8653d10f6688bc0b4a89fe81",
+    "tests/test_knowledge_departments.lua": "06973af003841c242faf1a2f387cf64745c7fcc1f7a8b63843bbe728d214bc08",
+    "tests/test_knowledge_editions.lua": "4de15b633462eabc74b416cabc718bd8215ed0f7d7b901daaee1161bbb68af83",
+    "tests/test_knowledge_editor_ui.lua": "e127ee00463677dbde81855d1dc82303b43409586db53795795aba829ad076e6",
+    "tests/test_knowledge_edits.lua": "08fa2adaab16cabf82ef36689628312522c0c4655fe94229e8af00f8a9aee864",
+    "tests/test_knowledge_forms.lua": "cdf467ac1846c4b21e794dff3359aca13dc91566386807cc4c4588b7055a6ab8",
+    "tests/test_knowledge_important.lua": "790174c6d7218f50de3c3ce0b96bac812bc69bb4e78d212dbd02415ccd537f51",
+    "tests/test_knowledge_ui.lua": "9261bb0690e928595b7893f7645f5b959cce95e6c9618aaa89c9d63e896b1814",
+    "tests/test_knowledge_updates_ui.lua": "7d329f2903955d3d4af10ece6e74f94f55154e366902fe2c6e251e5f7fff00a2",
+    "tests/test_library.lua": "5e3e1cb0c0699a09b7cbbf3554cbbe5aeddae5d756b1746c8f743c6f062f3c2c",
+    "tests/test_live_passport.lua": "c54631c4322f5b166de3751d675e640b97eed95adaf3b5930d8f9645d026b46d",
+    "tests/test_live_service_ui.lua": "2fa61846a341a90882cf9e79b98768e92e4a1ff49b7b5a182768207bf2919662",
+    "tests/test_manual_actions.lua": "16af2a7f4612b3cd7741fbce15eca60f34b2f5a6b19961b635e2f17a79bc7e75",
+    "tests/test_manual_channels.lua": "4fea7dbeb22b5b945cdb7c7f3c5f6d23ce3f6e5da555950c1fc14556bff0c613",
+    "tests/test_manual_chat.lua": "7c7ef27ac6751732f2e93dc38c1c80f42440a069a836224bd000b0f1d5f69d5d",
+    "tests/test_manual_live.lua": "82b35e7714abaeb4585be2254af895cae427ad78740b37306f7c4ccfa6a4c851",
+    "tests/test_manual_radio.lua": "ce75c3e66d3ef21ea87dbceb2d8cdb8ac04d26c0392d3ede922d25496f14d9e6",
+    "tests/test_map_adapter.lua": "f7fc3509b333749473c66e95b19299138ed94f16c5f38237fb159f881df562dc",
+    "tests/test_map_grid.lua": "764a537b5d6c26b3cdfbd33c70dbcd3ed7fef6e09529b44da74280da537ac8fc",
+    "tests/test_map_integration.lua": "f01816659b3063c9b9603d1b47b9845d9f0a784fc49dead0c24fff377102574e",
+    "tests/test_map_locations.lua": "6866c7cd07b26f35ababb56589576313c4b7f289e752df26f92b660df8f913db",
+    "tests/test_map_native32.lua": "ca01fe53daaf61ed24c9d5457f266b3ce06f0a7c99dd93ace4d48650b5df50c2",
+    "tests/test_mark_forms.lua": "dc97090d669a2aa0859590943713d5e04e61a59de2e843a695224daa3c2fcdec",
+    "tests/test_mark_ui.lua": "76e0046a4b0725051384ede6ec8c52ee15a7511b9ddacb7046217a42e99c70ea",
+    "tests/test_megaphone.lua": "91dd94003e758083197c133cc19fc5ab2e44bffddfa70c933466a1f91982cb40",
+    "tests/test_megaphone_ui.lua": "60f26e0ee5e340c47278cc5976dcd8b7bb1be64e63cfc977a7dabaa60d6c15f2",
+    "tests/test_menu.lua": "e654bd6d766b4fcb689cde1a6c028cb08f2e5e60db671e30828d4394ee67f3c8",
+    "tests/test_menu_key.lua": "df068824306301d3dbd08acae6a3470602f1a8f2bd9de7d54d639c2b64b08f23",
+    "tests/test_native_chat_live.lua": "9efaaf93d6acfca2a24b9420f1b61b4373f358df4ad1892b5df6212f102b23fe",
+    "tests/test_navigation_guard.lua": "c09b00a565e8e53b33294bc7a719c2470ee994e4415fda1b134bf4a2a4f45de6",
+    "tests/test_nearby.lua": "1007168245f1fefb7901858da21b908c31171093604a92dc5692798932244d5f",
+    "tests/test_normative0420.lua": "5d2895fa94bb9d8402fef711ea1ff949a8251f7353437ae4a9189163e726d6ed",
+    "tests/test_normative0420_native32.lua": "5987098f861faf037009fcbaf401fc3c1dfaa99f4b292445dfacaa0405c5e1a0",
+    "tests/test_notes_reference_navigation.lua": "e611c021c0e9ed927f13ab98f7f2c03ad3bfa8a283a1e713a383cdf3b14fe463",
+    "tests/test_notices.lua": "fda473ee5b0b67ba233e51e88166fe42ada9f42ad139e2a4c90729a633cc5397",
+    "tests/test_notification_ui.lua": "c4ea5df9b03fbc5e0a40af7970b9a6a150c8dd70511029e1a5ca3036825b1612",
+    "tests/test_observations0432.lua": "aa9afcdfdb515d2f7d74d94507671f2bf190e0d81d374e927e114985b5a465ed",
+    "tests/test_operations.lua": "072a53ee9251c6eaff9c860ef9109a387dda3a5a7e1759033847ef8ad78edb64",
+    "tests/test_operations_ui.lua": "5f33fd8342a3c5639cb1482c3a1c8ad7367cedcf4694058aa26b95e7502c11c2",
+    "tests/test_passport_formats.lua": "58784c33317f8526e10f50aac3450421b061839ffcfe98bd6df55879444b1649",
+    "tests/test_patrol.lua": "c8cf68825702900c51df0549560cf6fe9b4e0e9055d30f71a496f824f5530392",
+    "tests/test_patrol_diagnostics0423.lua": "89435c1313bf6174b553cad79a97839689f5cc3d3ce2fc0724e0e694822c9e45",
+    "tests/test_patrol_event_ui.lua": "31e76854eabd2ba42bec132bc84043655197f7e3afd64a347dda05cc8389e455",
+    "tests/test_patrol_events.lua": "cfb487dbc81e19f56d8f7d63a4db782345a8b8fb377034614ade2a55c5f91219",
+    "tests/test_patrol_navigation0432.lua": "709abe420e6410bbee5c4185eafd295ae9d07c9a275bb8c2c28bd4f85d09f58e",
+    "tests/test_patrol_notice0432.lua": "60b3a859eee2284934072ec718c435f39fbf09b7a43f4ae2cab0b5506aeb94bb",
+    "tests/test_patrol_notice_ui.lua": "5ce26baf1317f7430c137352a45482bfdc7c59f8fa45b0529b77c191fad4e3d9",
+    "tests/test_patrol_notices.lua": "a89b753aae879b566928df7ed45ac7e5298f2b47bc1f696fda8f9bba17ff8e0d",
+    "tests/test_patrol_periodic0431.lua": "09d7f63f85a194e2b745a4ce6d40cce4874187037345d6a8cceab8d22c5006b6",
+    "tests/test_patrol_session.lua": "18320f9e4a04da60b3e8fad16097191ee12c1248c1620425fca7c8ecf34b2591",
+    "tests/test_patrol_session_ui.lua": "6a2db4830b817becb7551285cccefb8009a4639620e003dcd7ca790469ba9be3",
+    "tests/test_pd_native32.lua": "fd6d3d7b8c57f77c5c6af4db0393d83255fd77848b25cdf9f23cb399ee28425b",
+    "tests/test_procedure_access.lua": "7b6ad1d48db9400cc0bcecddf23a74f69445d9bfc37a10bda07539b3b8dbcc7e",
+    "tests/test_procedure_windows0422.lua": "48b58d18f8157b3d8c0328620e6712b336f664c734570c0a9c938993b38d7d5c",
+    "tests/test_procedures0422.lua": "464b4cbb6b73f57b351c4ae8ff12f7713474a6dbd9bd4b9f8b988965611a07f5",
+    "tests/test_procedures0422_native32.lua": "9dd13ac5aaacf48505c38827d79ef9bd118256010e009b26ec58bed0f0671dac",
+    "tests/test_qol0432_native32.lua": "a93ee98e57d8a07c592dce1cf4d9efcf5f5373618cc711a8adfc48ffb8f43f8a",
+    "tests/test_quick_alert_keys.lua": "2d30034bd7c97772f3f555d01b0dc70a8c25ce09cedc9f90af94c013ee20470b",
+    "tests/test_radio_codes.lua": "15ae8dca313d2749465cae2cbf4e178f3e795d138ef7f45d978945b2de62833c",
+    "tests/test_radio_guard.lua": "f93b79784a8903c3553fc3359018e7e60cb54c17e279db6aa11db4d46b79f051",
+    "tests/test_radio_patrol_context.lua": "b650160ba323534a598a46fcd019cdb9c0e26bd84e9b600bf582c900fc2adf4f",
+    "tests/test_radio_segments.lua": "301154ac52ad6d0d340e6cf93fc958c6c077f9e3d9b28bdc9918d59a37f39334",
+    "tests/test_reader_notes_ux.lua": "9736fe20ca210e4badb3b3872a0f3508afff086e3f0f18f7d8734d351fffb1c6",
+    "tests/test_recovery_guard.lua": "f4bab7a5f51ede7fc686d5155a12877ae12e4db30ec6712a85777b5fbbd133f4",
+    "tests/test_report_template_validation.lua": "f0a4b64f9a6d30417ebf9f1e1cbf924381abca80ad7f8387b14edd2a89a643a0",
+    "tests/test_reports0432.lua": "b80dff9d629d04cb6c32f3caecc700a523c27b16c1615514242749da40c1bcda",
+    "tests/test_resume_acceptance.lua": "7328596e806452bc35fc6cd3238b7f84d2a0f08df007ffdab8471b69dd556505",
+    "tests/test_rp_integration.lua": "199f3410920bf9e1c3b5e5a2c3c4e7aead63a42ac24d59e118c2f205f4f05468",
+    "tests/test_rp_presets_ui.lua": "9ab28f929ef460e9eb36360cb2c008176294b60c53b6ace8574c6919336cf14b",
+    "tests/test_rp_text.lua": "6d8ac4d5e2568e2c7ecf2c24bda864798de94b49aeb804067813f57bf15fc565",
+    "tests/test_rp_ui.lua": "d609cf121a8439f864b364b08d82be6367b78564ea15660c42e34e2d3374af03",
+    "tests/test_runtime.lua": "519e5530b94a628e4042b34216ef8e994d0dbcf230e03ba04e317d8eaa2e9f50",
+    "tests/test_russian_text.lua": "e6108ad39f48dfbcb4e3b6d1a2dedc19ebc1bbc304fac9406602f23a6e5d127c",
+    "tests/test_screens_native32.lua": "4404f2c2c94255313d643882123365acfbb39ea9b54331ac0b5d5f1941b6283a",
+    "tests/test_scroll_bounds.lua": "fb104a5f4a06b1952cf97ee341af0d030690b305c39c5156e268cdec4a4e244c",
+    "tests/test_scroll_native32.lua": "96d6023efd408af1eb4ba1e998ff0b24dedf715b9ceada5d99cdf28537d6a8ab",
+    "tests/test_server_commands.lua": "da8826c22655fc1c9d19251ea5ac7c8dd877bcc553552ab75ccc13d39206d21a",
+    "tests/test_service_notifications.lua": "f3486ee4b1fbcf065d79190152a4b1c9da977f996a6ed85abb0b8e5dcb9a0edb",
+    "tests/test_service_preferences.lua": "2353aa51e5da73d38ca6ddba5a970510bba24d739b999a3f7ad1f639465aa0f9",
+    "tests/test_service_ui.lua": "129fcfdc0bcab4e1f9f2b0ff6c33d0b03b16cabedd01aae546d0cef4208ff106",
+    "tests/test_settings_tabs.lua": "ab8ed94629eb16590e17e4b0511da42f34d522c6a23b5764e27fa190381ddbf5",
+    "tests/test_shortcut_dialog.lua": "21f9173fe086662b0b613cfa76d0e556e7bc41af98bc65936a9dc07236b8d2fd",
+    "tests/test_smoke.lua": "cd3304f59f4c1b19c7cf2865567c06fbe5e990cbb1be1c6e3c87907f0d4843b2",
+    "tests/test_staff0433.lua": "783f290ba0fb499609251be0881d89a9f7ca867db343691dfbe9622d28878110",
+    "tests/test_startup040.lua": "99b62a4607c43daab7f3fbaa9c16e23f6900694aaf438f8023e17cd3f99c3e00",
+    "tests/test_status_shutdown0423.lua": "25ca4a53af1195da6ddb9a1f9a6891d239c6443ac3ed4390f834c912e74bbd2c",
+    "tests/test_step_editor.lua": "57731ca38352026d401e804e6b0133f1e31a4f22ca9391a73da0ad1f834830c9",
+    "tests/test_streamout0433.lua": "f81193d472ef160617d69f434754202abb7ea372fb9ffcbe1d8a9349c6312965",
+    "tests/test_studio.lua": "af7fe9037439c108c99c81582f034744f596e43c3efacad147c412944b89df60",
+    "tests/test_target_notices.lua": "294f2a3b91fefcf7af5b42cea334d12e82b89faf45bf55a0acfe700544492eac",
+    "tests/test_targeting.lua": "6857699218298a850c9fb7845022c3f3b01d2de512e3e18c3b0a210e3854604c",
+    "tests/test_taser.lua": "520c94df6afb648f1b0c810f27e7aff221a29049ce461ecb0257ef95229e44d3",
+    "tests/test_text_segments.lua": "570bae0054903ad88e3d1dcd99e42632318c5cf5394f331d80a6292e0629358d",
+    "tests/test_timing0372.lua": "1fcb1a6fe4807552aa73280460cb7a5a150c71272ca0d8aeed0a47b9aaa9bb03",
+    "tests/test_ui_content_regressions.lua": "994411b1b6e7857e2c96ab534984bb47c5d3413a2fcb32ec82b7fdd0a1befdad",
+    "tests/test_ui_recovery.lua": "116834a0408faa5950d19470a854de9f371a8d33d5a3363abdcdbf22e0c16ee0",
+    "tests/test_updater.lua": "8ac3e94db91fa061c01f3d3a53e71b527c26f6213b7eefaf1d7e31bb7fd66ada",
+    "tests/test_updater_native32.lua": "09e6a46686157ac7c23a50bb10317a5a9d1bed8340365b70e67dd04871c47ce7",
+    "tests/test_urgent0411.lua": "ea28a59a5584f66b13baa5507a1f4dea9cb5134efc9c19691ea7486768937506",
+    "tests/test_user_files.lua": "9d3225f149cc189e12c8a58e7b4fdef19971aade7afd9f9beb2a4d1c881069f7",
+    "tests/test_user_files_native32.lua": "022fabccb97206cb6b534baa99d6d1a672f0c2b30e65e150e23848f6c86e747c",
+    "tests/test_user_files_ui.lua": "7e3fba79586eabaabbf04cdd31a8ac897a7266fd5437d274370ef0f16fc927c2",
+    "tests/test_ux040.lua": "eff3ad95831ee0b3851c87ff0b0cc302e641470c0a0331180fca63e53f84bd84",
+    "tests/test_ux040_native32.lua": "34d3119168c4fc57daadec24a6316e3b15a83a3040c3d53750fa50c248a14563",
+    "tests/test_ux0432.lua": "5c998e4cf8556a43b727f63c23e9f2aca46cd01543be7b743f9a4d69c83a966a",
+    "tests/test_variables.lua": "d7c20ea4019817a457f8085b770a2a58865e712fa62eb7cc1fe3fb75544ecda8",
+    "tests/test_vehicle.lua": "1a23124e4159af24df7702d5e32a04a95d27127a4a6c6dae654df79652434cb6",
+    "tests/test_vehicle_names.lua": "90fb9def485700ed148d2e81b0f5511fbff2f616cf032d05af5eb397a4eb517f",
+    "tests/test_vehicle_selection.lua": "5645c43900350cd7f07ec9dfed1e1cecb95b14038555699a4be1cbb415ae8edd",
+    "tests/test_vehicle_world.lua": "2c332cd2591b9fe740a5c534039de868441f07a2eb02c8b3004e0c1f9b9798ed",
+    "tests/test_wanted_accounts.lua": "9fee0aeb72de4d80b884dde4dd91c63b7f106f094a3e4652fae94b2c69fcbe6f",
+    "tests/test_wanted_detached.lua": "d02222ea507d75c5788ccee59ffc474a4d52b2b085eed5e31abde2a9f3272a6f",
+    "tests/test_wanted_forms.lua": "65a945cd4e7b3ca22189e813263a7daa5ac63bec27389a3251d3e79aa345de7f",
+    "tests/test_wanted_native32.lua": "22aa33cb768ddd1472eb316e2acd68238871ddd3a48a8ecc187021fe40fc4c46",
+    "tests/test_wanted_passport_memory.lua": "0f6b368b23e14cb272640ead987b530dbc1afa750241974e37b7beee62c1572d",
+    "tests/test_wanted_remote.lua": "f162dce4c625c9194d9d1044a254afd061e7e4c90b60ba7b494c5f139d25d7ae",
+    "tests/test_wanted_todo.lua": "3e069bf129be427e244d20f62bf67dce17142e546c47b6f5a5d57d0874458d69",
+    "tests/test_weapon_holster.lua": "6a36e9efb263e40312ae4d8b6548572e75a252989ca6773597b10a39a645ce34",
+    "tests/test_weapon_roleplay.lua": "d207cba255284928e25737965522b5d078aeaa2e27a13bbb7ca296686923f9b6",
+    "tests/test_weapon_warning.lua": "4420bbbfee1de2ef1a55ca6bc98907021df3f1168f94d3c6dd02de13befff6bb",
+    "tests/test_wheel_custom.lua": "36fdbc959bb7cdf754422c5fa97cc3560a6a73428683f46957dc26f1b0a160f4",
+    "tests/test_wheel_labels.lua": "01acdf1cab8d6accc4179a8938f2454c0987a0d3f622fc81e2253746d81b5ad9",
+    "tests/test_wheel_order0423.lua": "6813115a423c881c5e1af41e15f8113d1a529238ec6516bac68a146d5fa2b58a",
+    "tests/test_win7_patrol_stability.lua": "b7e605d65bbd796829605f644222bca01654daac09ab04f7a8b3347547f1e502",
+    "tests/test_window_drag.lua": "2f03506f8cd39d83091e78a318e8282cd3fd6e6d77853bf81e7d4f832d261b55",
+    "tests/test_window_layout.lua": "778c3e0461cac774b6bc65b374be461972c48633ccfc9af2ea9132690b0f154e",
+    "tests/test_window_persistence.lua": "5a4043e9e8c304be571fb5681769a75e6fa692f3f7bc66da47201899f04c41e7",
+    "tests/test_windows_native32.lua": "1fe0df8e7e6cb91f5e2e83b09b64e8c2b013a1b13c000e89954b6031a8541352"
+  },
+  "total_checks": 11471121,
+  "results": [
+    {
+      "test": "test_core.lua",
+      "checks": 194,
+      "status": "passed"
+    },
+    {
+      "test": "test_config.lua",
+      "checks": 66,
+      "status": "passed"
+    },
+    {
+      "test": "test_runtime.lua",
+      "checks": 173,
+      "status": "passed"
+    },
+    {
+      "test": "test_bindings.lua",
+      "checks": 103,
+      "status": "passed"
+    },
+    {
+      "test": "test_library.lua",
+      "checks": 28,
+      "status": "passed"
+    },
+    {
+      "test": "test_smoke.lua",
+      "checks": 239517,
+      "status": "passed"
+    },
+    {
+      "test": "test_hud.lua",
+      "checks": 91,
+      "status": "passed"
+    },
+    {
+      "test": "test_menu.lua",
+      "checks": 62058,
+      "status": "passed"
+    },
+    {
+      "test": "test_targeting.lua",
+      "checks": 148987,
+      "status": "passed"
+    },
+    {
+      "test": "test_studio.lua",
+      "checks": 54030,
+      "status": "passed"
+    },
+    {
+      "test": "test_interaction.lua",
+      "checks": 156091,
+      "status": "passed"
+    },
+    {
+      "test": "test_binding_ux.lua",
+      "checks": 109267,
+      "status": "passed"
+    },
+    {
+      "test": "test_editor_access.lua",
+      "checks": 182845,
+      "status": "passed"
+    },
+    {
+      "test": "test_variables.lua",
+      "checks": 400,
+      "status": "passed"
+    },
+    {
+      "test": "test_settings_tabs.lua",
+      "checks": 138494,
+      "status": "passed"
+    },
+    {
+      "test": "test_accent.lua",
+      "checks": 130363,
+      "status": "passed"
+    },
+    {
+      "test": "test_draft_lifecycle.lua",
+      "checks": 264449,
+      "status": "passed"
+    },
+    {
+      "test": "test_window_layout.lua",
+      "checks": 48555,
+      "status": "passed"
+    },
+    {
+      "test": "test_step_editor.lua",
+      "checks": 143730,
+      "status": "passed"
+    },
+    {
+      "test": "test_notices.lua",
+      "checks": 29128,
+      "status": "passed"
+    },
+    {
+      "test": "test_target_notices.lua",
+      "checks": 31233,
+      "status": "passed"
+    },
+    {
+      "test": "test_binder_controls.lua",
+      "checks": 195829,
+      "status": "passed"
+    },
+    {
+      "test": "test_binding_dialogs.lua",
+      "checks": 86882,
+      "status": "passed"
+    },
+    {
+      "test": "test_shortcut_dialog.lua",
+      "checks": 241072,
+      "status": "passed"
+    },
+    {
+      "test": "test_gui_key_capture.lua",
+      "checks": 398735,
+      "status": "passed"
+    },
+    {
+      "test": "test_category_wheel.lua",
+      "checks": 2209,
+      "status": "passed"
+    },
+    {
+      "test": "test_category_wheel_ui.lua",
+      "checks": 250727,
+      "status": "passed"
+    },
+    {
+      "test": "test_alerts.lua",
+      "checks": 313,
+      "status": "passed"
+    },
+    {
+      "test": "test_alerts_ui.lua",
+      "checks": 184228,
+      "status": "passed"
+    },
+    {
+      "test": "test_confirmation_input.lua",
+      "checks": 22,
+      "status": "passed"
+    },
+    {
+      "test": "test_service_preferences.lua",
+      "checks": 52,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol.lua",
+      "checks": 56,
+      "status": "passed"
+    },
+    {
+      "test": "test_weapon_roleplay.lua",
+      "checks": 85,
+      "status": "passed"
+    },
+    {
+      "test": "test_taser.lua",
+      "checks": 181,
+      "status": "passed"
+    },
+    {
+      "test": "test_critical_reports.lua",
+      "checks": 49,
+      "status": "passed"
+    },
+    {
+      "test": "test_service_ui.lua",
+      "checks": 145401,
+      "status": "passed"
+    },
+    {
+      "test": "test_radio_guard.lua",
+      "checks": 132,
+      "status": "passed"
+    },
+    {
+      "test": "test_weapon_warning.lua",
+      "checks": 83,
+      "status": "passed"
+    },
+    {
+      "test": "test_service_notifications.lua",
+      "checks": 55,
+      "status": "passed"
+    },
+    {
+      "test": "test_notification_ui.lua",
+      "checks": 354132,
+      "status": "passed"
+    },
+    {
+      "test": "test_chat_input.lua",
+      "checks": 3833,
+      "status": "passed"
+    },
+    {
+      "test": "test_quick_alert_keys.lua",
+      "checks": 42187,
+      "status": "passed"
+    },
+    {
+      "test": "test_autosave.lua",
+      "checks": 64653,
+      "status": "passed"
+    },
+    {
+      "test": "test_wheel_labels.lua",
+      "checks": 116322,
+      "status": "passed"
+    },
+    {
+      "test": "test_knowledge.lua",
+      "checks": 16043,
+      "status": "passed"
+    },
+    {
+      "test": "test_knowledge_forms.lua",
+      "checks": 151,
+      "status": "passed"
+    },
+    {
+      "test": "test_knowledge_ui.lua",
+      "checks": 45245,
+      "status": "passed"
+    },
+    {
+      "test": "test_knowledge_updates_ui.lua",
+      "checks": 114278,
+      "status": "passed"
+    },
+    {
+      "test": "test_ui_content_regressions.lua",
+      "checks": 76063,
+      "status": "passed"
+    },
+    {
+      "test": "test_knowledge_edits.lua",
+      "checks": 108,
+      "status": "passed"
+    },
+    {
+      "test": "test_knowledge_editor_ui.lua",
+      "checks": 315538,
+      "status": "passed"
+    },
+    {
+      "test": "test_aim_warning_layout.lua",
+      "checks": 1035647,
+      "status": "passed"
+    },
+    {
+      "test": "test_choice_controls.lua",
+      "checks": 24655,
+      "status": "passed"
+    },
+    {
+      "test": "test_native_chat_live.lua",
+      "checks": 8721,
+      "status": "passed"
+    },
+    {
+      "test": "test_reader_notes_ux.lua",
+      "checks": 28728,
+      "status": "passed"
+    },
+    {
+      "test": "test_chat_bridge.lua",
+      "checks": 58,
+      "status": "passed"
+    },
+    {
+      "test": "test_cef_integration.lua",
+      "checks": 24063,
+      "status": "passed"
+    },
+    {
+      "test": "test_chat_bridge_startup.lua",
+      "checks": 10106,
+      "status": "passed"
+    },
+    {
+      "test": "test_keyboard_layout.lua",
+      "checks": 11035,
+      "status": "passed"
+    },
+    {
+      "test": "test_aim_selection.lua",
+      "checks": 47570,
+      "status": "passed"
+    },
+    {
+      "test": "test_chat_text.lua",
+      "checks": 26783,
+      "status": "passed"
+    },
+    {
+      "test": "test_feedback.lua",
+      "checks": 76965,
+      "status": "passed"
+    },
+    {
+      "test": "test_helpers_shortcut.lua",
+      "checks": 30242,
+      "status": "passed"
+    },
+    {
+      "test": "test_scroll_bounds.lua",
+      "checks": 13430,
+      "status": "passed"
+    },
+    {
+      "test": "test_vehicle_names.lua",
+      "checks": 1089,
+      "status": "passed"
+    },
+    {
+      "test": "test_general_megaphone.lua",
+      "checks": 89,
+      "status": "passed"
+    },
+    {
+      "test": "test_general_megaphone_ui.lua",
+      "checks": 56692,
+      "status": "passed"
+    },
+    {
+      "test": "test_menu_key.lua",
+      "checks": 7714,
+      "status": "passed"
+    },
+    {
+      "test": "test_notes_reference_navigation.lua",
+      "checks": 95118,
+      "status": "passed"
+    },
+    {
+      "test": "test_ui_recovery.lua",
+      "checks": 78933,
+      "status": "passed"
+    },
+    {
+      "test": "test_recovery_guard.lua",
+      "checks": 68,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_session.lua",
+      "checks": 219,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_session_ui.lua",
+      "checks": 242073,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_events.lua",
+      "checks": 190,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_event_ui.lua",
+      "checks": 125652,
+      "status": "passed"
+    },
+    {
+      "test": "test_identity.lua",
+      "checks": 117,
+      "status": "passed"
+    },
+    {
+      "test": "test_identity_ui.lua",
+      "checks": 55024,
+      "status": "passed"
+    },
+    {
+      "test": "test_case_forms.lua",
+      "checks": 50,
+      "status": "passed"
+    },
+    {
+      "test": "test_case_ui.lua",
+      "checks": 261321,
+      "status": "passed"
+    },
+    {
+      "test": "test_mark_forms.lua",
+      "checks": 87,
+      "status": "passed"
+    },
+    {
+      "test": "test_mark_ui.lua",
+      "checks": 263469,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_notices.lua",
+      "checks": 102,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_notice_ui.lua",
+      "checks": 71364,
+      "status": "passed"
+    },
+    {
+      "test": "test_operations.lua",
+      "checks": 1179,
+      "status": "passed"
+    },
+    {
+      "test": "test_operations_ui.lua",
+      "checks": 108635,
+      "status": "passed"
+    },
+    {
+      "test": "test_radio_codes.lua",
+      "checks": 104289,
+      "status": "passed"
+    },
+    {
+      "test": "test_followups.lua",
+      "checks": 19484,
+      "status": "passed"
+    },
+    {
+      "test": "test_radio_patrol_context.lua",
+      "checks": 25819,
+      "status": "passed"
+    },
+    {
+      "test": "test_procedure_access.lua",
+      "checks": 74543,
+      "status": "passed"
+    },
+    {
+      "test": "test_knowledge_departments.lua",
+      "checks": 57154,
+      "status": "passed"
+    },
+    {
+      "test": "test_force_followup.lua",
+      "checks": 36342,
+      "status": "passed"
+    },
+    {
+      "test": "test_vehicle.lua",
+      "checks": 82,
+      "status": "passed"
+    },
+    {
+      "test": "test_vehicle_world.lua",
+      "checks": 17,
+      "status": "passed"
+    },
+    {
+      "test": "test_live_passport.lua",
+      "checks": 39,
+      "status": "passed"
+    },
+    {
+      "test": "test_command_taser.lua",
+      "checks": 46,
+      "status": "passed"
+    },
+    {
+      "test": "test_weapon_holster.lua",
+      "checks": 21,
+      "status": "passed"
+    },
+    {
+      "test": "test_radio_segments.lua",
+      "checks": 33,
+      "status": "passed"
+    },
+    {
+      "test": "test_live_service_ui.lua",
+      "checks": 89405,
+      "status": "passed"
+    },
+    {
+      "test": "test_knowledge_editions.lua",
+      "checks": 130,
+      "status": "passed"
+    },
+    {
+      "test": "test_assist_settings.lua",
+      "checks": 51,
+      "status": "passed"
+    },
+    {
+      "test": "test_evidence.lua",
+      "checks": 67,
+      "status": "passed"
+    },
+    {
+      "test": "test_evidence_files.lua",
+      "checks": 10,
+      "status": "passed"
+    },
+    {
+      "test": "test_assist_ui.lua",
+      "checks": 86253,
+      "status": "passed"
+    },
+    {
+      "test": "test_megaphone.lua",
+      "checks": 25,
+      "status": "passed"
+    },
+    {
+      "test": "test_megaphone_ui.lua",
+      "checks": 29678,
+      "status": "passed"
+    },
+    {
+      "test": "test_interaction_preferences.lua",
+      "checks": 9960,
+      "status": "passed"
+    },
+    {
+      "test": "test_rp_text.lua",
+      "checks": 1212,
+      "status": "passed"
+    },
+    {
+      "test": "test_rp_integration.lua",
+      "checks": 27,
+      "status": "passed"
+    },
+    {
+      "test": "test_rp_ui.lua",
+      "checks": 28949,
+      "status": "passed"
+    },
+    {
+      "test": "test_server_commands.lua",
+      "checks": 9042,
+      "status": "passed"
+    },
+    {
+      "test": "test_russian_text.lua",
+      "checks": 4891,
+      "status": "passed"
+    },
+    {
+      "test": "test_rp_presets_ui.lua",
+      "checks": 74052,
+      "status": "passed"
+    },
+    {
+      "test": "test_map_locations.lua",
+      "checks": 40443,
+      "status": "passed"
+    },
+    {
+      "test": "test_nearby.lua",
+      "checks": 30300,
+      "status": "passed"
+    },
+    {
+      "test": "test_vehicle_selection.lua",
+      "checks": 8254,
+      "status": "passed"
+    },
+    {
+      "test": "test_wanted_forms.lua",
+      "checks": 888,
+      "status": "passed"
+    },
+    {
+      "test": "test_user_files.lua",
+      "checks": 1329,
+      "status": "passed"
+    },
+    {
+      "test": "test_user_files_ui.lua",
+      "checks": 63976,
+      "status": "passed"
+    },
+    {
+      "test": "test_resume_acceptance.lua",
+      "checks": 18012,
+      "status": "passed"
+    },
+    {
+      "test": "test_wanted_accounts.lua",
+      "checks": 28,
+      "status": "passed"
+    },
+    {
+      "test": "test_wanted_remote.lua",
+      "checks": 319875,
+      "status": "passed"
+    },
+    {
+      "test": "test_wanted_passport_memory.lua",
+      "checks": 27,
+      "status": "passed"
+    },
+    {
+      "test": "test_wanted_todo.lua",
+      "checks": 72,
+      "status": "passed"
+    },
+    {
+      "test": "test_hotfix0404.lua",
+      "checks": 16648,
+      "status": "passed"
+    },
+    {
+      "test": "test_hotfix0421.lua",
+      "checks": 152,
+      "status": "passed"
+    },
+    {
+      "test": "test_hotfix0421_patrol.lua",
+      "checks": 36,
+      "status": "passed"
+    },
+    {
+      "test": "test_win7_patrol_stability.lua",
+      "checks": 202,
+      "status": "passed"
+    },
+    {
+      "test": "test_downed_scene.lua",
+      "checks": 7602,
+      "status": "passed"
+    },
+    {
+      "test": "test_procedures0422.lua",
+      "checks": 530,
+      "status": "passed"
+    },
+    {
+      "test": "test_procedure_windows0422.lua",
+      "checks": 59732,
+      "status": "passed"
+    },
+    {
+      "test": "test_ground0422.lua",
+      "checks": 23952,
+      "status": "passed"
+    },
+    {
+      "test": "test_cef_assets.lua",
+      "checks": 114,
+      "status": "passed"
+    },
+    {
+      "test": "test_hud_close.lua",
+      "checks": 16307,
+      "status": "passed"
+    },
+    {
+      "test": "test_manual_radio.lua",
+      "checks": 22518,
+      "status": "passed"
+    },
+    {
+      "test": "test_text_segments.lua",
+      "checks": 475,
+      "status": "passed"
+    },
+    {
+      "test": "test_action_preferences.lua",
+      "checks": 37169,
+      "status": "passed"
+    },
+    {
+      "test": "test_window_drag.lua",
+      "checks": 78,
+      "status": "passed"
+    },
+    {
+      "test": "test_passport_formats.lua",
+      "checks": 6276,
+      "status": "passed"
+    },
+    {
+      "test": "test_navigation_guard.lua",
+      "checks": 57019,
+      "status": "passed"
+    },
+    {
+      "test": "test_map_grid.lua",
+      "checks": 6738,
+      "status": "passed"
+    },
+    {
+      "test": "test_map_adapter.lua",
+      "checks": 94,
+      "status": "passed"
+    },
+    {
+      "test": "test_map_integration.lua",
+      "checks": 16445,
+      "status": "passed"
+    },
+    {
+      "test": "test_manual_chat.lua",
+      "checks": 1441,
+      "status": "passed"
+    },
+    {
+      "test": "test_window_persistence.lua",
+      "checks": 4035,
+      "status": "passed"
+    },
+    {
+      "test": "test_wanted_detached.lua",
+      "checks": 55498,
+      "status": "passed"
+    },
+    {
+      "test": "test_manual_live.lua",
+      "checks": 18056,
+      "status": "passed"
+    },
+    {
+      "test": "test_editor0370.lua",
+      "checks": 54426,
+      "status": "passed"
+    },
+    {
+      "test": "test_manual_channels.lua",
+      "checks": 10807,
+      "status": "passed"
+    },
+    {
+      "test": "test_interior_selection.lua",
+      "checks": 190750,
+      "status": "passed"
+    },
+    {
+      "test": "test_timing0372.lua",
+      "checks": 7229,
+      "status": "passed"
+    },
+    {
+      "test": "test_updater.lua",
+      "checks": 8151,
+      "status": "passed"
+    },
+    {
+      "test": "test_manual_actions.lua",
+      "checks": 103676,
+      "status": "passed"
+    },
+    {
+      "test": "test_wheel_custom.lua",
+      "checks": 3314,
+      "status": "passed"
+    },
+    {
+      "test": "test_startup040.lua",
+      "checks": 109,
+      "status": "passed"
+    },
+    {
+      "test": "test_gender040.lua",
+      "checks": 96,
+      "status": "passed"
+    },
+    {
+      "test": "test_ux040.lua",
+      "checks": 62753,
+      "status": "passed"
+    },
+    {
+      "test": "test_author_presets.lua",
+      "checks": 359,
+      "status": "passed"
+    },
+    {
+      "test": "test_colleagues.lua",
+      "checks": 83,
+      "status": "passed"
+    },
+    {
+      "test": "test_copilot_traffic.lua",
+      "checks": 243,
+      "status": "passed"
+    },
+    {
+      "test": "test_evidence_screens.lua",
+      "checks": 25,
+      "status": "passed"
+    },
+    {
+      "test": "test_copilot_refinements.lua",
+      "checks": 49214,
+      "status": "passed"
+    },
+    {
+      "test": "test_copilot_main.lua",
+      "checks": 27538,
+      "status": "passed"
+    },
+    {
+      "test": "test_urgent0411.lua",
+      "checks": 6176,
+      "status": "passed"
+    },
+    {
+      "test": "test_dispatch0412.lua",
+      "checks": 304918,
+      "status": "passed"
+    },
+    {
+      "test": "test_normative0420.lua",
+      "checks": 2999,
+      "status": "passed"
+    },
+    {
+      "test": "test_status_shutdown0423.lua",
+      "checks": 17356,
+      "status": "passed"
+    },
+    {
+      "test": "test_wheel_order0423.lua",
+      "checks": 53065,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_diagnostics0423.lua",
+      "checks": 17,
+      "status": "passed"
+    },
+    {
+      "test": "test_dual_wheel.lua",
+      "checks": 36808,
+      "status": "passed"
+    },
+    {
+      "test": "test_knowledge_important.lua",
+      "checks": 91119,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_periodic0431.lua",
+      "checks": 1680126,
+      "status": "passed"
+    },
+    {
+      "test": "test_intentional_shutdown0431.lua",
+      "checks": 15899,
+      "status": "passed"
+    },
+    {
+      "test": "test_cef_input_performance0431.lua",
+      "checks": 3386,
+      "status": "passed"
+    },
+    {
+      "test": "test_direction0432.lua",
+      "checks": 18,
+      "status": "passed"
+    },
+    {
+      "test": "test_incident0432.lua",
+      "checks": 90,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_navigation0432.lua",
+      "checks": 13752,
+      "status": "passed"
+    },
+    {
+      "test": "test_reports0432.lua",
+      "checks": 207,
+      "status": "passed"
+    },
+    {
+      "test": "test_observations0432.lua",
+      "checks": 62,
+      "status": "passed"
+    },
+    {
+      "test": "test_crew0432.lua",
+      "checks": 14,
+      "status": "passed"
+    },
+    {
+      "test": "test_ux0432.lua",
+      "checks": 43029,
+      "status": "passed"
+    },
+    {
+      "test": "test_patrol_notice0432.lua",
+      "checks": 73649,
+      "status": "passed"
+    },
+    {
+      "test": "test_direction0433.lua",
+      "checks": 40,
+      "status": "passed"
+    },
+    {
+      "test": "test_staff0433.lua",
+      "checks": 20,
+      "status": "passed"
+    },
+    {
+      "test": "test_streamout0433.lua",
+      "checks": 166,
+      "status": "passed"
+    },
+    {
+      "test": "test_ground_drafts0433.lua",
+      "checks": 9,
+      "status": "passed"
+    },
+    {
+      "test": "test_cef_budget0433.lua",
+      "checks": 516,
+      "status": "passed"
+    },
+    {
+      "test": "test_f9_report_validation.lua",
+      "checks": 20592,
+      "status": "passed"
+    },
+    {
+      "test": "test_report_template_validation.lua",
+      "checks": 719,
+      "status": "passed"
+    }
+  ]
+}

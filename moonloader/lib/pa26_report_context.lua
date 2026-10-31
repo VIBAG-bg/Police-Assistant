@@ -4,7 +4,11 @@ local core=require 'pa26_core'
 local M={}
 local unknown={['']=true,['неизвестно']=true,['не определено']=true,['не определён']=true,['не определен']=true}
 function M.directionKnown(values)
- return values.directionKnown~=false and type(values.direction)=='string'and not unknown[values.direction]
+ if type(values)~='table'or values.directionKnown~=nil and type(values.directionKnown)~='boolean'then return false end
+ local value=values.direction
+ if values.directionKnown==false or type(value)~='string'or #value>512 or not core.validUtf8(value)or value:find('[%c{}]')then return false end
+ value=value:match('^%s*(.-)%s*$')
+ return not unknown[value]and value~='Неизвестно'and value~='Не определено'and value~='Не определён'and value~='Не определен'
 end
 M.fields={{'unit','Юнит'},{'crew','Экипаж'},{'city','Город'},{'area','Район'},{'map_square','Квадрат'},{'direction','Последний курс'}}
 function M.apply(values,override)
@@ -54,6 +58,8 @@ function M.stockTemplate(text)
  return stock[text]==true
 end
 function M.directionTemplate(text,values,isStock)
+    if type(text)~='string'or not text:find('%S')then return nil,'Не задан текст доклада.'end
+    if type(values)~='table'then return nil,'Нет данных для подготовки доклада.'end
     if M.directionKnown(values)or not text:find('{direction}',1,true)then return text end
     if isStock==nil then isStock=M.stockTemplate(text)end
     if not isStock then return nil,'Курс не наблюдался. В вашем шаблоне есть {direction}: уточните курс в данных доклада либо измените шаблон. Личный текст сохранён.'end

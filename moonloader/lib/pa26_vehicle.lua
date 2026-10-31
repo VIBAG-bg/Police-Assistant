@@ -145,13 +145,16 @@ function Vehicle:periodic(base)
     return out
 end
 function M.preview(action,cfg,values,codec,split)
+    if type(cfg)~='table'or type(values)~='table'then return nil,'Проверьте данные транспортного доклада.'end
     local slot=tonumber(tostring(action):match('^megaphone_(%d+)$'))
+    if slot and cfg.phrases~=nil and type(cfg.phrases)~='table'then return nil,'Проверьте список требований мегафона.'end
     local phrase=slot and cfg.phrases and cfg.phrases[slot]
-    if slot and(not phrase or not phrase.enabled)then return nil,'Требование выключено или удалено.'end
+    if slot and(type(phrase)~='table'or not phrase.enabled)then return nil,'Требование выключено или удалено.'end
     local body=phrase and phrase.template or cfg[action..'_template'];if not body then return nil,'Неизвестное действие транспорта.'end
     local directionError;body,directionError=require('pa26_report_context').directionTemplate(body,values)
     if not body then return nil,directionError end
-    values=mapGrid.reportValues(values,body,not megaphone(action)and action~='approach'and action~='window')
+    values,directionError=mapGrid.reportValues(values,body,not megaphone(action)and action~='approach'and action~='window')
+    if not values then return nil,directionError end
     local missing;body=core.expandGender(body,values.gender):gsub('{([a-z_]+)}',function(k)
         local v=values[k];local tag=k=='local_tag'or k=='global_tag'or k=='prison_tag'or k=='armed_text'
         if v==nil and not tag or v==''and not tag then missing=k;return ''end

@@ -1,0 +1,32 @@
+{
+  "status": "measured",
+  "timer": "Python time.process_time; own process CPU",
+  "valid_report_outputs_identical": true,
+  "rows": [
+    {
+      "mode": "published_0.43.3",
+      "samples_cpu_ms": [
+        187.5,
+        187.5,
+        187.5
+      ],
+      "median_cpu_ms": 187.5,
+      "previews_per_sample": 1500,
+      "output_sha256": "1bbe466b16718ef0bf7196e641532d9fc4c171744ff57a60d60511613778da24"
+    },
+    {
+      "mode": "local_f9_fix",
+      "samples_cpu_ms": [
+        187.5,
+        203.125,
+        203.125
+      ],
+      "median_cpu_ms": 203.125,
+      "previews_per_sample": 1500,
+      "output_sha256": "1bbe466b16718ef0bf7196e641532d9fc4c171744ff57a60d60511613778da24"
+    }
+  ],
+  "synthetic_game_state": true,
+  "game_frame_latency_measured": false,
+  "limitations": "CPU aggregate of existing preparation paths; not real GTA/CEF input or physical display latency."
+}

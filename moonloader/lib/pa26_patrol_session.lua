@@ -142,17 +142,23 @@ function Session:crewText(a)
     return table.concat(names,', '),#names
 end
 function Session:values(s,a,override)
+    if type(s)~='table'or a~=nil and type(a)~='table'then return nil,'Нет данных сеанса патруля для доклада.'end
     local out=model.copy(s);if not a then return out end
     local profile=self.env.profile()or{}
+    local cfg=override or self.env.settings()
+    if type(profile)~='table'or type(cfg)~='table'or cfg.grammar~=nil and type(cfg.grammar)~='table'then return nil,'Проверьте профиль и формы фраз патруля.'end
+    if type(a.officer)~='string'or type(a.callsign)~='string'or type(a.crew)~='table'or not core.finite(a.elapsed_ms)then return nil,'Повреждены данные экипажа патруля.'end
+    for _,row in ipairs(a.crew)do if type(row)~='table'or type(row.ic_name)~='string'or type(row.callsign)~='string'or type(row.role)~='string'then return nil,'Повреждены данные напарника в патруле.'end end
     for key,fallback in pairs({city='не определён',direction='не определено',map_square='не определён',rank='сотрудник'})do
         if out[key]==nil or out[key]==''then out[key]=profile[key]and profile[key]~=''and profile[key]or fallback end
     end
     for _,k in ipairs({'officer','callsign','station','unit','vehicle','sector','post'})do out[k]=a[k]end
-    local cfg=override or self.env.settings();local count=settings.crewCount(s,a.crew)
+    local count=settings.crewCount(s,a.crew)
     out.unit_crew_count=tostring(count)
     if a.unit_auto then out.unit=settings.autoUnit(profile,s,count,a.unit_number)end
     local grammar=cfg.grammar or settings.grammarDefaults();local form=count>=2 and'team'or'solo'
     for _,key in ipairs({'start','resume','finish','moving','available'})do
+        if type(grammar[key..'_'..form])~='string'then return nil,'Проверьте форму фразы патруля: '..key..'_'..form end
         out['patrol_'..key]=core.expandGender(grammar[key..'_'..form],s.gender or profile.gender)
     end
     out.crew,out.crew_count=self:crewText(a);out.crew_count=tostring(out.crew_count)
@@ -180,12 +186,16 @@ function Session:makeRecord(cfg,s)
     return a
 end
 function Session:prepareLine(action,a,s,cfg)
-    local values=self:values(s,a,cfg);local template=cfg[action..'_template'];local checked,err=settings.template(template)
+    if type(action)~='string'or type(cfg)~='table'then return nil,'Проверьте действие и настройки доклада патруля.'end
+    local values,err=self:values(s,a,cfg);if not values then return nil,err end
+    local template=cfg[action..'_template'];local checked;checked,err=settings.template(template)
     if not checked then return nil,err end
-    checked=require('pa26_report_context').directionTemplate(checked,values)
-    values=mapGrid.reportValues(values,checked)
+    checked,err=require('pa26_report_context').directionTemplate(checked,values)
+    if not checked then return nil,err end
+    values,err=mapGrid.reportValues(values,checked);if not values then return nil,err end
     local missing
     local body=core.expandGender(checked,s.gender):gsub('{([a-z_]+)}',function(key)
+        if values[key]~=nil and type(values[key])~='string'and not core.finite(values[key])then missing=key;return ''end
         local v=settings.text(tostring(values[key]or ''),1024)
         local tag=key=='local_tag'or key=='prison_tag'or key=='global_tag'
         if not v or v==''and not tag then missing=key;return ''end

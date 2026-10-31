@@ -32,7 +32,7 @@ function M.firearm(weapon,includeSd)
         ((weapon>=22 and weapon<=34 and (weapon~=23 or includeSd==true)) or weapon==38)
 end
 local function reportValues(state,template,enrich)
-    state=mapGrid.reportValues(state,template,enrich)
+    local err;state,err=mapGrid.reportValues(state,template,enrich);if not state then return nil,err end
     local out={}
     for key in pairs(preferences.radioVariables) do
         local used=template:find('{'..key..'}',1,true)
@@ -48,12 +48,15 @@ local function reportValues(state,template,enrich)
 end
 function M.prepare(kind,state,cfg,codec,now,life)
     if not M.kinds[kind] then return nil,'Неизвестный доклад.' end
+    if type(state)~='table'then return nil,'Персонаж недоступен.'end
     local configError;cfg,configError=model.validateAlerts(cfg);if not cfg then return nil,configError end
     if not cfg.enabled or not cfg.on_duty or not M.kindEnabled(kind,cfg) then return nil,'Этот доклад отключён.' end
-    if not state.session or not core.finite(state.ped) or type(state.demo)~='boolean' then return nil,'Персонаж недоступен.' end
+    if type(state.session)~='string'or state.session==''or not core.finite(state.ped) or type(state.demo)~='boolean' then return nil,'Персонаж недоступен.' end
     if kind=='code0' and (not core.finite(state.health) or state.health<=0 or state.health>cfg.code0_health) then return nil,'CODE 0 доступен только живому тяжело раненому офицеру: HP ≤ '..cfg.code0_health..'.' end
     local source=routine(kind) and cfg.patrol or cfg
-    local template=require('pa26_report_context').directionTemplate(source[kind..'_template'],state);local channel=source[kind..'_channel']
+    local template,directionError=require('pa26_report_context').directionTemplate(source[kind..'_template'],state)
+    if not template then return nil,directionError end
+    local channel=source[kind..'_channel']
     if not channel or channel=='' then channel=cfg.channel end
     local values,err=reportValues(state,template);if not values then return nil,err end
     local body=core.expandGender(template,state.gender):gsub('{([a-z_]+)}',function(key)return values[key]end):match('^%s*(.-)%s*$')

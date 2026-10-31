@@ -9,7 +9,7 @@ end
 function M.draw(studio,ui,data,callbacks,host)
     local im=studio.imgui;studio.currentNoticeScope='patrol_session';studio.preferenceContext=true
     local draft=studio.patrolSessionDraft or model.copy(studio.lib.patrol_session)
-    local view=data.patrolSession or {};local a=view.active
+    local view=type(data.patrolSession)=='table'and data.patrolSession or {};local a=view.active
     studio:settingsHeading(ui,'Сеанс патруля')
     if data.radioState then ui.text('Место: '..(require('pa26_map_grid').location(data.radioState)or 'не определено'))end
     if studio:button('Трафик-стоп и преследование##patrol-vehicle',ui)then
@@ -124,7 +124,7 @@ function M.draw(studio,ui,data,callbacks,host)
     end
     studio.patrolSessionDraft=draft
     studio:autoSettings('patrol_session',{'patrol_session'},draft,'patrolSessionDraft');studio:autosaveHint(ui,'patrol_session');studio:drawNotice(ui)
-    if #view.history>0 then
+    if type(view.history)=='table'and #view.history>0 then
         studio:settingsHeading(ui,'Последние патрули')
         for i=#view.history,math.max(1,#view.history-4),-1 do local r=view.history[i]
             ui.text('№ '..r.id..' · '..settings.duration(r.elapsed_ms)..' · '..r.reason..(r.demo and ' · демо'or ''))

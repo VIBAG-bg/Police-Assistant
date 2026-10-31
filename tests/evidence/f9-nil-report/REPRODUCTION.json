@@ -1,0 +1,22 @@
+{
+  "baseline": "0.43.3",
+  "baseline_commit": "42f90ffc3697c73dd68d0de28418e94223148587",
+  "all_reproduced": true,
+  "results": [
+    {
+      "test": "test_f9_report_validation.lua",
+      "expected_nil_template_crash_reproduced": true,
+      "error": "[string \"<python>\"]:5: [PA26] CEF: status=not_installed; stage=asset_missing\n[PA26] v0.43.3: Ð¸Ð³ÑÐ¾Ð²Ð¾Ð¹ ÑÐ¸ÐºÐ» Ð·Ð°Ð¿ÑÑÐµÐ½.\n[PA26] ÐÑÐ¸Ð±ÐºÐ° Ð¸Ð½ÑÐµÑÑÐµÐ¹ÑÐ° [main]: moonloader/lib/pa26_map_grid.lua:83: attempt to index local 'template' (a nil value)\nstack traceback:\n\tmoonloader/police_assistant_2026.lua:1870: in function 'draw'\n\ttests/support\\fixture.lua:865: in function 'render'\n\t[string \"<python>\"]:14: in main chunk\n[PA26] ÐÐ¸Ð°Ð³Ð½Ð¾ÑÑÐ¸ÐºÐ° UI: partners; Ð½ÐµÐ¿ÑÐ¾Ð·ÑÐ°ÑÐ½Ð¾ÑÑÑ 0.86; Ð¿Ð¾Ð¿ÑÑÐ¾Ðº Ð²Ð¾ÑÑÑÐ°Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ 0; F9 Ð¸Ð»Ð¸ /pa26repair â Ð²Ð¾ÑÑÑÐ°Ð½Ð¾Ð²Ð¸ÑÑ Ð¾ÐºÐ½Ð°.\n[PA26] ÐÐºÐ½Ð¾ main: x=32 y=18 w=1216 h=684\n[PA26] ÐÑÐ¸Ð±ÐºÐ° Ð¾ÐºÐ½Ð° PA. ÐÑÐ¿ÑÐ°Ð²ÐºÐ¸ Ð¾ÑÑÐ°Ð½Ð¾Ð²Ð»ÐµÐ½Ñ; F9 Ð¸Ð»Ð¸ /pa26repair Ð²Ð¾ÑÑÑÐ°Ð½Ð¾Ð²Ð¸Ñ Ð¸Ð½ÑÐµÑÑÐµÐ¹Ñ. ÐÐ¾Ð´ÑÐ¾Ð±Ð½Ð¾ÑÑÐ¸ Ð² moonloader.log.\nstack traceback:\n\t[string \"<python>\"]:15: in main chunk\n\t[string \"<python>\"]:5: in function 'check'\n\t[C]: in function 'assert'",
+      "test_sha256": "51bfd28b65e674ed3a83f69646d5c5570978675995ccd46d1f274f41a4e415d7"
+    },
+    {
+      "test": "test_report_template_validation.lua",
+      "expected_nil_template_crash_reproduced": true,
+      "error": "[string \"<python>\"]:5: start unknown custom: moonloader/lib/pa26_map_grid.lua:83: attempt to index local 'template' (a nil value)\nstack traceback:\n\t[string \"<python>\"]:37: in main chunk\n\t[string \"<python>\"]:9: in function 'rejected'\n\t[string \"<python>\"]:5: in function 'check'\n\t[C]: in function 'assert'",
+      "test_sha256": "f0a4b64f9a6d30417ebf9f1e1cbf924381abca80ad7f8387b14edd2a89a643a0"
+    }
+  ],
+  "alerts_nil_template_reproduced": true,
+  "alerts_error": "moonloader/lib/pa26_map_grid.lua:83: attempt to index local 'template' (a nil value)",
+  "game_written": false
+}

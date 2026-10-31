@@ -2,11 +2,35 @@
 -- No game reads, FFI, network calls, commands or persistent side effects.
 local core=require 'pa26_core'
 local M={MAX_LABELS=512}
+local defaultLocation='{area}, квадрат {map_square}'
+local reportDefaults={enabled=true,report_area=true,location_template=defaultLocation}
+local lastLocation,lastLocationValid
+local function validLocation(t)
+    if type(t)~='string'or #t>240 then return false end
+    if t==lastLocation then return lastLocationValid end
+    local valid=core.validUtf8(t)and not t:find('%c')and not t:match('^%s*[/@]')and
+        select(2,t:gsub('{area}',''))==1 and select(2,t:gsub('{map_square}',''))==1 and
+        not t:gsub('{area}',''):gsub('{map_square}',''):find('[{}]')
+    -- One immutable, <=240-byte format only; position and map flags stay fresh.
+    lastLocation,lastLocationValid=t,valid;return valid
+end
+local function reportSettings(values)
+    if type(values)~='table'then return nil,'Нет данных о месте для доклада.'end
+    local s=values.map_grid;if s==nil then return reportDefaults end
+    if type(s)~='table'or s.enabled~=nil and type(s.enabled)~='boolean'or
+        s.report_area~=nil and type(s.report_area)~='boolean'then return nil,'Повреждены настройки места в докладе.'end
+    if s.location_template~=nil and not validLocation(s.location_template)then return nil,'Проверьте формат места: нужны {area} и {map_square}.'end
+    return s
+end
+local function reportTemplate(template)
+    if type(template)~='string'or not template:find('%S')then return nil,'Не задан текст доклада.'end
+    return true
+end
 local function copy(t)local n={};for k,v in pairs(t)do n[k]=v end;return n end
 local function integer(x,a,b)return core.finite(x)and x==math.floor(x)and x>=a and x<=b end
 function M.defaults()
     return {enabled=true,radar=true,pause_map=true,hud=true,labels=true,axis_labels=true,highlight=true,auto_square=false,auto_city=true,
-        report_area=true,location_template='{area}, квадрат {map_square}',
+        report_area=true,location_template=defaultLocation,
         west=-3000,north=3000,cell_size=250,columns=24,row_labels='ABCDEFGHIJKLMNOPQRSTUVWX',column_start=1,separator='-',
         font_size=12,line_width=1,line_alpha=.32,label_alpha=.88,min_label_px=50,theme='white'}
 end
@@ -23,9 +47,7 @@ function M.validate(raw)
     end
     if raw.location_template~=nil then out.location_template=raw.location_template end
     local t=out.location_template
-    if type(t)~='string'or #t>240 or not core.validUtf8(t)or t:find('%c')or t:match('^%s*[/@]')or
-        select(2,t:gsub('{area}',''))~=1 or select(2,t:gsub('{map_square}',''))~=1 or
-        t:gsub('{area}',''):gsub('{map_square}',''):find('[{}]')then
+    if not validLocation(t)then
         return nil,'Формат места: одна строка до 240 байт с {area} и {map_square}, без команды.'
     end
     for _,r in ipairs({{'west',-10000,10000},{'north',-10000,10000},{'cell_size',50,2000},{'columns',1,48},{'column_start',0,99},
@@ -69,17 +91,22 @@ end
 -- {area} stays a district in binds. Only report renderers opt into enrichment;
 -- saved wording is never rewritten. Explicit square tokens avoid duplication.
 function M.location(values)
+    local s,err=reportSettings(values);if not s then return nil,err end
     local area=values.area
-    if type(area)~='string'or area==''then return nil end
-    local s=values.map_grid or M.defaults();local square=values.map_square
+    if area==nil or area==''then return nil end
+    if type(area)~='string'then return nil,'Неверное поле доклада: район.'end
+    local square=values.map_square
+    if square~=nil and type(square)~='string'then return nil,'Неверное поле доклада: квадрат карты.'end
     if not s.enabled or type(square)~='string'or square==''then return area end
-    return (s.location_template or M.defaults().location_template):gsub('{([a-z_]+)}',function(k)
+    return ((s.location_template or defaultLocation):gsub('{([a-z_]+)}',function(k)
         return k=='area'and area or k=='map_square'and square or '{'..k..'}'
-    end)
+    end))
 end
 function M.reportValues(values,template,enrich)
-    local out=copy(values);out.location=M.location(values)
-    local s=values.map_grid or M.defaults()
+    local checked,err=reportTemplate(template);if not checked then return nil,err end
+    local s;s,err=reportSettings(values);if not s then return nil,err end
+    local location;location,err=M.location(values);if err then return nil,err end
+    local out=copy(values);out.location=location
     if enrich~=false and s.report_area~=false and template:find('{area}',1,true)and
         not template:find('{map_square}',1,true)and not template:find('{square}',1,true)and not template:find('{location}',1,true)then
         out.area=out.location
@@ -87,10 +114,11 @@ function M.reportValues(values,template,enrich)
     return out
 end
 function M.reportPolicy(values,template)
-    local s=values.map_grid or M.defaults()
+    local checked,err=reportTemplate(template);if not checked then return nil,err end
+    local s;s,err=reportSettings(values);if not s then return nil,err end
     if template:find('{location}',1,true)or s.report_area~=false and template:find('{area}',1,true)and
         not template:find('{map_square}',1,true)and not template:find('{square}',1,true)then
-        return table.concat({tostring(s.enabled),tostring(s.report_area),s.location_template or M.defaults().location_template},'\0')
+        return table.concat({tostring(s.enabled),tostring(s.report_area),s.location_template or defaultLocation},'\0')
     end
     return ''
 end
