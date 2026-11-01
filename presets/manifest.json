@@ -5,8 +5,8 @@
   "minimum_pa": "0.43.0",
   "files": {
     "pa-binds.json": {
-      "sha256": "37bb9fa568c5f53f9ca9d5ed9e778dce601112a2be17aa8a73ec5efe494f1f58",
-      "size": 98330
+      "sha256": "77a0ebc78ab7750e0e4a61ec402f9098d506980ea0e4b06dadae52d10ff510d0",
+      "size": 96036
     },
     "pa-settings.json": {
       "sha256": "06eb98412020c67800ee9abb8049d8897b7e43fb15206978980a1923628f9445",
@@ -17,5 +17,6 @@
       "size": 75967
     }
   },
-  "settings_revision": "2026-10-31-settings-1"
+  "settings_revision": "2026-10-31-settings-1",
+  "binds_revision": "2026-11-01-binds-1"
 }

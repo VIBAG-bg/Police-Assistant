@@ -557,11 +557,11 @@
   "preset_files": [
     {
       "path": "presets/manifest.json",
-      "sha256": "8e0d18ddd4adc713b7bb03680504a1bddf3197d195e6e6eff33c996801d2426d"
+      "sha256": "80d421b8e7e960f6d9f7e8735d3fa6fd839961f3d6c9fd80d1bfb746617587b7"
     },
     {
       "path": "presets/pa-binds.json",
-      "sha256": "37bb9fa568c5f53f9ca9d5ed9e778dce601112a2be17aa8a73ec5efe494f1f58"
+      "sha256": "77a0ebc78ab7750e0e4a61ec402f9098d506980ea0e4b06dadae52d10ff510d0"
     },
     {
       "path": "presets/pa-settings.json",

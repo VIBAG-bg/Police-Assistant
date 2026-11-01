@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "revision": "2026-11-01-binds-1",
+  "binds": 83,
+  "lua_checks": 1688,
+  "installer_checks": 29,
+  "modified_fields": [
+    ".bindings[76].favorite",
+    ".bindings[76].quick",
+    ".bindings[76].script",
+    ".bindings[77].favorite",
+    ".bindings[77].quick",
+    ".bindings[77].script",
+    ".bindings[78].favorite",
+    ".bindings[78].quick",
+    ".bindings[78].script",
+    ".bindings[79].favorite",
+    ".bindings[79].quick",
+    ".bindings[79].script",
+    ".bindings[80].favorite",
+    ".bindings[80].quick",
+    ".bindings[80].script"
+  ],
+  "manual_setmark_already_published": true,
+  "settings_unchanged": true,
+  "stock_notes_unchanged": true,
+  "program_runtime_unchanged": true,
+  "update_zip_unchanged": true,
+  "local_game_written": false,
+  "binds_sha256": "77a0ebc78ab7750e0e4a61ec402f9098d506980ea0e4b06dadae52d10ff510d0",
+  "installer_zip_sha256": "68a58e2d218a7547289b601e6b0ce98c33cc354b07f06ee29c8547647bdb47a5"
+}

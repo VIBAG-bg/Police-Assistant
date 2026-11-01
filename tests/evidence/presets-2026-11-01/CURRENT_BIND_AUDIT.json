@@ -1,0 +1,11 @@
+{
+  "source_binds": 83,
+  "public_binds": 83,
+  "normalized_bind_differences": [],
+  "manual_action_differences": [],
+  "setmark_standard_rp_equal": true,
+  "public_binds_sha256": "77a0ebc78ab7750e0e4a61ec402f9098d506980ea0e4b06dadae52d10ff510d0",
+  "public_settings_sha256": "06eb98412020c67800ee9abb8049d8897b7e43fb15206978980a1923628f9445",
+  "notes_read": false,
+  "game_written": false
+}

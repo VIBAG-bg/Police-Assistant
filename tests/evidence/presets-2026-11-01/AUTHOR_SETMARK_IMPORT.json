@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "settings_imported": true,
+  "saved_manual_rp_preserved": true,
+  "manual_rp_preserved_after_reload": true,
+  "setmark_preview_uses_imported_rp": true,
+  "game_started": false,
+  "commands_sent": 0,
+  "local_game_written": false
+}
