@@ -5,7 +5,7 @@ ROOT=Path(__file__).resolve().parents[1];out=ROOT/'dist';out.mkdir(exist_ok=True
 listed=subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z'],cwd=ROOT).decode('utf-8').split('\0')
 allowed_roots={'moonloader','cef','presets','docs','tests','tools','.github'}
 root_files={'README.md','CHANGELOG.md','INSTALL_MANIFEST.json','CEF_CONTRACT.json','UPDATE_CEF_BASELINE.json','DEPENDENCIES.json',
- 'install.ps1','Установить PA.cmd','Показать обновление PA.cmd','.gitignore','.gitattributes','LICENSE','LICENSE.md','LICENSE.txt'}
+ 'install.ps1','Установить PA.cmd','Показать обновление PA.cmd','requirements-dev.txt','.gitignore','.gitattributes','LICENSE','LICENSE.md','LICENSE.txt'}
 files=[]
 for name in sorted(set(listed)):
  if not name:continue
