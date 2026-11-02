@@ -26,52 +26,86 @@
 
 ## 🖼️ Галерея интерфейса PA 0.44.0
 
-**Посмотри, как устроен Police Assistant.** Все основные разделы, помощники и справочники — в одной наглядной галерее.
-
-> **Это синтетические превью из тестового прогона Codex, а не скриншоты из GTA.** Они показывают планируемый интерфейс 0.44.0; работа и внешний вид в игре требуют отдельной проверки.
+**Посмотри, как устроен Police Assistant.** Все основные разделы, оперативные пульты и справочники — в одном окне прямо в игре.
 
 **👆 Нажми на любое изображение, чтобы открыть его в полном размере.**
 
+<div align="center">
+  <a href="docs/images/pa-044-showcase.png">
+    <img src="docs/images/pa-044-showcase.png" alt="Police Assistant 0.44.0 — Главное окно (F9)" width="100%">
+  </a>
+  <br>
+  <strong>🚓 Главное окно Police Assistant (F9)</strong>
+  <br>
+  <sub>Быстрый доступ к патрулю, трафик-стопу, библиотеке биндов, базе знаний и профилю офицера.</sub>
+</div>
+
+<br>
+
 <table>
   <tr>
-    <td width="50%" align="center">
-      <a href="docs/images/pa-044-f9-shell.png"><img src="docs/images/pa-044-f9-shell.png" alt="F9 — главное окно и боковая навигация Police Assistant" width="100%"></a>
+    <td width="50%" valign="top" align="center">
+      <a href="docs/images/pa-044-f9-shell.png">
+        <img src="docs/images/pa-044-f9-shell.png" alt="F9 — главное окно и боковая навигация Police Assistant" width="100%">
+      </a>
+      <br>
       <strong>🏠 F9 · Главное окно</strong>
-      <p>Навигация по разделам и основные инструменты.</p>
+      <br>
+      <sub>Навигация по разделам и основные инструменты.</sub>
     </td>
-    <td width="50%" align="center">
-      <a href="docs/images/pa-044-f4-shell.png"><img src="docs/images/pa-044-f4-shell.png" alt="F4 — окно быстрых помощников" width="100%"></a>
+    <td width="50%" valign="top" align="center">
+      <a href="docs/images/pa-044-f4-shell.png">
+        <img src="docs/images/pa-044-f4-shell.png" alt="F4 — окно быстрых помощников" width="100%">
+      </a>
+      <br>
       <strong>🚔 F4 · Помощники службы</strong>
-      <p>Патруль, трафик, мегафон и другие действия.</p>
+      <br>
+      <sub>Патруль, трафик, мегафон и другие действия.</sub>
     </td>
   </tr>
   <tr>
-    <td align="center">
-      <a href="docs/images/pa-044-traffic.png"><img src="docs/images/pa-044-traffic.png" alt="Трафик-стоп и преследование" width="100%"></a>
+    <td width="50%" valign="top" align="center">
+      <a href="docs/images/pa-044-traffic.png">
+        <img src="docs/images/pa-044-traffic.png" alt="Трафик-стоп и преследование" width="100%">
+      </a>
+      <br>
       <strong>🚨 Трафик и погоня</strong>
-      <p>Остановка машины, коды и оперативные действия.</p>
+      <br>
+      <sub>Остановка машины, коды и оперативные действия.</sub>
     </td>
-    <td align="center">
-      <a href="docs/images/pa-044-knowledge.png"><img src="docs/images/pa-044-knowledge.png" alt="Служебные памятки и база знаний" width="100%"></a>
+    <td width="50%" valign="top" align="center">
+      <a href="docs/images/pa-044-knowledge.png">
+        <img src="docs/images/pa-044-knowledge.png" alt="Служебные памятки и база знаний" width="100%">
+      </a>
+      <br>
       <strong>📚 База знаний</strong>
-      <p>Короткие памятки по частым ситуациям.</p>
+      <br>
+      <sub>Десять наглядных памяток по частым ситуациям.</sub>
     </td>
   </tr>
   <tr>
-    <td align="center">
-      <a href="docs/images/pa-044-guide.png"><img src="docs/images/pa-044-guide.png" alt="Поиск статей и штрафов" width="100%"></a>
+    <td width="50%" valign="top" align="center">
+      <a href="docs/images/pa-044-guide.png">
+        <img src="docs/images/pa-044-guide.png" alt="Поиск статей и штрафов" width="100%">
+      </a>
+      <br>
       <strong>⚖️ Статьи и штрафы</strong>
-      <p>Поиск по нарушениям, санкциям и условиям.</p>
+      <br>
+      <sub>Поиск по нарушениям, санкциям и условиям.</sub>
     </td>
-    <td align="center">
-      <a href="docs/images/pa-044-patrol.png"><img src="docs/images/pa-044-patrol.png" alt="Настройки смены, юнита и патруля" width="65%"></a>
+    <td width="50%" valign="top" align="center">
+      <a href="docs/images/pa-044-patrol.png">
+        <img src="docs/images/pa-044-patrol.png" alt="Настройки смены, юнита и патруля" width="100%">
+      </a>
+      <br>
       <strong>📻 Патруль и экипаж</strong>
-      <p>Смена, позывной, рация и состав экипажа.</p>
+      <br>
+      <sub>Смена, позывной, рация и состав экипажа.</sub>
     </td>
   </tr>
 </table>
 
-Последний опубликованный релиз доступен в [Releases](https://github.com/VIBAG-bg/Police-Assistant/releases/latest). До выхода 0.44.0 реальный интерфейс может отличаться от этих превью.
+Актуальный релиз всегда доступен в разделе [Releases](https://github.com/VIBAG-bg/Police-Assistant/releases/latest).
 
 ## Что можно делать
 
