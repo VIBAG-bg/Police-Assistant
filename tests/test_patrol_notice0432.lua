@@ -74,7 +74,7 @@ lib.alerts.enabled=true;lib.alerts.on_duty=true;lib.profile.name='Maximus Walker
 lib.patrol_session.confirmation=true;lib.patrol_session.interval_ms=600000;lib.patrol_session.channel='/f'
 local f=fixture({library=lib,demo=false,alerts=true,notifications=true,categoryWheel=true});f.step();f.page('partners')
 local function click(label)f.click=label;f.render();eq(f.click,nil,label);check(not f.hasLog('Ошибка интерфейса'))end
-click('Патруль##Напарники и служба##partners-pagepatrol');click('Начать патруль##patrol-start');click('ДА##confirm-yes')
+click('Патруль и смена##Патруль и служба##partners-pagepatrol');click('Начать патруль##patrol-start');click('ДА##confirm-yes')
 for _=1,5 do f.step(1500)end
 if f.frames[1].condition()then f.commands.pa26();f.step()end
 local initial=#f.sent;f.patrol.remaining=31000

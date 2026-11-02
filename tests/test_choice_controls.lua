@@ -45,7 +45,7 @@ for _,c in ipairs(combos)do if c.id=='##Изменить оружие##weapon-ed
 s.combo=nil
 -- Navigation in another section also works without discovering a dropdown.
 click(s,'4. Рация и тревоги##settings-tab-radio')
-click(s,'Патруль##Настройки связи##radio-pagepatrol');check(has(s,'Патруль полиции и охрана тюрьмы'))
+click(s,'Таймер##Настройки связи##radio-pagepatrol');check(has(s,'Отдельный таймер полиции и тюрьмы'))
 click(s,'Автодоклады##Настройки связи##radio-pageautomatic');check(has(s,'Предупреждения и свои автодоклады'))
 click(s,'Экстренные##Настройки связи##radio-pageemergency');check(has(s,'Shots fired · SOS · радиокоды'))
 -- Layout uses the same UTF-8 wrapping as its rendered labels. No narrow columns.

@@ -6,7 +6,7 @@ for _,display in ipairs({{640,480},{800,600},{1280,720},{1366,768},{1920,1080},{
         check(r.width>=r.height or display[1]<display[2],'Default proportions should be horizontal')
     end
 end
-local wide=menu.windowBounds(1920,1080,'main');eq(wide.width,1344);eq(wide.height,756)
+local wide=menu.windowBounds(1920,1080,'main');eq(wide.width,2251*.75);eq(wide.height,1339*.75)
 check(wide.width>1180 and wide.width/wide.height>1.5)
 local pos={x=100,y=100};local size={x=400,y=300}
 local io={DisplaySize={x=1280,y=720},MousePos={x=200,y=150},MouseDown={[0]=false,[1]=true}}

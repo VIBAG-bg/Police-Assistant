@@ -85,6 +85,9 @@ function M.serialize(cfg)
     for _, key in ipairs({'visible', 'x', 'y', 'scale', 'time_source'}) do
         lines[#lines + 1] = key .. '=' .. tostring(widget[key])
     end
+    for _,key in ipairs({'responsive','reference_width','reference_height'})do
+        if widget[key]~=nil then lines[#lines+1]=key..'='..tostring(widget[key])end
+    end
     lines[#lines+1]='\n[recovery]'
     local recovery=cfg.recovery or core.recoveryDefaults()
     for _,key in ipairs({'enabled','delay_ms','max_attempts','stable_ms','demo_after_recovery'})do

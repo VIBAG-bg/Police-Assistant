@@ -1,6 +1,6 @@
 local layout=require 'pa26_window_layout';local menu=require 'pa26_menu';local model=require 'pa26_bindings';local core=require 'pa26_core'
 local defaults=layout.defaults();eq(defaults.initial_percent,70);check(defaults.remember);check(defaults.wanted_separate)
-local b=menu.windowBounds(1920,1080,'main');eq(b.width,1344);eq(b.height,756)
+local b=menu.windowBounds(1920,1080,'main');eq(b.width,2251*.75);eq(b.height,1339*.75)
 local saved={width=1100,height=620,x=80,y=50,displayW=1280,displayH=720}
 local grown=assert(menu.windowRect(1920,1080,'main',saved));eq(grown.width,1650);eq(grown.height,930);eq(grown.x,120);eq(grown.y,75)
 for _,size in ipairs({{640,480},{1280,720},{1920,1080},{2560,1440}})do

@@ -35,10 +35,10 @@ s.combo='##kb-choice-Раздел';click(s,'Команды##kb-choice-Разде
 click(s,'Данные##kb-mode');s.toggle='Сбрасывать раздел после выхода из базы##kb-reset-enabled';s.intEdits={['Минуты после выхода##kb-reset-minutes']=7};s.render();s.step()
 local personal=decodeJson(s.files['moonloader\\config\\police_assistant_2026_knowledge_personal.json'])
 check(not personal.view.reset_enabled);eq(personal.view.reset_minutes,7)
--- Contacts appear in both the sidebar and footer.
+-- Contacts remain in the footer; the compact sidebar prioritizes all 8 sections.
 s.drawnText={};s.render();text=table.concat(s.drawnText,'\n')
 for _,contact in ipairs({'Telegram: victor_bg','Discord: victor_bag','GitHub: VIBAG-bg'})do
-    local first=text:find(contact,1,true);check(first);check(text:find(contact,first+#contact,true))
+    check(text:find(contact,1,true))
 end
 s.page('hints');local favorite=s.workspace.library.notes[1].favorite
 click(s,'##note-favorite1');eq(s.workspace.library.notes[1].favorite,not favorite)

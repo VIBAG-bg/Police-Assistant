@@ -25,7 +25,7 @@ eq(s.identity:view().record.ic_name,'John A. Smith')
 s.edits={['##Известные вашему персонажу приметы##identity-appearance']='Синяя куртка\nЧёрные брюки'};s.render();s.edits={};s.step()
 eq(s.identity:view().record.appearance,'Синяя куртка\nЧёрные брюки')
 -- Reuse in a report is explicit and carries manual source, never an automatic accusation.
-s.page('partners');click(s,'События##Напарники и служба##partners-pageevents');click(s,'Подготовить событие##patrol-event-new')
+s.page('partners');click(s,'События##Патруль и служба##partners-pageevents');click(s,'Подготовить событие##patrol-event-new')
 eq(st.patrolEventForm.subject,'');click(s,'Подставить известное имя / приметы##patrol-event-identity')
 eq(st.patrolEventForm.subject,'John A. Smith');eq(#s.patrolEvents.data.events,0)
 click(s,'Открыть IC-сведения о человеке##patrol-event-identity-open');s.render();healthy(s)

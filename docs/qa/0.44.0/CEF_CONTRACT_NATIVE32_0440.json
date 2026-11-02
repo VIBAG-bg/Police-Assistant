@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "checks": 1003,
+  "reviewed_contract": false,
+  "reason": "cef_contract_unreviewed",
+  "startup_ms": 1295.2539,
+  "file_reads": 1,
+  "hash_calls": 1,
+  "game_started": false,
+  "live_file_written": false
+}

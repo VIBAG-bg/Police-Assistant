@@ -12,6 +12,7 @@ local function open(s,page)
     editor.requestNavigation=function(_,action)action();return true end
     if not s.frames[1].condition() then s.commands.pa26() end
     s.page(page)
+    if page=='partners'then s.click='Напарники##Патруль и служба##partners-pagecontacts';s.render();eq(s.click,nil)end
     editor.requestNavigation=guard
 end
 local function newDraft(s,name,script)

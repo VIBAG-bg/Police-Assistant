@@ -17,7 +17,7 @@ local plan=assert(cp:propose('dispatch_stolen'));local text=table.concat(plan.pr
 local p=require 'pa26_fast_pt';local a={id=42,name='First_Name',ped=8,generation=1,distance=49,source='current'};local state={ped=1}
 local far=copy(a);far.id=43;far.distance=51;local close=copy(a);close.id=44;close.distance=1;close.source='selected'
 eq(p.resolve({a,close},state,50).id,42);eq(p.resolve({far,close},state,50).id,44)
-close.fallback=true;close.visible=true;close.colleague=true;check(not p.resolve({close},state,50));close.colleague=false;check(p.resolve({close},state,50));close.visible=false;check(not p.resolve({close},state,50))
+close.fallback=true;close.visible=true;close.colleague=true;check(not p.resolve({close},state,50));close.colleague=false;check(not p.resolve({close},state,50));close.wanted_verified=true;close.wanted_level=2;close.wanted_name=close.name;close.wanted_generation=close.generation;check(p.resolve({close},state,50));close.visible=false;check(not p.resolve({close},state,50))
 cp,v,s=require('support.copilot_fixture')();cp.fastPtLive=copy(a);cp.fastPtLiveAt=s.now;check(cp:requestFastPt({a}));local offer=s.has('fast_pt');check(offer);eq(#offer.prepared.lines,1);eq(offer.prepared.lines[1],'/pt 42');check(not offer.needsPatrol)
 cp.fastPtLive.generation=2;check(not cp:accept(offer));cp.fastPtLive=copy(a);offer.seen=true;check(cp:decide(offer.token,false));eq(#s.plans,0)
 check(cp:requestFastPt({a}));offer=s.has('fast_pt');check(cp:accept(offer));cp.fastPtLiveAt=s.now+1;s.tick(1);local sent=s.plans[#s.plans];check(sent);eq(#sent.lines,1);eq(sent.lines[1],'/pt 42')

@@ -15,7 +15,7 @@ for i,b in ipairs(before)do eq(saved.bindings[i].script,b.script)end
 s.page('addons')
 for _,label in ipairs({'Патруль и экипаж##toolpatrol','События патруля##toolevents','Человек и личность##toolidentity',
     'Машина и мегафон##toolvehicle','Розыск, штрафы, /setmark##toolprocedures','Фиксация (F8)##toolevidence','Обучение##tooltraining','Собеседование##toolextras'})do routes.click(s,label)end
-s.page('partners');routes.click(s,'Перейти к текущему патрулю и экипажу →##partners-patrol')
+s.page('partners');routes.click(s,'Напарники##Патруль и служба##partners-pagecontacts');routes.click(s,'Перейти к текущему патрулю и экипажу →##partners-patrol')
 routes.operations(s);routes.click(s,'Системный лог PA##История работы##stats-pagesystem_log')
 eq(#s.sent,0);eq(#s.scopes,0);eq(s.invalidIOReads,0);onScriptTerminate(s.script)
 -- Three choices for a held manual server command. The third is a full cancellation.

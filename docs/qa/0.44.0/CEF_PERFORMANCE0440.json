@@ -1,0 +1,228 @@
+{
+  "environment": "Node V8 + existing fake DOM; real adapter callbacks",
+  "game_started": false,
+  "actual_input_latency_measured": false,
+  "actual_fps_measured": false,
+  "chat_contents_recorded": false,
+  "rows": {
+    "PA_OFF": {
+      "handlers": {
+        "russian": {
+          "samples": 12000,
+          "median_ms": 0.00010000000000331966,
+          "p95_ms": 0.001599999999996271,
+          "worst_handler_ms": 0.6644000000000005
+        },
+        "english": {
+          "samples": 12000,
+          "median_ms": 0.00010000000000331966,
+          "p95_ms": 0.0002000000000066393,
+          "worst_handler_ms": 0.4268999999999892
+        },
+        "backspace": {
+          "samples": 12000,
+          "median_ms": 0.0006999999999948159,
+          "p95_ms": 0.0014999999999929514,
+          "worst_handler_ms": 1.1801000000000101
+        },
+        "word_selection": {
+          "samples": 12000,
+          "median_ms": 0.00019999999999242846,
+          "p95_ms": 0.0002000000000066393,
+          "worst_handler_ms": 0.18600000000000705
+        },
+        "drag_selection": {
+          "samples": 12000,
+          "median_ms": 0.00039999999999906777,
+          "p95_ms": 0.0006999999999948159,
+          "worst_handler_ms": 0.7103999999999928
+        },
+        "ctrl_a": {
+          "samples": 12000,
+          "median_ms": 0.0007000000000232376,
+          "p95_ms": 0.0018000000000029104,
+          "worst_handler_ms": 1.0471000000000004
+        },
+        "ctrl_c": {
+          "samples": 12000,
+          "median_ms": 0.0002000000000066393,
+          "p95_ms": 0.00030000000000995897,
+          "worst_handler_ms": 0.9121000000000095
+        },
+        "ctrl_v": {
+          "samples": 12000,
+          "median_ms": 0.0002000000000066393,
+          "p95_ms": 0.0004000000000132786,
+          "worst_handler_ms": 0.44719999999998095
+        },
+        "long_message": {
+          "samples": 12000,
+          "median_ms": 0.0002000000000066393,
+          "p95_ms": 0.0003999999999848569,
+          "worst_handler_ms": 0.3415999999999997
+        },
+        "unrelated_cef": {
+          "samples": 12000,
+          "median_ms": 0.0001999999999782176,
+          "p95_ms": 0.00030000000000995897,
+          "worst_handler_ms": 0.11080000000001178
+        }
+      },
+      "editing_dom_work": {
+        "textReads": 0,
+        "textWrites": 0,
+        "styleReads": 0,
+        "rectReads": 0,
+        "endpointLoads": 0
+      },
+      "editing_ipc": 0,
+      "history_lines": 550
+    },
+    "v0.43.2": {
+      "handlers": {
+        "russian": {
+          "samples": 12000,
+          "median_ms": 0.0007999999999981355,
+          "p95_ms": 0.0017000000000280124,
+          "worst_handler_ms": 0.7900999999999954
+        },
+        "english": {
+          "samples": 12000,
+          "median_ms": 0.0002000000000066393,
+          "p95_ms": 0.00030000000000995897,
+          "worst_handler_ms": 0.8907999999999845
+        },
+        "backspace": {
+          "samples": 12000,
+          "median_ms": 0.0011000000000080945,
+          "p95_ms": 0.0023000000000195087,
+          "worst_handler_ms": 1.596900000000005
+        },
+        "word_selection": {
+          "samples": 12000,
+          "median_ms": 0.0007999999999981355,
+          "p95_ms": 0.0024000000000228283,
+          "worst_handler_ms": 2.7719999999999914
+        },
+        "drag_selection": {
+          "samples": 12000,
+          "median_ms": 0.00029999999998153726,
+          "p95_ms": 0.0006999999999948159,
+          "worst_handler_ms": 0.07580000000001519
+        },
+        "ctrl_a": {
+          "samples": 12000,
+          "median_ms": 0.0011000000000080945,
+          "p95_ms": 0.0020999999999844476,
+          "worst_handler_ms": 0.8158000000000243
+        },
+        "ctrl_c": {
+          "samples": 12000,
+          "median_ms": 0.00029999999998153726,
+          "p95_ms": 0.0003000000000383807,
+          "worst_handler_ms": 1.5756000000000085
+        },
+        "ctrl_v": {
+          "samples": 12000,
+          "median_ms": 0.00029999999998153726,
+          "p95_ms": 0.0004000000000132786,
+          "worst_handler_ms": 1.5559000000000083
+        },
+        "long_message": {
+          "samples": 12000,
+          "median_ms": 0.0002000000000066393,
+          "p95_ms": 0.0004000000000132786,
+          "worst_handler_ms": 0.29750000000001364
+        },
+        "unrelated_cef": {
+          "samples": 12000,
+          "median_ms": 0.00010000000003174137,
+          "p95_ms": 0.0002000000000066393,
+          "worst_handler_ms": 0.07339999999999236
+        }
+      },
+      "editing_dom_work": {
+        "textReads": 0,
+        "textWrites": 0,
+        "styleReads": 0,
+        "rectReads": 0,
+        "endpointLoads": 0
+      },
+      "editing_ipc": 0,
+      "history_lines": 550
+    },
+    "v0.44.0": {
+      "handlers": {
+        "russian": {
+          "samples": 12000,
+          "median_ms": 0.0007999999999697138,
+          "p95_ms": 0.0012000000000398359,
+          "worst_handler_ms": 0.26789999999999736
+        },
+        "english": {
+          "samples": 12000,
+          "median_ms": 0.0002000000000066393,
+          "p95_ms": 0.0004000000000132786,
+          "worst_handler_ms": 1.9067999999999756
+        },
+        "backspace": {
+          "samples": 12000,
+          "median_ms": 0.0011000000000080945,
+          "p95_ms": 0.0013999999999896318,
+          "worst_handler_ms": 2.1662999999999784
+        },
+        "word_selection": {
+          "samples": 12000,
+          "median_ms": 0.0002000000000066393,
+          "p95_ms": 0.0002000000000066393,
+          "worst_handler_ms": 1.5971999999999866
+        },
+        "drag_selection": {
+          "samples": 12000,
+          "median_ms": 0.00029999999998153726,
+          "p95_ms": 0.0006000000000199179,
+          "worst_handler_ms": 0.6022000000000389
+        },
+        "ctrl_a": {
+          "samples": 12000,
+          "median_ms": 0.0004000000000132786,
+          "p95_ms": 0.00050000000004502,
+          "worst_handler_ms": 1.2997000000000298
+        },
+        "ctrl_c": {
+          "samples": 12000,
+          "median_ms": 0.00029999999998153726,
+          "p95_ms": 0.0005999999999630745,
+          "worst_handler_ms": 1.7244000000000028
+        },
+        "ctrl_v": {
+          "samples": 12000,
+          "median_ms": 0.00029999999998153726,
+          "p95_ms": 0.0003000000000383807,
+          "worst_handler_ms": 0.7999999999999545
+        },
+        "long_message": {
+          "samples": 12000,
+          "median_ms": 0.0002000000000066393,
+          "p95_ms": 0.00029999999998153726,
+          "worst_handler_ms": 0.22100000000000364
+        },
+        "unrelated_cef": {
+          "samples": 12000,
+          "median_ms": 0.0002000000000066393,
+          "p95_ms": 0.00029999999998153726,
+          "worst_handler_ms": 0.14239999999995234
+        }
+      },
+      "editing_dom_work": {
+        "textReads": 0,
+        "textWrites": 0,
+        "styleReads": 0,
+        "rectReads": 0,
+        "endpointLoads": 0
+      },
+      "editing_ipc": 0,
+      "history_lines": 550
+    }
+  }
+}

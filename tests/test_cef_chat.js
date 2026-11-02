@@ -9,7 +9,7 @@ const prefix = '[Русский акцент]:';
 const chatText = {version:1,skipBrackets:true,dotCommands:true,keyboardMap:{к:'r',К:'R',ы:'s',Ы:'S',е:'t',Е:'T',ф:'a',Ф:'A'}};
 const endpoint = 'http://127.0.0.1:39001/' + 'a'.repeat(48) + '/exchange';
 const flush = () => new Promise(resolve => setImmediate(resolve));
-async function page(delayed=false) {
+async function page(delayed=false, adapter=install) {
   const stats={textReads:0,textWrites:0,styleReads:0,rectReads:0,endpointLoads:0};
   const observers=[], fieldListeners={};
   let now = 0, sequence = 0;
@@ -52,7 +52,7 @@ async function page(delayed=false) {
     const request=JSON.parse(options.body);observed.push(...request.events);
     return {ok:responseStatus===200,status:responseStatus,json:async()=>malformed?{schema:0}:({...config,ack:request.events.at(-1)?.id || 0})};
   };
-  const api = install(root);
+  const api = adapter ? adapter(root) : {endpoint(){},exchange(){},stop(){}};
   root.cef.on('chat:messages', (...args) => callbacks.rendered.push(args));callbacks.rendered=[];
   root.sendMessageToChat = text => {if(delayed)root.setTimeout(()=>root.cef.emit('HandleHudSendMessage',text),50);else root.cef.emit('HandleHudSendMessage',text);panel.open=false;};
   function fire(name,event={}) {
@@ -73,7 +73,8 @@ async function page(delayed=false) {
     time(ms) {now+=ms;}, runTimers(ms) {now+=ms;for(const[id,timer]of [...timers])if(!timer.interval&&timer.at<=now){timers.delete(id);timer.cb();}}, offline(value) {failure=value;},
     status(value){responseStatus=value;},malformed(value){malformed=value;},hang(value){hang=value;}};
 }
-(async () => {
+module.exports={page};
+if(require.main===module)(async () => {
   let p=await page();p.type('Привет');eq(p.input.value,'Привет');eq(p.input.selectionStart,p.input.value.length);
   const caret=p.input.caretWrites;p.api.prepare();eq(p.input.caretWrites,caret,'stable input must not reset the caret');
   await p.enter();eq(p.sent,[['HandleHudSendMessage',prefix+' Привет']]);

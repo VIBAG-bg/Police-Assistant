@@ -14,7 +14,7 @@ local function setup(demo)
     lib.profile.name='Victor Auditore';lib.profile.callsign='A-1';lib.alerts.on_duty=true
     lib.alerts.patrol.enabled=true -- Old and new producers must not both run.
     local s=fixture({demo=demo==true,library=lib,alerts=true,notifications=true,categoryWheel=true})
-    s.step();s.page('partners');click(s,'Патруль##Напарники и служба##partners-pagepatrol')
+    s.step();s.page('partners');click(s,'Патруль и смена##Патруль и служба##partners-pagepatrol')
     return s
 end
 local s=setup(false);local c=s.patrolSession;check(c);check(not s.patrol.active,'No report before explicit start')
@@ -32,6 +32,7 @@ for _=1,31 do s.step(1000)end
 check(s.radioGuard:view().visible,s.patrol.phase..' '..tostring(s.patrol.remaining));eq(#s.sent,4)
 check(s.radioGuard:cancel());for _=1,40 do s.step(1000)end;eq(#s.sent,4)
 -- All editable outgoing templates and behavior fields persist in personal storage.
+click(s,'Шаблоны и дополнительные настройки →##session-settings')
 s.edits={['##Периодический доклад##session-template-periodic']='{unit}: участок {area}.'};s.render();s.edits={};s.step(700)
 eq(s.workspace.library.patrol_session.periodic_template,'{unit}: участок {area}.')
 local stored=s.savedLibrary()
@@ -40,6 +41,7 @@ eq(stored.patrol_session.periodic_template,'{unit}: участок {area}.')
 for _,width in ipairs({760,1000,1600})do
     s.io.DisplaySize.x=width;s.io.DisplaySize.y=900;s.render();healthy(s)
 end
+click(s,'Открыть патруль и смену##session-workspace')
 click(s,'Завершить без доклада##patrol-discard');click(s,'ДА##confirm-yes');s.step()
 check(not c.data.active);eq(#c.data.history,1);eq(#s.sent,4)
 check(s.files['moonloader\\config\\police_assistant_2026_patrol.json'])
@@ -60,7 +62,7 @@ lib.profile.name='Victor Auditore';lib.patrol_session.unit='A-1';lib.alerts.on_d
 lib.partners={{id=1,nickname='Player_Name',callsign='A-2'}};lib.next_partner_id=2
 lib.patrol_session.crew={{contact_id=1,ic_name='John Smith',role='Напарник'}}
 s=fixture({demo=true,library=lib,alerts=true});s.step();s.page('partners')
-click(s,'Патруль##Напарники и служба##partners-pagepatrol')
+click(s,'Патруль и смена##Патруль и служба##partners-pagepatrol')
 local originals,reads={},0
 for _,name in ipairs({'sampGetMaxPlayerId','sampIsPlayerConnected','sampGetPlayerNickname','sampGetCharHandleBySampPlayerId'})do
     local original=_G[name];originals[name]=original

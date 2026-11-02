@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "input": "current local split user documents; in-memory comparison only",
+  "user_values_exported": false,
+  "existing_leaf_values_preserved": 3164,
+  "additional_leaf_count": 17,
+  "source_files_unchanged": true,
+  "notes_exported": false,
+  "live_game_written": false,
+  "baseline": "0.43.5",
+  "candidate": "0.44.0"
+}

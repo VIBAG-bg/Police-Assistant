@@ -9,6 +9,17 @@ for script in [ROOT/'install.ps1', *(ROOT/'tools').glob('*.ps1'), *(ROOT/'moonlo
     if any(b>=128 for b in data):
         assert data.startswith(b'\xef\xbb\xbf'), f'Windows PowerShell needs UTF-8 BOM: {script}'
 manifest=json.loads((ROOT/'INSTALL_MANIFEST.json').read_text('utf-8-sig'))
+if manifest.get('update_carried_assets'):
+    fm=json.loads((ROOT/'moonloader/resource/pa26/fonts/manifest.json').read_text('utf-8'))
+    font=(ROOT/'moonloader/resource/pa26/fonts/fa-solid-900.ttf').read_bytes()
+    carrier=(ROOT/'moonloader/lib/pa26_icon_font.lua').read_text('utf-8')
+    data=carrier.split('data=table.concat({',1)[1].split('}),license=',1)[0]
+    decoded=bytes(int(n) for n in re.findall(r'\\(\d{3})',data))
+    assert decoded==font and hashlib.sha256(font).hexdigest()==fm['sha256'], 'Font carrier must contain the original pinned bytes'
+    license_text=(ROOT/'moonloader/resource/pa26/fonts/LICENSE.txt').read_text('utf-8')
+    assert carrier.split('license=[==[',1)[1].split(']==]',1)[0]==license_text, 'Full original font license must travel in updates'
+    assert carrier.split('manifest=[==[',1)[1].split(']==]',1)[0]==(ROOT/'moonloader/resource/pa26/fonts/manifest.json').read_text('utf-8')
+    assert {r['path'] for r in manifest['update_carried_assets']}=={'resource\\pa26\\fonts\\'+n for n in ('fa-solid-900.ttf','LICENSE.txt','manifest.json')}
 assert re.fullmatch(r'\d+\.\d+\.\d+(?:-[\w.-]+)?', manifest['release'])
 installer=(ROOT/'install.ps1').read_text('utf-8-sig')
 owned=re.search(r'\$paOwned\s*=\s*@\((.*?)\)\s*\r?\n',installer,re.S)

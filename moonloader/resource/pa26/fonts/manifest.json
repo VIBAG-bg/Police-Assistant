@@ -1,0 +1,177 @@
+{
+  "library": "Font Awesome Free",
+  "version": "6.7.2",
+  "style": "solid",
+  "font": "fa-solid-900.ttf",
+  "sha256": "af19d135d3a935b3ebfbd80320716ffe1202052c5f68dc2c5f1abc57005ac605",
+  "bytes": 426112,
+  "license": "SIL Open Font License 1.1",
+  "license_sha256": "9b914eae88817d63b576eab5aafde7068c7a1abae125d7cdfb034f1da43a9afc",
+  "source": "https://github.com/FortAwesome/Font-Awesome/releases/tag/6.7.2",
+  "font_source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.2/webfonts/fa-solid-900.ttf",
+  "metadata_source": "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.2/metadata/icons.json",
+  "metadata_sha256": "a3a705d0e03c4fbdf1a61aece3d8fd462024b33794187ef7ee2a0764439170eb",
+  "icons": {
+    "house": {
+      "codepoint": "f015",
+      "family": "Free Solid"
+    },
+    "car-side": {
+      "codepoint": "f5e4",
+      "family": "Free Solid"
+    },
+    "route": {
+      "codepoint": "f4d7",
+      "family": "Free Solid"
+    },
+    "tower-broadcast": {
+      "codepoint": "f519",
+      "family": "Free Solid"
+    },
+    "bullhorn": {
+      "codepoint": "f0a1",
+      "family": "Free Solid"
+    },
+    "triangle-exclamation": {
+      "codepoint": "f071",
+      "family": "Free Solid"
+    },
+    "circle-info": {
+      "codepoint": "f05a",
+      "family": "Free Solid"
+    },
+    "circle-check": {
+      "codepoint": "f058",
+      "family": "Free Solid"
+    },
+    "circle-xmark": {
+      "codepoint": "f057",
+      "family": "Free Solid"
+    },
+    "magnifying-glass": {
+      "codepoint": "f002",
+      "family": "Free Solid"
+    },
+    "gear": {
+      "codepoint": "f013",
+      "family": "Free Solid"
+    },
+    "book-open": {
+      "codepoint": "f518",
+      "family": "Free Solid"
+    },
+    "scale-balanced": {
+      "codepoint": "f24e",
+      "family": "Free Solid"
+    },
+    "gavel": {
+      "codepoint": "f0e3",
+      "family": "Free Solid"
+    },
+    "users": {
+      "codepoint": "f0c0",
+      "family": "Free Solid"
+    },
+    "id-card": {
+      "codepoint": "f2c2",
+      "family": "Free Solid"
+    },
+    "crosshairs": {
+      "codepoint": "f05b",
+      "family": "Free Solid"
+    },
+    "clipboard-list": {
+      "codepoint": "f46d",
+      "family": "Free Solid"
+    },
+    "play": {
+      "codepoint": "f04b",
+      "family": "Free Solid"
+    },
+    "pause": {
+      "codepoint": "f04c",
+      "family": "Free Solid"
+    },
+    "flag-checkered": {
+      "codepoint": "f11e",
+      "family": "Free Solid"
+    },
+    "stop": {
+      "codepoint": "f04d",
+      "family": "Free Solid"
+    },
+    "paper-plane": {
+      "codepoint": "f1d8",
+      "family": "Free Solid"
+    },
+    "check": {
+      "codepoint": "f00c",
+      "family": "Free Solid"
+    },
+    "xmark": {
+      "codepoint": "f00d",
+      "family": "Free Solid"
+    },
+    "pen": {
+      "codepoint": "f304",
+      "family": "Free Solid"
+    },
+    "floppy-disk": {
+      "codepoint": "f0c7",
+      "family": "Free Solid"
+    },
+    "rotate": {
+      "codepoint": "f2f1",
+      "family": "Free Solid"
+    },
+    "location-dot": {
+      "codepoint": "f3c5",
+      "family": "Free Solid"
+    },
+    "clock": {
+      "codepoint": "f017",
+      "family": "Free Solid"
+    },
+    "arrow-left": {
+      "codepoint": "f060",
+      "family": "Free Solid"
+    },
+    "chevron-down": {
+      "codepoint": "f078",
+      "family": "Free Solid"
+    },
+    "shield-halved": {
+      "codepoint": "f3ed",
+      "family": "Free Solid"
+    },
+    "car-burst": {
+      "codepoint": "f5e1",
+      "family": "Free Solid"
+    },
+    "phone": {
+      "codepoint": "f095",
+      "family": "Free Solid"
+    },
+    "file-lines": {
+      "codepoint": "f15c",
+      "family": "Free Solid"
+    },
+    "keyboard": {
+      "codepoint": "f11c",
+      "family": "Free Solid"
+    },
+    "sliders": {
+      "codepoint": "f1de",
+      "family": "Free Solid"
+    },
+    "circle-question": {
+      "codepoint": "f059",
+      "family": "Free Solid"
+    },
+    "handcuffs": {
+      "codepoint": "e4f8",
+      "family": "Free Solid"
+    }
+  },
+  "update_transport": "Identical original bytes and original license in lib/pa26_icon_font.lua; no worker/platform changes."
+}

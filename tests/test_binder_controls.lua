@@ -76,7 +76,7 @@ s.page('hints'); s.click='Удалить##note'; fresh(s); check(s.modalOpen); a
 s.commands.pa26tips(); fresh(s); s.click='Удалить##note'; fresh(s)
 eq(s.modalCalls[#s.modalCalls].parent,'Police Assistant · Памятки##pa26-tips')
 answered(s,yes); eq(#library(s).notes,1)
-s.commands.pa26(); s.page('partners')
+s.commands.pa26(); s.page('partners');s.click='Напарники##Патруль и служба##partners-pagecontacts';fresh(s)
 s.edits={['Игровой ник##partner']='Test_Partner',['Позывной##partner']='P-01'}; fresh(s)
 s.click='Добавить контакт'; fresh(s); eq(#library(s).partners,1)
 s.click='Test_Partner · P-01##partner1'; fresh(s); s.click='Удалить контакт'; fresh(s)

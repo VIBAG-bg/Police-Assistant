@@ -334,9 +334,17 @@ function Hud:getSettings() return copy(self.settings) end
 
 function Hud:change(key, value)
     local nextSettings = self:getSettings()
+    if (key=='x'or key=='y'or key=='scale'or key=='responsive')and self.viewport and
+        (nextSettings.reference_width~=self.viewport.w or nextSettings.reference_height~=self.viewport.h)then
+        local r=self:layout(self.viewport.w,self.viewport.h)
+        if r then
+            nextSettings.x,nextSettings.y,nextSettings.scale=r.x,r.y,r.scale
+            nextSettings.reference_width,nextSettings.reference_height=self.viewport.w,self.viewport.h
+        end
+    end
     nextSettings[key] = value
     if not core.validateWidget(nextSettings) then return false end
-    if self.settings[key] ~= value then
+    if self.settings[key] ~= value or nextSettings.reference_width~=self.settings.reference_width or nextSettings.reference_height~=self.settings.reference_height then
         self.settings = nextSettings
         self.dirty, self.dirtyAt = true, nil
     end
@@ -352,10 +360,19 @@ end
 
 function Hud:resetPosition()
     local defaults = core.widgetDefaults()
-    self:change('x', defaults.x)
-    self:change('y', defaults.y)
-    self:change('scale', defaults.scale)
+    for _,key in ipairs({'x','y','scale','responsive','reference_width','reference_height'})do self.settings[key]=defaults[key]end
+    self.dirty,self.dirtyAt=true,nil
     self:setVisible(true)
+end
+function Hud:recoverGeometry()
+    -- Validate once at recovery, never on every edit/frame. Good personal
+    -- geometry survives; an invalid rectangle gets one coherent reference.
+    if core.validateWidget(self.settings)then return false end
+    local nextSettings=core.widgetDefaults()
+    if type(self.settings.visible)=='boolean'then nextSettings.visible=self.settings.visible end
+    if self.settings.time_source=='game'then nextSettings.time_source='game'end
+    self.settings=nextSettings;self.dirty,self.dirtyAt=true,nil;self:stopInteraction()
+    return true
 end
 
 function Hud:stopInteraction()
@@ -456,11 +473,28 @@ end
 function Hud:layout(width, height)
     if not core.finite(width) or not core.finite(height) or width <= 0 or height <= 0 then return nil end
     local baseHeight=M.HEIGHT+(self.mapSquare and 28 or 0)+(self.patrol and self.patrol.visible and((self.patrol.crew and 80 or 58)+(self.patrolExtraHeight or 0))or 0)
-    local scale = math.min(self.settings.scale, (width - 4) / M.WIDTH, (height - 4) / baseHeight)
+    self.viewport={w=width,h=height}
+    local rw,rh=self.settings.reference_width,self.settings.reference_height
+    if not rw or not rh then
+        -- One-time legacy migration, in memory; the normal deferred writer owns
+        -- persistence and backup. No filesystem work in the input/render path.
+        rw,rh=width,height;self.settings.reference_width,self.settings.reference_height=rw,rh
+        self.dirty,self.dirtyAt=true,nil
+    end
+    local responsive=self.settings.responsive~=false
+    local factor=responsive and math.max(.85,math.min(1.5,width/rw,height/rh))or 1
+    local scale = math.min(2,self.settings.scale*factor, (width - 4) / M.WIDTH, (height - 4) / baseHeight)
     if scale < 0.45 then return nil end
     local w, h = M.WIDTH * scale, baseHeight * scale
-    local x = math.max(0, math.min(self.settings.x, width - w))
-    local y = math.max(0, math.min(self.settings.y, height - h))
+    local rawX,rawY=self.settings.x,self.settings.y
+    if responsive then
+        -- Horizontal travel anchors the author HUD at the right margin. The top
+        -- anchor is viewport-relative, independent of temporary patrol rows.
+        local travel=math.max(1,rw-M.WIDTH*self.settings.scale)
+        rawX=math.max(0,math.min(1,rawX/travel))*math.max(0,width-w);rawY=rawY*height/rh
+    end
+    local x = math.max(0, math.min(rawX, width - w))
+    local y = math.max(0, math.min(rawY, height - h))
     return {x = x, y = y, w = w, h = h, scale = scale}
 end
 

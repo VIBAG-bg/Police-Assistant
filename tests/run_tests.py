@@ -64,7 +64,7 @@ def runtime():
 
 syntax_lua = runtime()
 files = sorted((ROOT / "moonloader").rglob("*.lua")) + sorted(
-    file for file in (ROOT / "tests").rglob("*.lua") if "install-sandbox" not in file.parts and "update-sandbox" not in file.parts
+    file for file in (ROOT / "tests").rglob("*.lua") if not {'install-sandbox','update-sandbox','cef-contract-sandbox'}.intersection(file.parts)
 )
 for file in files:
     syntax_lua.execute(b"local f,e = loadfile(...); assert(f,e)", file.as_posix().encode("utf-8"))
@@ -150,6 +150,9 @@ test_names.extend(['test_direction0433.lua','test_staff0433.lua','test_streamout
 test_names.append('test_f9_report_validation.lua')
 test_names.append('test_report_template_validation.lua')
 test_names.extend(['test_patrol_addendum0435.lua','test_chat_alias0435.lua','test_stop_workflow0435.lua','test_mask0435.lua'])
+test_names.append('test_ux0440.lua')
+test_names.append('test_geometry0440.lua')
+test_names.extend(['test_custody0440.lua','test_cef_contract0440.lua'])
 
 parser.add_argument('--report')
 parser.add_argument('--only', nargs='+', choices=test_names)

@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "screen_sizes": 7,
+  "environment": "installed x86 mimgui CPU-only",
+  "script_sha256": "f2b1c87675a6be195f7963fbcb0e3a35e86e36624537800203472c4937ef6c39",
+  "game_started": false,
+  "live_game_written": false,
+  "checks": 805,
+  "frames": 315
+}

@@ -2,6 +2,8 @@
 -- Optional generated artwork is local to this menu and never owns input.
 local core = require 'pa26_core'
 local bit = require 'bit'
+local icons = require 'pa26_icons'
+local geometry = require 'pa26_geometry'
 local M = {}
 local Menu = {}
 Menu.__index = Menu
@@ -9,7 +11,7 @@ M.sections = {
     {key='home',label='Главная',short='Главная'},
     {key='binds',label='Библиотека биндов',short='Бинды'},
     {key='addons',label='Помощники службы',short='Помощники'},
-    {key='partners',label='Напарники',short='Напарники'},
+    {key='partners',label='Патруль',short='Патруль'},
     {key='hints',label='Памятки и справка',short='Памятки'},
     {key='knowledge',label='База знаний',short='База знаний'},
     {key='stats',label='Журнал и статистика',short='Журнал'},
@@ -31,51 +33,43 @@ function Menu:navigate(section,guide,tool)
 end
 
 local function clamp(value,low,high) return math.max(low,math.min(high,value)) end
-function M.windowBounds(width,height,key,percent)
-    if not core.finite(width) or not core.finite(height) or width<220 or height<220 then return nil end
-    percent=percent or 70
-    local defaults=({main={width*percent/100,height*percent/100,760,480},wanted={width*.7,math.max(720,height*.86),420,400},fine={math.min(820,width*.76),height*.82,420,360},mark={math.min(780,width*.75),height*.82,420,360},ground={math.min(780,width*.72),height*.8,420,360},quick={780,700,360,320},tips={960,760,420,360},assist={680,560,420,380}})[key]
-    if not defaults then return nil end
-    local maxW,maxH=width-32,height-32
-    local minW,minH=math.min(defaults[3],maxW),math.min(defaults[4],maxH)
-    return {width=clamp(defaults[1],minW,maxW),height=clamp(defaults[2],minH,maxH),
-        minW=minW,minH=minH,maxW=maxW,maxH=maxH}
-end
+M.windowBounds=geometry.bounds
 function Menu:prepareWindow(imgui,key)
-    local io=imgui.GetIO(); local bounds=M.windowBounds(io.DisplaySize.x,io.DisplaySize.y,key)
+    local io=imgui.GetIO(); local bounds=M.windowBounds(io.DisplaySize.x,io.DisplaySize.y,key,nil,nil,io.FontGlobalScale)
     if not bounds then return false end
     local config=self.windowConfig and self.windowConfig()
     local saved=self.windows[key];local restored=false
+    if saved and not geometry.valid(saved,key)then saved=nil;self.windows[key]=nil end
     if not saved and config and config.remember then saved=config.windows[key];self.windows[key]=saved;restored=saved~=nil end
     self.pendingWindows=self.pendingWindows or{};self.resetWindows=self.resetWindows or{}
     local pending=self.pendingWindows[key];self.pendingWindows[key]=nil
     local reset=self.resetWindows[key];self.resetWindows[key]=nil
     local desired=pending or saved;if reset then desired=nil end
-    local rect=M.windowRect(io.DisplaySize.x,io.DisplaySize.y,key,desired,config and config.initial_percent)
+    local rect=M.windowRect(io.DisplaySize.x,io.DisplaySize.y,key,desired,config and config.initial_percent,config and config.default_style,io.FontGlobalScale)
     imgui.SetNextWindowSizeConstraints(imgui.ImVec2(bounds.minW,bounds.minH),imgui.ImVec2(bounds.maxW,bounds.maxH))
-    local force=restored or not saved or pending or reset or(saved.displayW~=io.DisplaySize.x or saved.displayH~=io.DisplaySize.y)
+    self.forceWindows=self.forceWindows or{};local recovering=self.forceWindows[key];self.forceWindows[key]=nil
+    local force=recovering or restored or not saved or pending or reset or(saved.displayW~=io.DisplaySize.x or saved.displayH~=io.DisplaySize.y)
     local condition=force and imgui.Cond.Always or imgui.Cond.FirstUseEver
     -- Position and size must be fixed BEFORE Begin calculates native clip rects.
     imgui.SetNextWindowPos(imgui.ImVec2(rect.x,rect.y),condition)
     imgui.SetNextWindowSize(imgui.ImVec2(rect.width,rect.height),condition)
     return true
 end
-function M.windowRect(width,height,key,saved,percent)
-    local b=M.windowBounds(width,height,key,percent);if not b then return nil end
-    saved=saved or{}
-    if core.finite(saved.displayW)and core.finite(saved.displayH)and saved.displayW>=220 and saved.displayH>=220 then
-        local copy={};for k,v in pairs(saved)do copy[k]=v end
-        for _,k in ipairs({'width','x'})do if core.finite(copy[k])then copy[k]=copy[k]*width/saved.displayW end end
-        for _,k in ipairs({'height','y'})do if core.finite(copy[k])then copy[k]=copy[k]*height/saved.displayH end end
-        saved=copy
-    end
-    local w=clamp(core.finite(saved.width)and saved.width or b.width,b.minW,b.maxW)
-    local h=clamp(core.finite(saved.height)and saved.height or b.height,b.minH,b.maxH)
-    return {width=w,height=h,x=clamp(core.finite(saved.x)and saved.x or(width-w)/2,16,width-w-16),
-        y=clamp(core.finite(saved.y)and saved.y or(height-h)/2,16,height-h-16)}
-end
+M.windowRect=geometry.rect
 function Menu:resetWindowPositions()
     self.pendingWindows={};self.resetWindows={main=true,quick=true,tips=true,assist=true,wanted=true,fine=true,mark=true,ground=true}
+end
+function Menu:recoverWindowPositions()
+    -- A draw failure does not mean the user's saved layout is corrupt.
+    -- Discard transient drag deltas, then reapply the last valid geometry.
+    self.pendingWindows={};self.resetWindows={};self.forceWindows={}
+    local config=self.windowConfig and self.windowConfig()
+    for key in pairs(require('pa26_window_layout').keys)do
+        if not geometry.valid(self.windows[key],key)then
+            self.windows[key]=config and config.remember and config.windows[key]or nil
+        end
+        self.forceWindows[key]=true
+    end
 end
 function Menu:nativeEdges(imgui)
     local io=imgui.GetIO()
@@ -277,6 +271,10 @@ function M.confirmationLayout(im,spec)
 end
 function M.confirmationBody(im,ui,layout,spec,extra)
     im.PushFont(layout.titleFont);ui.push(function()im.PopFont()end)
+    if spec.icon then
+        local p=im.GetCursorScreenPos();local window=im.GetWindowPos()
+        if p.x-window.x>=24 then icons.draw(im,spec.icon,p.x-22,p.y+2,16,spec.iconTone or'info')end
+    end
     ui.text(spec.title);ui.finish()
     if extra and not spec.extraAfterLines then extra()end
     if layout.pages then
@@ -303,13 +301,20 @@ function M.fittedButton(imgui,ui,label,size,font)
     if width<0 then width=math.max(4,available.x+width)
     elseif width==0 then width=current:CalcTextSizeA(fontSize,100000,0,visible).x+28 end
     local requestedHeight=size.y<0 and math.max(4,available.y+size.y)or size.y
-    local wrap=math.max(1,width-28)
+    local name=width>=200 and icons.semantic(label)or nil
+    local decorated=name and icons.owner==imgui and icons.get(name)
+    local gutter=decorated and 26 or 0
+    local wrap=math.max(1,width-28-gutter)
     local layout=M.labelLayout(current,fontSize,wrap,visible)
     local height=math.max(requestedHeight,layout.height+16)
     imgui.PushStyleColor(imgui.Col.Text,imgui.ImVec4(1,1,1,0)); ui.push(function() imgui.PopStyleColor(1) end)
     local clicked=imgui.Button(label,imgui.ImVec2(width,height)); ui.finish()
     local first=imgui.GetItemRectMin()
-    M.drawCenteredLabel(imgui,current,fontSize,first,width,height,layout)
+    if decorated then
+        icons.draw(imgui,name,first.x+12,first.y+(height-16)/2,16,
+            visible:match('^НЕТ')and'danger'or visible:match('^ДА')and'safe'or'normal')
+    end
+    M.drawCenteredLabel(imgui,current,fontSize,imgui.ImVec2(first.x+gutter,first.y),width-gutter,height,layout)
     if font then ui.finish() end
     return clicked
 end
@@ -501,9 +506,9 @@ function Menu:pushTheme(imgui, ui)
         {imgui.Col.FrameBg, .09, .15, .22, .85},
         {imgui.Col.FrameBgHovered, .12, .23, .34, 1},
         {imgui.Col.FrameBgActive, .13, .29, .44, 1},
-        {imgui.Col.Button, .13, .31, .47, .82},
-        {imgui.Col.ButtonHovered, .20, .43, .62, .93},
-        {imgui.Col.ButtonActive, .13, .40, .59, .95},
+        {imgui.Col.Button, .10, .25, .31, .94},
+        {imgui.Col.ButtonHovered, .13, .37, .43, 1},
+        {imgui.Col.ButtonActive, .12, .44, .49, 1},
         {imgui.Col.Header, .11, .35, .56, 1},
         {imgui.Col.HeaderHovered, .13, .43, .66, 1},
         {imgui.Col.HeaderActive, .10, .40, .64, 1},
@@ -664,6 +669,10 @@ local function selectorRow(imgui, items, active, prefix, onSelect,ui)
 end
 
 local function rows(imgui, ui, data)
+    if imgui.GetContentRegionAvail().x<380 then
+        for _,row in ipairs(data)do ui.text(row[1]..': '..tostring(row[2]or'—'))end
+        return
+    end
     imgui.Columns(2, 'rows##pa26', false)
     ui.push(function() imgui.Columns(1) end)
     imgui.SetColumnWidth(0, math.max(110, math.min(210, imgui.GetWindowSize().x * .38)))
@@ -719,37 +728,69 @@ function Menu:homePage(imgui, ui, model, callbacks, fonts)
         ui.text('Скриншоты SA:MP: '..screens.count..' / 1000 · индекс '..screens.maxIndex..'/999. Скоро потребуется архив.')
         if callbacks.openAssist and button(imgui,ui,'Открыть архив скриншотов##home-screens',imgui.ImVec2(available,40),fonts.button)then callbacks.openAssist('evidence')end
     end
-    self:loadAsset(imgui, 'banner')
-    local heroHeight = self:assetHeight('banner', available)
-    if not self:drawAsset(imgui, 'banner', available, heroHeight) then
-        child(imgui, ui, 'photo-slot##pa26', available, 142, function()
-            heading(imgui, ui, 'Exsellent RP / Police Assistant', fonts.heading)
-            ui.text('San Andreas Police Department • FBI')
-            ui.text('Department of Corrections')
-            muted(imgui, ui, 'Изображение недоступно; инструменты остаются доступны.')
+    local profileRows={{'Номер личного дела',model.caseNumber and model.caseNumber~=''and model.caseNumber or 'Не заполнено'},
+        {'Игровой ник',model.nickname},{'SA:MP ID',model.id},{'Доступ к программе','Локальная версия'},
+        {'Режим работы',model.demo and 'Демонстрационный'or'Реальные команды'},{'Подключение',model.connected and 'На сервере'or'Ожидание подключения'}}
+    local font=imgui.GetFont();local fs=imgui.GetFontSize();local profileHeight=68
+    local wrap=math.max(1,available-32);local profileWide=wrap>=900
+    local labelWidth=math.min(210,wrap*.17);local valueWidth=math.max(1,wrap/2-labelWidth-16)
+    if profileWide then
+        for i=1,3 do
+            local rowHeight=0
+            for _,index in ipairs({i,i+3})do local row=profileRows[index]
+                rowHeight=math.max(rowHeight,M.labelLayout(font,fs,labelWidth,row[1]).height,
+                    M.labelLayout(font,fs,valueWidth,tostring(row[2]or'—')).height)
+            end
+            profileHeight=profileHeight+rowHeight+10
+        end
+    else
+        for _,row in ipairs(profileRows)do
+            local text=row[1]..': '..tostring(row[2]or'—')
+            profileHeight=profileHeight+M.labelLayout(font,fs,wrap<380 and wrap or math.max(1,wrap*.48),text).height+12
+        end
+    end
+    local columns=available>=1100 and 4 or available>=580 and 2 or 1
+    local actionHeight=math.ceil(4/columns)*56+50
+    -- Keep the owner's home hierarchy: banner first, personal record below.
+    -- The image keeps its aspect ratio and uses the space left after controls.
+    local heroHeight=math.min(self:assetHeight('banner',available),math.max(96,imgui.GetContentRegionAvail().y-profileHeight-actionHeight-186))
+    if not self:drawAsset(imgui,'banner',available,heroHeight)then
+        child(imgui,ui,'photo-slot##pa26',available,math.min(142,heroHeight),function()
+            heading(imgui,ui,'Exsellent RP / Police Assistant',fonts.heading)
+            ui.text('Изображение недоступно; инструменты остаются доступны.')
         end)
     end
-    imgui.Dummy(imgui.ImVec2(0, 8))
-    child(imgui, ui, 'profile##pa26', available, 264, function()
-        heading(imgui, ui, 'Личное дело', fonts.heading)
-        imgui.Separator()
-        rows(imgui, ui, {{'Номер личного дела', model.caseNumber~='' and model.caseNumber or 'Не заполнено'}, {'Игровой ник', model.nickname},
-            {'SA:MP ID', model.id}, {'Доступ к программе', 'Локальная версия'},
-            {'Режим работы', model.demo and 'Демонстрационный' or 'Реальные команды'},
-            {'Подключение', model.connected and 'На сервере' or 'Ожидание подключения'}})
-    end)
-    imgui.Dummy(imgui.ImVec2(0, 8))
-    if callbacks.openPatrol and button(imgui,ui,'Патруль и экипаж##home-patrol',imgui.ImVec2(available,40),fonts.button)then callbacks.openPatrol()end
-    local pairedButtons = available >= 650
-    local buttonWidth = pairedButtons and (available - 12) / 2 or available
-    if button(imgui, ui, 'Библиотека биндов##home', imgui.ImVec2(buttonWidth, 46), fonts.button) then
-        self:navigate('binds',nil,'actions')
+    imgui.Dummy(imgui.ImVec2(0,8))
+    child(imgui,ui,'profile##pa26',available,profileHeight,function()
+        heading(imgui,ui,'Личное дело',fonts.heading)
+        if profileWide then
+            imgui.Columns(4,'profile-grid##pa26',false);ui.push(function()imgui.Columns(1)end)
+            imgui.SetColumnWidth(0,labelWidth);imgui.SetColumnWidth(1,valueWidth+8)
+            imgui.SetColumnWidth(2,labelWidth)
+            for i=1,3 do for _,index in ipairs({i,i+3})do local row=profileRows[index]
+                muted(imgui,ui,row[1]);imgui.NextColumn();ui.text(tostring(row[2]or'—'));imgui.NextColumn()
+            end end
+            ui.finish()
+        else rows(imgui,ui,profileRows)end
+    end,false,imgui.WindowFlags.NoScrollbar+imgui.WindowFlags.NoScrollWithMouse)
+    imgui.Dummy(imgui.ImVec2(0,8))
+    local width=(available-12*(columns-1))/columns
+    local actions={{'Трафик и погоня · F4##home-fast',function()if callbacks.openAssist then callbacks.openAssist('traffic')end end},
+        {'Патруль и экипаж##home-patrol',function()if callbacks.openPatrol then callbacks.openPatrol()end end},
+        {'Библиотека биндов##home',function()self:navigate('binds',nil,'actions')end},
+        {'База знаний##home-knowledge',function()self:navigate('knowledge')end}}
+    for i,action in ipairs(actions)do
+        if (i-1)%columns~=0 then imgui.SameLine(0,12)end
+        if button(imgui,ui,action[1],imgui.ImVec2(width,46),fonts.button)then action[2]()end
     end
-    if pairedButtons then imgui.SameLine(0, 12) end
+    if callbacks.openSettings and button(imgui,ui,'Профиль и первые настройки##home-setup',imgui.ImVec2(available,40),fonts.button)then callbacks.openSettings('profile')end
+    withFont(imgui,ui,fonts.small,function()muted(imgui,ui,'F4 — действия и доклады. F9 — настройки. Перед отправкой проверьте предпросмотр и нажмите ДА.')end)
+    imgui.Dummy(imgui.ImVec2(0, 8))
     imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(.40,.13,.18,.90));ui.push(function()imgui.PopStyleColor(1)end)
-    if button(imgui,ui,'Отключить PA##home',imgui.ImVec2(buttonWidth,46),fonts.button)then callbacks.finishWork()end
+    if button(imgui,ui,'Отключить PA##home',imgui.ImVec2(available,42),fonts.button)then callbacks.finishWork()end
     ui.finish()
-    withFont(imgui, ui, fonts.small, function() muted(imgui, ui, 'Полностью выключить Police Assistant до перезахода в игру.') end)
+    withFont(imgui,ui,fonts.small,function()muted(imgui,ui,'Полностью выключить Police Assistant до перезахода в игру.')end)
+
 end
 
 function Menu:statsPage(imgui, ui, model, fonts)
@@ -890,7 +931,11 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         local sidebarTextH=0
         for _,line in ipairs(M.contacts)do sidebarTextH=sidebarTextH+M.labelLayout(smallFont,smallSize,artworkWidth,line).height end
         local spacing=self.compact and 6 or 10
-        local navHeight = math.max(1, imgui.GetContentRegionAvail().y - (2*smallSize+sidebarTextH+9*spacing+10))
+        local fullReserve=2*smallSize+sidebarTextH+9*spacing+10
+        local navRequired=#M.sections*(44+spacing)+8
+        local fullContacts=imgui.GetContentRegionAvail().y>=fullReserve+navRequired
+        local reserved=fullContacts and fullReserve or(smallSize+3*spacing+10)
+        local navHeight = math.max(1, imgui.GetContentRegionAvail().y - reserved)
         child(imgui, ui, 'navigation##pa26', 0, navHeight, function()
             imgui.PushStyleVarVec2(imgui.StyleVar.ButtonTextAlign, vec(0, .5))
             ui.push(function() imgui.PopStyleVar(1) end)
@@ -902,7 +947,7 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
                         ui.push(function() imgui.PopStyleColor(1) end)
                     end
                     local label = side < 244 and section.short or section.label
-                    if imgui.Button(string.format('%02d', index) .. '  ' .. label .. '##nav' .. section.key,
+                    if M.fittedButton(imgui,ui,string.format('%02d', index) .. '  ' .. label .. '##nav' .. section.key,
                         vec(math.max(1, imgui.GetContentRegionAvail().x), 44)) then self:navigate(section.key)end
                     if selected then ui.finish() end
                 end
@@ -912,8 +957,10 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         imgui.Dummy(vec(0, 4))
         withFont(imgui, ui, fonts.small, function()
             muted(imgui, ui, model.connected and 'Соединение активно' or 'Ожидание сервера')
-            imgui.Dummy(vec(0,6));ui.text('Для связи')
-            for _,line in ipairs(M.contacts)do ui.text(line)end
+            if fullContacts then
+                imgui.Dummy(vec(0,6));ui.text('Для связи')
+                for _,line in ipairs(M.contacts)do ui.text(line)end
+            end -- The same full contacts remain in the fixed footer at every size.
         end)
     end, true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse)
 

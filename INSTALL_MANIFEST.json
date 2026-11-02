@@ -1,9 +1,9 @@
 {
-  "release": "0.43.5",
+  "release": "0.44.0",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
-      "sha256": "4978ee9d1c47fc0301641c846294d2538e34bba8d9c941cdca584d3cd363e6c5"
+      "sha256": "db1ac67da0c775c4690bdfe4f268ef56742cdd16e55092fca99e5753b40eb28d"
     },
     {
       "path": "lib\\pa26_alerts.lua",
@@ -15,7 +15,7 @@
     },
     {
       "path": "lib\\pa26_assist_ui.lua",
-      "sha256": "38b6969b6dee8c44a1484fe709f0831acef66d45aa3a1032159462b0757f4c61"
+      "sha256": "22dbdd9e1fe0a7185fb0540a409d3a9c8e32bcbf73f90768944466d43a12b4ac"
     },
     {
       "path": "lib\\pa26_author_controller.lua",
@@ -39,7 +39,7 @@
     },
     {
       "path": "lib\\pa26_bindings.lua",
-      "sha256": "94000404fe7d5cd86c3a3dbe0e77ac0cb5ac3d854e12440dda94c366e4fbf5dd"
+      "sha256": "3750343cdb81d589f3132b7d80a4302671d5dd995508078c2650712c9ec54ef2"
     },
     {
       "path": "lib\\pa26_case_forms.lua",
@@ -71,7 +71,7 @@
     },
     {
       "path": "lib\\pa26_config.lua",
-      "sha256": "d8e3ec3002f80b989d063e620c14d74dec917c45d2d3445238cea025828a0948"
+      "sha256": "9021a4eddfb6ea7a903e0d0d9755f082b6b2539b3ad270f929e2a030839a9032"
     },
     {
       "path": "lib\\pa26_copilot.lua",
@@ -87,11 +87,11 @@
     },
     {
       "path": "lib\\pa26_copilot_ui.lua",
-      "sha256": "ac13971545ce8038fa29430988c0d163641eaf316f8a1cd799f59555ddcfb1f1"
+      "sha256": "ee04dc8acbae93f6b84eded85da104d92ed05fd766b2bc0ccc433146c73d4325"
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "f1506e9bc223cc87a060e922a6b6ac507abb6b195b87d676a6e8913e40584e3a"
+      "sha256": "0c5bd4466b949a0d8611d8fb4382771604c2359f246a1f6d8c16f3da1e4d1a87"
     },
     {
       "path": "lib\\pa26_detention_timers.lua",
@@ -123,7 +123,7 @@
     },
     {
       "path": "lib\\pa26_fast_pt.lua",
-      "sha256": "d9e82eadb2821bb5924cd177621f6e889d9bf7368ca187f2cbb37f3af493572d"
+      "sha256": "100ddf901fedb92c7856c95b682a9d7a73bd6a79d49d220efddfbcad8917ca07"
     },
     {
       "path": "lib\\pa26_feedback.lua",
@@ -143,7 +143,7 @@
     },
     {
       "path": "lib\\pa26_hud.lua",
-      "sha256": "8a91f9a7a1c06ed73cf9ea4b2f043d9272e3a258296900775e302cd2a640d853"
+      "sha256": "07505173087b45fc66411e373a622bdb7fe7db29d29b15a4a39fd95111482292"
     },
     {
       "path": "lib\\pa26_identity.lua",
@@ -163,7 +163,7 @@
     },
     {
       "path": "lib\\pa26_interface_settings.lua",
-      "sha256": "7435e0f0a4a4dba1a084e043eaa2413c518151d8f11318d99aef7c70956f2619"
+      "sha256": "11edf76dfe5428408467433447b04bd3f0616d75535259e0acb1c5bd35b925b2"
     },
     {
       "path": "lib\\pa26_journal.lua",
@@ -187,11 +187,11 @@
     },
     {
       "path": "lib\\pa26_knowledge_important.lua",
-      "sha256": "c15d64e8f5f6cb322adeb03eb5c2341d9948eb526d31d3eead9a818e529d0c81"
+      "sha256": "f40dc960726b2b1226e1f7fe69a8d08d7ca7b010fa23c78fc6029d739fff2ddb"
     },
     {
       "path": "lib\\pa26_knowledge_important_ui.lua",
-      "sha256": "71be885c4fbcfa2fce0f262a99d1d67213c0b3a27d4ce2f1150d30b32a859b98"
+      "sha256": "5e4c3ff00d3be80638e3fae0329dfd3029a682b68497d09e6712145338d1fd18"
     },
     {
       "path": "lib\\pa26_knowledge_ui.lua",
@@ -231,7 +231,7 @@
     },
     {
       "path": "lib\\pa26_menu.lua",
-      "sha256": "a93c2a55a7dad7ef54cf48e0f3813aa968389e7598fe6e80b7533d37f70aafde"
+      "sha256": "acdec6d57309ffaf102dacb3362d9f3e26c1bf5503e43e5670dd0f31e71b99ba"
     },
     {
       "path": "lib\\pa26_nearby.lua",
@@ -239,7 +239,7 @@
     },
     {
       "path": "lib\\pa26_notifications.lua",
-      "sha256": "ad5917cb8db4691d6e97e73f402aace05b8546c798a60cc907dc68dc9ba54078"
+      "sha256": "449d15ca3830867862e2726d10bf0976b80099a985411bf96e0594818cf557d9"
     },
     {
       "path": "lib\\pa26_operation_settings.lua",
@@ -267,15 +267,15 @@
     },
     {
       "path": "lib\\pa26_patrol_event_settings.lua",
-      "sha256": "fd91f0443d72048d684b1336206afc850411d167f537d432711bf303c090ee48"
+      "sha256": "88b10a2caa1b4cfe0e6b38c36deb6776c48021632f60c2e048d390d00b2fc911"
     },
     {
       "path": "lib\\pa26_patrol_event_ui.lua",
-      "sha256": "63bfebb99527671f26d0bfd96d4ebf9aede94c5d1798c5b2c60841f72ec6b68e"
+      "sha256": "fcd5f2c3f75c395bf397d6274907b973e4d5e2f74702b3d0117d27a8835edb24"
     },
     {
       "path": "lib\\pa26_patrol_events.lua",
-      "sha256": "b97d6f78c43f7c78897fd2c7f14f451edf86c1577cc217c68a3cffafe3cb619e"
+      "sha256": "a435957848964a384cfebdbc685a4c4af24fdf3f66ec756e3dec226dc52297fe"
     },
     {
       "path": "lib\\pa26_patrol_session.lua",
@@ -287,7 +287,7 @@
     },
     {
       "path": "lib\\pa26_patrol_ui.lua",
-      "sha256": "b5500d28d0b4706c3390252ab626b368ec38c33ad1da029d89dd47b3678dd9c2"
+      "sha256": "41a734994a71b568bf6857cc22d6c473bb4c892f1e15909ef455624236826972"
     },
     {
       "path": "lib\\pa26_preferences.lua",
@@ -375,7 +375,7 @@
     },
     {
       "path": "lib\\pa26_studio.lua",
-      "sha256": "00eb7c1feedad54ee6fc90f46a482191e4036ef02a81c5204c9dce8e90218299"
+      "sha256": "333ae928b37c528e18ecba2a7bc90f851cd40a4785e868e553bcf2c7218bb34d"
     },
     {
       "path": "lib\\pa26_target.lua",
@@ -479,7 +479,7 @@
     },
     {
       "path": "lib\\pa26_window_layout.lua",
-      "sha256": "1bd237d35ced5944e579624c40df6477a48ccd915e1577270dad0aa59b2f12bb"
+      "sha256": "c3da0d255592ca95b00efd20c1dd729c5507fae824b4171e38c2d26208607948"
     },
     {
       "path": "lib\\pa26_workspace.lua",
@@ -491,11 +491,11 @@
     },
     {
       "path": "pa26_guard.lua",
-      "sha256": "93c1e0ef75985a23720e673b9ad4cff482b959471699af8d3abc4b27696044df"
+      "sha256": "70137b3bca0fb1c7132b69884fd6e30bc2d74d6eba1e23d5216bb0f023592e4f"
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "3ffe58b2c7008ec6f1aac72afb3497c5dfea6f2de0b054121ed0b2122f794406"
+      "sha256": "5f58838fb041ab564a82903d3345973f2691bf0c27ea0eee041ffefa9278d14e"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",
@@ -520,6 +520,54 @@
     {
       "path": "resource\\pa26\\wanted-catalog.json",
       "sha256": "9939d2496f87cfa281faa6ae1dd13e6069f514946a4f11137e6f4b27d55de55a"
+    },
+    {
+      "path": "lib\\pa26_icons.lua",
+      "sha256": "402756db7f5039ede395070a84e73d7d4af73ce7a936a7e031c7f887b1aca0be"
+    },
+    {
+      "path": "lib\\pa26_icon_font.lua",
+      "sha256": "37dd10fd5ec58fc272219dca5d7ec97c5f9871f37a27da8d1f263eb56dfc08f4"
+    },
+    {
+      "path": "lib\\pa26_icon_glyphs.lua",
+      "sha256": "93fcd9fe508ec13c82f5991f538ad5019d426de0ea475e1c415d37050b1e50ed"
+    },
+    {
+      "path": "lib\\pa26_ui_groups.lua",
+      "sha256": "8d3e8b392f7b840ebd6b38ce5cca592da375abebe356cadd11492fcc7e8706b2"
+    },
+    {
+      "path": "resource\\pa26\\fonts\\fa-solid-900.ttf",
+      "sha256": "af19d135d3a935b3ebfbd80320716ffe1202052c5f68dc2c5f1abc57005ac605"
+    },
+    {
+      "path": "resource\\pa26\\fonts\\LICENSE.txt",
+      "sha256": "9b914eae88817d63b576eab5aafde7068c7a1abae125d7cdfb034f1da43a9afc"
+    },
+    {
+      "path": "resource\\pa26\\fonts\\manifest.json",
+      "sha256": "ddf4909fee89f216504c5a4a45785a4046a8dd0a3fb903630a1c91969c90db8c"
+    },
+    {
+      "path": "lib\\pa26_geometry.lua",
+      "sha256": "084c5c5242a60afc8a735839ab91c5cf8614f4a945836b9d1ccc0aea360669fb"
+    },
+    {
+      "path": "lib\\pa26_cef_compat.lua",
+      "sha256": "5cd6a9b78c784ed93336b386c4e215f15ea6838f587edd143dcc4620d3fc925e"
+    },
+    {
+      "path": "lib\\pa26_custody_settings.lua",
+      "sha256": "035461a5925d5a01c9f42e48c6563b2c8a22fe9ad7a5f209218af782edce49bc"
+    },
+    {
+      "path": "lib\\pa26_custody_reports.lua",
+      "sha256": "a266d7ac1f76dd717b743abdffa2c74cd9cf0577542339fde0459306557e1253"
+    },
+    {
+      "path": "lib\\pa26_custody_ui.lua",
+      "sha256": "61d8dee5306399b8966c316301386f5eeee99adcbf2028e159e688fb3e2055a6"
     }
   ],
   "cef_files": [
@@ -551,13 +599,13 @@
     },
     {
       "path": "tools/pa-seed-presets.ps1",
-      "sha256": "580e606aeda993c203335de12082b684f0f9c30d4114f9ef170b60a42595058b"
+      "sha256": "0d834b5d41d6d155cc6fe84315b18319a0efbc06f4f428bd509d4eab3efda70f"
     }
   ],
   "preset_files": [
     {
       "path": "presets/manifest.json",
-      "sha256": "80d421b8e7e960f6d9f7e8735d3fa6fd839961f3d6c9fd80d1bfb746617587b7"
+      "sha256": "341987b7d711277768fdf6d14ea2584bada5075cbea39fcb11fa26dfff4cf435"
     },
     {
       "path": "presets/pa-binds.json",
@@ -565,11 +613,90 @@
     },
     {
       "path": "presets/pa-settings.json",
-      "sha256": "06eb98412020c67800ee9abb8049d8897b7e43fb15206978980a1923628f9445"
+      "sha256": "014229d3b1b420ebf76e729043e1669884794ea33e8232e12a12d110ce61533a"
     },
     {
       "path": "presets/baseline.json",
       "sha256": "070b440081266945321bede19da9d931a1f7f27d3ef4cffa20597a59119069e3"
     }
-  ]
+  ],
+  "update_carried_assets": [
+    {
+      "path": "resource\\pa26\\fonts\\fa-solid-900.ttf",
+      "carrier": "lib\\pa26_icon_font.lua",
+      "purpose": "Identical font and full license bytes; glyph metadata also in pa26_icon_glyphs.lua"
+    },
+    {
+      "path": "resource\\pa26\\fonts\\LICENSE.txt",
+      "carrier": "lib\\pa26_icon_font.lua",
+      "purpose": "Identical font and full license bytes; glyph metadata also in pa26_icon_glyphs.lua"
+    },
+    {
+      "path": "resource\\pa26\\fonts\\manifest.json",
+      "carrier": "lib\\pa26_icon_font.lua",
+      "purpose": "Identical font and full license bytes; glyph metadata also in pa26_icon_glyphs.lua"
+    }
+  ],
+  "responsive_layout": {
+    "reference_width": 2560,
+    "reference_height": 1440,
+    "windows": {
+      "wanted": {
+        "height": 900,
+        "x": 444,
+        "y": 335.5,
+        "width": 1792
+      },
+      "tips": {
+        "height": 760,
+        "x": 800,
+        "y": 340,
+        "width": 960
+      },
+      "main": {
+        "height": 1339,
+        "x": 16,
+        "y": 31,
+        "width": 2251
+      },
+      "ground": {
+        "height": 1152,
+        "x": 890,
+        "y": 144,
+        "width": 780
+      },
+      "fine": {
+        "height": 1000,
+        "x": 720,
+        "y": 220,
+        "width": 1120
+      },
+      "mark": {
+        "height": 1000,
+        "x": 760,
+        "y": 220,
+        "width": 1040
+      },
+      "quick": {
+        "height": 700,
+        "x": 890,
+        "y": 370,
+        "width": 780
+      },
+      "assist": {
+        "height": 1180,
+        "x": 412,
+        "y": 114.5,
+        "width": 1440
+      }
+    },
+    "widget": {
+      "reference_width": 2560,
+      "reference_height": 1440,
+      "responsive": true,
+      "x": 2278,
+      "y": 409,
+      "scale": 1
+    }
+  }
 }

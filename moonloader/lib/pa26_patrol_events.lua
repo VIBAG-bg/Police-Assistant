@@ -101,6 +101,7 @@ function Events:available()
 end
 function Events:targetStamp()return self.env.targetStamp and self.env.targetStamp()or 0 end
 function Events:command(line,origin,target)
+    if self.env.suppressCommand and self.env.suppressCommand(line)then return false end
     local state=self.state;local cfg=self.env.settings()
     -- onSendCommand can arrive before the chat closes. Observation is allowed
     -- there; showing a prompt, confirming a fact and sending still require safe().

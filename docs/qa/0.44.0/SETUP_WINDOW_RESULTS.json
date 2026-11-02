@@ -1,0 +1,12 @@
+{
+  "compatibility_matrix": [
+    "Windows 7 SP1 prerequisites",
+    "Windows 10",
+    "Windows 11"
+  ],
+  "checks": 28,
+  "real_game_written": false,
+  "windows7_vm_tested": false,
+  "rendered": false,
+  "status": "passed"
+}

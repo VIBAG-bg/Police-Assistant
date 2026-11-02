@@ -6,21 +6,29 @@ function M.valid(t,state,radius)
   core.finite(t.ped)and t.ped>0 and core.finite(t.distance)and t.distance>=0 and t.distance<=math.min(50,radius)and core.finite(t.generation)and t.generation>=0 and t.generation%1==0
 end
 function M.resolve(rows,state,radius)
- for i,r in ipairs(rows or{})do if i>2051 then break end;if M.valid(r,state,radius)and(not r.fallback or r.visible and not r.colleague)then return model.copy(r)end end
+ for i,r in ipairs(rows or{})do if i>2051 then break end
+  -- Distance/skin/nickname alone never prove a server wanted status. The
+  -- present adapter has no verified wanted feed, so it cannot supply fallback.
+  local recognized=r.wanted_verified==true and r.wanted_name==r.name and r.wanted_generation==r.generation and
+   core.finite(r.wanted_level)and r.wanted_level%1==0 and r.wanted_level>=1 and r.wanted_level<=6
+  if M.valid(r,state,radius)and(not r.fallback or r.visible and not r.colleague and recognized)then return model.copy(r)end
+ end
 end
 function M.install(C)
  function C:requestFastPt(rows)
   local cfg=self.env.settings()
   if not cfg.fast_pt_enabled then return nil,'Быстрый /pt выключен в настройках Copilot.'end
   local t=M.resolve(rows,self.state,cfg.fast_pt_distance)
-  if not t then return nil,'Нет подходящей видимой цели в пределах '..cfg.fast_pt_distance..' м. Подойдите ближе или используйте /pt ID вручную.'end
+  if not t then return nil,'Нет подтверждённой цели в пределах '..cfg.fast_pt_distance..' м. Выберите человека по ID или используйте /pt ID вручную. Ближайший гражданский автоматически не выбирается.'end
   self.fastPtTarget=t
   local p,why=self:propose('fast_pt');if not p then return nil,why end
   self.offers={p};return true
  end
  function C:validFastPt(p)
   local target=self.fastPtLive
-  return self.env.settings().fast_pt_enabled and M.same(p.ptTarget,target)and M.valid(target,self.state,self.env.settings().fast_pt_distance)and
+  return self.env.settings().fast_pt_enabled and M.same(p.ptTarget,target)and
+   (not p.ptTarget.fallback or target and target.fallback==true)and
+   M.resolve({target},self.state,self.env.settings().fast_pt_distance)~=nil and
    self.fastPtLiveAt and(core.elapsed(self.now,self.fastPtLiveAt)or math.huge)<=250
  end
 end

@@ -1,5 +1,5 @@
 -- Original Police Assistant 2026 rules. Lua 5.1 / LuaJIT, no game APIs.
-local M = {VERSION = '0.43.5', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
+local M = {VERSION = '0.44.0', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
 M.actions = {
     {key = 'introduce', label = 'Представиться', me = 'остановившись рядом, достал служебное удостоверение и раскрыл его перед собеседником.', do_text = 'Удостоверение раскрыто: данные и фотография видны собеседнику.', command = ''},
     {key = 'documents', label = 'Документы', me = 'оглянувшись по сторонам, обратился к собеседнику с просьбой предъявить паспорт.', do_text = 'Готов ли собеседник предъявить документ?', command = ''},
@@ -72,7 +72,7 @@ local function cleanLine(value, limit)
 end
 
 function M.widgetDefaults()
-    return {visible = true, x = 8, y = 170, scale = 1, time_source = 'local'}
+    return {visible=true,x=2278,y=409,scale=1,time_source='local',responsive=true,reference_width=2560,reference_height=1440}
 end
 
 function M.recoveryDefaults()
@@ -103,6 +103,12 @@ function M.validateWidget(w)
     end
     if w.time_source ~= 'local' and w.time_source ~= 'game' then
         return nil, 'Выберите часы компьютера или игровые часы.'
+    end
+    if w.responsive~=nil and type(w.responsive)~='boolean'then return nil,'Выберите адаптацию виджета к экрану.'end
+    if w.reference_width~=nil or w.reference_height~=nil then
+        for _,key in ipairs({'reference_width','reference_height'})do
+            if not M.finite(w[key])or w[key]<220 or w[key]>32768 then return nil,'Повреждено исходное разрешение виджета.'end
+        end
     end
     return true
 end
@@ -216,16 +222,32 @@ function M.normalizeConfig(raw)
         if type(raw.widget) ~= 'table' then
             warn('Повреждён раздел widget; восстановлен виджет по умолчанию.')
         else
-            for _, key in ipairs({'visible', 'x', 'y', 'scale', 'time_source'}) do
+            -- Old INI pixels belong to the user's screen, not the author's 2K
+            -- screen. Capture their actual viewport on the first layout.
+            cfg.widget.reference_width,cfg.widget.reference_height=nil,nil
+            local invalidGeometry=false
+            for _, key in ipairs({'visible', 'x', 'y', 'scale', 'time_source','responsive'}) do
                 local value = raw.widget[key]
                 if value ~= nil then
-                    if key == 'visible' then value = parseBool(value)
+                    if key == 'visible'or key=='responsive' then value = parseBool(value)
                     elseif key ~= 'time_source' then value = tonumber(value) end
                     local trial = M.widgetDefaults()
                     trial[key] = value
                     if M.validateWidget(trial) then cfg.widget[key] = value
-                    else warn('Некорректный widget.' .. key .. '; восстановлено значение по умолчанию.') end
+                    else
+                        if key=='x'or key=='y'or key=='scale'then invalidGeometry=true end
+                        warn('Некорректный widget.' .. key .. '; восстановлено значение по умолчанию.')
+                    end
                 end
+            end
+            if raw.widget.reference_width~=nil or raw.widget.reference_height~=nil then
+                local trial=M.widgetDefaults();trial.reference_width=tonumber(raw.widget.reference_width);trial.reference_height=tonumber(raw.widget.reference_height)
+                if M.validateWidget(trial)then cfg.widget.reference_width=trial.reference_width;cfg.widget.reference_height=trial.reference_height
+                else warn('Повреждено исходное разрешение виджета; сохранённое положение оставлено на текущем экране.')end
+            end
+            if invalidGeometry then
+                local defaults=M.widgetDefaults()
+                for _,key in ipairs({'x','y','scale','reference_width','reference_height'})do cfg.widget[key]=defaults[key]end
             end
         end
     end

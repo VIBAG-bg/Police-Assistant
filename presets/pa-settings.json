@@ -57,7 +57,10 @@
       "time_source": "local",
       "visible": true,
       "scale": 1,
-      "x": 2278
+      "x": 2278,
+      "reference_width": 2560,
+      "reference_height": 1440,
+      "responsive": true
     }
   },
   "settings": {
@@ -1459,61 +1462,13 @@
         },
         "window_layout": {
           "fine_separate": true,
-          "windows": {
-            "assist": {
-              "displayH": 1440,
-              "y": 285,
-              "displayW": 2560,
-              "height": 839,
-              "x": 792,
-              "width": 680
-            },
-            "tips": {
-              "displayH": 1440,
-              "y": 340,
-              "displayW": 2560,
-              "height": 760,
-              "x": 800,
-              "width": 960
-            },
-            "ground": {
-              "displayH": 1440,
-              "y": 144,
-              "displayW": 2560,
-              "height": 1152,
-              "x": 890,
-              "width": 780
-            },
-            "wanted": {
-              "displayH": 1440,
-              "y": 497,
-              "displayW": 2560,
-              "height": 577,
-              "x": 444,
-              "width": 1792
-            },
-            "main": {
-              "displayH": 1440,
-              "y": 216,
-              "displayW": 2560,
-              "height": 1008,
-              "x": 384,
-              "width": 1792
-            },
-            "quick": {
-              "displayH": 1440,
-              "y": 370,
-              "displayW": 2560,
-              "height": 700,
-              "x": 890,
-              "width": 780
-            }
-          },
+          "windows": {},
           "initial_percent": 70,
           "wanted_separate": true,
           "remember": true,
           "revision": 1,
-          "mark_separate": true
+          "mark_separate": true,
+          "default_style": "author"
         },
         "tips_key": 123,
         "wheel_child_limit": 10,

@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "checks": 37614,
+  "scope": "GUI edits, preview, autosave, independent toggles, five viewports, no transmission",
+  "game_started": false,
+  "live_game_written": false
+}

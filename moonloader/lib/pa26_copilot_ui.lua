@@ -22,42 +22,73 @@ function M.editReport(s,ui,callbacks)
  end
  return false
 end
+local groups=require 'pa26_ui_groups'
+M.dispatchFamilies={}
+for _,row in ipairs(require('pa26_dispatch').primaryActions)do if row[1]~='gas_order'then M.dispatchFamilies[#M.dispatchFamilies+1]=row end end
 function M.quick(s,ui,callbacks,offer)
  if M.editReport(s,ui,callbacks)then return end
- s:settingsHeading(ui,'Вызовы и спецситуации (RP + Рация)')
- ui.text('Ручная отыгровка полученного вызова: в машине используется терминал, пешком — КПК и рация. Затем идёт доклад. Проверьте место в предпросмотре: это текущие город, район, квадрат и курс офицера. Серверная GPS-метка не устанавливается.')
- local dispatch=require 'pa26_dispatch';s.dispatchExpanded=s.dispatchExpanded or{}
- for _,r in ipairs(dispatch.primaryActions)do
-  if s:button(r[2]..'##copilot-dispatch-'..r[1],ui)then if offer then offer(r[1])else M.offer(s,callbacks,r[1])end end
-  local group=dispatch.followups[r[1]]
-  if group then
-   if s:button((s.dispatchExpanded[r[1]]and'Скрыть следующие доклады'or'Доклады по этому вызову')..'##dispatch-followups-'..r[1],ui)then s.dispatchExpanded[r[1]]=not s.dispatchExpanded[r[1]]end
-   if s.dispatchExpanded[r[1]]then for _,sub in ipairs(group)do
-    if s:button(sub[2]..'##copilot-dispatch-'..sub[1],ui)then if offer then offer(sub[1])else M.offer(s,callbacks,sub[1])end end
-   end end
-  end
- end
+ local send=offer or function(action)M.offer(s,callbacks,action)end
  s:settingsHeading(ui,'Быстрые доклады')
- ui.text('Каждая кнопка открывает предпросмотр и ДА/НЕТ. Отправки без подтверждения нет. Тексты и канал меняются в «Трафик и погоня → Настройки и тексты». Перерыв — только доклад, без таймера.')
- for _,r in ipairs(require('pa26_copilot').quick)do if s:button(r[2]..'##copilot-quick-'..r[1],ui)then if offer then offer(r[1])else M.offer(s,callbacks,r[1])end end end
+ ui.text('Работают и без сеанса патруля. Перед отправкой — предпросмотр, юнит и экипаж, ДА / НЕТ.')
+ local quick={};for _,r in ipairs(require('pa26_copilot').quick)do quick[#quick+1]={r[1],r[2]..'##copilot-quick-'..r[1]}end
+ groups.buttons(s,ui,quick,send)
+ if callbacks.custodyReport then
+  groups.buttons(s,ui,{{'detention','Задержан · доклад##custody-detention'},{'jail','КПЗ · доклад##custody-jail'}},function(kind)
+   local ok,err=callbacks.custodyReport(kind);if not ok then s:notify(err,'vehicle',false)end
+  end)
+  ui.text('После /cuff ID и /arrest ID эти доклады предлагаются автоматически. Нажатие здесь не выполняет команду над человеком.')
+ end
+ s:settingsHeading(ui,'Вызовы и спецситуации')
+ local dispatch=require 'pa26_dispatch';s.dispatchExpanded=s.dispatchExpanded or{}
+ local families={};for _,r in ipairs(M.dispatchFamilies)do families[#families+1]={r[1],r[2]..' · доклады##dispatch-followups-'..r[1]}end
+ groups.buttons(s,ui,families,function(id)s.dispatchExpanded[id]=not s.dispatchExpanded[id]end)
+ for _,r in ipairs(M.dispatchFamilies)do if s.dispatchExpanded[r[1]]then
+  s:settingsHeading(ui,r[2]);ui.text('RP и доклад — только после подтверждения. Место берётся из вашего контекста; GPS-метка не устанавливается.')
+  local rows={{r[1],r[2]..'##copilot-dispatch-'..r[1]}}
+  for _,sub in ipairs(dispatch.followups[r[1]]or{})do rows[#rows+1]={sub[1],sub[2]..'##copilot-dispatch-'..sub[1]}end
+  if r[1]=='dispatch_gas'then rows[#rows+1]={'gas_order',dispatch.byAction.gas_order.label..'##copilot-dispatch-gas_order'}end
+  groups.buttons(s,ui,rows,send)
+ end end
 end
 function M.draw(s,ui,data,callbacks)
  local im=s.imgui;local v=data.copilot or{};local c=v.car;local values=v.values or{}
  s.currentNoticeScope='vehicle';s:settingsHeading(ui,'Трафик и погоня')
  if M.editReport(s,ui,callbacks)then return end
- for _,r in ipairs({{'on_duty','На службе · автофункции PA'},{'enabled','Связь · разрешить доклады PA'}})do
-  local value,changed=s:check(r[2]..'##copilot-alert-'..r[1],s.lib.alerts[r[1]])
-  if changed then
-   local lib=copy(s.lib);lib.alerts[r[1]]=value;local ok,err=callbacks.save(lib)
-   if ok then if s.alertDraft then s.alertDraft[r[1]]=value end else s:notify(err,'vehicle',false)end
-  end
- end
- ui.text('Это режим PA. Серверную смену он не заменяет.')
  s.copilotPage=s:choice('Раздел##copilot-page',s.copilotPage or'work',{{'work','Ситуация'},{'grounds','Причина и основание'},{'rights','Задержание и права'},{'settings','Настройки и тексты'}},ui)
  local d=s.vehicleDraft or copy(s.lib.vehicle);local cfg=d.copilot or prefs.defaults();d.copilot=cfg
+ local function offer(action)
+  s.vehicleDraft=d;s:autoSettings('vehicle',{'vehicle'},d,'vehicleDraft');s:flushAutosave(callbacks,true)
+  if not s.autosaves.vehicle then M.offer(s,callbacks,action)else s:notify('Исправьте и сохраните настройки транспорта.','vehicle',false)end
+ end
  if s.copilotPage=='work'then
-  if s:button('Быстрый /pt рядом · ДА/НЕТ##copilot-fast-pt',ui)then callbacks.fastPt()end
-  ui.text('/pt: водитель текущей ситуации, выбранный человек, водитель выбранной машины, затем ближайший видимый человек вне списка коллег. Максимум 50 м; отправка только после ДА.')
+  if not s.lib.alerts.on_duty or not s.lib.alerts.enabled then ui.text('Режим PA для докладов выключен. Включите «На службе» и связь в «Настройки и тексты».')end
+  if c then
+   s:settingsHeading(ui,(values.model or'Машина')..' ['..c.id..'] · '..(v.phase or'Выбрана'))
+   ui.text((values.vehicle_color or'Цвет неизвестен')..' · Гос. номер: '..(values.vehicle_plate or'не установлен'))
+   ui.text((values.occupants_text or'Салон не определён')..' · Водитель: '..(v.driver and('ID '..v.driver.id)or'не установлен')..' · '..(c.stale and'последнее наблюдение'or math.floor(c.distance or 0)..' м'))
+   if c.armed or v.phase=='10-66'or v.phase=='Преследование'then ui.text('Повышенный риск · рассмотрите 10-66. Наличие оружия не подтверждает стрельбу.')end
+  else ui.text('Выберите видимую машину. Если автовыбор водителя включён, его ID станет целью биндов и обычного взаимодействия.')end
+  -- A finish request stays beside the context, above optional actions/settings.
+  if s:button('10-99 · Завершить##copilot-finish',ui)then offer('finish')end
+  groups.buttons(s,ui,{{'select','Выбрать ближайшую впереди##copilot-select'},
+   {'pt','Быстрый /pt рядом · ДА/НЕТ##copilot-fast-pt'}},function(action)
+    if action=='pt'then callbacks.fastPt()else local ok,err=callbacks.copilotSelect();if not ok then s:notify(err,'vehicle',false)end end
+   end)
+  s:settingsHeading(ui,'Оперативные действия')
+  local primary={{'stop_order','10-55 · К обочине##copilot-stop_order'},
+   {'pursuit','10-57 · Начать погоню##copilot-pursuit'},{'stop','Доклад 10-55##copilot-stop'},
+   {'tire','Мегафон: колёса (+1)##copilot-tire'}}
+  groups.buttons(s,ui,primary,offer)
+  if v.pinned and s:button((v.pinned=='pursuit_mark'and'Только /pt · без повторного /su'or v.pinned=='combat_wanted'and'Розыск 2.2 · отдельно от /pt'or'Розыск 8.1 · отдельно от /pt')..'##copilot-wanted',ui)then offer(v.pinned)end
+  local narrow=im.GetContentRegionAvail().x<580
+  if narrow and s:button((s.copilotMore and 'Скрыть остальные действия'or'Остальные действия (6)')..'##copilot-more',ui)then s.copilotMore=not s.copilotMore end
+  if not narrow or s.copilotMore then
+   groups.buttons(s,ui,{{'high_risk','10-66 · CODE 3##copilot-high_risk'},
+    {'approach','Осмотр автомобиля##copilot-approach'},{'risk_order','10-66 · Ключи, выход##copilot-risk_order'},
+    {'explain_stop','Причина и документы##copilot-explain_stop'},{'foot','10-57 FOXTROT##copilot-foot'},
+    {'explain_detention','Основание и права##copilot-explain_detention'}},offer)
+  end
+  if v.phase then ui.text(v.stopWarningStatus or'');ui.text(v.tireStatus or'')end
   local bulletin=v.stolen
   if bulletin then
    s:settingsHeading(ui,'Ориентировка об угоне')
@@ -78,17 +109,17 @@ function M.draw(s,ui,data,callbacks)
     if s:button(r[2]..'##window-manual-'..r[1],ui)then local ok,why=callbacks.copilotWindow(r[1]);if not ok then s:notify(why or'Нужны текущий водитель и активная остановка.','vehicle',false)end end
    end
   end
-  if c then
-   s:settingsHeading(ui,(values.model or'Машина')..' ['..c.id..'] · '..(v.phase or'Выбрана'))
-   ui.text((values.vehicle_color or'Цвет неизвестен')..' · Гос. номер: '..(values.vehicle_plate or'не установлен'))
-   ui.text((values.occupants_text or'Салон не определён')..' · Водитель: '..(v.driver and('ID '..v.driver.id)or'не установлен')..' · '..(c.stale and'последнее наблюдение'or math.floor(c.distance or 0)..' м'))
-   if c.armed or v.phase=='10-66'or v.phase=='Преследование'then ui.text('Повышенный риск · рассмотрите 10-66. Наличие оружия не подтверждает стрельбу.')end
-  else ui.text('Выберите видимую машину. Если автовыбор водителя включён, его ID станет целью биндов и обычного взаимодействия.')end
-  if s:button('Выбрать ближайшую впереди##copilot-select',ui)then local ok,err=callbacks.copilotSelect();if not ok then s:notify(err,'vehicle',false)end end
-  ui.text('Дальность захвата авто, м (5–150)');local radius=im.new.int(d.radius);im.PushItemWidth(-1)
-  if im.SliderInt('##copilot-radius',radius,5,150)then d.radius=radius[0];d.retain_distance=math.max(d.retain_distance,d.radius)end;im.PopItemWidth()
-  d.sync_driver_target=s:check('Водитель — цель биндов##copilot-sync-driver',d.sync_driver_target)
-  ui.text('Работает пешком и из машины, включая близкую видимую цель сбоку. Автовыбор не подменяет вручную выбранного человека при фоновом обновлении; повторный выбор машины привязывает её водителя заново.')
+  M.quick(s,ui,callbacks,offer)
+  if s:button((s.fastPtChooseId and'Скрыть выбор человека'or'Выбрать человека по ID для /pt')..'##copilot-pt-manual',ui)then s.fastPtChooseId=not s.fastPtChooseId end
+  if s.fastPtChooseId then
+   ui.text('/pt: водитель ситуации → выбранный человек → водитель выбранной машины. Данные серверного списка розыска сейчас не доступны PA; случайный прохожий не выбирается.')
+   local text=s:field('ID игрока##copilot-pt-id','copilot:pt-id','',16)
+   if s:button('Выбрать человека##copilot-pt-select-id',ui)then
+    local id=text:match('^%s*(%d+)%s*$');local ok,why=callbacks.selectNearbyId(id and tonumber(id)or nil)
+    if not ok then s:notify(why,'vehicle',false)end
+   end
+  end
+  s:settingsHeading(ui,'Связь и итог ситуации')
   local colleagues=v.colleagues or{};local roles={driver='Водитель ADAM',navigator='Штурман-координатор ADAM',solo='Одиночный LINCOLN'}
   ui.text('Маркировка: '..(values.unit or colleagues.autoCallsign or'—')..' · '..(roles[colleagues.ownCruiserRole]or'Пешком'))
   ui.text('Сотрудников ПД рядом: '..#(colleagues.nearbyOfficers or{})..' · экипажей: '..(colleagues.nearbyCruisers or 0))
@@ -100,19 +131,7 @@ function M.draw(s,ui,data,callbacks)
   local outcomes={{'проведена беседа','Беседа'},{'выписан штраф','Штраф'},{'подозреваемый задержан','Задержан'},{'Код 4 АДАМ, подозреваемый потерян','CODE 4 ADAM · потерян'}}
   local known=false;for _,row in ipairs(outcomes)do if row[1]==cfg.stop_outcome then known=true end end;if not known then outcomes[#outcomes+1]={cfg.stop_outcome,'Свой итог: '..cfg.stop_outcome}end
   cfg.stop_outcome=s:choice('Итог##copilot-outcome',cfg.stop_outcome,outcomes,ui)
-  local function offer(action)
-   s.vehicleDraft=d;s:autoSettings('vehicle',{'vehicle'},d,'vehicleDraft');s:flushAutosave(callbacks,true)
-   if not s.autosaves.vehicle then M.offer(s,callbacks,action)else s:notify('Исправьте и сохраните настройки транспорта.','vehicle',false)end
-  end
-  M.quick(s,ui,callbacks,offer)
-  for _,r in ipairs(require('pa26_copilot').actions)do if s:button(r[2]..'##copilot-'..r[1],ui)then offer(r[1])end end
-  if v.pinned and s:button((v.pinned=='pursuit_mark'and'Только /pt · без повторного /su'or v.pinned=='combat_wanted'and'Розыск 2.2 + /pt'or'Розыск 8.1 + /pt')..'##copilot-wanted',ui)then offer(v.pinned)end
-  if v.phase then
-   ui.text(v.stopWarningStatus or'')
-   ui.text(v.tireStatus or'')
-   if s:button('/m Предупреждение (+1)##copilot-tire',ui)then offer('tire')end
-  end
-  ui.text('Розыск по машине: ориентировка диспетчеру и одно ДА, без вопросов о маске и паспорте. Условный номер из ID — выбранная RP-конвенция PA. Это не чтение серверной регистрации. Обычный /su ID открывает полный помощник. N сохраняет кнопку на карточке.')
+  ui.text('Розыск по машине использует вашу RP-конвенцию номера из ID. /su и /pt подтверждаются отдельно; обычный /su ID открывает полный помощник.')
  elseif s.copilotPage=='grounds'then
   local op=require 'pa26_operational_ui'
   op.ground(s,ui,cfg,'stop',callbacks);op.ground(s,ui,cfg,'detention',callbacks)
@@ -126,6 +145,18 @@ function M.draw(s,ui,data,callbacks)
  elseif s.copilotPage=='rights'then
   require('pa26_operational_ui').timers(s,ui,data,callbacks)
  else
+ for _,r in ipairs({{'on_duty','На службе · автофункции PA'},{'enabled','Связь · разрешить доклады PA'}})do
+  local value,changed=s:check(r[2]..'##copilot-alert-'..r[1],s.lib.alerts[r[1]])
+  if changed then
+   local lib=copy(s.lib);lib.alerts[r[1]]=value;local ok,err=callbacks.save(lib)
+   if ok then if s.alertDraft then s.alertDraft[r[1]]=value end else s:notify(err,'vehicle',false)end
+  end
+ end
+ ui.text('Это режим PA. Серверную смену он не заменяет.')
+  ui.text('Дальность захвата авто, м (5–150)');local radius=im.new.int(d.radius);im.PushItemWidth(-1)
+  if im.SliderInt('##copilot-radius',radius,5,150)then d.radius=radius[0];d.retain_distance=math.max(d.retain_distance,d.radius)end;im.PopItemWidth()
+  d.sync_driver_target=s:check('Водитель — цель биндов##copilot-sync-driver',d.sync_driver_target)
+  ui.text('Работает пешком и из машины, включая близкую видимую цель сбоку. Автовыбор не подменяет вручную выбранного человека при фоновом обновлении; повторный выбор машины привязывает её водителя заново.')
   if v.moscowTime then ui.text(string.format('МСК %02d:%02d · сохранённое окно %02d:00–%02d:00: ',v.moscowTime.hour,v.moscowTime.min,cfg.raid_start_hour,cfg.raid_end_hour)..(v.raidAllowed and'внутри интервала'or'вне интервала'))end
   ui.text('В источнике есть расхождение: регламент 4.3 — 14:00–22:00; 10.9 запрещает 20:00–13:00. Часовой пояс там не указан. Настройка PA — ваша трактовка, а не разрешение на рейд.')
   ui.text('Изменения сохраняются автоматически. Старые значения остальных функций и ваши бинды остаются своими.')
@@ -224,7 +255,7 @@ function M.drawHud(controller,im)
  list:AddTextFontPtr(m.heading,14*s,vec(x,y),white,m.title,nil,math.max(1,m.wrap-30*s));y=y+m.titleH+6*s;text(m.text,m.body,12,x,y);y=y+m.bodyH+5*s
  if not m.traffic then return end
  local primary=m.view.phase=='10-55'and{'explain_stop','Причина'}or m.view.phase=='10-66'and{'explain_detention','Основание'}or{'tire','/m +1'}
- local buttons={primary,{m.view.pinned or'high_risk',m.view.pinned=='pursuit_mark'and'Только /pt'or m.view.pinned and'Розыск + /pt'or'10-66'},{'finish','Завершить'}}
+ local buttons={primary,{m.view.pinned or'high_risk',m.view.pinned=='pursuit_mark'and'Только /pt'or m.view.pinned and'Розыск /su'or'10-66'},{'finish','Завершить'}}
  local width=(m.wrap-8*s)/3
  for i,b in ipairs(buttons)do
   local box={x=x+(i-1)*(width+4*s),y=y,w=width,h=32*s}

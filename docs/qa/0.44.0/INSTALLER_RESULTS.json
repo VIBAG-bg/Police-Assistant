@@ -1,0 +1,27 @@
+{
+  "release": "0.44.0",
+  "status": "passed",
+  "native_install": true,
+  "cef_install": true,
+  "idempotent_patch": true,
+  "preserved_personal_files": true,
+  "personal_backups": true,
+  "verify_only_readonly": true,
+  "rollback_after": [
+    1,
+    37,
+    89,
+    91,
+    92,
+    93,
+    94,
+    97,
+    98,
+    102,
+    103,
+    144
+  ],
+  "manifest_sha256": "39D9C4DC3AADBB3CAD32D9EFFCECCD72E92484D5A6348B6C4F83BF26DC19E51B",
+  "installer_sha256": "0BA57517D8995B2FEFB6C1529DDDDFB1A700BAE430F93B1B7B95C342A5BA725A",
+  "real_game_written": false
+}

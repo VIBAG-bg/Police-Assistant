@@ -47,7 +47,7 @@ for _,bad in ipairs({'unknown','',false})do local c=settings.defaults();c.select
 for _,field in ipairs({'cone_angle','height_tolerance'})do local c=settings.defaults();c[field]=0/0;check(not settings.validate(c))end
 local personal=settings.defaults();personal.traffic_stop_template='Мой текст {area}.';personal.selection_mode=nil;personal.selection_ranking=nil;personal.cone_angle=nil;personal.height_tolerance=nil
 local upgraded=assert(settings.validate(personal));eq(upgraded.traffic_stop_template,personal.traffic_stop_template);eq(upgraded.selection_mode,'auto')
-local f=require('support.fixture')({demo=false});f.step();f.page('partners');f.click='Транспорт##Напарники и служба##partners-pagevehicle';f.render();eq(f.click,nil)
+local f=require('support.fixture')({demo=false});f.step();f.page('partners');f.click='Трафик и погоня##Патруль и служба##partners-pagevehicle';f.render();eq(f.click,nil)
 local originalSlider=f.imgui.SliderInt;local visited={}
 f.imgui.SliderInt=function(label,value,minimum,maximum)
     if label=='##vehicle-cone_angle'then value[0]=42;visited.angle=true;return true end

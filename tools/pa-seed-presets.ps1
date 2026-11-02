@@ -54,6 +54,26 @@ function Test-PaStockIni([string]$Text,$Default){
   }
  };return $true
 }
+function Set-PaFreshLayout($Settings,$Cfg,$Manifest){
+ # Only a fresh installation reaches this path. Shared presets and all existing
+ # custom files remain untouched; geometry is a separate sanitized program seed.
+ $layout=$Manifest.responsive_layout
+ if($null -eq $layout){return}
+ $Settings.data.settings.window_layout.default_style='author'
+ $Settings.data.settings.window_layout.windows=@{}
+ foreach($key in @('main','assist','wanted','fine','mark','ground','quick','tips')){
+  $ref=$layout.windows.$key;if($null -eq $ref){throw 'Missing responsive layout reference.'}
+  $row=@{displayW=2560;displayH=1440}
+  foreach($field in @('width','height','x','y')){
+   $n=$ref.$field
+   if(-not($n -is [ValueType]) -or [double]::IsNaN([double]$n) -or [double]::IsInfinity([double]$n) -or $n -lt 0 -or $n -gt 32768){throw 'Invalid responsive layout reference.'}
+   $row[$field]=$n
+  }
+  # Keep the seed empty: runtime content floors adapt this reference before
+  # the first draw. It becomes a saved user rectangle only after that draw.
+ }
+ foreach($key in @('x','y','scale','reference_width','reference_height','responsive')){$Cfg.widget[$key]=$layout.widget.$key}
+}
 function Get-PaPresetSeedPlan([string]$Source,[string]$ML,$Manifest,[bool]$Binds,[bool]$Settings,$IniRow){
  $result=@{plan=@();replace=@{};summary=@{binds='disabled';settings='disabled';notes='preserved'}}
  if(-not $Binds -and -not $Settings){return $result}
@@ -93,6 +113,11 @@ function Get-PaPresetSeedPlan([string]$Source,[string]$ML,$Manifest,[bool]$Binds
   if(-not $fresh){foreach($key in @('profile','partners','next_partner_id','wanted_reminders','filters')){$docs.settings.data.$key=$existing.settings.data.$key};$docs.settings.data.assist.history=$existing.settings.data.assist.history;$docs.settings.data.settings.updates=$existing.settings.data.settings.updates}
   $result.summary.settings='installed'
  }elseif($Settings){$result.summary.settings='preserved'}
+ $freshConfig=$null
+ if($fresh){
+  $freshConfig=Read-PaPresetJson (Write-PaPresetJson $(if($applySettings){$data['pa-settings'].config}else{$data.baseline.config}))
+  Set-PaFreshLayout $docs.settings $freshConfig $Manifest
+ }
  if(-not $docs.Count){return $result}
  $stage=Join-Path $Source ('installation-backups/preset-stage-'+[guid]::NewGuid().ToString('N'));Assert-PaSetupPlain $stage;[IO.Directory]::CreateDirectory($stage)|Out-Null
  foreach($kind in $docs.Keys){
@@ -102,7 +127,8 @@ function Get-PaPresetSeedPlan([string]$Source,[string]$ML,$Manifest,[bool]$Binds
   if($exists){$result.replace[$to]=$hash}
  }
  if($applySettings){
-  $from=Join-Path $stage 'config.ini';[IO.File]::WriteAllText($from,(Get-PaPresetIni $data['pa-settings'].config),(New-Object Text.UTF8Encoding($false)))
+  $paSeedConfig=$(if($freshConfig){$freshConfig}else{$data['pa-settings'].config})
+  $from=Join-Path $stage 'config.ini';[IO.File]::WriteAllText($from,(Get-PaPresetIni $paSeedConfig),(New-Object Text.UTF8Encoding($false)))
   $IniRow.Source=$from;$IniRow.SHA256=(Get-FileHash -LiteralPath $from -Algorithm SHA256).Hash;$IniRow.Skip=$false
   if($IniRow.Existed){$result.replace[$IniRow.Target]=$IniRow.SHA256}
  }

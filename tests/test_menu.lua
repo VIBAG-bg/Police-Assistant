@@ -67,14 +67,16 @@ check(not s.frames[2].condition()); eq(#s.sent,0)
 -- Dragging/closing HUD uses explicit Alt editing and cannot save RP drafts.
 s=fixture(); s.step(); s.page('addons')
 s.edits={['##me']='несохранённый черновик'}; s.render(); s.commands.pa26(); s.step()
-s.down[0x12],s.down[0x02]=true,true; s.mx,s.my=20,180; s.mouseClicks={[1]=true}; s.step()
+local initialHud=s.hud.bounds
+s.down[0x12],s.down[0x02]=true,true; s.mx,s.my=initialHud.x+12,initialHud.y+10; s.mouseClicks={[1]=true}; s.step()
 check(not s.frames[1].condition()); check(not s.frames[3].HideCursor)
 s.mouseClicks={}; s.mx,s.my=100,220; s.step()
 s.down[0x02]=false; s.step(); s.down[0x12]=false; s.step(800)
-eq(s.saved.widget.x,88); eq(s.saved.widget.y,210)
+check(math.abs(s.saved.widget.x-88)<.01,'HUD drag x='..s.saved.widget.x);check(math.abs(s.saved.widget.y-210)<.01,'HUD drag y='..s.saved.widget.y)
 eq(s.saved.introduce.me,core.defaults().introduce.me,'HUD save must preserve unsaved RP text')
 check(s.inputDisabled()); eq(s.lockRequests,0)
-s.down[0x12],s.down[0x01]=true,true; s.mx,s.my=348,222; s.mouseClicks={[0]=true}; s.step()
+local movedHud=s.hud.bounds
+s.down[0x12],s.down[0x01]=true,true; s.mx,s.my=movedHud.x+movedHud.w-12*movedHud.scale,movedHud.y+10*movedHud.scale; s.mouseClicks={[0]=true}; s.step()
 check(not s.frames[3].condition()); s.commands.pa26hudreset(); s.step(); check(s.frames[3].condition())
 
 -- Bounded image input, unavailable paths, and IO errors must degrade locally.

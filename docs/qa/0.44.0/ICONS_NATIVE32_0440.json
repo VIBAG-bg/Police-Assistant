@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "checks": 513,
+  "frames": 56,
+  "screen_sizes": 7,
+  "font_scales": 2,
+  "icons": 40,
+  "merge_supported": true,
+  "memory_supported": true,
+  "game_started": false,
+  "game_written": false
+}

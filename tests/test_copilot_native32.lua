@@ -14,7 +14,7 @@ local model=require 'pa26_bindings';local core=require 'pa26_core';local Studio=
 local s=Studio.new(im,ffi,model.defaults(core.defaults()),function()return 1000 end)
 local stack={};local ui={push=function(f)stack[#stack+1]=f end,finish=function()assert(table.remove(stack))()end,text=function(t)im.PushTextWrapPos(0);im.TextUnformatted(t);im.PopTextWrapPos()end}
 local data={copilot={phase='Преследование',car={id=142,occupants=2,distance=15,armed=true},driver={id=37},values={model='Sultan',vehicle_color='Чёрный',vehicle_plate='не установлен',occupants_text='внутри двое',unit='2-A-1'},colleagues={nearbyOfficers={},nearbyCruisers=2,ownCruiserRole='navigator'},pinned='fast_wanted',tireStatus='Предупреждений: 1/5. Проверьте условия применения силы.'}}
-local cb={copilotPreview=function()return'Предпросмотр с сохранёнными значениями.'end}
+local cb={copilotPreview=function()return'Предпросмотр с сохранёнными значениями.'end,custodyReport=function()return true end}
 s.currentUi=ui;s.preferenceContext=true
 local checks,frames=0,0
 local function check(v,why)checks=checks+1;assert(v,why)end

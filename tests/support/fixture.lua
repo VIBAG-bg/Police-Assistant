@@ -16,6 +16,7 @@ ffi.cdef [[
         bool KeysDown[512];
         bool KeyCtrl, KeyAlt, KeyShift, KeySuper;
         float MouseWheel, MouseWheelH;
+        float FontGlobalScale;
         bool queuedCharacters;
         bool WantTextInput;
         bool WantCaptureKeyboard;
@@ -152,7 +153,7 @@ local function fixture(options)
     new.char = setmetatable({}, {__index = function(_, size) return ffi.typeof('char[' .. size .. ']') end})
     s.fonts = ffi.new('Pa26TestFontAtlas[1]')
     s.io = ffi.new('Pa26TestIO', {DisplaySize = {1280, 720}, MousePos = {727, 410},
-        WantTextInput = false, Fonts = s.fonts,ConfigWindowsResizeFromEdges=true,BackendFlags=2})
+        WantTextInput = false, Fonts = s.fonts,FontGlobalScale=1,ConfigWindowsResizeFromEdges=true,BackendFlags=2})
     local function beginScope(name) s.scopes[#s.scopes + 1] = name end
     local function endScope(name)
         eq(s.scopes[#s.scopes], name, 'ImGui scope mismatch: ' .. name)
@@ -545,6 +546,17 @@ local function fixture(options)
         value.new=function(...)local v=original(...);s.knowledgeUi=v;return v end
         return value
     end
+    -- Explicit virtual-client capability; production does its one-time file hash.
+    package.loaded.pa26_cef_compat={new=function()return function()
+        s.cefContractChecks=(s.cefContractChecks or 0)+1
+        return options.reviewedCef~=false,options.reviewedCef==false and'cef_contract_unreviewed'or'cef_contract_reviewed'
+    end end}
+    package.loaded.pa26_custody_reports=nil
+    package.preload.pa26_custody_reports=function()
+        local value=dofile('moonloader/lib/pa26_custody_reports.lua');local original=value.new
+        value.new=function(env)local v=original(env);s.custody=v;return v end
+        return value
+    end
     package.loaded.pa26_chat_bridge=nil
     package.preload.pa26_chat_bridge=function()
         local value=dofile('moonloader/lib/pa26_chat_bridge.lua')
@@ -739,6 +751,7 @@ local function fixture(options)
     if not options.productionWindows then
         seed.settings.window_layout=require('pa26_window_layout').defaults()
         seed.settings.window_layout.initial_percent=95
+        seed.settings.window_layout.default_style='percent'
         seed.settings.window_layout.remember=false
         seed.settings.window_layout.wanted_separate=false
         seed.settings.window_layout.fine_separate=false

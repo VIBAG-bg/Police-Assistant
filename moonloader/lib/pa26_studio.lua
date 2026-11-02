@@ -1001,12 +1001,15 @@ function Studio:drawNotes(ui,data,callbacks,floating)
     self:drawNotice(ui)
 end
 function Studio:drawPartners(ui,data,callbacks)
-    ui.text('Здесь хранится постоянный список напарников по нику. Состав текущего экипажа выбирается в «Патруль и экипаж».')
-    if self:button('Перейти к текущему патрулю и экипажу →##partners-patrol',ui)then callbacks.openPatrol()end
-    self.partnerPage=self:choice('Напарники и служба##partners-page',self.partnerPage or 'contacts',{{'contacts','Контакты'},{'patrol','Патруль'},{'events','События'},{'vehicle','Транспорт'}},ui)
-    if self.partnerPage=='vehicle'then vehicleUi.draw(self,ui,data,callbacks);return end
+    self.partnerPage=self:choice('Патруль и служба##partners-page',self.partnerPage or 'patrol',{{'patrol','Патруль и смена'},{'vehicle','Трафик и погоня'},{'contacts','Напарники'},{'events','События'}},ui)
+    if self.partnerPage=='vehicle'then
+        if self:button('Открыть оперативный пульт (F4)##partners-copilot',ui)then callbacks.openAssist('traffic')end
+        vehicleUi.draw(self,ui,data,callbacks);return
+    end
     if self.partnerPage=='patrol'then patrolUi.draw(self,ui,data,callbacks,'partners');return end
     if self.partnerPage=='events'then eventUi.draw(self,ui,data,callbacks);return end
+    ui.text('Напарники — сохранённые контакты. Экипаж текущей смены выбирается на вкладке «Патруль и смена».')
+    if self:button('Перейти к текущему патрулю и экипажу →##partners-patrol',ui)then callbacks.openPatrol()end
     local im=self.imgui; local chosen
     for _,p in ipairs(self.lib.partners) do if im.Selectable(p.nickname..' · '..(p.callsign~='' and p.callsign or 'без позывного')..'##partner'..p.id,self.partner==p.id) then self.partner=p.id; self.cache['partnerNick']=nil; self.cache['partnerCall']=nil end; if p.id==self.partner then chosen=p end end
     im.Separator(); ui.text('Контакт хранится по нику; ID может меняться после переподключения.')
@@ -1070,7 +1073,7 @@ function Studio:settingsHeading(ui,title,help,helpId)
         im.SetCursorScreenPos(pos)
         im.PushTextWrapPos(im.GetCursorPosX()+math.max(1,width-46));ui.push(function()im.PopTextWrapPos()end)
         im.TextUnformatted(title);ui.finish()
-    else ui.text(title)end
+    else require('pa26_icons').heading(im,ui,title)end
     if self.buttonFont then ui.finish() end
     im.Dummy(im.ImVec2(0,4))
 end
@@ -1094,9 +1097,11 @@ function Studio:drawAlerts(ui,data,callbacks)
     local im=self.imgui
     self.radioPage=self:choice('Настройки связи##radio-page',self.radioPage or 'emergency',
         {{'emergency','Shots fired · SOS · радиокоды','Экстренные','Здесь можно сообщить о стрельбе или ранении, запросить поддержку и отменить запрос. Перед отправкой PA попросит подтверждение.'},
-            {'patrol','Патруль полиции и охрана тюрьмы','Патруль','Выберите режим службы, интервал и текст периодического доклада.'},
+            {'session','Патруль · защита, интервалы и тексты','Смена','Восстановление, проверка состава, формы докладов и клавиши. Оперативный экран — 04. Патруль.'},
+            {'patrol','Отдельный таймер полиции и тюрьмы','Таймер','Прежний таймер без сеанса. При включённых сеансах используется их расписание.'},
             {'automatic','Предупреждения и свои автодоклады','Автодоклады','Настройте напоминания об автодокладах или добавьте своё расписание.'}},ui)
     if self.radioPage=='automatic'then self.currentNoticeScope='radio_guard';self:drawRadioGuard(ui,data,callbacks);return end
+    if self.radioPage=='session'then patrolUi.drawSessionSettings(self,ui,data,callbacks);return end
     if self.radioPage=='patrol' then self.currentNoticeScope='patrol';self:drawPatrol(ui,data,callbacks);return end
     self.currentNoticeScope='alerts'
     self:settingsHeading(ui,'Связь · отдельные доклады')
@@ -1494,7 +1499,7 @@ function Studio:drawProfile(ui,data,callbacks,part)
     if part=='chat_cef'or part=='all'then
     local cef,cefChanged=self:check('Поддержка чата лаунчера##cef-chat',copy.settings.cef_chat_support)
     if cefChanged then self:autoSettings('cef_chat',{'settings','cef_chat_support'},cef)end
-    ui.text('При запуске проверяет подключение PA к CEF-чату и восстанавливает свой тег в HUD, если лаунчер его убрал. Проверка выполняется до ожидания SA-MP. Если страница чата уже успела загрузиться без PA, потребуется новый запуск игры. Серверные main.js и DLL не меняются.')
+    ui.text('При запуске один раз сверяет версию CEF-чата. Только на проверенной сборке восстанавливает свой тег в HUD. На неизвестной сборке работают нативные модули PA, а подключение к CEF остаётся выключенным. Серверные main.js и DLL не меняются. После обновления клиента повторная проверка выполняется при новом запуске PA.')
     ui.text('Связывает CEF-чат с командами PA, фильтрами и распознаванием служебных сообщений. Во время ввода игровые сочетания и отправка сценариев блокируются так же, как в стандартном чате.')
     for _,r in ipairs({{'cef_chat_weapon_guard','Защита клавиш оружия'},
         {'cef_chat_weapon_lock','Оружие при вводе чата'}})do
@@ -1515,7 +1520,7 @@ function Studio:drawProfile(ui,data,callbacks,part)
     })[data.cefChatStatus or'not_installed'])
     if self:button((self.showCefDiagnostics and 'Скрыть диагностику чата' or 'Диагностика чата')..'##cef-diagnostics-toggle',ui)then self.showCefDiagnostics=not self.showCefDiagnostics end
     if self.showCefDiagnostics then
-    local cefReason=({setting_disabled='Для подключения включите поддержку чата лаунчера.',asset_missing='Файл HUD пока недоступен. PA повторит проверку автоматически.',
+    local cefReason=({cef_contract_unreviewed='Эта версия CEF-чата ещё не проверена. PA работает без подключения к CEF: файл чата и обработка его ввода не меняются. Не снимайте защиту SHA-256 вручную.',cef_contract_missing='CEF-контракт не подтверждён: файл отсутствует, недоступен или превышает безопасный размер. Нативные модули PA доступны.',setting_disabled='Для подключения включите поддержку чата лаунчера.',asset_missing='Файл HUD пока недоступен. PA повторит проверку автоматически.',
         asset_too_large='Размер HUD превышает допустимый. Нужна новая проверка совместимости.',adapter_file_missing='Не найден скрипт адаптера PA. Повторите установку PA.',
         asset_contract='Структура HUD изменилась. Нужна проверка совместимости; файл оставлен как есть.',asset_tag_conflict='Подключение PA в HUD неоднозначно. Нужна проверка установки.',
         asset_backup='Не удалось сохранить копию HUD перед восстановлением подключения.',asset_changed='Лаунчер обновил HUD во время проверки. PA повторит попытку.',
@@ -1560,6 +1565,8 @@ function Studio:drawOptions(ui,data,callbacks,part)
     self:settingsHeading(ui,'Оформление окон')
     local alpha=im.new.float(d.opacity);if im.SliderFloat('Непрозрачность',alpha,.5,1)then d.opacity=alpha[0]end
     d.compact=self:check('Компактные отступы',d.compact)
+    d.ui_icons=self:check('Показывать иконки интерфейса##ui-icons',d.ui_icons~=false)
+    require('pa26_icons').setEnabled(d.ui_icons)
     end
     if part~='appearance'then
     im.Separator();self:settingsHeading(ui,'Выбранный человек')
@@ -2041,6 +2048,8 @@ function Studio:drawModal(ui,data,callbacks)
         self.modalToken=intent.token; self.modalError=nil;self.modalPagination={};self.modalPosition=nil;self.rightDrag=nil; im.OpenPopup(id)
     end
     local spec={title=intent and intent.title or '',lines=model.copy(intent and intent.lines or{}),
+        icon=intent and intent.kind=='warning'and(intent.title=='Уведомление'and'circle-info'or'triangle-exclamation')or'circle-question',
+        iconTone=intent and intent.kind=='warning'and(intent.title=='Уведомление'and'info'or'warning')or'info',
         titleFont=self.buttonFont,buttonFont=self.buttonFont,pageState=self.modalPagination,columns=intent and(intent.kind=='warning'or intent.kind=='manual_action')and 1 or intent and intent.kind=='changes' and 3 or 2,
         extraHeight=intent and intent.kind=='manual_action'and self.manualAction and self.manualAction.head=='frisk'and 68 or intent and intent.kind=='capture' and 136 or intent and intent.kind=='wanted_appearance_input'and 90 or 0,
         extraAfterLines=intent and intent.kind=='wanted_appearance_input',

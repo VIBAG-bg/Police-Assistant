@@ -36,7 +36,7 @@ local function setup(occupants,gender,channel,confirm)
  radar.view=function(self)
   local state=observed(self);state.patrolOccupants=s.occupants;return state
  end
- s.vehicle=true;s.step();s.page('partners');click(s,'Патруль##Напарники и служба##partners-pagepatrol')
+ s.vehicle=true;s.step();s.page('partners');click(s,'Патруль и смена##Патруль и служба##partners-pagepatrol')
  click(s,'Начать патруль##patrol-start');click(s,'ДА##confirm-yes');s.step()
  for _=1,4 do s.step(1500)end
  check(s.patrolSession.data.active);check(s.patrol.active);eq(s.patrol.env.settings().police_interval_ms,600000)

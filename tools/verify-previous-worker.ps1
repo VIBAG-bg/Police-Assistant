@@ -1,7 +1,9 @@
 ﻿[CmdletBinding()]
 param(
  [Parameter(Mandatory=$true)][string]$Baseline,
- [string]$OfficialHudPath=''
+ [string]$OfficialHudPath='',
+ [string]$UnreviewedHudPath='',
+ [string]$ReportName='PREVIOUS_WORKER0430.json'
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -23,6 +25,11 @@ if($OfficialHudPath){
  if((Get-PaHash $OfficialHudPath) -cne $contract.hud_main_sha256){throw 'Read-only official HUD reference differs from the reviewed contract.'}
  $environments+=@('launcher')
 }
+if($UnreviewedHudPath){
+ if(-not(Test-Path -LiteralPath $UnreviewedHudPath -PathType Leaf)){throw 'Unreviewed HUD reference is missing.'}
+ $environments+=@('unreviewed_launcher')
+}
+if($ReportName -cnotmatch '^PREVIOUS_WORKER[A-Z0-9_]+\.json$'){throw 'Invalid report name.'}
 $cases=@();$checks=0
 function Check($ok,[string]$why){$script:checks++;if(-not $ok){throw ('ASSERT: '+$why)}}
 foreach($environment in $environments){
@@ -37,12 +44,14 @@ foreach($environment in $environments){
  }
  $protected=@{}
  foreach($file in Get-ChildItem -LiteralPath (Join-Path $ml 'config') -File){$protected[$file.FullName]=Get-PaHash $file.FullName}
- if($environment -eq 'launcher'){
+ if($environment -ne 'native'){
   $hud=Join-Path $game 'cef/assets/hud';[IO.Directory]::CreateDirectory($hud)|Out-Null
-  [IO.File]::Copy($OfficialHudPath,(Join-Path $hud 'main.js'))
+  $reference=if($environment -eq 'launcher'){$OfficialHudPath}else{$UnreviewedHudPath}
+  [IO.File]::Copy($reference,(Join-Path $hud 'main.js'))
   foreach($row in $oldManifest.cef_files){[IO.File]::Copy((Join-Path $previous ('cef/assets/hud/'+$row.path)),(Join-Path $hud $row.path))}
   [IO.File]::WriteAllText((Join-Path $hud 'index.html'),'<html><body>CLIENT HUD<!-- PA26 CEF chat adapter --><script src="pa26-chat.js"></script><script src="pa26-chat-endpoint.js"></script></body></html>')
   $protected[(Join-Path $hud 'main.js')]=Get-PaHash (Join-Path $hud 'main.js')
+  foreach($file in Get-ChildItem -LiteralPath $hud -File){$protected[$file.FullName]=Get-PaHash $file.FullName}
  }
  $job=Join-Path $script:PaBase ('jobs/'+[guid]::NewGuid().ToString('N'))
  [IO.Directory]::CreateDirectory($job)|Out-Null
@@ -62,7 +71,7 @@ foreach($environment in $environments){
  if($environment -eq 'native'){
   Check (-not(Test-Path -LiteralPath (Join-Path $game 'cef'))) 'native update never creates launcher assets'
  }else{
-  foreach($row in $current.cef_files){Check ((Get-PaHash (Join-Path $hud $row.path)) -ceq $row.sha256) 'new adapter copied under official HUD contract'}
+  Check (@($plan|Where-Object {$_.path -like 'cef/*'}).Count -eq 0) 'program-only update never changes CEF'
   $html=[IO.File]::ReadAllText((Join-Path $hud 'index.html'))
   Check ($html.Contains('CLIENT HUD')) 'foreign markup retained'
   Check ([regex]::Matches($html,'src="pa26-chat.js"').Count -eq 1) 'adapter tag remains unique'
@@ -79,4 +88,4 @@ foreach($environment in $environments){
 @{status='passed';checks=$checks;release=$current.release;baseline=$oldManifest.release;
  previous_worker_sha256=Get-PaHash $worker;package_sha256=$candidate.sha256;cases=$cases;
  real_game_written=$false;official_hud_read_only=[bool]$OfficialHudPath}|ConvertTo-Json -Depth 5|
- Set-Content -LiteralPath (Join-Path $release 'tests/PREVIOUS_WORKER0430.json') -Encoding UTF8
+ Set-Content -LiteralPath (Join-Path $release ('tests/'+$ReportName)) -Encoding UTF8

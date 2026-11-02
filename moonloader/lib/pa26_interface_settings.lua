@@ -8,15 +8,16 @@ function M.draw(s,ui,data,cb,menu,part)
     s:settingsHeading(ui,'Размер и положение окон')
     layout.remember=s:check('Сохранять выставленный размер и положение после перезахода##window-remember',layout.remember)
     layout.wanted_separate=s:check('Открывать розыск в отдельном окне##wanted-detached',layout.wanted_separate)
-    ui.text('Начальный размер: '..layout.initial_percent..'% ширины и высоты экрана. После изменения мышью сохраняется именно ваш размер. При другом разрешении он пересчитывается пропорционально и остаётся в пределах экрана.')
+    ui.text('Новые окна используют просторное авторское расположение, адаптированное к вашему экрану. Ваши сохранённые размеры имеют приоритет. После сбоя возвращается последнее корректное расположение; повреждённые размеры восстанавливаются автоматически.')
+    ui.text('Альтернативный размер главного окна: '..layout.initial_percent..'% ширины и высоты экрана. Ползунок применяется кнопкой ниже.')
     local percent=im.new.int(layout.initial_percent)
     im.PushItemWidth(math.max(1,im.GetContentRegionAvail().x));ui.push(function()im.PopItemWidth()end)
     if im.SliderInt('##window-initial-percent',percent,50,95)then layout.initial_percent=percent[0]end;ui.finish()
     if s:button('Применить начальный размер к главному окну##window-apply',ui)then
-        layout.windows.main=nil;menu.windows.main=nil;menu.resetWindows=menu.resetWindows or{};menu.resetWindows.main=true
+        layout.default_style='percent';layout.windows.main=nil;menu.windows.main=nil;menu.resetWindows=menu.resetWindows or{};menu.resetWindows.main=true
     end
     if s:button('Сбросить размеры и положения всех окон##window-reset',ui)then
-        layout.windows={};menu.windows={};menu:resetWindowPositions()
+        layout.default_style='author';layout.windows={};menu.windows={};menu:resetWindowPositions()
     end
     s:autoSettings('window_layout',{'settings','window_layout'},layout)
     s:autosaveHint(ui,'window_layout')

@@ -238,7 +238,9 @@ function M.draw(s,ui,data,callbacks)
         tab=menu.choiceControl(s.imgui,ui,'##assist-tabs','',tab,{{'traffic','Трафик и погоня'},{'patrol','Патруль'},{'megaphone','Мегафон'},{'evidence','Фиксация'},{'training','Обучение'},{'notices','Уведомления'}},s,{buttons=true,font=s.buttonFont})
         s.assistPage=tab
     end
-    if s:button('Настройки чата, переноса RP и команд##assist-chat-settings',ui)and callbacks.openSettings then callbacks.openSettings('chat')end
+    if tab~='traffic'or s.copilotPage=='settings'then
+        if s:button('Настройки чата, переноса RP и команд##assist-chat-settings',ui)and callbacks.openSettings then callbacks.openSettings('chat')end
+    end
     if tab=='traffic'then require('pa26_copilot_ui').draw(s,ui,data,callbacks)
     elseif tab=='patrol'then require('pa26_patrol_ui').draw(s,ui,data,callbacks,'assist')
     elseif tab=='megaphone'then M.megaphone(s,ui,data,callbacks)

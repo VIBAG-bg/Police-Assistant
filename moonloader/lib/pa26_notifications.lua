@@ -1,6 +1,7 @@
 -- Shared bottom-centre toast surface. No game APIs or chat sends in this file.
 local core=require 'pa26_core'
 local model=require 'pa26_bindings'
+local icons=require 'pa26_icons'
 local M={};local Notices={};Notices.__index=Notices
 local function safe(s)return s and s.focused==true and s.paused==false and s.blocked==false and s.typing~=true and
     s.recording~=true and s.editingHud~=true and s.draggingHud~=true and not s.alertPending and not s.modal end
@@ -74,7 +75,9 @@ function Notices:measure(im,fonts,avoid)
     local body=fonts.body or im.GetFont();local heading=fonts.heading or body
     local function extent(font,size,text)return font:CalcTextSizeA(size*s,100000,wrap,text)end
     local title=c.full and c.title or c.title..' · предстоящий доклад'
-    local titleH=extent(heading,16,title).y;local statusH=extent(body,13,c.status).y
+    local icon=c.full and'circle-question'or'triangle-exclamation'
+    local gutter=icons.owner==im and icons.get(icon)and 23*s or 0
+    local titleH=heading:CalcTextSizeA(16*s,100000,math.max(1,wrap-gutter),title).y;local statusH=extent(body,13,c.status).y
     local bodyH=c.full and extent(body,14,c.body).y or 0
     local hint=(self.state.demo and 'ДЕМО · без отправки · 'or '')..(c.hint or '')
     local hintH=extent(body,12,hint).y
@@ -102,7 +105,7 @@ function Notices:measure(im,fonts,avoid)
     end
     for _,other in ipairs(avoid or {})do if overlaps(r,other)then return nil end end
     self.bounds=r;self.measurement={s=s,pad=pad,wrap=wrap,body=body,heading=heading,title=title,titleH=titleH,bodyH=bodyH,statusH=statusH,
-        hint=hint,hintH=hintH,keys=keys,keyH=keyH};return r
+        hint=hint,hintH=hintH,keys=keys,keyH=keyH,icon=icon,gutter=gutter};return r
 end
 function Notices:overWidget(im)
     local io=im.GetIO();return self:view().visible and inside(self.bounds,io.MousePos.x,io.MousePos.y)or false
@@ -112,10 +115,11 @@ function Notices:draw(im,fonts,avoid)
     local c=self.active;local m=self.measurement;local s=m.s;local io=im.GetIO();local list=im.GetForegroundDrawList();local vec=im.ImVec2
     local function tint(a,b,d,alpha)return im.ColorConvertFloat4ToU32(im.ImVec4(a,b,d,alpha or 1))end
     local white,muted=tint(.98,.99,1),tint(.72,.84,.94)
-    local function text(value,font,size,x,y,color)list:AddTextFontPtr(font,size*s,vec(x,y),color or white,value,nil,m.wrap)end
+    local function text(value,font,size,x,y,color,wrap)list:AddTextFontPtr(font,size*s,vec(x,y),color or white,value,nil,wrap or m.wrap)end
     list:AddRectFilled(vec(r.x,r.y),vec(r.x+r.w,r.y+r.h),tint(.035,.13,.22,.91),13*s)
     local x,y=r.x+m.pad,r.y+m.pad
-    text(m.title,m.heading,16,x,y);y=y+m.titleH+6*s
+    icons.draw(im,m.icon,x,y,16*s,c.full and'info'or'warning',1,list)
+    text(m.title,m.heading,16,x+m.gutter,y,nil,m.wrap-m.gutter);y=y+m.titleH+6*s
     text(c.status,m.body,13,x,y,tint(.58,.83,1));y=y+m.statusH+8*s
     if c.full then
         list:AddRectFilled(vec(x-4*s,y-3*s),vec(x+m.wrap+4*s,y+m.bodyH+5*s),tint(.10,.24,.35,.9),7*s)

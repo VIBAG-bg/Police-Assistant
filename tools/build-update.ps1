@@ -9,8 +9,19 @@ if(-not $paOutput.StartsWith($paRelease+'\',[StringComparison]::OrdinalIgnoreCas
 . (Join-Path $paRelease 'moonloader\resource\pa26\updater\pa26-update.ps1') -Mode Library
 $paInstall=Read-PaJson (Join-Path $paRelease 'INSTALL_MANIFEST.json')
 $paFiles=@();$paSources=@{}
+$paCarried=@{}
+if($paInstall.PSObject.Properties.Name -contains 'update_carried_assets'){
+ foreach($row in $paInstall.update_carried_assets){
+  if($row.path -notmatch '^resource\\pa26\\fonts\\(fa-solid-900\.ttf|LICENSE\.txt|manifest\.json)$' -or $row.carrier -cne 'lib\pa26_icon_font.lua'){throw 'Unrecognized carried font asset.'}
+  $paCarried[$row.path]=$true
+ }
+}
 foreach($row in $paInstall.files){
     if($row.path.StartsWith('config\')){continue}
+    if($paCarried.ContainsKey($row.path)){
+     if((Get-PaHash (Join-Path $paRelease ('moonloader\'+$row.path))) -cne $row.sha256){throw 'Carried font asset mismatch.'}
+     continue # Identical font/license bytes travel in the allowed Lua carrier.
+    }
     $path='MoonLoader/'+$row.path.Replace('\','/');if(-not (Test-PaOwned $path)){throw ('Unowned runtime entry: '+$path)}
     $source=Join-Path $paRelease ('moonloader\'+$row.path)
     if((Get-PaHash $source) -ne $row.sha256){throw 'Manifest changed after release verification'}

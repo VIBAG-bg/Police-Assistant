@@ -49,7 +49,7 @@ for _,display in ipairs(displays)do for _,scenario in ipairs({'known-custom','un
   im.NewFrame();im.SetNextWindowPos(im.ImVec2(12,12),im.Cond.Always);im.SetNextWindowSize(im.ImVec2(display[1]-24,display[2]-24),im.Cond.Always)
   im.Begin('F9 patrol validation',nil,im.WindowFlags.NoSavedSettings);im.BeginChild('content',im.ImVec2(0,0),false)
   local data={radioState=state};if frame==2 then data.patrolSession={}elseif frame>=3 then data.patrolSession={history={}}end
-  studio:drawPartners(ui,data,callbacks)
+  require('pa26_patrol_ui').drawSessionSettings(studio,ui,data,callbacks)
   check(previews==5,'All five preview actions must run');check(warnings==(scenario=='unknown-custom'and 5 or 0),'Independent warning text')
   check(#stack==0,'Unbalanced ImGui scope');im.EndChild();im.End();im.Render();check(im.GetDrawData().Valid)
   for _,key in ipairs({'start','resume','finish','crew','periodic'})do check(studio.patrolSessionDraft[key..'_template']==saved[key..'_template'],'Personal template changed')end

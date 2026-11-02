@@ -14,7 +14,7 @@ getCarModel=function()return 411 end;getDriverOfCar=function()return 99 end;getC
 getCarColours=function()return 1,0 end;getNameOfVehicleModel=function()return 'INFERNUS'end
 getGxtText=function(k)return k=='INFERNUS'and 'Infernus'or 'Doherty'end
 isCarOnScreen=function()return true end;isLineOfSightClear=function()check(not s.rendererContext);return true end
-s.step();s.page('partners');click(s,'Транспорт##Напарники и служба##partners-pagevehicle')
+s.step();s.page('partners');click(s,'Трафик и погоня##Патруль и служба##partners-pagevehicle')
 click(s,'Мои требования в мегафон##vehicle-own-megaphone');s.render()
 click(s,'Infernus [105] · 5 м##assist-car-105');check(s.vehicleController.selectionRequest);s.step();eq(s.vehicleController.selected.id,105);eq(#s.sent,0)
 click(s,'Настройки##megaphone-pagesettings')

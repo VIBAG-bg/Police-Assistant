@@ -2,7 +2,7 @@
 local model=require 'pa26_bindings'
 local defs=require 'pa26_important_data'
 local M={}
-local function clean(s)return tostring(s or''):gsub('https?://%S+',''):gsub('##','# #')end
+local function clean(s)return tostring(s or''):gsub('\226\128\139',''):gsub('\239\187\191',''):gsub('https?://%S+',''):gsub('##','# #')end
 local function label(row)
  local edit=row and row.edit and row.edit.status
  return edit=='override'and'Моя версия' or edit=='custom'and'Моя карточка'or(edit=='conflict'or edit=='collision')and'Личная правка требует сравнения'or nil
@@ -11,7 +11,8 @@ function M.build(k)
  local out={revision=k.revision,cards=model.copy(defs.cards),byId={},rows={},radioCount=0,required=0,free=0}
  local function add(c,s,row)
   row=model.copy(row);row.title=clean(row.title);row.text=clean(row.text);row.card=c.id;row.section=s.id
-  row.key=c.id..':'..row.id;row.search=model.casefold(row.title..' '..row.text..' '..c.title..' '..s.title)
+  row.key=c.id..':'..row.id;row.sectionTitle=s.title
+  row.search=model.casefold(row.title..' '..row.text..' '..c.title..' '..s.title)
   s.rows[#s.rows+1]=row;return row
  end
  for _,c in ipairs(out.cards)do out.byId[c.id]=c
@@ -55,7 +56,7 @@ function M.build(k)
   if row.group=='articles'and i.code=='AK'and n and n>=20 and n<=62 then
    local lines={};for _,v in ipairs(i.sanctions or{})do lines[#lines+1]=(v.condition or'')..' '..(v.alternative or v.source_excerpt or'')end
    local r={id=i.id,title=(i.reference or('АК '..n))..' · '..i.title,text=i.text or i.local_text or table.concat(lines,'\n'),
-       summary=table.concat(lines,'\n'),note=label(row),refs={row.key},action={kind='fine',value=i.reference or('Административный кодекс ст. '..n)}}
+       kind='fine',reference=i.reference,sanctions=model.copy(i.sanctions or{}),summary=table.concat(lines,'\n'),note=label(row),refs={row.key},action={kind='fine',value=i.reference or('Административный кодекс ст. '..n)}}
    add(out.byId.fines,section('fines','all'),r)
    add(out.byId.fines,section('fines',n>=37 and n<=49 and'road'or n<=36 and'public'or'authority'),r)
   end
@@ -68,6 +69,7 @@ function M.build(k)
   end
   local text=r.note..'\n'..(#laws>0 and('Возможные нормы, при наличии их признаков:\n'..table.concat(laws,'\n'))or'Прямое соответствие норме не установлено; проверьте состав по обстоятельствам.')
   add(out.byId.catalog,section('catalog','all'),{id=r.id,title=r.id..' · '..r.title..' · '..r.stars..' зв.',text=text,
+   kind='wanted',stars=r.stars,mapping_status=r.mapping_status,observed_on='2026-10-23',
    summary=r.group_title..' · '..r.mapping_status,refs=r.refs,action={kind='wanted',value=r.id}})
  end
  local seen={}
@@ -75,23 +77,46 @@ function M.build(k)
   local ref=k.byKey['commands:command:'..entry.command:sub(2)];local required=entry.rp_required
   if ref and type(ref.item.rp_required)=='boolean'then required=ref.item.rp_required end
   local row={id=entry.command,title=entry.command,text=required and'Требует RP-отыгровки.'or'Не требует отдельной RP-отыгровки по разделу XI.',
-   note=label(ref),refs=ref and{ref.key}or{},summary=required and'RP обязательно'or'Без отдельного RP'}
+   kind='command',rp_required=required,note=label(ref),refs=ref and{ref.key}or{},summary=required and'RP обязательно'or'Без отдельного RP'}
   add(out.byId.commands,section('commands','all'),row);add(out.byId.commands,section('commands',required and'required'or'free'),row)
   if required then out.required=out.required+1 else out.free=out.free+1 end
  end end
  add(out.byId.commands,section('commands','extra'),{id='/ticket',title='/ticket ID сумма причина',text='Синтаксис отдельно подтверждён пользователем. Процедура штрафа сопровождается RP. Команда не входит в таблицу 50 команд раздела XI.',action={kind='fine'}})
  add(out.byId.commands,section('commands','extra'),{id='/wanted',title='/wanted',text='Общий серверный список преступников. По предоставленным наблюдениям поиска по ID в нём нет. Отдельная RP-отыгровка не требуется.'})
+ -- Provenance is derived once on catalogue revision, never while a user types.
+ for _,c in ipairs(out.cards)do for _,s in ipairs(c.sections)do for _,r in ipairs(s.rows)do
+  r.provenance={};r.verification='verified_snapshot_only';local seen={}
+  if c.id=='service'and s.id=='raids'and r.id=='time'then
+   r.verification='conflict';r.note='Требует уточнения: в одном источнике указаны разные часы рейдов. Оба положения сохранены.'
+  end
+  for _,key in ipairs(r.refs or{})do
+   local linked=k.byKey[key]or k.byKey['articles:'..key]
+   if linked then
+    if linked.edit and linked.edit.status~='source'then r.edit_status=linked.edit.status;r.note=r.note or label(linked)end
+    for _,ref in ipairs(linked.refs or{})do
+     local src=k.sources[tostring(ref.source_id)]
+     local identity=tostring(ref.source_id)..':'..tostring(ref.locator)
+     if not seen[identity]then seen[identity]=true;r.provenance[#r.provenance+1]={key=linked.key,source_id=tostring(ref.source_id),
+      title=src and src.title or'Источник отсутствует',locator=ref.locator,date=src and(src.source_reviewed_on or src.read_on),url=ref.url}end
+    end
+   else r.verification='missing';r.note=r.note or'Ссылка памятки требует проверки в РЕЕСТРЕ.'end
+  end
+  if r.note or r.edit_status=='conflict'or r.edit_status=='collision'then c.hasIssues=true end
+ end end end
  local indexed={}
- for _,c in ipairs(out.cards)do for _,s in ipairs(c.sections)do for _,r in ipairs(s.rows)do if not indexed[r.key]then indexed[r.key]=true;out.rows[#out.rows+1]=r end end end end
+ for _,c in ipairs(out.cards)do for _,s in ipairs(c.sections)do for _,r in ipairs(s.rows)do
+  if not indexed[r.key]then indexed[r.key]=r;out.rows[#out.rows+1]=r
+  elseif s.id~='all'then indexed[r.key].sectionTitle=s.title end
+ end end end
  out.byId.radio.subtitle=out.radioCount..' кодов · маркировки и порядок доклада'
  out.byId.commands.subtitle=(out.required+out.free)..' команд · с RP: '..out.required..' · без отдельного RP: '..out.free
  return out
 end
 function M.filter(data,query,card,tab)
- local out={};query=model.casefold(query or''):match('^%s*(.-)%s*$')
+ local out,seen={},{};query=model.casefold(query or''):match('^%s*(.-)%s*$')
  local source=data.rows
  if card and data.byId[card]then for _,s in ipairs(data.byId[card].sections)do if s.id==tab then source=s.rows;break end end end
- for _,r in ipairs(source)do if(not card or r.card==card)and(query==''or r.search:find(query,1,true))then out[#out+1]=r end end
+ for _,r in ipairs(source)do if not seen[r.key]and(not card or r.card==card)and(query==''or r.search:find(query,1,true))then seen[r.key]=true;out[#out+1]=r end end
  return out
 end
 return M

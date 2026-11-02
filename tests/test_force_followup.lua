@@ -58,7 +58,7 @@ g.weapon=23;g.step();g.events.onSendBulletSync({weaponId=23,hitType=0,targetId=6
 eq(g.patrolEvents.data.facts.force_used,nil);eq(#g.patrolEvents.followups,0,'A packet cannot establish force or injury')
 g.page('partners')
 local function click(label)g.click=label;g.render();eq(g.click,nil,label);check(not g.hasLog('Ошибка интерфейса'));eq(#g.scopes,0)end
-click('События##Напарники и служба##partners-pageevents')
+click('События##Патруль и служба##partners-pageevents')
 local studio=g.workspace.studio;studio.patrolEventKind='force_used';g.render();click('Подготовить событие##patrol-event-new')
 g.edits={['##Человек · IC-имя или известные приметы##patrol-event-subject']='Человек в куртке',
     ['##Основание / статья · вручную##patrol-event-basis']='Непосредственная угроза',

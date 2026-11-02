@@ -1,0 +1,15 @@
+{
+  "screen_count": 7,
+  "font_sizes": [
+    16,
+    24
+  ],
+  "game_written": false,
+  "status": "passed",
+  "checks": 26987,
+  "window_percent": [
+    70,
+    100
+  ],
+  "frames": 2940
+}

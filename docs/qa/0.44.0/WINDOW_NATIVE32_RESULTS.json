@@ -1,0 +1,29 @@
+{
+  "screen_sizes": [
+    [
+      640,
+      480
+    ],
+    [
+      1366,
+      768
+    ],
+    [
+      1920,
+      1080
+    ],
+    [
+      2560,
+      1440
+    ]
+  ],
+  "status": "passed",
+  "real_installed_imgui": true,
+  "cpu_only": true,
+  "right_drag_children": true,
+  "gta_launched": false,
+  "checks": 202,
+  "right_drag_modal": true,
+  "game_server_contacted": false,
+  "native_game_tested": false
+}

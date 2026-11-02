@@ -72,7 +72,7 @@ f.io.MousePos={x=button.x+button.w/2,y=button.y+button.h/2};f.step(150)
 f.mouseClicks={[0]=true};f.render();f.mouseClicks={};f.step();eq(#c.followups,0);eq(#f.sent,0);eq(c.data.facts.detention,1)
 f.physicalDown={};f.commands.pa26();f.step();f.page('partners')
 local function click(label)f.click=label;f.render();eq(f.click,nil,label);check(not f.hasLog('Ошибка интерфейса'))end
-click('События##Напарники и служба##partners-pageevents');click('Настройки##События##patrol-event-pagesettings')
+click('События##Патруль и служба##partners-pageevents');click('Настройки##События##patrol-event-pagesettings')
 f.edits={['##Напоминание о правах##patrol-followup-rights']='Проверить разъяснение прав.'};f.render();f.edits={}
 f.intEdits={['Напомнить позже через, с##patrol-event-followup_snooze_ms']=45};f.render();f.intEdits={};f.step(700)
 local saved=f.savedLibrary()

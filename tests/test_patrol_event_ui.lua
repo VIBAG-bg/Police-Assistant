@@ -9,11 +9,13 @@ local function setup(demo,extra)
     local lib=model.defaults(core.defaults());lib.patrol_session.enabled=true;lib.patrol_session.unit='A-1'
     lib.profile.name='Victor Auditore';lib.profile.callsign='A-1';lib.alerts.on_duty=true
     lib.patrol_events.enabled=true
+    -- Retain coverage for the optional legacy event form; ready reports have their own tests.
+    lib.patrol_events.command_reports.enabled=false
     local options={demo=demo==true,library=lib,alerts=true,notifications=true,categoryWheel=true}
     for k,v in pairs(extra or {})do options[k]=v end
-    local s=fixture(options);s.step();s.page('partners');click(s,'Патруль##Напарники и служба##partners-pagepatrol')
+    local s=fixture(options);s.step();s.page('partners');click(s,'Патруль и смена##Патруль и служба##partners-pagepatrol')
     click(s,'Начать патруль##patrol-start');s.expectedStart=model.copy(s.workspace.studio.patrolConfirm.prepared.lines);click(s,'ДА##confirm-yes');s.step();s.step(1500)
-    click(s,'События##Напарники и служба##partners-pageevents')
+    click(s,'События##Патруль и служба##partners-pageevents')
     return s
 end
 local s=setup(false);local c=s.patrolEvents;local baseline=#s.sent;eq(baseline,#s.expectedStart);check(baseline>0)

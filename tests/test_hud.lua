@@ -59,8 +59,8 @@ for _,size in ipairs({{640,480},{1920,1080},{320,200},{16384,16384}}) do
 end
 eq(hud:layout(0/0,700),nil); eq(hud:layout(100,100),nil)
 check(not hud:change('scale',0/0)); check(not hud:change('scale',2.1)); check(not hud:change('x',-1))
-hud:resetPosition(); eq(hud.settings.x,8); eq(hud.settings.y,170); eq(hud.settings.scale,1)
-local detached=hud:getSettings(); detached.x=100; eq(hud.settings.x,8)
+hud:resetPosition(); eq(hud.settings.x,2278); eq(hud.settings.y,409); eq(hud.settings.scale,1)
+local detached=hud:getSettings(); detached.x=100; eq(hud.settings.x,2278)
 hud:savePending(100); eq(saves,0); hud.drag={}; hud:savePending(2000); eq(saves,0)
 hud.drag=nil; hud:savePending(2001); eq(saves,0); hud:savePending(2700); eq(saves,1); check(not hud.dirty)
 hud:change('x',20); hud:savePending(3000); hud:savePending(3699); eq(saves,1)
@@ -78,7 +78,7 @@ hud:stopInteraction(); check(not hud.editing and not hud.interactive and hud.dra
 -- Cosmetic corruption/migration must not silently change saved RP mode.
 local raw={main={schema='2',show_on_connect='true',menu_key='120',radial_key='88',max_distance='8',interval_ms='1500',demo_mode='false'}}
 for _,a in ipairs(core.actions) do raw[a.key]=core.defaults()[a.key] end
-local migrated, warnings=core.normalizeConfig(raw); check(not migrated.main.demo_mode); eq(migrated.widget.x,8); eq(#warnings,0)
+local migrated, warnings=core.normalizeConfig(raw); check(not migrated.main.demo_mode); eq(migrated.widget.x,2278); eq(#warnings,0)
 raw.widget={scale='nan',x='-1',time_source='server',visible='broken'}
 migrated,warnings=core.normalizeConfig(raw); check(not migrated.main.demo_mode); check(#warnings>=4)
 eq(migrated.widget.scale,1); eq(migrated.widget.time_source,'local')

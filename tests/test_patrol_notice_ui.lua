@@ -9,6 +9,8 @@ local function click(s,label)s.click=label;s.render();eq(s.click,nil,'Missing co
 local function setup(mode)
     local lib=model.defaults(core.defaults());lib.patrol_events.enabled=true;lib.patrol_events.require_patrol=false
     lib.patrol_events.toast_mode=mode or 'confirm';lib.alerts.on_duty=true;lib.weapon_warning.enabled=false
+    -- This suite exercises the existing event form when ready command reports are disabled.
+    lib.patrol_events.command_reports.enabled=false
     local s=fixture({demo=false,library=lib,alerts=true});s.step()
     check(s.workspace:selectTarget({id=s.id,ped=s.mappedPed,name=s.name}));s.step()
     if s.frames[1].condition()then s.commands.pa26();s.step()end
@@ -40,12 +42,12 @@ s.commands.pa26sos();s.step();check(s.alerts.pending);check(not s.notifications:
 s.step(1000);eq(s.patrolEvents.attempts[1].notice_remaining,remaining)
 key(s,0x4e);check(not s.alerts.pending);check(not s.workspace.studio.patrolEventForm);healthy(s)
 -- Existing form answers survive accepting another command reminder.
-s=setup();s.commands.pa26();s.step();s.page('partners');click(s,'События##Напарники и служба##partners-pageevents')
+s=setup();s.commands.pa26();s.step();s.page('partners');click(s,'События##Патруль и служба##partners-pageevents')
 st=s.workspace.studio;st.patrolEventKind='custom';s.render();click(s,'Подготовить событие##patrol-event-new')
 s.edits={['##Дополнительные сведения##patrol-event-details']='Не терять эту запись'};s.render();s.edits={};local old=st.patrolEventForm
 s.commands.pa26();s.step();attempt(s);key(s,0x59);eq(st.patrolEventForm,old,'Existing form object is retained');eq(old.details,'Не терять эту запись','Existing typed answers survive')
 -- Settings persist from GUI and info tooltips stay readable independently.
-s=setup();s.commands.pa26();s.step();s.page('partners');click(s,'События##Напарники и служба##partners-pageevents')
+s=setup();s.commands.pa26();s.step();s.page('partners');click(s,'События##Патруль и служба##partners-pageevents')
 click(s,'Настройки##События##patrol-event-pagesettings')
 s.edits={['##Вопрос после команды##patrol-event-toast_template']='Проверить {event}?\nКоманда: {command}',
     ['##Заголовок уведомления##patrol-event-toast_title']='Проверка события'};s.render();s.edits={}

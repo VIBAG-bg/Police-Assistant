@@ -23,7 +23,7 @@ local function setup()
     getGxtText=function(key)return key=='INFERNUS'and 'Infernus'or 'Doherty'end
     isCarOnScreen=function()return true end
     isLineOfSightClear=function()check(not s.rendererContext);return true end
-    s.step();s.page('partners');click(s,'Транспорт##Напарники и служба##partners-pagevehicle')
+    s.step();s.page('partners');click(s,'Трафик и погоня##Патруль и служба##partners-pagevehicle')
     return s
 end
 local s=setup();check(s.vehicleController:view().nearest);eq(#s.sent,0)
@@ -46,7 +46,7 @@ click(s,'Остановиться##assist-say-1');check(s.workspace.studio.vehic
 s.step() -- release Y before the newly opened confirmation may accept its edge
 s.physicalDown={[0x59]=true};s.step();s.physicalDown={};s.step(1500);s.step(1500)
 check(#s.sent>before);check(s.sent[#s.sent].line:match('^/m '));healthy(s)
-s.commands.pa26();s.page('partners');click(s,'Транспорт##Напарники и служба##partners-pagevehicle')
+s.commands.pa26();s.page('partners');click(s,'Трафик и погоня##Патруль и служба##partners-pagevehicle')
 s.edits={['##Обратиться в мегафон##vehicle-template-megaphone_template']='Водитель {model}, говорит {station}. Остановитесь у обочины.'};s.render();s.edits={};s.step(700)
 eq(s.workspace.library.vehicle.megaphone_template,'Водитель {model}, говорит {station}. Остановитесь у обочины.')
 check(s.savedLibrary().vehicle.enabled)

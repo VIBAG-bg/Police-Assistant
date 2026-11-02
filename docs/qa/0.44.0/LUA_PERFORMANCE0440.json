@@ -1,0 +1,98 @@
+{
+  "measured_at": "2026-11-02T11:21:38.582355+00:00",
+  "environment": "LuaJIT 2.1 + existing offline fixture + Lupa calls",
+  "game_started": false,
+  "actual_input_latency_measured": false,
+  "actual_frame_time_spikes_measured": false,
+  "chat_contents_recorded": false,
+  "rows": {
+    "v0.43.2": {
+      "onWindowMessage.mouse": {
+        "samples": 6000,
+        "median_ms": 0.0004,
+        "p95_ms": 0.0004,
+        "worst_handler_ms": 0.0128
+      },
+      "onWindowMessage.char": {
+        "samples": 6000,
+        "median_ms": 0.0004,
+        "p95_ms": 0.0004,
+        "worst_handler_ms": 0.0091
+      },
+      "onWindowMessage.key": {
+        "samples": 6000,
+        "median_ms": 0.0009,
+        "p95_ms": 0.0018,
+        "worst_handler_ms": 0.2831
+      },
+      "Bridge.tick": {
+        "samples": 2000,
+        "median_ms": 0.0007,
+        "p95_ms": 0.0012,
+        "worst_handler_ms": 0.0421
+      },
+      "Bridge.exchange": {
+        "samples": 500,
+        "median_ms": 0.22094999999999998,
+        "p95_ms": 0.3613,
+        "worst_handler_ms": 0.6217
+      },
+      "context": {
+        "samples": 800,
+        "median_ms": 0.0007,
+        "p95_ms": 0.0013,
+        "worst_handler_ms": 0.0138
+      },
+      "updateGame": {
+        "samples": 800,
+        "median_ms": 0.40435,
+        "p95_ms": 0.8844,
+        "worst_handler_ms": 4.6473
+      }
+    },
+    "v0.44.0": {
+      "onWindowMessage.mouse": {
+        "samples": 6000,
+        "median_ms": 0.0006,
+        "p95_ms": 0.0007,
+        "worst_handler_ms": 0.0943
+      },
+      "onWindowMessage.char": {
+        "samples": 6000,
+        "median_ms": 0.0006,
+        "p95_ms": 0.0007,
+        "worst_handler_ms": 0.1798
+      },
+      "onWindowMessage.key": {
+        "samples": 6000,
+        "median_ms": 0.0013,
+        "p95_ms": 0.0018,
+        "worst_handler_ms": 4.3937
+      },
+      "Bridge.tick": {
+        "samples": 2000,
+        "median_ms": 0.0012,
+        "p95_ms": 0.0038,
+        "worst_handler_ms": 0.4503
+      },
+      "Bridge.exchange": {
+        "samples": 500,
+        "median_ms": 0.3139,
+        "p95_ms": 0.4636,
+        "worst_handler_ms": 1.8389
+      },
+      "context": {
+        "samples": 800,
+        "median_ms": 0.0006,
+        "p95_ms": 0.0007,
+        "worst_handler_ms": 0.4306
+      },
+      "updateGame": {
+        "samples": 800,
+        "median_ms": 0.3248,
+        "p95_ms": 0.7746,
+        "worst_handler_ms": 3.7107
+      }
+    }
+  }
+}

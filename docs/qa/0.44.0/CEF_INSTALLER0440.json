@@ -1,0 +1,6 @@
+{
+  "scenario": "production hash gate: unknown CEF with old PA tag; real native fixture installation; strict mode rejects",
+  "status": "passed",
+  "live_game_written": false,
+  "checks": 11
+}

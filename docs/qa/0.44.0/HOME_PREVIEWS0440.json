@@ -1,0 +1,172 @@
+{
+  "results": [
+    {
+      "navigation_scroll": 0,
+      "profile": "representative_demo",
+      "status": "passed",
+      "window": {
+        "y": 23,
+        "x": 16,
+        "h": 1004,
+        "w": 1688
+      },
+      "navigation": [
+        {
+          "x": 48,
+          "label": "01  Главная##navhome",
+          "w": 248,
+          "y": 417,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "02  Библиотека биндов##navbinds",
+          "w": 248,
+          "y": 471,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "03  Помощники службы##navaddons",
+          "w": 248,
+          "y": 525,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "04  Патруль##navpartners",
+          "w": 248,
+          "y": 579,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "05  Памятки и справка##navhints",
+          "w": 248,
+          "y": 633,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "06  База знаний##navknowledge",
+          "w": 248,
+          "y": 687,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "07  Журнал и статистика##navstats",
+          "w": 248,
+          "y": 741,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "08  Настройки##navsettings",
+          "w": 248,
+          "y": 795,
+          "h": 44,
+          "inside": true
+        }
+      ],
+      "resolution": [
+        1920,
+        1080
+      ],
+      "content_scroll": 0
+    },
+    {
+      "navigation_scroll": 0,
+      "profile": "representative_demo",
+      "status": "passed",
+      "window": {
+        "y": 31,
+        "x": 16,
+        "h": 1339,
+        "w": 2251
+      },
+      "navigation": [
+        {
+          "x": 48,
+          "label": "01  Главная##navhome",
+          "w": 248,
+          "y": 425,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "02  Библиотека биндов##navbinds",
+          "w": 248,
+          "y": 479,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "03  Помощники службы##navaddons",
+          "w": 248,
+          "y": 533,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "04  Патруль##navpartners",
+          "w": 248,
+          "y": 587,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "05  Памятки и справка##navhints",
+          "w": 248,
+          "y": 641,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "06  База знаний##navknowledge",
+          "w": 248,
+          "y": 695,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "07  Журнал и статистика##navstats",
+          "w": 248,
+          "y": 749,
+          "h": 44,
+          "inside": true
+        },
+        {
+          "x": 48,
+          "label": "08  Настройки##navsettings",
+          "w": 248,
+          "y": 803,
+          "h": 44,
+          "inside": true
+        }
+      ],
+      "resolution": [
+        2560,
+        1440
+      ],
+      "content_scroll": 0
+    }
+  ],
+  "version": "0.44.0",
+  "kind": "synthetic_real_native_cpu_mesh",
+  "game_started": false,
+  "user_data_modified": false
+}

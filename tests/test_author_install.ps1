@@ -26,7 +26,12 @@ foreach($mode in @(@($true,$true),@($true,$false),@($false,$true),@($false,$fals
   Check (@((Get-Content $bind.Source -Raw|ConvertFrom-Json).bindings).Count -eq $(if($mode[0]){83}else{6})) 'bind checkbox is independent'
   Check (@((Get-Content $note.Source -Raw|ConvertFrom-Json).notes).Count -eq 2) 'exactly two public notes'
   Check (-not(Test-Path (Join-Path $c.ml 'config/police_assistant_2026_settings.json'))) 'planning does not write game data'
+  $settingRow=@($plan.plan|Where-Object Relative -Like '*_settings.json')[0]
+  $freshSettings=Read-PaPresetJson (Get-Content -LiteralPath $settingRow.Source -Raw -Encoding UTF8)
+  Check ($freshSettings.data.settings.window_layout.default_style -ceq 'author') 'fresh geometry uses responsive author layout'
+  Check ($freshSettings.data.settings.window_layout.windows.Count -eq 0) 'reference pixels are not copied as saved user windows'
   if($mode[1]){Check ((Get-Content -LiteralPath $c.ini.Source -Raw) -match '(?m)^demo_mode=false$') 'fresh author settings start in real mode'}
+  if($mode[1]){Check ((Get-Content -LiteralPath $c.ini.Source -Raw) -match '(?m)^reference_width=2560$') 'fresh HUD retains resolution reference'}
  }
 }
 $c=New-Case 'stock' $true;$p=Get-PaPresetSeedPlan $release $c.ml $manifest $true $true $c.ini

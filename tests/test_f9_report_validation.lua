@@ -11,7 +11,8 @@ s.step()
 local c=s.patrolSession
 c.state.direction=nil;c.state.directionKnown=false
 s.page('partners')
-s.click='Патруль##Напарники и служба##partners-pagepatrol';s.render()
+s.click='Патруль и смена##Патруль и служба##partners-pagepatrol';s.render()
+s.click='Шаблоны и дополнительные настройки →##session-settings';s.render();eq(s.click,nil);s.render()
 check(not s.hasLog('Ошибка интерфейса'),table.concat(s.logs,'\n'))
 check(s.frames[1].condition(),'A normal preview warning must leave F9 available')
 eq(#s.scopes,0);eq(s.invalidIOReads,0);eq(#s.sent,0)
@@ -37,11 +38,12 @@ s.edits={['Завершение патруля##session-template-finish']='{unit
 s.drawnText={};s.render();s.edits={};local valid=false
 for _,line in ipairs(s.drawnText)do if line:find('/r 1-L-1: смена завершена.',1,true)or line:find('/r A-1: смена завершена.',1,true)then valid=true end end
 check(valid);check(not s.hasLog('Ошибка интерфейса'))
-s.click='Контакты##Напарники и служба##partners-pagecontacts';s.render();eq(s.click,nil)
+s.page('partners');s.click='Напарники##Патруль и служба##partners-pagecontacts';s.render();eq(s.click,nil)
 s.page('settings');check(s.frames[1].condition());eq(#s.sent,0)
 s.commands.pa26();s.render();check(not s.frames[1].condition())
 s.commands.pa26();s.render();check(s.frames[1].condition())
-s.page('partners');s.click='Патруль##Напарники и служба##partners-pagepatrol';s.render()
+s.page('partners');s.click='Патруль и смена##Патруль и служба##partners-pagepatrol';s.render()
+s.click='Шаблоны и дополнительные настройки →##session-settings';s.render();eq(s.click,nil)
 check(s.frames[1].condition());check(not s.hasLog('Ошибка интерфейса'));eq(#s.scopes,0);eq(s.invalidIOReads,0);eq(#s.sent,0)
 -- Unexpected renderer failures still use the established recovery path.
 s.widgetError=true;s.page('addons');s.render();check(not s.frames[1].condition());check(s.hasLog('Ошибка интерфейса'))

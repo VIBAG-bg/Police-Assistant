@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.43.5')
+script_version('0.44.0')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -48,6 +48,7 @@ sceneServices.mapAdapterModule=dependency('pa26_map_adapter')
 sceneServices.chatModule=dependency('pa26_chat_bridge')
 sceneServices.perfModule=dependency('pa26_chat_perf')
 sceneServices.elapsedModule=dependency('pa26_elapsed_clock')
+sceneServices.icons=dependency('pa26_icons')
 sceneServices.manualActionModule=dependency('pa26_manual_actions')
 sceneServices.layoutModule=dependency('pa26_keyboard_layout')
 sceneServices.targetModule=dependency('pa26_target')
@@ -64,7 +65,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.43.5' then
+if #missing > 0 or not core or core.VERSION ~= '0.44.0' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -509,6 +510,7 @@ local env = {
         local sent=pcall(sampSendChat,wire)
         ownedChatSendDepth=ownedChatSendDepth-1
         if not sent or ownedSendCancelled then return false end
+        if sceneServices.custody then local ok,text=pcall(codec.decode,wire);if ok then sceneServices.custody:observe(text)end end
         metrics.sent = metrics.sent + 1
         if workspace and workspace.operations and not workspace.executor.queue then
             local ok,text=pcall(codec.decode,wire)
@@ -597,6 +599,7 @@ workspace = workspaceModule.new({
         if plan.vehicleAction then return sceneServices.vehicle and sceneServices.vehicle:validPlan(plan)or false end
         if plan.caseProcedure then return caseForms and caseForms:validPlan(plan)or false end
         if plan.patrolEvent then return patrolEvents and patrolEvents:validPlan(plan)or false end
+        if plan.custodyReport then return sceneServices.custody and sceneServices.custody:validPlan(plan)or false end
         if plan.patrolSession then return patrolSession and patrolSession:validPlan(plan)or false end
         if plan.radioGuard and (not radioGuard or not radioGuard:validPlan(plan))then return false end
         if plan.alert then return alerts and alerts:validPlan(plan) or false end
@@ -610,6 +613,9 @@ workspace = workspaceModule.new({
         return true
     end,
     executionEvent=function(kind,q,line)
+        if sceneServices.custody then
+            sceneServices.custody:onExecution(kind,q)
+        end
         if kind=='sent_line'and sceneServices.colleagues then sceneServices.colleagues:command(line,studioClock)end
         if sceneServices.manualActions then sceneServices.manualActions:onExecution(kind,q,line)end
         if sceneServices.evidence then sceneServices.evidence:onExecution(kind,q)end
@@ -742,6 +748,7 @@ patrolSession.readScene=function(state,now)
     patrolSession.scene=scene
 end
 patrolEvents=patrolEventsModule.new({settings=function()return workspace.library.patrol_events end,
+    suppressCommand=function(line)return sceneServices.custody and sceneServices.custody:observed(line)end,
     patrol=function()return patrolSession.data.active end,target=function()return bindingModel.copy(workspace.selectedTarget)end,
     targetStamp=function()return workspace.targets.revision end,
     equal=patrolSession.env.equal,codec=codec,json=workspace.json,path=workspace.base..'_patrol_events.json',
@@ -755,6 +762,24 @@ patrolEvents=patrolEventsModule.new({settings=function()return workspace.library
     start=startAutomatic,cancel=function(token,reason)
         local q=workspace.executor.queue
         if q and q.plan.patrolEvent and q.plan.patrolEvent.token==token then workspace.executor:cancel(reason or 'Доклад события отменён.')end
+    end})
+sceneServices.custody=require('pa26_custody_reports').new({
+    settings=function()return workspace.library.patrol_events.command_reports end,equal=patrolSession.env.equal,codec=codec,
+    values=function(state)
+        local v=bindingModel.copy(state)
+        for key,value in pairs(require('pa26_report_context').values(state,workspace.library.profile,workspace.library.patrol_session))do v[key]=value end
+        if state.unit and state.unit~=''then v.unit=state.unit end
+        return v
+    end,
+    identity=function(id)
+        local connected=optionalRead('sampIsPlayerConnected',id)==true
+        local name=connected and optionalRead('sampGetPlayerNickname',id)or nil
+        if type(name)=='string'then local ok,text=pcall(codec.decode,name);name=ok and text or nil end
+        return {connected=connected,name=name,generation=sceneServices.nearby and(sceneServices.nearby.generations[id]or 0)or 0}
+    end,
+    start=startAutomatic,notice=function(text)studio:notify(text,'custody',false)end,
+    cancel=function(token,reason)local q=workspace.executor.queue
+        if q and q.plan.custodyReport and q.plan.custodyReport.token==token then workspace.executor:cancel(reason)end
     end})
 sceneServices.wantedAccounts=require('pa26_wanted_accounts').new({
     observe=function(id)return {connected=optionalRead('sampIsPlayerConnected',id),name=optionalRead('sampGetPlayerNickname',id),
@@ -856,17 +881,9 @@ sceneServices.refreshFastPt=function(state,now)
             local driver=sceneServices.readDriver(car.driver_id)
             if driver and car.driver_ped==driver.ped then driver.source='водитель выбранной машины';rows[#rows+1]=driver end
         end
-        local colleagues={}
-        for _,p in ipairs(workspace.library.partners or{})do colleagues[p.nickname:lower()]=true end
-        for name in pairs(sceneServices.colleagues.knownColleagues or{})do colleagues[name]=true end
-        for _,p in ipairs((state.colleagues or{}).nearbyOfficers or{})do colleagues[p.name:lower()]=true end
-        local skins=require('pa26_copilot_settings').ids(workspace.library.vehicle.copilot.skin_ids,0,65535)or{}
-        local fallback=nearbyVisible(limit);table.sort(fallback,function(a,b)return a.distance<b.distance end)
-        for _,p in ipairs(fallback)do
-            p.generation=sceneServices.nearby.generations[p.id]or 0;p.visible=true;p.fallback=true;p.source='ближайший видимый человек'
-            p.colleague=colleagues[p.name:lower()]or skins[optionalRead('getCharModel',p.ped)]or false
-            rows[#rows+1]=p
-        end
+        -- No verified server wanted-list feed is exposed by the current client.
+        -- Never infer wanted status from skin, proximity or nickname, nor scan
+        -- civilians for a /pt fallback. Explicit selection above remains usable.
         local target=require('pa26_fast_pt').resolve(rows,state,limit)
         c.fastPtLive=target;c.fastPtLiveAt=now
         local ok,why=c:requestFastPt(rows);if not ok then studio:notify(why,'vehicle',false)end
@@ -875,7 +892,7 @@ sceneServices.refreshFastPt=function(state,now)
     for _,p in ipairs(c.offers)do if p.action=='fast_pt'then pending=true end end
     if c.fastPtTarget and pending then
         local fresh=sceneServices.readDriver(c.fastPtTarget.id)
-        if fresh and c.fastPtTarget.fallback and not visiblePed(fresh.ped,workspace.library.vehicle.copilot.fast_pt_distance)then fresh=nil end
+        if fresh and c.fastPtTarget.fallback then fresh=nil end -- an old wanted observation is not a live recheck
         c.fastPtLive=fresh;c.fastPtLiveAt=now
     elseif not request then c.fastPtTarget=nil;c.fastPtLive=nil;c.fastPtLiveAt=nil end
 end
@@ -928,9 +945,11 @@ notifications=notificationsModule.new({skipShortcut=function()return workspace.l
     elseif owner=='vehicle'then return sceneServices.copilot:decide(token,yes)
     elseif owner=='weapon'then return weaponWarning:decide(token,yes)
     elseif owner=='patrol'then return patrolEvents:decideNotice(token,yes)
+    elseif owner=='custody'then return sceneServices.custody:decide(token,yes)
     elseif owner=='wanted'then return caseForms:decideReminder(token,yes)end end,
     shown=function(owner,token)if owner=='radio'then radioGuard:shown(token)
         elseif owner=='weapon'then weaponWarning:shown(token)elseif owner=='patrol'then patrolEvents:shown(token)
+        elseif owner=='custody'then sceneServices.custody:shown(token)
         elseif owner=='vehicle'then sceneServices.copilot:shown(token)
         elseif owner=='wanted'then caseForms:shownReminder(token)end end})
 patrol=patrolModule.new({settings=effectivePatrol,clockPolicy=function()return workspace.library.radio_guard.count_during_input end,log=pushLog,
@@ -1018,13 +1037,14 @@ local function studioData()
         accentInputAvailable=type(sampGetChatInputText)=='function'and type(sampSetChatInputText)=='function',
         manualChatDraft=sceneServices.manual and sceneServices.manual.draft,
         cefChatStatus=sceneServices.chatBridge and sceneServices.chatBridge.status or 'not_installed',
-        cefChatReason=sceneServices.chatBridge and sceneServices.chatBridge.reason,
+        cefChatReason=sceneServices.cefContractAllowed==false and sceneServices.cefContractReason or sceneServices.chatBridge and sceneServices.chatBridge.reason,
         nearby=sceneServices.nearby:view(),mapState=sceneServices.mapState,mapAdapterStatus=sceneServices.mapAdapter:message(),
         textFiltersAvailable=workspace.chatFiltersAvailable or(sceneServices.chatBridge and workspace.library.settings.cef_chat_support and sceneServices.chatBridge.status=='connected'),
         target=workspace.selectedTarget,targetState=workspace.targets:view(),queued=workspace.executor.queue,
         localNickname=hud.data.nickname,rpSettings=workspace.library.rp_text,evidence=sceneServices.evidence:view(),vehicle=sceneServices.vehicle:view(),copilot=sceneServices.copilot:view(),detentionTimers=sceneServices.detentionTimers:view(),operations=workspace.operations:view(),radioState=alerts.state,patrol=patrol:view(),patrolSession=patrolSession:view(patrol:view()),patrolEvents=patrolEvents:view(),identity=identity:view(),caseForms=caseForms:view(),taser=taser:view(),codec=codec,autoReport=radioGuard:view()}
 end
 local function cancelManualActions(reason)
+    if sceneServices.custody and(sceneServices.custody.intent or sceneServices.custody.queued)then sceneServices.custody:reset(reason)end
     if sceneServices.manualActions then sceneServices.manualActions:cancel()end
     sceneServices.evidence:cancel(reason)
     sceneServices.vehicle:cancel(reason)
@@ -1182,6 +1202,16 @@ studioCallbacks={
     patrolEventPreview=function(form,settings)local line,err=patrolEvents:line(form,settings);return line and line.line,err end,
     patrolEventOffer=function(form,report)return patrolEvents:propose(form,report)end,
     patrolEventAccept=function(p)return patrolEvents:accept(p)end,
+    custodyReport=function(kind)
+        local p,err=sceneServices.custody:create(kind,nil,'F4 · проверьте фактическое выполнение')
+        return p~=nil,err
+    end,
+    custodyPreview=function(kind,settings)
+        if not sceneServices.custody.state then return nil,'Дождитесь подключения к игре.'end
+        local line,err=sceneServices.custody:line(kind,sceneServices.custody.env.values(sceneServices.custody.state),settings)
+        return line and line.line,err
+    end,
+    openPatrolContacts=function()return studio:requestNavigation(function()openWorkspace('partners',true);studio.partnerPage='contacts'end,'открыть контакты')end,
     openPatrol=function()return studio:requestNavigation(function()openWorkspace('addons',true);menu.tool='patrol';studio.partnerPage='patrol'end,'открыть патруль и экипаж')end,
     patrolTraffic=function(host)
         if host=='assist'then studio.assistPage='traffic'
@@ -1368,7 +1398,8 @@ sceneServices.hasManualActivity=function()
     return e.active or e.intent or e.queued or e.archiveRequest or v.intent or v.queued or c.intent or c.queued or
         a and(a.pending or a.approved)or workspace.operations.intent or workspace.operations.offer or
         caseForms.intent or caseForms.queued or caseForms.awaitingCommand or
-        patrolSession.intent or patrolSession.queued or patrolEvents.intent or patrolEvents.queued
+        patrolSession.intent or patrolSession.queued or patrolEvents.intent or patrolEvents.queued or
+        sceneServices.custody and(sceneServices.custody.intent or sceneServices.custody.queued)
 end
 local function closeForInput(reason, keepAutoOpen)
     if not ownUi()and not hasUiModal()and not sceneServices.hasManualActivity()and not runtime.wheel and not runtime.queue and
@@ -1528,7 +1559,7 @@ recoverUi=function(manual)
     caseForms:reset('Интерфейс восстановлен. Проверьте процедуру заново.');patrolEvents:reset('Интерфейс восстановлен. Проверьте действие заново.');sceneServices.vehicle:reset('Интерфейс восстановлен. Перепроверьте машину.');alerts:reset();weapons:reset();taser:reset();weaponWarning:reset();notifications:reset()
     if cfg.recovery.demo_after_recovery then setDemo(true)end
     -- Keep drafts and loaded player data; only window/input state is rebuilt.
-    menu:resetWindowPositions();uiFailed=false;hud.failed=false;alerts.failed=false;notifications.failed=false
+    menu:recoverWindowPositions();hud:recoverGeometry();uiFailed=false;hud.failed=false;alerts.failed=false;notifications.failed=false
     menu.section='settings';settingsTab='general'
     showWindow[0]=true;showQuick[0]=false;showTips[0]=false;uiTyping=false;uiInputReset=true
     autoOpenForSession=nil;imgui.DisableInput=false
@@ -1587,6 +1618,8 @@ local fontSubscription = imgui.OnInitialize(function()
                     io.FontDefault = font -- preserve the existing wheel's font size
                     menuBodyFont = io.Fonts:AddFontFromFileTTF(path, 18, nil, ranges) or font
                     menuSmallFont = io.Fonts:AddFontFromFileTTF(path, 16, nil, ranges) or font
+                    local loaded,why=sceneServices.icons.initialize(imgui,ffi,menuButtonFont or font)
+                    if not loaded then pushLog('Иконки недоступны; текстовый интерфейс сохранён: '..tostring(why))end
                     return
                 end
             end
@@ -1666,6 +1699,9 @@ local function drawWidgetSettings()
     if imgui.Checkbox('Показывать компактный виджет', widgetVisible) then hud:setVisible(widgetVisible[0]);changed=true end
     widgetScale[0] = hud.settings.scale
     if imgui.SliderFloat('Размер виджета', widgetScale, 0.65, 2) then hud:change('scale', widgetScale[0]);changed=true end
+    local responsive=new.bool(hud.settings.responsive~=false)
+    if imgui.Checkbox('Адаптировать виджет при смене разрешения##hud-responsive',responsive)then hud:change('responsive',responsive[0]);changed=true end
+    text('Положение привязано к экрану: правый край остаётся справа, размер подстраивается с ограничением для читаемости. Ваше расположение сохраняется. Сброс возвращает авторское расположение, адаптированное к текущему экрану.')
     if mainButton('Вернуть виджет на исходное место') then hud:resetPosition();changed=true end
     text('Чтобы передвинуть виджет, удерживайте на нём правую кнопку мыши. Если другие окна закрыты, удерживайте Alt, чтобы показать курсор.')
     text('Часы виджета')
@@ -1745,6 +1781,7 @@ studioCallbacks.openSettings=function(tab,sub)
     return studio:requestNavigation(function()
         openWorkspace('settings',true);settingsTab=tab or'profile'
         if tab=='chat'and sub then studio.chatSettingsPage=sub end
+        if tab=='radio'and sub then studio.radioPage=sub end
         if tab=='general'and sub then studio.screenSettingsPage=sub end
     end,'открыть настройки PA')
 end
@@ -1774,6 +1811,7 @@ local function drawMain()
     local ui = {push = pushScope, finish = endScope, text = text}
     local baseDepth = #scopes
     if menuBodyFont ~= nil then imgui.PushFont(menuBodyFont); pushScope(function() imgui.PopFont() end) end
+    sceneServices.icons.setEnabled(workspace.library.settings.ui_icons)
     menu.opacity=studio.optionOpacity or workspace.library.settings.opacity
     menu.compact=studio.optionCompact; if menu.compact==nil then menu.compact=workspace.library.settings.compact end
     menu:pushTheme(imgui, ui)
@@ -2171,6 +2209,7 @@ local function cleanup()
     pcall(workspace.operations.save,workspace.operations,true)
     pcall(hud.savePending,hud,optionalRead('getGameTimer')or 0,true)
     shutdown = true
+    if sceneServices.custody then sceneServices.custody:reset('PA завершил работу.')end
     if sceneServices.chatBridge then pcall(sceneServices.chatBridge.close,sceneServices.chatBridge)end
     pcall(closeForInput,'Скрипт остановлен.')
     if workspace.journal.dirty then pcall(workspace.saveJournal,workspace)end
@@ -2677,6 +2716,7 @@ sceneServices.observeMessage=function(text,source,now)
     if fresh then workspace.operations:onChat(text)end
 end
 sceneServices.observeCommand=function(line)
+    if sceneServices.custody then sceneServices.custody:observe(line)end
     if sceneServices.copilot then sceneServices.copilot:observeManualCommand(line,'outgoing')end
     sceneServices.colleagues:command(line,studioClock)
     taser:command(line,workspace.executor.queue and workspace.executor.queue.plan.manualCommand~=nil);patrolEvents:command(line,'Введено вручную · попытка',nil)
@@ -2849,6 +2889,7 @@ local function connectChatFilters()
     sceneServices.invalidateLocalScene=function(reason,respawn)
             sceneServices.chatEpoch=sceneServices.chatEpoch+1
             sceneServices.nearby:reset()
+            if sceneServices.custody then sceneServices.custody:reset('Подключение или персонаж изменились.')end
             sceneServices.colleagues:reset();sceneServices.bulletins:clear();sceneServices.copilot:reset('Подключение или жизнь изменились.')
             if sceneServices.chatBridge then sceneServices.chatBridge.pending=nil;sceneServices.chatBridge.seen={}end
             alerts:invalidateLife()
@@ -2892,6 +2933,7 @@ local function connectChatFilters()
     end
     previousQuitHandler,previousJoinHandler=events.onPlayerQuit,events.onPlayerJoin
     quitHandler=function(id,reason)
+        if sceneServices.custody then sceneServices.custody:invalidate(id)end
         workspace.targets:quit(id)
         sceneServices.nearby:invalidate(id)
         sceneServices.colleagues:invalidate(id)
@@ -2900,6 +2942,7 @@ local function connectChatFilters()
         if type(previousQuitHandler)=='function' then return previousQuitHandler(id,reason) end
     end
     joinHandler=function(id,...)
+        if sceneServices.custody then sceneServices.custody:invalidate(id)end
         workspace.targets:join(id)
         sceneServices.nearby:invalidate(id)
         sceneServices.colleagues:invalidate(id)
@@ -2932,6 +2975,7 @@ function sceneServices.menuTrace(pressed,source,ctx)
     elseif source=='blocked'then pushLog('Клавиша меню заблокирована: chat='..tostring(ctx.chatActive)..', dialog='..tostring(ctx.dialogActive)..', input='..tostring(ctx.blocked)..'.')end
 end
 local function updateGame()
+    sceneServices.icons.setEnabled(workspace.library.settings.ui_icons)
     bindingKeyCaptured=keyRecorder~=nil
     local now = getGameTimer()
     studioClock=now
@@ -3172,7 +3216,8 @@ local function updateGame()
         not(ownUi()and(uiTyping or hasUiModal()))and not keyRecorder and
         (workspace.executor.queue or runtime.queue or runtime.wheel or workspace.pending or alerts.pending or
             sceneServices.evidence.intent or sceneServices.evidence.queued or sceneServices.evidence.active or
-            caseForms.intent or caseForms.queued or caseForms.awaitingCommand or patrolSession.intent or patrolSession.queued or patrolEvents.intent or patrolEvents.queued or workspace.operations.intent)then
+            caseForms.intent or caseForms.queued or caseForms.awaitingCommand or patrolSession.intent or patrolSession.queued or patrolEvents.intent or patrolEvents.queued or workspace.operations.intent or
+            sceneServices.custody.intent or sceneServices.custody.queued)then
         if alerts.pending then alerts:decide(false)end
         closeForInput('Остановлено клавишей отмены.');return
     end
@@ -3277,9 +3322,12 @@ local function updateGame()
     weapons:tick(alertState,now)
     alertState.busy=alertState.busy or (workspace.executor.queue and tostring(workspace.executor.queue))
     weaponWarning:tick(alertState,now)
+    alertState.busy=alertState.busy or(workspace.executor.queue and tostring(workspace.executor.queue))
+    sceneServices.custody:tick(alertState,now)
     local candidates=radioGuard:candidates()
     for _,c in ipairs(weaponWarning:candidates())do candidates[#candidates+1]=c end
     for _,c in ipairs(patrolEvents:candidates())do candidates[#candidates+1]=c end
+    for _,c in ipairs(sceneServices.custody:candidates())do candidates[#candidates+1]=c end
     for _,c in ipairs(caseForms:candidates())do candidates[#candidates+1]=c end
     for _,c in ipairs(sceneServices.copilot:candidates())do candidates[#candidates+1]=c end
     local noticeKeys=physicalKeys
@@ -3366,12 +3414,13 @@ end
 updateGame=sceneServices.chatPerf:wrap('updateGame',updateGame)
 -- placement after the SA:MP gate was too late after a launcher integrity pass.
 sceneServices.readLayout=sceneServices.layoutModule.reader(ffi)
+sceneServices.cefContractAllowed,sceneServices.cefContractReason=require('pa26_cef_compat').new(getWorkingDirectory()..'\\..\\cef\\assets\\hud\\')()
 sceneServices.chatBridge=sceneServices.chatModule.new({fs=storage.fs,assetFs=require('pa26_cef_assets').fs,json=workspace.json,
     path=getWorkingDirectory()..'\\..\\cef\\assets\\hud\\',token=function()return sceneServices.chatModule.entropy(ffi)end,
     session=function()local key=connectionKey();return key and(key..'@'..sceneServices.chatEpoch)or nil end,
     settings=function()
         local filters={};for _,filter in ipairs(workspace.library.filters)do if filter.enabled then filters[#filters+1]=filter.prefix end end
-        return{enabled=workspace.library.settings.cef_chat_support,accentEnabled=workspace.library.settings.accent_live_input,
+        return{enabled=workspace.library.settings.cef_chat_support and sceneServices.cefContractAllowed==true,accentEnabled=workspace.library.settings.accent_live_input,
             accent=bindingModel.accentPrefix(workspace.library.profile.accent),filters=filters,diagnostics=workspace.library.settings.cef_chat_diagnostics,
             layoutIndicator=workspace.library.settings.cef_layout_indicator,weaponGuard=workspace.library.settings.cef_chat_weapon_guard,
             accent_skip_brackets=workspace.library.settings.accent_skip_brackets,chat_dot_commands=workspace.library.settings.chat_dot_commands,

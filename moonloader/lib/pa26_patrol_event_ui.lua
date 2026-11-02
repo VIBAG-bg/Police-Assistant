@@ -86,6 +86,7 @@ function M.draw(studio,ui,data,callbacks)
             if e.report_line~=''then ui.text('Доклад: '..e.report_line)end
         end
     else
+        require('pa26_custody_ui').draw(studio,ui,cfg,data,callbacks)
         for _,row in ipairs({{'enabled','Включить события патруля'},{'suggest_commands','Предлагать проверить результат после команды'},
             {'require_patrol','Записывать события только в начатом патруле'},{'remind_clear','После доставки напоминать о проверке IC-розыска'},
             {'toast_enabled','Предлагать проверку команды в уведомлении'}})do

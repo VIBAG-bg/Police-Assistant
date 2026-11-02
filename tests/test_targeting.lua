@@ -164,10 +164,11 @@ s=fixture({demo=false}); s.aimed=false; s.pool={}
 for i=1,2049 do s.pool[i]=99 end
 noTarget(s,'pool limit'); check(s.hasLog('Слишком много персонажей'))
 
--- Banner must occupy exactly the profile's width at the true PNG aspect ratio.
+-- Responsive home banner keeps its true aspect ratio and fits the profile width;
+-- it may be smaller to leave all controls visible on the owner's home screen.
 s=fixture(); s.step()
 local image=s.imageDraws[2]
 local profileWidth
 for _,call in ipairs(s.childCalls) do if call.name=='profile##pa26' then profileWidth=call.width end end
-check(profileWidth~=nil); check(math.abs(image.w-profileWidth)<.01)
+check(profileWidth~=nil); check(image.w>0 and image.w<=profileWidth+.01)
 check(math.abs(image.w/image.h-1983/793)<.0001)

@@ -25,7 +25,7 @@ check(#saved.events>0); check(saved.events[#saved.events].demo); eq(saved.events
 s.commands.pa26(); s.page('hints'); s.click='Добавить новую памятку'; s.render()
 s.edits={['Название##note']='Памятка о смене',['Текст##note']='Сначала проверить связь.\nЗатем начать патруль.'}; s.render(); s.click='Сохранить памятку'; s.render();s.click='ОК##warning-ok';s.render()
 raw=s.savedLibrary(); eq(#raw.notes,3); eq(raw.notes[3].name,'Памятка о смене')
-s.page('partners'); s.edits={['Игровой ник##partner']='Visible_Partner',['Позывной##partner']='P-12'}; s.render(); s.click='Добавить контакт'; s.render()
+s.page('partners');s.workspace.studio.partnerPage='contacts'; s.edits={['Игровой ник##partner']='Visible_Partner',['Позывной##partner']='P-12'}; s.render(); s.click='Добавить контакт'; s.render()
 raw=s.savedLibrary(); eq(#raw.partners,1); eq(raw.partners[1].callsign,'P-12')
 s.commands.pa26export();s.render();s.click='ОК##warning-ok';s.render(); check(s.files['moonloader\\config\\police_assistant_2026_binds_exchange.json'])
 s.commands.pa26import(); s.render(); s.click='ДА##confirm-yes'; s.render(); s.step()

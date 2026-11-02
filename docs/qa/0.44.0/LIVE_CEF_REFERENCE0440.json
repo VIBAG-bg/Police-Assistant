@@ -1,0 +1,14 @@
+{
+  "actual_sha256": "53d87865490a3830310504a27233d7042b873cd0477192b9954a72d5d2f7d84d",
+  "reviewed_contract_sha256": "c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410",
+  "same_bytes_as_reviewed_snapshot": false,
+  "owned_adapter_changed": false,
+  "live_file_written": false,
+  "observed_tokens": {
+    "HandleHudSendMessage": false,
+    "chat:messages": false,
+    "chatInputField": true,
+    "chatInput": true
+  },
+  "conclusion": "Use preserved reviewed official snapshot for reproducible legacy-worker upgrade fixture. Current full CEF client requires manual in-game acceptance; token presence is not behavior verification."
+}

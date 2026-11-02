@@ -7,7 +7,7 @@ seed.profile.name='Victor Auditore';seed.profile.callsign='A-1'
 seed.patrol_session.post='Пост А';seed.alerts.patrol.post='Другой пост'
 seed.alerts.sos_template='{unit}: {officer}. Помощь! {post}, {area}.'
 local s=fixture({library=seed,demo=false,alerts=true,categoryWheel=true});s.step()
-s.page('partners');click(s,'Патруль##Напарники и служба##partners-pagepatrol')
+s.page('partners');click(s,'Патруль и смена##Патруль и служба##partners-pagepatrol')
 click(s,'Начать патруль##patrol-start');click(s,'ДА##confirm-yes');s.step();s.step(1500);s.step()
 local baseline=#s.sent;check(s.patrolSession.data.active)
 if s.frames[1].condition()then s.commands.pa26();s.step()end

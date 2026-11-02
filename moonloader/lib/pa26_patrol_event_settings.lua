@@ -28,6 +28,7 @@ function M.defaults()
         open_shortcut={key=0,ctrl=false,alt=false,shift=false},events={}}
     for _,row in ipairs(M.catalog)do out.events[row[1]]={enabled=true,name=row[2],template=row[3],channel='/r',
         command=row[4],suggest=row[4]~='',require_target=row[1]~='custom'}end
+    out.command_reports=require('pa26_custody_settings').defaults()
     return out
 end
 M.noticeVariables={command=true,event=true,origin=true,target=true}
@@ -92,6 +93,8 @@ function M.validate(raw)
             out.events[row[1]]=v
         end
     end
+    local why;out.command_reports,why=require('pa26_custody_settings').validate(raw.command_reports)
+    if not out.command_reports then return nil,why end
     return out
 end
 return M
