@@ -166,15 +166,20 @@ local f=fixture({demo=false,library=lib,alerts=true,copilot=true});f.step();f.co
 f.physicalDown={[0x73]=true};f.step();f.physicalDown={};f.step();check(f.frames[4].condition())
 for _,page in ipairs({'traffic','patrol'})do
  f.workspace.studio.assistPage=page
- f.workspace.studio.dispatchExpanded={dispatch_911=true,dispatch_stolen=true,dispatch_business=true,dispatch_gas=true,dispatch_bank=true}
+ f.workspace.studio.dispatchExpanded=nil
  for _,row in ipairs(D.actions)do
-  local before=#f.sent;f.click=row[2]..'##copilot-dispatch-'..row[1];f.render();eq(f.click,nil,'Button missing from '..page)
+  local family,label
+  for _,primary in ipairs(D.primaryActions)do if primary[1]==row[1]then family=row[1];label=family=='dispatch_search'and'Начинаю поиск'or'Выехал'end end
+  for key,rows in pairs(D.followups)do for _,sub in ipairs(rows)do if sub[1]==row[1]then family=key;label=sub[2]end end end
+  if row[1]=='gas_order'then family='dispatch_gas';label=row[2]end
+  f.workspace.studio.dispatchIncident=family;f.render()
+  local before=#f.sent;f.click=label..'##copilot-dispatch-'..row[1];f.render();eq(f.click,nil,'Button missing from '..page)
   local notice=f.workspace.studio.feedback:peek()
   check(f.workspace.studio.vehicleConfirm and f.workspace.studio.vehicleConfirm.dispatchAction,row[1]..': '..tostring(notice and notice.text)..' '..table.concat(f.logs,'\n'));eq(#f.sent,before)
   f.click='НЕТ##confirm-no';f.render();eq(f.click,nil);check(not f.workspace.studio.vehicleConfirm);f.workspace.studio.reportEdit=nil;f.step();eq(#f.sent,before)
  end
 end
-f.workspace.studio.assistPage='traffic';f.click=D.actions[1][2]..'##copilot-dispatch-dispatch_911';f.render()
+f.workspace.studio.assistPage='traffic';f.workspace.studio.dispatchIncident='dispatch_911';f.click='Выехал##copilot-dispatch-dispatch_911';f.render()
 check(f.workspace.studio.vehicleConfirm);f.click='ДА##confirm-yes';f.render();eq(f.click,nil)
 for _=1,15 do f.step(1600)end
 check(#f.sent>0);check(f.sent[1].line:match('^/me '));check(f.sent[#f.sent].line:match('^/r '));check(not f.copilot.phase)

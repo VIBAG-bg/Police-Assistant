@@ -161,6 +161,12 @@ function M.preview(action,cfg,values,codec,split)
     local phrase=slot and cfg.phrases and cfg.phrases[slot]
     if slot and(type(phrase)~='table'or not phrase.enabled)then return nil,'Требование выключено или удалено.'end
     local body=phrase and phrase.template or cfg[action..'_template'];if not body then return nil,'Неизвестное действие транспорта.'end
+    local class=require('pa26_vehicle_types').class(tonumber(values.model_id))
+    local enclosed=class=='car'or class=='van'or class=='truck'or class=='bus'
+    if not enclosed and(action=='approach'or action=='window')then
+        local k=action=='approach'and(class=='bike'and'approach_bike'or'approach_neutral')or(class=='bike'and'inspect_bike'or'inspect_neutral')
+        body=cfg[k..'_template']or settings.defaults()[k..'_template']
+    end
     local directionError;body,directionError=require('pa26_report_context').directionTemplate(body,values)
     if not body then return nil,directionError end
     values,directionError=mapGrid.reportValues(values,body,not megaphone(action)and action~='approach'and action~='window')

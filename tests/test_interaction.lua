@@ -101,7 +101,7 @@ for _,condition in ipairs({'chat','dialog','paused','disconnect','identity','uns
     elseif condition=='cancel' then s.commands.pa26cancel()
     elseif condition=='focus' then onWindowMessage(0x0008,0)
     elseif condition=='End' then s.step(16,{[0x23]=true})
-    else onWindowMessage(0x0100,0x1B); s.step(); onWindowMessage(0x0100,0x1B) end
+    else onWindowMessage(0x0100,0x1B);onWindowMessage(0x0101,0x1B);s.step();onWindowMessage(0x0100,0x1B)end
     s.step(3500); s.step(3500); eq(#s.sent,1,'remaining rights lines must be dropped: '..condition)
 end
 

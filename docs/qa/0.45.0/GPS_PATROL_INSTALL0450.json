@@ -1,0 +1,10 @@
+﻿{
+    "version":  "0.45.0",
+    "manifest_entries":  164,
+    "installer_sha256":  "f0de29115467c9cfe45e7daa5f586ce31512ab6a20e5959a4a7d525d214107bf",
+    "manifest_sha256":  "553ffe214cdd0bfad706c3f00a0c6ed4cf33002b87c63f5556616af4601e29e2",
+    "game_written":  false,
+    "status":  "passed",
+    "fixture_only":  true,
+    "checks":  171
+}

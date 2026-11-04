@@ -1,3 +1,4 @@
+﻿param([int]$ShardIndex=-1,[int]$ShardCount=1)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $paRelease=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -5,6 +6,7 @@ $paManifestBefore=(Get-FileHash -LiteralPath (Join-Path $paRelease 'INSTALL_MANI
 $paInstallerBefore=(Get-FileHash -LiteralPath (Join-Path $paRelease 'install.ps1') -Algorithm SHA256).Hash
 $paCurrentManifest=Get-Content -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Raw|ConvertFrom-Json
 $paRollbackPoints=@(1,37,89,91,92,93,94,97,98,102,103,($paCurrentManifest.files.Count+$paCurrentManifest.cef_files.Count))
+if($ShardIndex -ge 0){$allPoints=$paRollbackPoints;$paRollbackPoints=@();for($i=0;$i -lt $allPoints.Count;$i++){if(($i % $ShardCount) -eq $ShardIndex){$paRollbackPoints+=@($allPoints[$i])}}}
 $paRoot=Join-Path $paRelease ('tests\install-sandbox\run-'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $paRoot | Out-Null
 function Snapshot([string]$root) {
@@ -33,7 +35,8 @@ function Create-Case([string]$name,[bool]$cef) {
         $hud=Join-Path $base 'cef\assets\hud'
         New-Item -ItemType Directory -Path $hud -Force | Out-Null
         [IO.File]::WriteAllText((Join-Path $hud 'index.html'),'<!doctype html><html><head><title>HUD</title></head><body><input id="chatInputField"><div id="chatInput"></div><script src="main.js"></script></body></html>')
-        [IO.File]::WriteAllText((Join-Path $hud 'main.js'),'OFFICIAL HUD UNCHANGED')
+        [IO.File]::Copy('C:\Users\35987\AppData\Local\Exsellent Launcher\game\cef\assets\hud\main.js',(Join-Path $hud 'main.js'))
+        [IO.File]::WriteAllText((Join-Path $hud 'index.html'),'<html><head></head><body><div id="chatMsgList"></div><form id="chatInput"><input id="chatInputField"><svg id="SendMsgButton"></svg></form><div id="Dialog"></div><script src="main.js"></script></body></html>')
     }
     return $base
 }
@@ -89,5 +92,5 @@ foreach($failAfter in $paRollbackPoints) {
 if((Get-FileHash -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Algorithm SHA256).Hash -ne $paManifestBefore) { throw 'Manifest changed during installer test' }
 if((Get-FileHash -LiteralPath (Join-Path $paRelease 'install.ps1') -Algorithm SHA256).Hash -ne $paInstallerBefore) { throw 'Installer changed during test' }
 $result=[ordered]@{release=(Get-Content -LiteralPath (Join-Path $paRelease 'INSTALL_MANIFEST.json') -Raw|ConvertFrom-Json).release;status='passed';native_install=$true;cef_install=$true;idempotent_patch=$true;preserved_personal_files=$true;personal_backups=$true;verify_only_readonly=$true;rollback_after=$paRollbackPoints;manifest_sha256=$paManifestBefore;installer_sha256=$paInstallerBefore;real_game_written=$false;sandbox=$paRoot}
-$result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $paRelease 'tests\INSTALLER_RESULTS.json') -Encoding UTF8
+$result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $paRelease $(if($ShardIndex -ge 0){'tests/INSTALLER_RESULTS-shard'+$ShardIndex+'.json'}else{'tests/INSTALLER_RESULTS.json'})) -Encoding UTF8
 'Installer: native, CEF, repeated patch and twelve rollback points passed.'

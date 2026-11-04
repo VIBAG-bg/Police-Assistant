@@ -4,7 +4,9 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),cp=require('node:child_process');
 const crypto=require('node:crypto'),assert=require('node:assert/strict');
 const release=path.resolve(__dirname,'..'),workspace=path.resolve(__dirname,'../../..');
-const game=path.join(process.env.LOCALAPPDATA, 'Exsellent Launcher/game');
+const game=process.env.PA_QA_GAME || 'C:/Users/35987/AppData/Local/Exsellent Launcher/game';
+const registry=JSON.parse(fs.readFileSync(path.join(release,'CEF_CONTRACT.json'),'utf8'));
+const functionalFingerprint=registry.contract_profiles[0].fingerprint;
 const box=path.join(release,'tests/update-sandbox/cef-runtime-probe',crypto.randomUUID());fs.mkdirSync(box,{recursive:true});
 const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 const slash=p=>p.replaceAll('\\','/');const q=s=>JSON.stringify(slash(s));
@@ -21,11 +23,12 @@ package.cpath=game..'MoonLoader/lib/?.dll;'..package.cpath
 local socket=require'socket';local json=require'cjson';local m=require'pa26_chat_bridge';local fs=require'pa26_config'.fs;local assets=require'pa26_cef_assets'
 local base=${q(box+'/')};local state={};local function readControl()local raw=fs.read(base..'control.json');if raw then local ok,t=pcall(json.decode,raw);if ok then state=t end end end
 local env={path=base,fs=fs,assetFs=assets.fs,json=json,token=function()return m.entropy(require'ffi')end,session=function()return'probe-session'end,
- settings=function()readControl();state.filters={};return state end,layout=function()return state.keyboardLayout end,
- log=function(text)print(text);io.stdout:flush()end,message=function()end,command=function()end}
+ settings=function()readControl();state.filters=state.filterPrefixes or{};return state end,layout=function()return state.keyboardLayout end,
+ log=function(text)print(text);io.stdout:flush()end,message=function()local p=base..'incoming-count.json';local old=fs.read(p);local n=old and tonumber(old)or 0;assert(fs.write(p,tostring(n+1)))end,command=function()end}
 local manualLib=require 'pa26_manual_chat';local converter=require('encoding').CP1251;local manualSent={};local b;local probeNow=0
 env.manual=function(text,key)return manualQueue:offer(text,key)end
 env.manualResult=function(key)return key and manualQueue.seen[key]or manualQueue.result end
+env.compatibility=function()return {schema=2,allowed=true,known=false,state='CONTRACT_COMPATIBLE',reason='normalized_contract_and_dom',fingerprint=${JSON.stringify(functionalFingerprint)},sha256=${JSON.stringify(sha(path.join(game,'cef/assets/hud/main.js')))},capabilities={}}end
 local originalSettings=env.settings
 env.settings=function()local result=originalSettings();if state.manualEnabled then result.manual_chat={enabled=true,max_parts=3,interval_ms=1200};result.rp_text=require('pa26_rp_settings').defaults();result.nickname='Officer_Name'end;return result end
 manualQueue=manualLib.new({codec={encode=function(v)return converter:encode(v,'UTF-8')end,decode=function(v)return converter:decode(v,'UTF-8')end},
@@ -50,12 +53,12 @@ let output='',error='',exited=false;child.stdout.on('data',d=>output+=d);child.s
 let checks=0;const eq=(a,b,m)=>{checks++;assert.deepEqual(a,b,m);};const ok=(v,m)=>{checks++;assert(v,m);};
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(fn,message){for(let i=0;i<180;i++){if(fn())return;if(exited)throw Error('Native probe exited: '+error);await wait(30);}throw Error(message);}
-const timers=new Set(),intervals=new Set(),listeners={},sent=[],network=[],consoleCodes=[];
+const timers=new Set(),intervals=new Set(),listeners={},sent=[],network=[],consoleCodes=[],incomingCallbacks={},incomingStored=[],incomingRendered=[];
 let endpoint,offset=0,context,requestNumber=0,responseNumber=0;
 async function refreshAdapter(){const after=requestNumber;await until(()=>responseNumber>after,'No fresh adapter metadata reply');}
 const field={value:'',selectionStart:0,selectionEnd:0,tagName:'INPUT',parentElement:{appendChild(){}},
  setSelectionRange(a,b){this.selectionStart=a;this.selectionEnd=b;}};
-const panel={open:true,classList:{contains(){return panel.open;}}};
+const panel={appendChild(){},open:true,classList:{contains(){return panel.open;}}};field.parentElement=panel;
 const source=fs.readFileSync(path.join(game,'cef/assets/hud/main.js'),'utf8');
 function fn(name){const start=source.indexOf('function '+name+'(');assert(start>=0);let depth=0,quote='',escaped=false;
  for(let i=source.indexOf('{',start);i<source.length;i++){const c=source[i];if(quote){if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c===quote)quote='';continue;}
@@ -81,16 +84,39 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
   document:{readyState:'loading',activeElement:field,getElementById(id){return id==='chatInputField'?field:id==='chatInput'?panel:null;},
    addEventListener(name,cb){(listeners[name]||=[]).push(cb);},createElement(){return{style:{},setAttribute(){},remove(){}};},
    head:{appendChild(el){loadEndpoint();if(el.onload)el.onload();}}},
-  cef:{on(){},emit(...args){sent.push(args);}},
+  saveMessageToStorage:(...a)=>incomingStored.push(a),renderChatMessage:(...a)=>incomingRendered.push(a),isDialogActive:()=>false,cef:{on(name,callback){incomingCallbacks[name]=callback;},set_focus(){},emit(...args){sent.push(args);}},
   fetch:async(url,options)=>{const sequence=++requestNumber;endpoint=url;let r;try {r=await fetch(url,{...options,headers:{...options.headers,Origin:'sampcef://assets'}});}catch(e){consoleCodes.push('native_fetch:'+e.name+':'+(e.cause?.code||'none'));throw e;}
     network.push({status:r.status,cors:r.headers.get('access-control-allow-origin')});return {ok:r.ok,status:r.status,json:async()=>{const value=await r.json();responseNumber=sequence;return value;}};}});
- vm.runInContext('window=globalThis;'+fn('_0x52d0')+';'+fn('_0x2db2')+';'+source.slice(0,source.indexOf('const hudContainer=')),context,{timeout:1000});
+ // The test may inspect a newly renamed decoder without approving that HUD
+ // hash for production. Execute only the isolated string table/bootstrap.
+ const alias=/^const (_0x[0-9a-f]+)=(_0x[0-9a-f]+);/.exec(source);assert(alias,'Unknown HUD bootstrap');
+ const decoder=fn(alias[2]),table=/const _0x[0-9a-f]+=(_0x[0-9a-f]+)\(\)/.exec(decoder);assert(table,'Unknown HUD string table');
+ const prefixEnd=source.indexOf('const hudContainer=');assert(prefixEnd>0&&prefixEnd<10000);
+ const bootstrap=source.slice(0,prefixEnd);assert(!/document\.|fetch\(|cef\./.test(bootstrap));
+ vm.runInContext('window=globalThis;'+fn(table[1])+';'+decoder+';'+bootstrap,context,{timeout:1000});
  vm.runInContext(fs.readFileSync(adapter,'utf8'),context,{timeout:1000});
  vm.runInContext("const chatInputField=__testField;let chatInputHistory=[],historyIndex=0,inputBuffer='';const MAX_INPUT_HISTORY_LENGTH=100;function saveInputMessageToStorage(){};"+fn('sendMessageToChat'),context,{timeout:1000});
- fire('DOMContentLoaded');await until(()=>network.length>0,'No real HTTP exchange');await context.PA26Chat.exchange();
+ vm.runInContext(fn('addChatMessage'),context,{timeout:1000});context.cef.on('chat:messages',context.addChatMessage);fire('DOMContentLoaded');await until(()=>network.length>0,'No real HTTP exchange');await context.PA26Chat.exchange();
+ await until(()=>context.PA26Chat.submitted('Ready').text===control.accent+' Ready','Runtime handshake did not confirm');
  eq(network[0].status,200);eq(network[0].cors,'sampcef://assets');
- async function languagePacket(chat=true){return(await fetch(endpoint,{method:'POST',headers:{Origin:'sampcef://assets','Content-Type':'application/json'},
-  body:JSON.stringify({schema:1,page:'language-probe',chat,dialog:false,busy:chat,events:[]})})).json();}
+ incomingCallbacks['chat:messages'](17,'Fixture incoming.','INFO','Officer_Demo');await refreshAdapter();
+ eq(incomingStored.at(-1),[17,'Fixture incoming.','INFO','Officer_Demo']);eq(incomingRendered.at(-1),incomingStored.at(-1));
+ setControl({filterPrefixes:['BLOCK:']});await refreshAdapter();const renderedBefore=incomingRendered.length;
+ incomingCallbacks['chat:messages'](18,'BLOCK: synthetic filter.','INFO','Officer_Demo');await refreshAdapter();
+ eq(incomingRendered.length,renderedBefore,'Real incoming callback is filtered without altering the HUD function');
+ await until(()=>fs.existsSync(path.join(box,'incoming-count.json'))&&Number(fs.readFileSync(path.join(box,'incoming-count.json'),'utf8'))>=2,'Incoming messages not observed by native bridge');
+ setControl({filterPrefixes:[]});await refreshAdapter();incomingCallbacks['chat:messages'](19,'After filter.');await refreshAdapter();
+ eq(incomingRendered.at(-1),[19,'After filter.',null,null],'Optional incoming metadata retains original defaults');
+
+ const languagePages=new Set();
+ async function languagePacket(chat=true){
+  const challenge=endpoint.match(/\/([a-f0-9]{48})\/exchange$/u)[1];
+  async function call(phase){return(await fetch(endpoint,{method:'POST',headers:{Origin:'sampcef://assets','Content-Type':'application/json'},
+   body:JSON.stringify({schema:1,page:'language-probe',chat,dialog:false,busy:chat,events:[],compatibility:{protocol:2,challenge,phase,
+    fingerprint:functionalFingerprint,capabilities:{dom:true,send:true,emit:true,incoming:true,focus:true}}})})).json();}
+  if(!languagePages.has(challenge)){await call('hello');languagePages.add(challenge);}
+  return call('confirmed');
+ }
  for(const code of ['RU','EN','BG','UK','FIL']){setControl({keyboardLayout:code});eq((await languagePacket()).keyboardLayout,code);}
  setControl({layoutIndicator:false});eq((await languagePacket()).layoutIndicator,false);eq((await languagePacket()).keyboardLayout,undefined);
  setControl({layoutIndicator:true});eq((await languagePacket(false)).keyboardLayout,undefined);

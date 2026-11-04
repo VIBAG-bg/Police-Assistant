@@ -235,13 +235,14 @@ function M.draw(s,ui,data,callbacks)
     s.currentUi=ui;s.preferenceContext=true;s.settingTextChanged=false;s.currentNoticeScope='assist'
     local tab=s.assistPage or'traffic'
     if tab~='roleplay'and tab~='commands'then
-        tab=menu.choiceControl(s.imgui,ui,'##assist-tabs','',tab,{{'traffic','Трафик и погоня'},{'patrol','Патруль'},{'megaphone','Мегафон'},{'evidence','Фиксация'},{'training','Обучение'},{'notices','Уведомления'}},s,{buttons=true,font=s.buttonFont})
+        tab=menu.choiceControl(s.imgui,ui,'##assist-tabs','',tab,{{'traffic','Трафик и погоня'},{'navigation','Навигация'},{'patrol','Патруль'},{'megaphone','Мегафон'},{'evidence','Фиксация'},{'training','Обучение'},{'notices','Уведомления'}},s,{buttons=true,font=s.buttonFont})
         s.assistPage=tab
     end
     if tab~='traffic'or s.copilotPage=='settings'then
         if s:button('Настройки чата, переноса RP и команд##assist-chat-settings',ui)and callbacks.openSettings then callbacks.openSettings('chat')end
     end
     if tab=='traffic'then require('pa26_copilot_ui').draw(s,ui,data,callbacks)
+    elseif tab=='navigation'then require('pa26_field_ui').quick(s,ui,data,callbacks)
     elseif tab=='patrol'then require('pa26_patrol_ui').draw(s,ui,data,callbacks,'assist')
     elseif tab=='megaphone'then M.megaphone(s,ui,data,callbacks)
     elseif tab=='evidence'then M.evidence(s,ui,data,callbacks)
@@ -265,6 +266,12 @@ end
 function M.modal(s)
     local a=s.assistConfirm;if not a then return end
     if a.kind=='archive_screens'then return {kind='assistant',token='screens-archive:'..a.proposal.dir,title='Перенести снимки SA:MP в архив?',lines={'Папка: '..a.proposal.dir,'Найдено изображений: '..a.proposal.count..'; максимальный индекс: '..a.proposal.maxIndex..'.','Завершённые sa-mp-*.png/jpg будут перенесены в новую подпапку PA_Archive_дата. Свежие и занятые файлы останутся. Ничего не удаляется и не перезаписывается.','Имена в журнале старых фиксаций останутся прежними; новый путь будет показан после переноса.',a.proposal.demo and'ДЕМО: перемещения не будет.'or'ДА — перенести; НЕТ — оставить все файлы на месте.'}}end
+    if a.kind=='field'then
+        local p=a.proposal;local lines=model.copy(p.lines)
+        lines[#lines+1]=p.kind=='share'and'OOC-координаты не являются IC-знанием. Канал и полная команда показаны выше.'or'Каждая строка отправится один раз. Отмена остановит оставшиеся; уже отправленные строки не повторяются.'
+        lines[#lines+1]=p.demo and'ДЕМО: реальных отправок нет.'or'ДА — выполнить показанный план. НЕТ — отменить.'
+        return {kind='assistant',token=p.token,title=p.label,lines=lines}
+    end
     if a.kind=='evidence'then
         local p=a.proposal;local lines={p.label,'Район: '..p.area}
         for _,line in ipairs(p.lines)do lines[#lines+1]=line end
@@ -278,6 +285,7 @@ function M.modal(s)
 end
 function M.accept(s,callbacks)
     local a=s.assistConfirm;if not a then return nil,'Подтверждение отсутствует.'end
+    if a.kind=='field'then return callbacks.fieldAccept(a.proposal)end
     if a.kind=='evidence'then return callbacks.evidenceAccept(a.proposal)end
     if a.kind=='archive_screens'then return callbacks.evidenceArchiveAccept(a.proposal)end
     local copy=model.copy(s.lib)

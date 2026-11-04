@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "checks": 21,
+  "editing_events": 40000,
+  "editing_ipc": 0,
+  "game_started": false,
+  "actual_latency_measured": false
+}

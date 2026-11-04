@@ -49,15 +49,16 @@ function M.ensure(path,fs,repair)
     if type(script)~='string'or #script==0 then return false,'adapter_file_missing'end
     local remaining,count=html:gsub(M.TAG:gsub('([^%w])','%%%1'),'')
     if count>1 or remaining:find(M.MARKER,1,true)or remaining:find('pa26-chat.js',1,true)then return false,'asset_tag_conflict'end
-    if count==1 then return true,'asset_ready'end
-    if not repair then return false,'adapter_missing'end
-    local lower=html:lower();local at=lower:find('</body%s*>')
-    if not at or html:find('%z')or not html:find('chatInputField',1,true)or not html:find('main.js',1,true)then
+    local at=remaining:find('<script%s+src="main%.js"%s*>')or remaining:find("<script%s+src='main%.js'%s*>")
+    if not at or html:find('%z')or not html:find('chatInputField',1,true)then
         return false,'asset_contract'
     end
+    local desired=remaining:sub(1,at-1)..M.TAG..remaining:sub(at)
+    if html==desired then return true,'asset_ready'end
+    if not repair then return false,'adapter_missing'end
     local backup=path..'index.html.pa26-before-repair'
     if not call(fs,'write',backup,html)or call(fs,'read',backup)~=html then return false,'asset_backup'end
-    local ok,reason=M.commit(path..'index.html',html:sub(1,at-1)..M.TAG..html:sub(at),fs,html)
+    local ok,reason=M.commit(path..'index.html',desired,fs,html)
     return ok,ok and'asset_restored'or reason
 end
 return M

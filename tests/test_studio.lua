@@ -1,7 +1,7 @@
 local fixture=require 'support.fixture'
 local core=require 'pa26_core'
 local model=require 'pa26_bindings'
-local s=fixture(); s.step(); eq(#s.frames,5)
+local s=fixture(); s.step(); eq(#s.frames,6)
 eq(s.frames[5].LockPlayer,false);eq(s.frames[5].HideCursor,true)
 s.step(16,{[0x7A]=true}); check(s.frames[4].condition()); check(not s.frames[1].condition()); eq(s.lockRequests,0)
 s.io.WantTextInput=true; s.render(); check(s.keyMessage(0x4A,false)==false)

@@ -19,6 +19,13 @@ foreach($paName in $paAssets){
     $paFiles+=@{name=$paName;path=$paPath;size=(Get-Item -LiteralPath $paPath).Length;sha256=(Get-FileHash -LiteralPath $paPath -Algorithm SHA256).Hash.ToLowerInvariant()}
 }
 $paNotes=[IO.File]::ReadAllText((Join-Path $paRoot ('docs\RELEASE-'+$paVersion+'.md')),[Text.Encoding]::UTF8)
+# Release bodies have no docs-relative base. Pin those links to this tag while
+# leaving external URLs and local heading anchors untouched.
+$paDocsBase='https://github.com/'+$Repository+'/blob/'+$paTag+'/docs/'
+$paNotes=[regex]::Replace($paNotes,'\]\((?![A-Za-z][A-Za-z0-9+.-]*:|#)([^)\s]+)\)',[Text.RegularExpressions.MatchEvaluator]{
+    param($paMatch)
+    return ']('+[Uri]::new([Uri]$paDocsBase,$paMatch.Groups[1].Value).AbsoluteUri+')'
+})
 if($VerifyOnly){$paFiles | ForEach-Object {[PSCustomObject]$_} | Select-Object name,size,sha256;return}
 
 # Use the normal Git credential helper for this same GitHub host. Never print

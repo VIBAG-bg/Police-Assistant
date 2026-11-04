@@ -1,0 +1,12 @@
+{
+  "status": "CONTRACT_COMPATIBLE",
+  "hud_main_sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+  "known_reviewed_identity": false,
+  "functional_profile": "exsellent-chat-v1:57c75fe6c2d126d65400533b3d112d657b77834be588558716d0c6c92778e95f",
+  "shared_static_verifier": "PASS",
+  "isolated_x86_runtime_handshake": "PASS",
+  "actual_launcher_runtime_handshake": "NOT RUN",
+  "actual_game_input_latency": "NOT RUN",
+  "live_game_written": false,
+  "second_computer_installation": "NOT RUN"
+}

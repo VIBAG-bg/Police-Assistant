@@ -1,0 +1,29 @@
+{
+  "release": "0.45.0",
+  "status": "passed",
+  "native_install": true,
+  "cef_install": true,
+  "idempotent_patch": true,
+  "preserved_personal_files": true,
+  "personal_backups": true,
+  "verify_only_readonly": true,
+  "rollback_after": [
+    1,
+    37,
+    89,
+    91,
+    92,
+    93,
+    94,
+    97,
+    98,
+    102,
+    103,
+    166
+  ],
+  "manifest_sha256": "D97A8BB84CBDA81EBA4DBEDD474C0FD9ECA18E96F3A8EC762C033B1AC68DAC91",
+  "installer_sha256": "F0DE29115467C9CFE45E7DAA5F586CE31512AB6A20E5959A4A7D525D214107BF",
+  "real_game_written": false,
+  "sandbox": "three independent workspace fixture folders",
+  "independent_process_shards": 3
+}

@@ -1,5 +1,5 @@
 {
-  "observed_date": "2026-10-24",
+  "observed_date": "2026-11-04",
   "hud_main_sha256": "c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410",
   "cef_client_sha256": "1c5053dc19369ee4c672ef1631e9d84bfc3cde9aecfbb415a064098508392994",
   "outgoing_event": "HandleHudSendMessage",
@@ -14,11 +14,151 @@
   "previous_cef_client_sha256": "9cf99622cdb8503a861f91a70249e2b4a3caf36d8ee194ca6337f113117091d6",
   "large_asset_reader_limit": 1048576,
   "bootstrap": "top-level PA initialization before first SA:MP wait",
-  "observed_client_update": "24.10 launcher main.js changed; outgoing HandleHudSendMessage, incoming chat:messages and DOM IDs reviewed. Actual send function plus real x86 LuaSocket loopback: 68 checks passed. Official assets unchanged.",
+  "observed_client_update": "2026-11-04: unknown hash d7526... has a reviewed bounded static profile. Runtime verification is session-specific, never inferred from the file hash.",
   "manual_radio_prefix": "/r only; policy from Lua; explicit profile toggle; no accent or implicit bind rewriting",
   "pa_text_splitting": "Prepared PA speech; 90 CP1251 body characters including accent, spaces and continuation markers. Native manual entry keeps its existing route.",
   "previous_hud_main_sha256": "c6c6e2dfe9fd66e66c37ac6cbe4989166e87cbd6bbd38cd951e357b10003fc77",
   "pa_adapter_reviewed": "2026-10-30",
-  "input_transforms": "Submission only: no draft reads, text analysis, live preview timers, value/caret writes or HTTP requests from ordinary input events. Async state heartbeat 250 ms; open/close safety signals remain immediate; no new send delay.",
-  "performance_validation": "See docs/CEF-PERFORMANCE-0431.md; synthetic CPU/DOM measurements and real x86 LuaSocket probe are not live GTA input-latency measurements."
+  "input_transforms": "Submission only; no draft processing/DOM text/caret writes or input HTTP. Existing 750 ms lease heartbeat; initialization-only contract analysis in a bounded background job.",
+  "performance_validation": "See docs/CEF-PERFORMANCE-0431.md; synthetic CPU/DOM measurements and real x86 LuaSocket probe are not live GTA input-latency measurements.",
+  "schema": 2,
+  "interface_version": "exsellent-chat-v1",
+  "protocol": 2,
+  "verification": "reviewed identity OR normalized functional contract plus DOM; bounded runtime confirmation required",
+  "required_dom": {
+    "chatInput": "form",
+    "chatInputField": "input",
+    "chatMsgList": "div",
+    "Dialog": "div",
+    "SendMsgButton": "svg"
+  },
+  "required_functions": [
+    "showCursor",
+    "hideCursor",
+    "getInputLanguage",
+    "showChat",
+    "hideChat",
+    "showChatInput",
+    "hideChatInput",
+    "isChatHidden",
+    "isChatInputActive",
+    "moveCursorToEnd",
+    "sendMessageToChat",
+    "addChatMessage",
+    "renderChatMessage",
+    "resetChatFadeTimer",
+    "saveMessageToStorage",
+    "loadMessagesFromStorage",
+    "saveInputMessageToStorage",
+    "loadInputMessagesFromStorage",
+    "isDialogActive"
+  ],
+  "known_versions": [
+    {
+      "sha256": "c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410",
+      "fingerprint": "exsellent-reviewed-2026-10-24",
+      "interface_version": "exsellent-chat-v1",
+      "required_dom": [
+        "chatInput",
+        "chatInputField",
+        "chatMsgList",
+        "Dialog",
+        "SendMsgButton"
+      ],
+      "outgoing": {
+        "event": "HandleHudSendMessage",
+        "payload": [
+          "string"
+        ]
+      },
+      "incoming": {
+        "event": "chat:messages",
+        "payload": [
+          "color",
+          "string",
+          "optional metadata"
+        ]
+      },
+      "requirements": [
+        "classic main.js script",
+        "PA before main.js",
+        "cef.on/emit/set_focus",
+        "runtime protocol 2 handshake"
+      ]
+    }
+  ],
+  "contract_profiles": [
+    {
+      "fingerprint": "exsellent-chat-v1:57c75fe6c2d126d65400533b3d112d657b77834be588558716d0c6c92778e95f",
+      "components": {
+        "showCursor": "a96757ef58a12402cce1c099c19cf0f172f55e51d41a10a05f5c8b0275ae494d",
+        "hideCursor": "3831d24aa648ce9db18cd3c714f35ba5829e8f9ca19a66844ef5d471a8596ee9",
+        "getInputLanguage": "9b24f4dd9ce16b9e0ec3a345e28516270720a4c00c26558032f6bf324197afee",
+        "showChat": "3544fde9ab809430a579d9030bf848822acf8ee0fa8e62aa4c8feedc3614bfe7",
+        "hideChat": "9dcd7ba389fc2c5c636b88995e38ac75743aa1b037326af9fbaa1bd17e974542",
+        "showChatInput": "109a44d46251367a019597abc293f6b71df9f6438fe093fddecec53fbbc81e73",
+        "hideChatInput": "b18182e67dae288c0754db36a64e58db5d86f0b841d99c8f540d686ed007dc11",
+        "isChatHidden": "e2e817ac35c1722538ffecf48bf6c236d0e507bd3ba248bb1986e43603762ea8",
+        "isChatInputActive": "79c33f0c830baf714c231799c9a0a74c93af313ca8a34338e06fccb9a0fcdebd",
+        "moveCursorToEnd": "0b1aa54ad09176a41a18cf0e0e17e92dc95de262367d4b4196f643aa398acdba",
+        "sendMessageToChat": "2bdbb7da6103bd6c68ca2fa2b3750c3044015592307fe1b56b43a797c8ddf9da",
+        "addChatMessage": "2e33ef0e47d48bba4f57587cc64855bcdfc40b0792194df364119efa4d697be1",
+        "renderChatMessage": "ba1f92974b058cdb513a24e7419e4b243c5deaa1081af2da495de5510440ee69",
+        "resetChatFadeTimer": "d2379cc8867977075d83c6af763d2a25f6732d00dbc0f27bf831cade794110e5",
+        "saveMessageToStorage": "f7f07a37a75a0dbd6afa50008e1b2ddde28a529944c6ad478f7cea7d3c51573a",
+        "loadMessagesFromStorage": "ece2eb746a6d2d2189243ad68b06563b14db72ca2e587794208b8b92d4682ae4",
+        "saveInputMessageToStorage": "da62eaf2aa50fbba6aabcea736fc1db4248b8a8610c91afcb48db869ab8496c1",
+        "loadInputMessagesFromStorage": "da65e23a2af0a46dd4ea16ca4c4df4936a8354e4123fec40c6e1ea5236a937b7",
+        "isDialogActive": "1429aefda459e6c061122cb0eac1e5a13c79ce353547a53b48a7f9a4634f06e8",
+        "isCarDealershipActive": "eb752a26d0963826a9e59bd64095b70659a318c7db7c37d442b59c61fa9a93ab",
+        "isBlackjackGameActive": "f97d1dec9f16c22d408433706253c7090b6492179612bcd7fe63d7cef8a542f3",
+        "isDialogDailyTasksInterfaceActive": "d68929026c9bf9581484fb4aae0721fa442ba5f4b020ef036ff33448c3fa77c3",
+        "isDiceGameActive": "f25c93ff9b246b6e3827296f7efdf81e42c7d9b6fef7875f006c00991e08c4b2",
+        "isGasStationInterfaceActive": "490cfc9f38a72a28cbb7b937187970a6706e8dccb4ff5c8dca86018465a36689",
+        "isPerformanceInterfaceActive": "d8a270d98b4553f4be9bb9e17bf7cffb9957cc228cf9f111020b7d91d13174c4",
+        "isSlotMachineActive": "0faed226f25c2adfc3cc1a73c1534c75ff49f2f0219d0e48ef0bf6fb51fd9a72",
+        "isPromocodeActive": "04137db4bebfb691b3b9bad5ccacf9e54c13f9014c557900c7b1bc43ccb5a7e1",
+        "isDeathScreen": "b76789ccb0f35bc78058ebd2289ba2424a3f5002222b50c27b83b9279e684216",
+        "isShowActive": "f54602b86154df351e430d4c99c0b61179cd1d9f83c52e721eac8ccf648a9071",
+        "isFactionRating": "75ab1e275d1cc96c3662e937e26bd93d42c7a230d8959dc2f1553b86efc29875",
+        "isAuthActive": "36ccccef492859b34fd2fbf4329369ef6acaab3667588e8a5ad437425b282d83",
+        "isAdminToolsActive": "b68f7e1c0d5ec79fa91f0be885a82998021355450038265801f7be61626ae9f8",
+        "isTuningActive": "aecb0cc7c0f99b640ddb3d627118b9b3b56652f7972511c60f45c2504c0491a5",
+        "isHouseSpawnSelectorActive": "27f74281a0394845f07ec0072fd2ee56cbd3d9cdb83ebe13d7b6346c186041a8",
+        "parseHexColor": "e1bab6a8b2c88e5346d816b6db50892cc6563cf4102a1bb4d716774921ee2bdd",
+        "showCopyToast": "f698aa53656951ee89e9cb65040042c4f693562d323fed9d3a275aa84637ab3c",
+        "isRegistrationActive": "fd9bf9f39eaec953e51085ffb774b0eae6b60a0b6e8ce864103a2494235823af",
+        "isRegSkinSelectionActive": "173431ded152e9c0922e304ec396b91199f0bae536ef98fa7f8b4ce7d584fbbc",
+        "$decoder": "4f32f162e602ca07d594f1643be6fa46b6094de22ea456fad6dc97699d3663fa",
+        "$table": "0a2ab3ef82d12722cd3e4ef4fc3bcda73a903422e51fffccbe8ee23c7a930884",
+        "$initialization_and_events": "22c3de22c946c4319122f91cfe2c03ef6931989c87022664a157fd54a9ba055a",
+        "$protected_references": "4b4feaf2d238a05e7e9d92ec1ee09c6672fdf1a1a6d5bd8598b72130b6c6fe49"
+      },
+      "reviewed_date": "2026-11-04",
+      "scope": "Chat/focus/storage roots and their named dependency closure; literal decoder/table; complete initialization/event skeleton; full bodies of other functions referencing protected APIs. Comments/whitespace/private identifiers normalized.",
+      "behavior": "outgoing HandleHudSendMessage(string); incoming chat:messages(color,string,metadata); class active; focus/blur; original HUD owns editing",
+      "limits": "Conservative syntax profile; changed chat implementation/table/event wiring requires review. Not a generic proof about arbitrary JS or a live game acceptance."
+    }
+  ],
+  "runtime_handshake": {
+    "protocol": 2,
+    "timeout_ms": 12000,
+    "capabilities": [
+      "dom",
+      "send",
+      "emit",
+      "incoming",
+      "focus"
+    ],
+    "server_messages_sent": false,
+    "scope": "initialization/transport acknowledgements; actual server semantics still require in-game acceptance"
+  },
+  "limits": {
+    "main_js_bytes": 4194304,
+    "html_bytes": 1048576,
+    "tokens": 650000,
+    "nesting": 512,
+    "analysis_job_ms": 30000,
+    "handshake_ms": 12000
+  }
 }

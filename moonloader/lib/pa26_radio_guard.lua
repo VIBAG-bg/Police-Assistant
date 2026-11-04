@@ -264,13 +264,13 @@ function Guard:validPlan(plan)
     local current=M.prepare(spec,self.state,self.env.codec,self.now,self.life)
     return current and signature(spec,self.state)==t.signature and radio.key(current)==radio.key(plan) and t.paintedWire==radio.key(plan) or false
 end
-function Guard:onExecution(kind,q)
+function Guard:onExecution(kind,q,reason)
     local mark=q and q.plan and q.plan.radioGuard;if not mark then return end
     local t=self:find(mark.token);if not t or t.refreshing then return end
     if kind=='sent_line' or kind=='preview_line' then
         if q.plan.steps and q.index and q.index<#q.plan.steps then t.started=true;return end
         t.phase='sent'
-    elseif kind=='cancelled' then self:finish(t,'cancelled','Отправка остановлена; повтора нет.')end
+    elseif kind=='cancelled' then self:finish(t,'cancelled',reason or'Отправка остановлена; повтора нет.')end
 end
 function Guard:candidates()
     if self.state and self.state.paused then return {}end

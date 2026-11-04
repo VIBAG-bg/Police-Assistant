@@ -679,6 +679,7 @@ function Studio:drawEditorBody(ui,data,callbacks)
     if self.editor=='text' then
         value,changed=self:field('##script','script',b.script,16385,true,230); if changed then b.script=value; self.dirty=true; self.plan=nil; self:clearSteps() end
     else self:drawSteps(ui) end
+    if self.lib.profile.gender=='female'and #require('pa26_gender_audit').inspect(b.script)>0 then ui.text('В личном /me есть мужские формы. PA сохраняет ваш текст: используйте {gender:достал|достала} для действий офицера. Род цели не угадывается.')end
     self.variable=self.variable or 'my_name'
     local variableSearch=self:field('Найти переменную##search','variableSearch','',256)
     local variableChoices={}; local needle=model.casefold(variableSearch)
@@ -925,7 +926,10 @@ function Studio:drawQuick(ui,data,callbacks)
             if self:button(item.name..'##quick-system-'..item.id,ui)then callbacks.navigateService(item.kind,item.id)end
         end
     end
-    for number,b in ipairs(wheelLib.bindings) do
+    local quickRows={}
+    for number,b in ipairs(wheelLib.bindings)do quickRows[#quickRows+1]={number=number,binding=b}end
+    table.sort(quickRows,function(a,b)if a.binding.favorite~=b.binding.favorite then return a.binding.favorite end;return a.number<b.number end)
+    for _,row in ipairs(quickRows)do local number,b=row.number,row.binding
         local included=self.quickWheelCategory and b.wheel_visible and wheelModel.groupFor(b,self.quickWheelProfile)==self.quickWheelCategory or
             not self.quickWheelCategory and b.quick
         if b.enabled and included and (not self.quickFavorites or b.favorite) and (search=='' or model.casefold(b.name..' '..b.category):find(search,1,true)) then
@@ -986,6 +990,10 @@ function Studio:drawNotes(ui,data,callbacks,floating)
                 local ok,err=callbacks.save(copy); self:notify(err or (ok and 'Памятка сохранена.' or 'Не сохранено.'),nil,nil,ok and'info'or'warning'); if ok then self.lib=copy; self.noteMode=false;self.noteDraft=nil end end
             if im.Button('Отмена##note') then self.noteMode=false;self.noteDraft=nil; self.cache['noteName']=nil; self.cache['noteBody']=nil end
         else
+            if callbacks.openField and self:button('Закрепить поверх игры##note-pin',ui)then
+                local candidate=model.copy(self.lib);candidate.field.enabled=true;candidate.field.pinned.enabled=true;candidate.field.pinned.note_id=selected.id
+                local ok,why=callbacks.save(candidate);self:notify(ok and'Памятка закреплена. Размер и положение: Помощники службы → Навигация и инструменты → Памятка.'or why,'hints',false,ok and'info'or'warning')
+            end
             ui.text(selected.name); child(self,ui,'notebody##studio',0,math.max(120,im.GetContentRegionAvail().y-130),function() ui.text(selected.body) end)
             if im.Button('Редактировать##note') then self.noteMode=true end
             im.SameLine(); if im.Button('Удалить##note') then self.remove={kind='note',id=selected.id} end
@@ -1208,6 +1216,14 @@ function Studio:drawRadioGuard(ui,data,callbacks)
     im.SameLine();if self:button('Убрать##guard-key',ui)then d.skip_shortcut={key=0,ctrl=false,alt=false,shift=false};changed=true end
     ui.text('При включённом флажке отсчёт идёт в чате и окнах PA. В 00:00 доклад ждёт закрытия ввода и свободной очереди; закрытие F6 не начинает предупреждение заново. Alt+Tab, пауза игры и долгий зависший кадр приостанавливают отсчёт. Экстренные подтверждения идут первыми; отмена пропускает один доклад.')
     self:settingsHeading(ui,'Длинные доклады')
+    local resume,resumeChanged=self:check('Продолжать многострочный доклад после краткого ввода в чат##guard-resume',d.resume_radio_batches~=false)
+    if resumeChanged then d.resume_radio_batches=resume;changed=true end
+    local resumeTime=im.new.int((d.radio_resume_ms or 15000)/1000)
+    if im.SliderInt('Сколько ждать закрытия чата, с##guard-resume-time',resumeTime,1,60)then d.radio_resume_ms=resumeTime[0]*1000;changed=true end
+    local gap=im.new.int((d.radio_gap_ms or 1000)/1000)
+    if im.SliderInt('Минимум между строками доклада, с##guard-radio-gap',gap,1,5)then d.radio_gap_ms=gap[0]*1000;changed=true end
+    ui.text('Используется больший из этого интервала и общего интервала PA. Если журнал показывает все строки, а сервер выводит только часть, увеличьте интервал: передача клиенту не подтверждает получение сервером. Автоматического повтора нет.')
+    ui.text('Если часть патрульного доклада уже передана, краткое открытие чата сохраняет только неотправленный остаток. После закрытия ввода он продолжится с прежними интервалами и проверкой ситуации. Отмена, диалог, потеря фокуса, смена сеанса или ошибка отправки останавливают доклад без повтора; журнал показывает число переданных строк.')
     local split,splitChanged=self:check('Делить длинные доклады на строки##guard-split',d.split_enabled)
     if splitChanged then d.split_enabled=split;changed=true end
     local maxLines=im.new.int(d.max_lines);if im.InputInt('Максимум строк в докладе##guard-max-lines',maxLines)then d.max_lines=maxLines[0];changed=true end
@@ -1457,6 +1473,7 @@ function Studio:drawProfile(ui,data,callbacks,part)
     self:profileGroup(ui,copy,'Место и транспорт · ручные значения',{{'city','Город (вручную)'},{'square','Сектор патруля (вручную)'},
         {'my_plate','Свой номер авто (вручную)'},{'select_plate','Номер выбранной машины (вручную)'},{'closest_plate','Номер ближайшей машины (вручную)'}})
     copy.profile.gender=self:choice('Грамматический род',copy.profile.gender,{{'male','Мужской'},{'female','Женский'}},ui)
+    ui.text(require('pa26_gender_audit').fallback)
     copy.profile.timezone=self:choice('Часы в биндах',copy.profile.timezone,{{'local','Компьютер'},{'utc','UTC'},{'moscow','Москва (UTC+3)'}},ui)
     local grid=model.copy((self.autosaves and self.autosaves.map_grid and self.autosaves.map_grid.value)or self.lib.map_grid)
     local auto,changed=self:check('Автозаполнение {square} квадратом карты##profile-auto-square',grid.auto_square)
@@ -1499,7 +1516,7 @@ function Studio:drawProfile(ui,data,callbacks,part)
     if part=='chat_cef'or part=='all'then
     local cef,cefChanged=self:check('Поддержка чата лаунчера##cef-chat',copy.settings.cef_chat_support)
     if cefChanged then self:autoSettings('cef_chat',{'settings','cef_chat_support'},cef)end
-    ui.text('При запуске один раз сверяет версию CEF-чата. Только на проверенной сборке восстанавливает свой тег в HUD. На неизвестной сборке работают нативные модули PA, а подключение к CEF остаётся выключенным. Серверные main.js и DLL не меняются. После обновления клиента повторная проверка выполняется при новом запуске PA.')
+    ui.text('При запуске проверяет контракт чата отдельным фоновым заданием. Известные версии проверяются быстрее; новый хеш допустим, если структура и поведение нужных интерфейсов совпадают с проверенным профилем. Затем адаптер подтверждает локальную связь. При отказе остаётся исходный чат и нативные функции PA. Main.js и DLL не меняются. Повторная проверка — после перезапуска PA.')
     ui.text('Связывает CEF-чат с командами PA, фильтрами и распознаванием служебных сообщений. Во время ввода игровые сочетания и отправка сценариев блокируются так же, как в стандартном чате.')
     for _,r in ipairs({{'cef_chat_weapon_guard','Защита клавиш оружия'},
         {'cef_chat_weapon_lock','Оружие при вводе чата'}})do
@@ -1514,13 +1531,26 @@ function Studio:drawProfile(ui,data,callbacks,part)
     if layoutChanged then self:autoSettings('cef_chat',{'settings','cef_layout_indicator'},layout)end
     ui.text('Показывает текущую раскладку клавиатуры справа от поля CEF-чата: RU, EN, BG, UK и другие. Обновляется при смене языка. При закрытом чате или потере связи значок скрывается. Это отдельный индикатор, он не меняет текст и RP-акцент.')
     ui.text(({
-        disabled='Поддержка чата лаунчера выключена.',connected='Чат лаунчера: связь установлена.',waiting='Чат лаунчера: ожидается связь с игровым окном.',
+        disabled='CEF-функции PA отключены. Причина — в диагностике чата.',connected='Чат лаунчера: связь установлена.',waiting='Чат лаунчера: ожидается связь с игровым окном.',
         unavailable='Чат лаунчера: адаптер установлен, но локальная связь недоступна.',
         not_installed='Чат лаунчера: адаптер не установлен. Для стандартного чата SA-MP он не нужен.'
     })[data.cefChatStatus or'not_installed'])
     if self:button((self.showCefDiagnostics and 'Скрыть диагностику чата' or 'Диагностика чата')..'##cef-diagnostics-toggle',ui)then self.showCefDiagnostics=not self.showCefDiagnostics end
     if self.showCefDiagnostics then
-    local cefReason=({cef_contract_unreviewed='Эта версия CEF-чата ещё не проверена. PA работает без подключения к CEF: файл чата и обработка его ввода не меняются. Не снимайте защиту SHA-256 вручную.',cef_contract_missing='CEF-контракт не подтверждён: файл отсутствует, недоступен или превышает безопасный размер. Нативные модули PA доступны.',setting_disabled='Для подключения включите поддержку чата лаунчера.',asset_missing='Файл HUD пока недоступен. PA повторит проверку автоматически.',
+    local compat=data.cefCompatibility
+    if type(compat)=='table'then
+        ui.text('Совместимость: '..tostring(compat.state or 'UNAVAILABLE'))
+        ui.text('Контракт: '..(compat.known and 'известная проверенная версия' or 'проверка функционального профиля'))
+        ui.text('SHA-256 main.js: '..tostring(compat.sha256 or 'недоступен'))
+        ui.text('Профиль: '..tostring(compat.fingerprint or 'не подтверждён'))
+        ui.text('Режим: '..tostring(compat.mode or 'native-only')..'; подтверждение моста: '..tostring(compat.runtime or 'NOT_RUN'))
+        local names={};for _,name in ipairs({'dom','outgoing','incoming','payloads','lifecycle','focus','ipc','adapter_order'})do names[#names+1]=name..'='..tostring((compat.capabilities or {})[name]==true)end
+        ui.text('Проверки: '..table.concat(names,', '))
+        ui.text('Функции CEF PA: '..((compat.runtime=='CONFIRMED' and copy.settings.cef_chat_support) and 'подключены; игровые проверки ещё могут требоваться' or 'ожидают подтверждения или отключены'))
+        ui.text('Команды с точкой: '..(copy.settings.chat_dot_commands and 'включены; преобразуется только имя команды' or 'выключены'))
+        ui.text('Причина: '..tostring(compat.fallback or compat.reason or 'нет'))
+    end
+    local cefReason=({analysis_pending='Проверка контракта выполняется один раз в фоне. Дождитесь результата.',normalized_contract_and_dom='Новый хеш: нужный контракт и разметка совпадают с проверенным профилем.',reviewed_identity_and_dom='Известная проверенная версия чата. Разметка соответствует контракту.',functional_profile_mismatch='Нужные интерфейсы отличаются от проверенного профиля. Работают нативные функции PA; исходный чат сохранён.',files_unavailable='Файлы чата не найдены или недоступны. Для обычного SA-MP это нормально.',files_or_analysis_unavailable='Не удалось прочитать файлы или проверить контракт. Подключение к CEF не включено.',analysis_start_failed='Windows не запустила фоновую проверку. Подключение к CEF не включено.',analysis_timeout='Проверка превысила время ожидания. Перезапустите PA, чтобы повторить её.',analysis_failed='Фоновая проверка завершилась ошибкой. Исходный чат сохранён.',analysis_invalid_reply='Ответ проверки не прошёл проверку формата. CEF-функции не включены.',handshake_timeout='Адаптер не подтвердил нужные возможности вовремя. Перезапустите PA; исходный чат остаётся доступен.',cef_contract_unreviewed='Эта версия CEF-чата ещё не проверена. PA работает без подключения к CEF: файл чата и обработка его ввода не меняются. Не снимайте защиту SHA-256 вручную.',cef_contract_missing='CEF-контракт не подтверждён: файл отсутствует, недоступен или превышает безопасный размер. Нативные модули PA доступны.',setting_disabled='Для подключения включите поддержку чата лаунчера.',asset_missing='Файл HUD пока недоступен. PA повторит проверку автоматически.',
         asset_too_large='Размер HUD превышает допустимый. Нужна новая проверка совместимости.',adapter_file_missing='Не найден скрипт адаптера PA. Повторите установку PA.',
         asset_contract='Структура HUD изменилась. Нужна проверка совместимости; файл оставлен как есть.',asset_tag_conflict='Подключение PA в HUD неоднозначно. Нужна проверка установки.',
         asset_backup='Не удалось сохранить копию HUD перед восстановлением подключения.',asset_changed='Лаунчер обновил HUD во время проверки. PA повторит попытку.',

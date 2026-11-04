@@ -10,6 +10,12 @@
   const state = {url: null, config: null, until: 0, queue: [], next: 1, pending: false,
     failures: 0, owned: '', composing: false, submits: [], stopped: false, hooked: false, cefFocused: false,
     applied: 0, submitted: 0, rejected: 0, lastError: '', diagnostics: true, layoutBadge: null, lastChatText: null};
+  // Discovery is bounded and never runs from input/selection handlers. A long
+  // outage goes dormant until the page becomes active again or explicit retry.
+  const cefRetryDelays = [50,100,200,400,800,1600,3200,5000,5000,5000];
+  const endpointRetryDelays = [2500,5000,10000,20000,30000,60000];
+  let cefRetryTimer = null, cefRetryIndex = 0, endpointRequest = null;
+  let endpointAttempts = 0, endpointNext = 0, endpointDormant = false, exchangeNext = 0;
   const page = String(root.Date.now()) + '-' + String(root.Math.random()).slice(2);
   const cpExtra = new Set(Array.from('ЂЃ‚ѓ„…†‡€‰Љ‹ЊЌЋЏђ‘’“”•–—™љ›њќћџ ЎўЈ¤Ґ¦§Ё©Є«¬®Ї°±Ііґµ¶·ё№є»јЅѕї'));
   const command = text => /^\s*[\/!]/u.test(text);
@@ -24,6 +30,20 @@
     return bytes;
   }
   function config() { return clock() <= state.until ? state.config : null; }
+  function runtimeReady() { return !state.compatibility || state.compatibility.ready === true; }
+  function compatibilityHello() {
+    const c=state.compatibility;if(!c)return undefined;
+    if(c.phase==='confirmed'||c.failed)return {protocol:2,challenge:c.challenge,phase:c.phase};
+    const el=field(),panel=doc.getElementById('chatInput');
+    let parent=el,inside=false;for(let depth=0;parent&&depth<32;depth++,parent=parent.parentElement)if(parent===panel){inside=true;break;}
+    const cef=root.cef;
+    return {protocol:2,challenge:c.challenge,fingerprint:c.fingerprint,phase:'hello',capabilities:{
+      dom:!!(el&&el.tagName==='INPUT'&&!el.disabled&&!el.readOnly&&panel&&inside&&panel.classList&&typeof panel.classList.contains==='function'),
+      send:state.hooked&&root.sendMessageToChat===state.wrappedSubmit,
+      emit:!!cef&&cef.emit===state.wrappedEmit&&cef.on===state.wrappedOn,
+      incoming:(state.incomingRegistrations||0)>0,
+      focus:!!cef&&cef.set_focus===state.wrappedFocus&&typeof root.isDialogActive==='function'}};
+  }
   function prefix() {
     const c = config();
     return c && c.enabled && c.accentEnabled && typeof c.accent === 'string' ? c.accent : '';
@@ -205,7 +225,7 @@
     if (!(/^[0-9]$/u.test(event.key || '') || /^(Digit|Numpad)[0-9]$/u.test(event.code || '') ||
         event.keyCode >= 48 && event.keyCode <= 57 || event.keyCode >= 96 && event.keyCode <= 105)) return;
     const c = config();
-    if (state.stopped || c && (!c.enabled || c.weaponGuard === false) || state.inputGuardDisabled || !panelOpen() || event.target !== state.guardedField) return;
+    if (state.stopped || !runtimeReady() || c && (!c.enabled || c.weaponGuard === false) || state.inputGuardDisabled || !panelOpen() || event.target !== state.guardedField) return;
     if (/^[0-9]$/u.test(event.key || '') || /^(Digit|Numpad)[0-9]$/u.test(event.code || '') ||
         event.keyCode >= 48 && event.keyCode <= 57 || event.keyCode >= 96 && event.keyCode <= 105) {
       // Keep the input's default editing and WM_CHAR; stop only HUD bubbling.
@@ -341,7 +361,9 @@
   }
   function hookCef() {
     const cef = root.cef;
-    if (!cef || typeof cef.on !== 'function' || typeof cef.emit !== 'function') return;
+    if (state.stopped || !cef || typeof cef.on !== 'function' || typeof cef.emit !== 'function' || typeof cef.set_focus !== 'function') return false;
+    if (state.cefTarget === cef) return cef.on === state.wrappedOn && cef.emit === state.wrappedEmit && cef.set_focus === state.wrappedFocus;
+    state.cefTarget = cef;state.incomingRegistrations = 0;
     const originalOn = cef.on, originalEmit = cef.emit;
     if (typeof cef.set_focus === 'function') {
       const originalFocus = cef.set_focus;
@@ -350,12 +372,14 @@
         state.cefFocused = next;
         const result = originalFocus.call(this, focus, ...args); if(changed)inputChanged();return result;
       };
+      state.wrappedFocus=cef.set_focus;
     }
     cef.on = function (name, callback, ...rest) {
       if (name === 'chat:messages' && typeof callback === 'function') {
+        state.incomingRegistrations=(state.incomingRegistrations||0)+1;
         const original = callback;
         callback = function (color, text, ...args) {
-          if (typeof text === 'string') {
+          if (!state.stopped && state.cefTarget === cef && runtimeReady() && typeof text === 'string') {
             enqueue('message', text, color); exchange();
             if (filtered(text)) return;
           }
@@ -364,9 +388,10 @@
       }
       return originalOn.call(this, name, callback, ...rest);
     };
+    state.wrappedOn=cef.on;
     cef.emit = function () {
       // Preserve even zero/one arguments, receiver and return value verbatim.
-      if (arguments[0] !== 'HandleHudSendMessage') return originalEmit.apply(this, arguments);
+      if (arguments[0] !== 'HandleHudSendMessage' || state.cefTarget !== cef || !runtimeReady() || state.stopped) return originalEmit.apply(this, arguments);
       const [name, text, ...args] = arguments;
       state.submits = state.submits.filter(ticket => clock() - ticket.at <= 5000);
       const index = typeof text === 'string' ? state.submits.findIndex(ticket => ticket.text === text ||
@@ -396,12 +421,34 @@
       }
       return originalEmit.call(this, name, text, ...args);
     };
+    state.wrappedEmit=cef.emit;
+    return true;
+  }
+  function discoverCef(restart = false) {
+    if (state.stopped) return;
+    if (hookCef()) {
+      if (cefRetryTimer !== null) root.clearTimeout(cefRetryTimer);
+      cefRetryTimer = null;return;
+    }
+    if (restart && cefRetryTimer === null) cefRetryIndex = 0;
+    if (cefRetryTimer !== null || cefRetryIndex >= cefRetryDelays.length) return;
+    cefRetryTimer = root.setTimeout(() => {cefRetryTimer=null;discoverCef();},cefRetryDelays[cefRetryIndex++]);
+  }
+  function restartDiscovery() {
+    endpointAttempts=0;endpointNext=0;endpointDormant=false;
+  }
+  function resumeDiscovery() {
+    if (state.stopped || doc.visibilityState === 'hidden') return;
+    // Do not reset an active backoff burst on repeated focus events.
+    if (endpointDormant) {restartDiscovery();exchangeNext=0;}
+    if (cefRetryTimer === null) discoverCef(true);
+    loadEndpoint();
   }
   function hookSubmit() {
     if (state.hooked || typeof root.sendMessageToChat !== 'function') return;
     const original = root.sendMessageToChat;
     root.sendMessageToChat = function (text, ...args) {
-      if (state.stopped || typeof text !== 'string' || !active()) return original.call(this, text, ...args);
+      if (state.stopped || !runtimeReady() || typeof text !== 'string' || !active()) return original.call(this, text, ...args);
       if (state.composing) return;
       if (state.manualPending) { notice('Предыдущее сообщение ещё отправляется. Новый ввод сохранён.');return; }
       const body = state.owned && text.startsWith(state.owned) ? text.slice(state.owned.length) : text;
@@ -416,19 +463,21 @@
       state.recoveryNotice=null;notice('');
       return original.call(this, result.text, ...args);
     };
+    state.wrappedSubmit=root.sendMessageToChat;
     state.hooked = true;
   }
   async function exchange() {
-    if (!state.url || state.pending || state.stopped) return;
+    if (!state.url || state.pending || state.stopped || state.failures && (clock()<exchangeNext || endpointDormant)) return;
     state.pending = true;
+    const url = state.url;
     const input=readInput(),inputSequence=state.inputSequence || 0;
     state.publishedInputSequence=inputSequence;
     const abort = new root.AbortController();
     const timeout = root.setTimeout(() => abort.abort(), 1500);
     try {
-      const url = state.url;
       const response = await root.fetch(url, {method: 'POST', cache: 'no-store', signal: abort.signal,
         headers: {'Content-Type': 'application/json'}, body: JSON.stringify({schema: 1, page, ...input, events: state.queue.slice(0, 24),
+          compatibility: compatibilityHello(),
           policyRevision: state.config && state.config.policyRevision,
           diagnostics: !state.diagnostics ? undefined : {field: !!state.guardedField && state.guardedField.isConnected!==false, sendHook: state.hooked,
             accentConfigured: !!prefix(), applied: state.applied, submitted: state.submitted, rejected: state.rejected}})});
@@ -436,10 +485,23 @@
       const value = await response.json();
       if (state.stopped || url !== state.url) return;
       if (!value || value.schema !== 1 || !Number.isSafeInteger(value.ack) || typeof value.enabled !== 'boolean') throw Error('bad_response');
+      if(state.compatibility){
+        const c=state.compatibility,reply=value.compatibility;
+        if(!reply||reply.protocol!==2||reply.challenge!==c.challenge)throw Error('bad_response');
+        if(reply.phase==='ack'){c.phase='confirmed';Promise.resolve().then(()=>exchange());}
+        c.ready=reply.phase==='ready'&&(reply.state==='KNOWN_VERIFIED'||reply.state==='RUNTIME_VERIFIED');
+        c.state=reply.state;
+        if(!c.ready){
+          state.config=null;state.until=0;state.inputGuardDisabled=true;
+          if(reply.state==='INCOMPATIBLE'||reply.state==='UNAVAILABLE'||clock()-c.startedAt>12000){c.failed=true;throw Error('handshake_failed');}
+          return;
+        }
+      }
       state.queue = state.queue.filter(event => event.id > value.ack);
       if (value.policyUnchanged === true && (!state.config || value.policyRevision !== state.config.policyRevision)) throw Error('bad_response');
       state.config = value.policyUnchanged === true ? {...state.config, ...value} : value;
       state.until = clock() + 2000; state.failures = 0; state.lastError = ''; state.diagnostics = state.config.diagnostics !== false;
+      exchangeNext=0;restartDiscovery();
       state.inputGuardDisabled = !value.enabled || state.config.weaponGuard === false;
       state.lastChatText = textPolicy();
       const receipt=value.manualResult,pending=state.manualPending;
@@ -453,9 +515,11 @@
       if (value.policyUnchanged !== true) syncFieldLimit();
       updateLayoutBadge();
     } catch (error) {
-      state.failures++;
-      if(state.failures===1)state.endpointAttempt=undefined;
-      const code = error && /^(http_\d{3}|bad_response)$/u.test(error.message) ? error.message : 'network';
+      if (state.stopped || url !== state.url) return;
+      state.failures=Math.min(32,state.failures+1);
+      exchangeNext=clock()+Math.min(30000,750*Math.pow(2,state.failures-1));
+      if(state.failures===1)restartDiscovery();
+      const code = error && /^(http_\d{3}|bad_response|handshake_failed)$/u.test(error.message) ? error.message : 'network';
       if (state.lastError !== code && state.diagnostics) {
         state.lastError = code;
         if (root.console && typeof root.console.warn === 'function') root.console.warn('[PA26 CEF] exchange_failed: ' + code);
@@ -463,45 +527,53 @@
       if (state.failures >= 3) { state.config = null; state.until = 0; state.queue = []; }
     } finally {
       root.clearTimeout(timeout); state.pending = false;
-      if(!state.stopped){if(state.inputDirty)inputChanged();else if((state.inputSequence || 0)!==inputSequence)Promise.resolve().then(exchange);}
+      if(!state.stopped){if(state.inputDirty)inputChanged();else if(url!==state.url || (state.inputSequence || 0)!==inputSequence)Promise.resolve().then(exchange);}
     }
   }
-  let endpointLoading = false;
   function loadEndpoint() {
-    if (endpointLoading || state.stopped || state.url && config() && state.failures===0) return;
+    if (endpointRequest || state.stopped || endpointDormant || state.url && state.failures===0 && (config() || state.pending)) return;
     const now = clock();
-    if (state.endpointAttempt !== undefined && now >= state.endpointAttempt && now-state.endpointAttempt < Math.min(10000,2500*Math.max(1,state.failures))) return;
-    state.endpointAttempt=now;
-    endpointLoading = true;
+    if (now < endpointNext) return;
+    if (endpointAttempts > endpointRetryDelays.length) {endpointDormant=true;return;}
+    endpointNext=now+(endpointRetryDelays[endpointAttempts] || 60000);endpointAttempts++;
     const script = doc.createElement('script');
     script.src = 'pa26-chat-endpoint.js?pa26=' + root.Date.now();
-    const timeout=root.setTimeout(() => done(),2000);
-    const done = () => { root.clearTimeout(timeout);endpointLoading = false; script.remove(); };
+    let finished=false;
+    const done = () => {
+      if(finished)return;finished=true;root.clearTimeout(timeout);
+      script.onload=null;script.onerror=null;script.remove();endpointRequest=null;
+    };
+    const timeout=root.setTimeout(done,2000);
+    endpointRequest={done};
     script.onload = done; script.onerror = done;
-    (doc.head || doc.documentElement).appendChild(script);
+    try {(doc.head || doc.documentElement).appendChild(script);}catch (_) {done();}
   }
   const api = root.PA26Chat = {
-    endpoint(value) {
+    endpoint(value, compatibility) {
       if (state.stopped) return;
       if (typeof value !== 'string' || !/^http:\/\/127\.0\.0\.1:\d{1,5}\/[a-f0-9]{48}\/exchange$/u.test(value)) return;
       const port = Number(value.split(':')[2].split('/')[0]);
       if (port < 1 || port > 65535) return;
       if (value !== state.url) {
+        discoverCef(true);restartDiscovery();state.failures=0;exchangeNext=0;
         if(state.manualPending){const raw=state.manualPending.raw;state.manualPending=null;recoverManual(raw,'Подключение PA изменилось. Проверьте уже переданные части перед повтором; исходный текст сохранён.',false);}
-        state.url = value; state.config = null; state.queue = []; state.until = 0; updateLayoutBadge();
+        state.url = value; state.config = null; state.queue = []; state.until = 0; syncFieldLimit(); updateLayoutBadge();
+        state.compatibility=compatibility&&compatibility.protocol===2&&typeof compatibility.challenge==='string'&&/^[a-f0-9]{48}$/u.test(compatibility.challenge)&&typeof compatibility.fingerprint==='string'&&compatibility.fingerprint.length<=120
+          ?{...compatibility,phase:'hello',ready:false,startedAt:clock(),state:'CONTRACT_COMPATIBLE'}:null;
       }
       exchange();
     },
     // Exposed for bounded, offline tests; no page-wide network or game API is exposed.
     wireSize, prepare, exchange() { state.inputDirty=true;return exchange(); }, inputState() { state.visibleCache=new WeakMap();return inputState(); }, updateLayoutBadge() { hookInput();state.inputDirty=true;updateLayoutBadge(); }, manualSubmission, submitted, manualBusy:()=>!!state.manualPending,
-    stop() { if (state.manualPending) recoverManual(state.manualPending.raw,'PA остановлен. Проверьте уже переданные части перед повтором.',false);const input=field();if (input && state.originalMaxLength !== undefined) input.maxLength=state.originalMaxLength;state.stopped = true;if (state.inputObserver) state.inputObserver.disconnect();if(state.dialogObserver)state.dialogObserver.disconnect();if(state.ancestorObserver)state.ancestorObserver.disconnect();if(root.clearInterval)root.clearInterval(state.heartbeat);state.config = null; state.lastChatText = null; state.until = 0; updateLayoutBadge(); }
+    reconnect() {if(state.stopped)return;restartDiscovery();exchangeNext=0;discoverCef(true);loadEndpoint();return exchange();},
+    stop() { if (state.manualPending) recoverManual(state.manualPending.raw,'PA остановлен. Проверьте уже переданные части перед повтором.',false);const input=field();if (input && state.originalMaxLength !== undefined) input.maxLength=state.originalMaxLength;state.stopped = true;if(cefRetryTimer!==null)root.clearTimeout(cefRetryTimer);cefRetryTimer=null;if(endpointRequest)endpointRequest.done();if (state.inputObserver) state.inputObserver.disconnect();if(state.dialogObserver)state.dialogObserver.disconnect();if(state.ancestorObserver)state.ancestorObserver.disconnect();if(root.clearInterval)root.clearInterval(state.heartbeat);state.config = null; state.lastChatText = null; state.until = 0; updateLayoutBadge(); }
   };
-  hookCef();
+  discoverCef();
   // Text, selection and caret are owned by the HUD. Analyze only on submission.
   doc.addEventListener('compositionstart', event => { if (event.target === field()) state.composing = true; }, true);
   doc.addEventListener('compositionend', event => { if (event.target === field()) state.composing = false; }, true);
   doc.addEventListener('keydown', event => {
-    if (state.stopped) return;
+    if (state.stopped || !runtimeReady()) return;
     if (event.key === 'F6' || event.key === 'Escape' || (event.key === 't' || event.key === 'T') && !panelOpen()) {
       inputChanged();
     }
@@ -521,7 +593,9 @@
   }, true);
   doc.addEventListener('focusin', inputChanged, true);
   doc.addEventListener('focusout', inputChanged, true);
-  doc.addEventListener('DOMContentLoaded', () => { hookInput(); hookSubmit(); loadEndpoint(); });
+  doc.addEventListener('DOMContentLoaded', () => { discoverCef(); hookInput(); hookSubmit(); loadEndpoint(); });
+  doc.addEventListener('visibilitychange', resumeDiscovery);
+  if (typeof root.addEventListener === 'function') root.addEventListener('focus', resumeDiscovery);
   state.heartbeat=root.setInterval(() => {
     if (state.stopped) return;
     // Only discovery/reconnection and a small lease heartbeat. No draft reads,

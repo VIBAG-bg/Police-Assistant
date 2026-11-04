@@ -1,7 +1,8 @@
 local common=require 'pa26_procedure_window';local wanted=require 'pa26_wanted_ui';local M={}
 function M.draw(s,ui,data,cb)
  s.currentNoticeScope='procedures';s.preferenceContext=false;s.currentUi=ui
- s.markPage=s:choice('Пеленгация##mark-page',s.markPage or'form',{{'form','Пеленгация'},{'rules','Правила'},{'settings','Настройки и RP'}},ui)
+ s.markPage=s:choice('Пеленгация##mark-page',s.markPage or'form',{{'form','Пеленгация'},{'ooc','Технические OOC-звёзды'},{'rules','Правила'},{'settings','Настройки и RP'}},ui)
+ if s.markPage=='form'then require('pa26_tracking_ui').draw(s,ui,data,cb);return end
  if s.markPage=='settings'then common.settings(s,ui,cb,'mark');return end
  if s.markPage=='rules'then
   ui.text('Регламент 6.9–6.17: известный по IC телефон и источник, включённое устройство, RP перед /setmark. ID не является номером телефона.')

@@ -1,0 +1,1 @@
+{"win7_guest_tested":false,"results":[{"source":"bundled","nodes":462},{"source":"custom","nodes":462}],"live_game_written":false,"game_started":false,"status":"passed","cases":3,"environment":"Windows x86 LuaJIT and Unicode reader; fixture files only","checks":17}

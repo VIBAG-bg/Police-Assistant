@@ -1,7 +1,7 @@
 -- Opt-in aggregate timing only. No arguments, chat text, identities or paths.
 local M={};local P={};P.__index=P
 local buckets={.05,.1,.25,.5,1,2,4,8,16,33,50,100,250,1000,math.huge}
-local allowed={frame=true,context=true,updateGame=true,onWindowMessage=true,bridgeTick=true,bridgeExchange=true}
+local allowed={frame=true,context=true,updateGame=true,onWindowMessage=true,bridgeTick=true,bridgeExchange=true,fieldNavigation=true,fieldPath=true,fieldCoordinates=true,fieldCruiser=true,fieldCleanup=true,fieldProjection=true,fieldPinned=true,fieldUI=true}
 function M.clock(ffi)
  local ok,read=pcall(function()
   if ffi.os~='Windows'then return end

@@ -1,0 +1,16 @@
+﻿{
+    "scenarios":  [
+                      "fresh current launcher",
+                      "reinstall",
+                      "late-tag upgrade",
+                      "private preservation",
+                      "incompatible native fallback",
+                      "strict rejection"
+                  ],
+    "checks":  21,
+    "live_game_written":  false,
+    "manifest_sha256":  "553ffe214cdd0bfad706c3f00a0c6ed4cf33002b87c63f5556616af4601e29e2",
+    "installer_sha256":  "f0de29115467c9cfe45e7daa5f586ce31512ab6a20e5959a4a7d525d214107bf",
+    "status":  "passed",
+    "game_started":  false
+}

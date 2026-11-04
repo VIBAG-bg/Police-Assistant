@@ -827,10 +827,10 @@ function Menu:addonsPage(imgui,ui,model,callbacks,fonts)
     muted(imgui,ui,'Выберите задачу текущей смены. Общие параметры находятся в «Настройках».')
     if callbacks.openAssist and button(imgui,ui,'Открыть быстрое окно помощников ('..(model.assistKey or'F4')..')##assist-open',imgui.ImVec2(-1,42),fonts.button)then callbacks.openAssist()end
     local tools={{'patrol','Патруль и экипаж'},{'events','События патруля'},{'identity','Человек и личность'},
-        {'vehicle','Машина и мегафон'},{'procedures','Розыск, штрафы, /setmark'},{'evidence','Фиксация (F8)'},{'training','Обучение'},{'extras','Собеседование'}}
+        {'field','Навигация и инструменты'},{'vehicle','Машина и мегафон'},{'procedures','Розыск, штрафы, /setmark'},{'evidence','Фиксация (F8)'},{'training','Обучение'},{'extras','Собеседование'}}
     selectorRow(imgui,tools,self.tool,'tool',function(key)self.tool=key end,ui)
     imgui.Separator()
-    local route=({patrol='patrol',events='patrolEvents',identity='identity',vehicle='vehicle',procedures='procedures',
+    local route=({field='field',patrol='patrol',events='patrolEvents',identity='identity',vehicle='vehicle',procedures='procedures',
         evidence='evidence',training='training',extras='extras',actions='actions',widget='widget',log='log',operations='operations'})[self.tool]
     if route and callbacks[route]then callbacks[route]()
     elseif self.tool=='wheel'then

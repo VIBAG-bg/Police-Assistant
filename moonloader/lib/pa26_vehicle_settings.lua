@@ -9,6 +9,7 @@ for _,k in ipairs({'vehicle_type','vehicle_type_gen','model','model_id','vehicle
 M.actions={{'traffic_stop','Начать трафик-стоп 10-55'},{'pursuit','Начать преследование'},{'megaphone','Обратиться в мегафон'},{'finish','Завершить остановку / погоню'},{'approach','Подойти к остановленной машине'},{'window','Спросить об открытом окне'}}
 M.keys={{'select_shortcut','Выбрать машину и предложить остановку'},{'pursuit_shortcut','Подтвердить преследование'},{'megaphone_shortcut','Открыть выбор реплик мегафона'}}
 M.phraseCount=8
+M.extraTemplates={{'approach_bike','Подход к мотоциклу'},{'approach_neutral','Подход к другому транспорту'},{'inspect_bike','Осмотр мотоцикла'},{'inspect_neutral','Осмотр другого транспорта'}}
 M.phraseConditions={{'any','Всегда'},{'vehicle','Из служебной машины'},{'foot','Пешком'},{'stop','Во время 10-55'},{'pursuit','Во время погони'}}
 for i=1,M.phraseCount do M.keys[#M.keys+1]={'phrase_'..i..'_shortcut','Мегафон · требование '..i}end
 M.keys[#M.keys+1]={'fast_pt_shortcut','Быстрый /pt рядом · предложение ДА/НЕТ'}
@@ -27,7 +28,11 @@ function M.defaults()
         pursuit_periodic_template='{local_tag}{unit}, продолжаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}.',
         megaphone_template='Водитель автомобиля {model}, говорит {station}. Немедленно остановитесь у обочины и выключите двигатель.',
         finish_template="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area} ({map_square}), {stop_outcome}, продолжаю патрулирование, Код 4.",
-        approach_template='подойдя к машине, коснулся заднего фонаря и, держа руку у кобуры, направился к водителю.',
+        approach_template='подойдя к машине, {gender:коснулся|коснулась} заднего фонаря и, держа руку у кобуры, {gender:направился|направилась} к водителю.',
+        approach_bike_template='{gender:подошёл|подошла} к мотоциклу, остановившись на безопасном расстоянии от водителя.',
+        approach_neutral_template='{gender:подошёл|подошла} к транспортному средству и {gender:обратился|обратилась} к водителю.',
+        inspect_bike_template='Видимые элементы и маркировки мотоцикла доступны для внешнего осмотра?',
+        inspect_neutral_template='Видимые элементы транспортного средства доступны для внешнего осмотра?',
         window_template='Открыто ли окно со стороны водителя?',
         unknown_model='Модель не определена',unknown_color='Цвет не определён',color_separator=' / ',
         description_template='{vehicle_type} {model}, цвет: {vehicle_color}'}
@@ -104,7 +109,7 @@ function M.validate(raw)
         out[k]=shared.text(raw[k]or out[k],120)
         if not out[k]or out[k]==''then return nil,'Заполните подпись: '..k end
     end
-    for _,k in ipairs({'traffic_stop','pursuit','pursuit_periodic','megaphone','finish','approach','window','description'})do
+    for _,k in ipairs({'traffic_stop','pursuit','pursuit_periodic','megaphone','finish','approach','window','description','approach_bike','approach_neutral','inspect_bike','inspect_neutral'})do
         local err;out[k..'_template'],err=M.template(raw[k..'_template']or out[k..'_template']);if not out[k..'_template']then return nil,err end
     end
     local typeError;out.type_names,typeError=require('pa26_vehicle_types').validate(raw.type_names)

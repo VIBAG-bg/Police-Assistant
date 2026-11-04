@@ -95,6 +95,10 @@ function M.draw(studio,ui,data,callbacks)
         local text,err=callbacks.vehiclePreview(row[1],d)
         ui.text(text and('Предпросмотр: '..text)or('Для предпросмотра: '..tostring(err)))
     end
+    for _,row in ipairs(settings.extraTemplates)do
+        local key=row[1]..'_template';d[key]=studio:field(row[2]..'##vehicle-template-'..key,'vehicle:template:'..key,d[key],2048,true,78)
+        ui.text('Предпросмотр: '..require('pa26_core').expandGender(d[key],studio.lib.profile.gender))
+    end
     d.description_template=studio:field('Описание машины##vehicle-description','vehicle:description',d.description_template,1024,true,62)
     ui.text('Для описания доступны {vehicle_type}, {vehicle_type_gen}, {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}. Если цвет не удалось определить, PA не подставляет случайное название.')
     studio:settingsHeading(ui,'Тип транспорта в отыгровках')

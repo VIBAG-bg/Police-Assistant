@@ -16,7 +16,7 @@ local ok,reason=assets.ensure('hud/',fs,true);check(ok);eq(reason,'asset_restore
 eq(f['hud/index.html.pa26-before-repair'],original)
 eq(f['hud/index.html']:gsub(assets.TAG:gsub('([^%w])','%%%1'),''),original)
 local count=#writes;check(assets.ensure('hud/',fs,true));eq(#writes,count,'no rewrite on an ordinary check')
-check(#f['hud/index.html']>32768);check(not f['hud/index.html']:sub(1,32769):find(assets.MARKER,1,true))
+check(#f['hud/index.html']>32768);check(f['hud/index.html']:find(assets.MARKER,1,true)<f['hud/index.html']:find('src="main.js"',1,true),'Adapter must load before HUD registrations')
 -- Actual production readers: the INI bound is kept; the asset reader sees the tag.
 check(assets.fs.write(TEST_TEMP_PATH,f['hud/index.html']))
 eq(#storage.fs.read(TEST_TEMP_PATH),32769)

@@ -1,6 +1,7 @@
 -- Cooperative frame state machine: no threads, wait(), sleeps or recursive resumes.
 local core=require 'pa26_core'
 local model=require 'pa26_bindings'
+local policyModule=require 'pa26_command_policy'
 local M={}; local Executor={}; Executor.__index=Executor
 local function unsafe(ctx)
     return ctx.focused~=true or ctx.paused~=false or ctx.blocked~=false or
@@ -10,19 +11,36 @@ local function validTarget(self,target)
     local ok,result=pcall(self.env.validate,target)
     return ok and core.capturedTargetValid(result) and result.id==target.id and result.ped==target.ped and result.name==target.name
 end
-function M.new(env) return setmetatable({env=env,status='Готово.',queue=nil},Executor) end
+local radioChannels={r=true,f=true,d=true,l=true,rn=true,fn=true,dn=true,df=true,ln=true}
+local function radioBatch(plan)
+    local owned=plan.patrolSession or plan.radioGuard or plan.copilotAction and plan.copilotAction.routineRadio or plan.alert and(plan.alert.kind=='police'or plan.alert.kind=='prison')
+    if not owned then return end
+    local count=0
+    for _,s in ipairs(plan.steps)do
+        local head=s.kind=='message'and type(s.text)=='string'and s.text:match('^/([a-z]+)%s')
+        if not head or not radioChannels[head]then return end
+        count=count+1
+    end
+    return count>1 and count or nil
+end
+function M.new(env) return setmetatable({env=env,policy=env.commandPolicy or policyModule.new(env.policyEnv),status='Готово.',queue=nil},Executor) end
+function Executor:prepare(plan,ctx)return self.policy:prepare(plan,ctx)end
 function Executor:event(kind,q,reason)
     if self.env.event then pcall(self.env.event,kind,q,reason) end
 end
 function Executor:cancel(reason)
     local q=self.queue; self.queue=nil
-    if q then self.status=reason or 'Отменено.'; self:event('cancelled',q,self.status) end
+    if q then self.status=reason or 'Отменено.'
+        if q.radioBatch then self.status='Доклад прерван · '..(q.demo and q.previewed or q.sent)..' / '..q.radioBatch..' строк. '..self.status..' Переданные строки не повторяются.'end
+        self:event('cancelled',q,self.status)
+    end
 end
 function Executor:start(plan,demo,interval)
     if self.queue then return nil,'Другой сценарий уже выполняется.' end
     if type(plan)~='table' or not model.array(plan.steps,64) or #plan.steps==0 then return nil,'Нет подготовленного сценария.' end
     if type(demo)~='boolean' or not core.finite(interval) or interval<1000 or interval>5000 then return nil,'Неверные параметры запуска.' end
     if plan.demo~=demo then return nil,'Режим изменился после предпросмотра.' end
+    local prepared,why=self:prepare(plan);if not prepared then return nil,why end;plan=prepared
     local ctx=self.env.context(); local now=self.env.now()
     if not core.finite(now) or not ctx.session or unsafe(ctx) or (not demo and ctx.alive~=true) then return nil,'Игра или ввод сейчас недоступны.' end
     if plan.session~=ctx.session then return nil,'Подключение изменилось после подготовки.' end
@@ -35,7 +53,11 @@ function Executor:start(plan,demo,interval)
         if plan.requirements.target and not plan.target then return nil,'Нужен выбранный человек.' end
     end
     local q={plan=model.copy(plan),demo=demo,interval=interval,index=1,startedAt=now,lastTick=now,
-        session=ctx.session,sent=0,previewed=0,keyArmed=false}
+        session=ctx.session,sent=0,previewed=0,keyArmed=false,delivered={},radioBatch=radioBatch(plan)}
+    if q.radioBatch and self.env.reportDelivery then
+        local cfg=self.env.reportDelivery()
+        if cfg and core.finite(cfg.radio_gap_ms)then q.interval=math.max(interval,math.min(5000,math.max(1000,cfg.radio_gap_ms)))end
+    end
     self.queue=q; self.status=plan.binding.name..': начато.'; self:event('started',q)
     return true
 end
@@ -44,10 +66,29 @@ function Executor:step()
     local now=self.env.now(); local ctx=self.env.context()
     local age=core.elapsed(now,q.startedAt); local delta=core.elapsed(now,q.lastTick)
     if not age or not delta or age>600000 or ctx.session~=q.session or self.env.demo()~=q.demo or
-        unsafe(ctx) or (not q.demo and ctx.alive~=true) then
+        (not q.demo and ctx.alive~=true) then
         self:cancel('Сценарий остановлен: контекст игры изменился.'); return
     end
     q.lastTick=now
+    local delivery=q.radioBatch and self.env.reportDelivery and self.env.reportDelivery()
+    local interrupted=q.radioBatch and(q.demo and q.previewed>0 or q.sent>0)
+    local canWait=interrupted and delivery and delivery.resume_radio_batches==true and
+        ctx.focused==true and ctx.paused==false and ctx.dialogActive~=true and not ctx.incapacitated and
+        ctx.recording~=true and ctx.editingHud~=true and(ctx.chatActive==true or q.radioPauseAt and ctx.blocked==true)
+    if canWait then
+        q.radioPauseAt=q.radioPauseAt or now
+        local waited=core.elapsed(now,q.radioPauseAt)
+        if not waited or waited>delivery.radio_resume_ms then self:cancel('Чат открыт слишком долго. Подготовьте оставшийся текст вручную.');return end
+        self.status='Доклад · '..(q.demo and q.previewed or q.sent)..' / '..q.radioBatch..' · продолжение ждёт закрытия чата'
+        return -- No sends, retries, re-expansion or per-keystroke work.
+    end
+    if q.radioPauseAt then
+        local waited=core.elapsed(now,q.radioPauseAt)
+        if not delivery or delivery.resume_radio_batches~=true or not waited or waited>delivery.radio_resume_ms then self:cancel('Срок продолжения доклада истёк.');return end
+        q.radioPauseAt=nil
+    end
+    if unsafe(ctx)then self:cancel('Сценарий остановлен: ввод или игровое окно недоступны.');return end
+    if not self.policy:valid(q.plan)then self:cancel('Пеленгация остановлена: RP, профиль или личность изменились.');return end
     if (q.plan.alert or q.plan.automatic or q.plan.rpSignature or q.plan.textSignature) and self.env.planValid and not self.env.planValid(q.plan) then
         self:cancel('Данные действия изменились. Отправка остановлена.');return
     end
@@ -63,12 +104,16 @@ function Executor:step()
         local last=self.env.lastSent(); local elapsed=last and core.elapsed(now,last)
         if last and not elapsed then self:cancel('Таймер отправки сбросился.'); return end
         if last and elapsed<q.interval then self.status='Ожидание интервала отправки…'; return end
+        local allowed,why=self.policy:beforeSend(q,step);if not allowed then self:cancel(why);return end
         if q.demo then q.previewed=q.previewed+1; self:event('preview_line',q,step.text)
         else
+            q.sendingWire=step.wire -- Only the executor may cross the final PA send boundary.
             local ok,result=pcall(self.env.send,step.wire)
+            q.sendingWire=nil
             if not ok or result~=true then self:cancel('Ошибка отправки. Автоматического повтора нет.'); return end
             q.sent=q.sent+1; self:event('sent_line',q,step.text)
         end
+        q.delivered[q.index]=true
         self.env.markSent(now,q.demo); advanced=true
     elseif step.kind=='wait' then
         if not q.waitAt then q.waitAt=now end

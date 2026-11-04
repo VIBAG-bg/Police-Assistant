@@ -9,7 +9,12 @@ M.actions={
  {'dispatch_gas','Ограбление АЗС · RP + доклад','robbery_gas'},
  {'gas_order','АЗС · Требование грабителям','gas_order'},
  {'dispatch_bank','Ограбление банка · RP + доклад','robbery_bank'}}
+local field=require 'pa26_field_radio'
+for _,r in ipairs(field.primary)do M.actions[#M.actions+1]=r end
 local followups=require 'pa26_dispatch_followups'
+for _,r in ipairs(field.rows)do
+ if r[1]~=r.family then followups.rows[#followups.rows+1]=r;followups.groups[r.family]=followups.groups[r.family]or{};followups.groups[r.family][#followups.groups[r.family]+1]=r end
+end
 M.primaryActions={};for i,row in ipairs(M.actions)do M.primaryActions[i]=row end
 M.followups=followups.groups
 for _,row in ipairs(followups.rows)do M.actions[#M.actions+1]=row end
@@ -43,6 +48,7 @@ M.defaults={
  dispatch_bank_foot_rp='/me {gender:принял|приняла} экстренный вызов об ограблении банка по рации и {gender:открыл|открыла} сведения об объекте на служебном КПК.\n/do На экране КПК отображены место вызова и сведения для оцепления.',
  robbery_bank='{local_tag}{unit}, сработала сигнализация банка, направляюсь в {city}, район {area} ({map_square}), курс {direction}, запрашиваю свободные юниты по Код 3!'}
 for key,text in pairs(followups.templates)do M.defaults[key]=text end
+for key,text in pairs(field.templates)do M.defaults[key]=text end
 function M.officers(state)
  local c=state and state.colleagues or{};local seen={};local count=1
  -- Occupancy and saved contacts are never staffing evidence. Each row is

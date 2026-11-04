@@ -37,7 +37,7 @@ function M.new(env,cfg,base)
     for _,note in ipairs(self.operations.warnings)do self.warnings[#self.warnings+1]=note end
     local demoSent
     self.executor=execution.new({context=env.context,now=env.now,validate=function(t) return env.validate(t,self.cfg.main.max_distance) end,
-        demo=env.demo,send=env.send,pressed=env.pressed,down=env.down,sound=env.sound,planValid=env.planValid,
+        policyEnv=env.policyEnv,demo=env.demo,send=env.send,pressed=env.pressed,down=env.down,sound=env.sound,planValid=env.planValid,
         clearTarget=function() self:clearTarget('manual') end,
         lastSent=function() return env.demo() and demoSent or env.lastSent() end,
         markSent=function(now,demo) if demo then demoSent=now else env.markSent(now) end end,
@@ -212,6 +212,7 @@ function Workspace:process()
     if snapshot then plan,err=binder.compile(binding,snapshot,pending.args,self.env.codec,math.random,
         {rpSettings=self.library.rp_text,sound=self.env.soundAvailable(),screen=false,reservedKeys={[0x1B]=true,[self.library.settings.cancel_key]=true,
             [self.cfg.main.menu_key]=true,[self.cfg.main.radial_key]=true,[self.library.settings.quick_key]=true,[self.library.settings.tips_key]=true}}) end
+    if plan then plan,err=self.executor:prepare(plan,snapshot)end
     if not plan then self.status=err or 'Подготовка не выполнена.'; self:notifyRequest(pending); self.env.openReturn(pending.returnTo); return end
     if self.studio then self.studio.plan=plan end
     self.status='Предпросмотр подготовлен. Отправки нет.'

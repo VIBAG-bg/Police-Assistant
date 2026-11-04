@@ -126,6 +126,18 @@ function M.draw(s,ui,data,callbacks)
     ui.text('Выбираются любые видимые игроки рядом, включая офицеров. Нажатие не отправляет команд и не меняет ранг.')
     im.Separator()
 end
+function M.compact(s,ui,data,callbacks)
+    local view=data.nearby;if not view or not view.enabled then return end
+    local im=s.imgui;local width=math.max(1,im.GetContentRegionAvail().x);local count=math.min(6,#view.rows,math.max(1,math.floor(width/180)))
+    if data.target then ui.text('Цель: '..data.target.name..' ['..data.target.id..']')end
+    for i=1,count do local r=view.rows[i];if i>1 then im.SameLine(0,6)end
+        if s:rowTitle(ui,r.name:gsub('##','# #')..' ['..r.id..'] · '..string.format('%.0f м',r.distance)..'###compact-'..M.buttonId(r),
+            data.target and data.target.id==r.id and data.target.name==r.name and data.target.ped==r.ped,(width-(count-1)*6)/count,40)then
+            local ok,why=callbacks.selectNearby(r,view.revision);if not ok then s:notify(why,'nearby',false)end
+        end
+    end
+    if data.target and s:button('Сбросить выбранного человека##compact-target-clear',ui)then callbacks.clearTarget()end
+end
 function M.settings(s,ui)
     local im=s.imgui;local d=s.nearbyDraft or copy(s.lib.nearby)
     s:settingsHeading(ui,'Кнопки людей рядом')

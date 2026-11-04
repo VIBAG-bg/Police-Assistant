@@ -61,7 +61,8 @@ function M.draw(studio,ui,data,callbacks)
         ui.text('На последнем шаге формы вы увидите все отыгровки и команду с данными выбранного человека. Проверьте их перед подтверждением.')
     else
         local kind,changed=studio:choice('Действие##case-kind',studio.caseKind or 'wanted',{{'wanted','Розыск'},{'wanted_list','Список преступников'},{'fine','Штраф'},{'mark','Пеленгация'}},ui)
-        if changed then M.select(studio,kind)else studio.caseKind=kind end
+        if changed then M.select(studio,kind);studio.trackingOoc=nil else studio.caseKind=kind end
+        if kind=='mark'and not studio.trackingOoc then require('pa26_tracking_ui').draw(studio,ui,data,callbacks);return end
         if kind=='wanted'or kind=='wanted_list'then wantedUi.form(studio,ui,data,callbacks,cfg)
         else
         if kind=='mark'and callbacks.caseRemoteTarget then

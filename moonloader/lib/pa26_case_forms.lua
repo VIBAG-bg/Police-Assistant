@@ -336,7 +336,7 @@ function Forms:validPlan(plan)
     if accountKind(p.kind)and p.form.target and p.form.target.account then
         valid=valid and plan.target==nil and plan.wantedSubject and self.env.equal(plan.wantedSubject,p.form.target)
     end
-    return valid and table.concat(plan.wire,'\0')==table.concat(p.planWire or p.wire,'\0')or false
+    return valid and table.concat(plan.commandPolicy and plan.commandPolicy.baseWire or plan.wire,'\0')==table.concat(p.planWire or p.wire,'\0')or false
 end
 function Forms:reset(reason)
     local had=self.queued~=nil or self.intent~=nil or self.awaitingCommand~=nil

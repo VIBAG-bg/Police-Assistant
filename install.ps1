@@ -65,8 +65,171 @@ $paDestination=Resolve-PaSetupRoot $DestinationRoot $paTest
 if($TestFailAfter -ne 0 -and -not $paTest){throw 'Failure injection is allowed only in the test sandbox.'}
 $paDependencyManifest=Read-PaDependencyManifest (Join-Path $PSScriptRoot 'DEPENDENCIES.json')
 $paDependencyPlan=@()
-$paOwned=@(
-'config\police_assistant_2026.ini','lib\pa26_alerts.lua','lib\pa26_assist_settings.lua','lib\pa26_assist_ui.lua','lib\pa26_author_controller.lua','lib\pa26_author_io.lua','lib\pa26_author_presets.lua','lib\pa26_author_store.lua','lib\pa26_binder.lua','lib\pa26_bindings.lua','lib\pa26_case_forms.lua','lib\pa26_case_ui.lua','lib\pa26_cef_assets.lua','lib\pa26_chat_bridge.lua','lib\pa26_chat_perf.lua','lib\pa26_chat_text.lua','lib\pa26_colleagues.lua','lib\pa26_config.lua','lib\pa26_copilot.lua','lib\pa26_copilot_incident.lua','lib\pa26_copilot_settings.lua','lib\pa26_copilot_ui.lua','lib\pa26_core.lua','lib\pa26_geometry.lua','lib\pa26_detention_timers.lua','lib\pa26_dispatch.lua','lib\pa26_dispatch_followups.lua','lib\pa26_elapsed_clock.lua','lib\pa26_evidence.lua','lib\pa26_evidence_files.lua','lib\pa26_executor.lua','lib\pa26_fast_pt.lua','lib\pa26_feedback.lua','lib\pa26_fine_window.lua','lib\pa26_ground_speech.lua','lib\pa26_ground_window.lua','lib\pa26_hud.lua','lib\pa26_identity.lua','lib\pa26_identity_ui.lua','lib\pa26_important_data.lua','lib\pa26_input.lua','lib\pa26_interface_settings.lua','lib\pa26_journal.lua','lib\pa26_keyboard_layout.lua','lib\pa26_knowledge.lua','lib\pa26_knowledge_editor_ui.lua','lib\pa26_knowledge_edits.lua','lib\pa26_knowledge_important.lua','lib\pa26_knowledge_important_ui.lua','lib\pa26_knowledge_ui.lua','lib\pa26_library.lua','lib\pa26_local_life.lua','lib\pa26_manual_actions.lua','lib\pa26_manual_chat.lua','lib\pa26_map_adapter.lua','lib\pa26_map_grid.lua','lib\pa26_map_ui.lua','lib\pa26_mark_window.lua','lib\pa26_menu.lua','lib\pa26_nearby.lua','lib\pa26_notifications.lua','lib\pa26_operation_settings.lua','lib\pa26_operation_ui.lua','lib\pa26_operational.lua','lib\pa26_operational_ui.lua','lib\pa26_operations.lua','lib\pa26_patrol.lua','lib\pa26_patrol_event_settings.lua','lib\pa26_patrol_event_ui.lua','lib\pa26_patrol_events.lua','lib\pa26_patrol_session.lua','lib\pa26_patrol_settings.lua','lib\pa26_patrol_ui.lua','lib\pa26_preferences.lua','lib\pa26_procedure_flow.lua','lib\pa26_procedure_input.lua','lib\pa26_procedure_settings.lua','lib\pa26_procedure_window.lua','lib\pa26_radio_guard.lua','lib\pa26_radio_text.lua','lib\pa26_recovery.lua','lib\pa26_report_context.lua','lib\pa26_rp_presets.lua','lib\pa26_rp_settings.lua','lib\pa26_rp_text.lua','lib\pa26_rp_ui.lua','lib\pa26_runtime.lua','lib\pa26_sanctions.lua','lib\pa26_screens.lua','lib\pa26_server_commands.lua','lib\pa26_settings_ui.lua','lib\pa26_shutdown.lua','lib\pa26_startup.lua','lib\pa26_stolen_bulletin.lua','lib\pa26_studio.lua','lib\pa26_target.lua','lib\pa26_taser.lua','lib\pa26_text_editor.lua','lib\pa26_training.lua','lib\pa26_update_platform.lua','lib\pa26_update_ui.lua','lib\pa26_updater.lua','lib\pa26_user_files.lua','lib\pa26_vehicle.lua','lib\pa26_vehicle_names.lua','lib\pa26_vehicle_palette.lua','lib\pa26_vehicle_settings.lua','lib\pa26_vehicle_types.lua','lib\pa26_vehicle_ui.lua','lib\pa26_vehicle_world.lua','lib\pa26_wanted_accounts.lua','lib\pa26_wanted_catalog.lua','lib\pa26_wanted_ui.lua','lib\pa26_wanted_window.lua','lib\pa26_weapon_warning.lua','lib\pa26_weapons.lua','lib\pa26_wheel.lua','lib\pa26_wheel_edit.lua','lib\pa26_wheel_order.lua','lib\pa26_wheel_scope.lua','lib\pa26_window_layout.lua','lib\pa26_workspace.lua','lib\pa26_zone_bounds.lua','pa26_guard.lua','police_assistant_2026.lua','resource\pa26\banner-bmw-lamborghini.png','resource\pa26\knowledge-base.json','resource\pa26\knowledge-policy.json','resource\pa26\sidebar-police-assistant.png','resource\pa26\updater\pa26-update.ps1','resource\pa26\wanted-catalog.json','lib\pa26_icons.lua','lib\pa26_icon_font.lua','lib\pa26_icon_glyphs.lua','lib\pa26_ui_groups.lua','resource\pa26\fonts\fa-solid-900.ttf','resource\pa26\fonts\LICENSE.txt','resource\pa26\fonts\manifest.json','lib\pa26_cef_compat.lua','lib\pa26_custody_settings.lua','lib\pa26_custody_reports.lua','lib\pa26_custody_ui.lua'
+$paOwned = @(
+    'config\police_assistant_2026.ini',
+    'lib\pa26_alerts.lua',
+    'lib\pa26_assist_settings.lua',
+    'lib\pa26_assist_ui.lua',
+    'lib\pa26_author_controller.lua',
+    'lib\pa26_author_io.lua',
+    'lib\pa26_author_presets.lua',
+    'lib\pa26_author_store.lua',
+    'lib\pa26_binder.lua',
+    'lib\pa26_bindings.lua',
+    'lib\pa26_case_forms.lua',
+    'lib\pa26_case_ui.lua',
+    'lib\pa26_cef_assets.lua',
+    'lib\pa26_cef_compat.lua',
+    'lib\pa26_cef_contract.lua',
+    'lib\pa26_cef_job.lua',
+    'lib\pa26_chat_bridge.lua',
+    'lib\pa26_chat_perf.lua',
+    'lib\pa26_chat_text.lua',
+    'lib\pa26_colleagues.lua',
+    'lib\pa26_command_policy.lua',
+    'lib\pa26_config.lua',
+    'lib\pa26_coord_share.lua',
+    'lib\pa26_copilot.lua',
+    'lib\pa26_copilot_incident.lua',
+    'lib\pa26_copilot_settings.lua',
+    'lib\pa26_copilot_ui.lua',
+    'lib\pa26_core.lua',
+    'lib\pa26_cruiser_assist.lua',
+    'lib\pa26_custody_reports.lua',
+    'lib\pa26_custody_settings.lua',
+    'lib\pa26_custody_ui.lua',
+    'lib\pa26_detention_timers.lua',
+    'lib\pa26_dispatch.lua',
+    'lib\pa26_dispatch_followups.lua',
+    'lib\pa26_elapsed_clock.lua',
+    'lib\pa26_evidence.lua',
+    'lib\pa26_evidence_files.lua',
+    'lib\pa26_executor.lua',
+    'lib\pa26_fast_pt.lua',
+    'lib\pa26_feedback.lua',
+    'lib\pa26_field_briefings.lua',
+    'lib\pa26_field_radio.lua',
+    'lib\pa26_field_services.lua',
+    'lib\pa26_field_settings.lua',
+    'lib\pa26_field_ui.lua',
+    'lib\pa26_fine_window.lua',
+    'lib\pa26_gender_audit.lua',
+    'lib\pa26_gender_catalog.lua',
+    'lib\pa26_geometry.lua',
+    'lib\pa26_ground_speech.lua',
+    'lib\pa26_ground_window.lua',
+    'lib\pa26_hud.lua',
+    'lib\pa26_icon_font.lua',
+    'lib\pa26_icon_glyphs.lua',
+    'lib\pa26_icons.lua',
+    'lib\pa26_identity.lua',
+    'lib\pa26_identity_ui.lua',
+    'lib\pa26_important_data.lua',
+    'lib\pa26_input.lua',
+    'lib\pa26_interface_settings.lua',
+    'lib\pa26_journal.lua',
+    'lib\pa26_keyboard_layout.lua',
+    'lib\pa26_knowledge.lua',
+    'lib\pa26_knowledge_editor_ui.lua',
+    'lib\pa26_knowledge_edits.lua',
+    'lib\pa26_knowledge_important.lua',
+    'lib\pa26_knowledge_important_ui.lua',
+    'lib\pa26_knowledge_ui.lua',
+    'lib\pa26_library.lua',
+    'lib\pa26_local_life.lua',
+    'lib\pa26_manual_actions.lua',
+    'lib\pa26_manual_chat.lua',
+    'lib\pa26_map_adapter.lua',
+    'lib\pa26_map_grid.lua',
+    'lib\pa26_map_ui.lua',
+    'lib\pa26_mark_window.lua',
+    'lib\pa26_menu.lua',
+    'lib\pa26_navigation.lua',
+    'lib\pa26_navigation_path.lua',
+    'lib\pa26_navigation_render.lua',
+    'lib\pa26_navigation_roads.lua',
+    'lib\pa26_nearby.lua',
+    'lib\pa26_notifications.lua',
+    'lib\pa26_operation_settings.lua',
+    'lib\pa26_operation_ui.lua',
+    'lib\pa26_operational.lua',
+    'lib\pa26_operational_ui.lua',
+    'lib\pa26_operations.lua',
+    'lib\pa26_patrol.lua',
+    'lib\pa26_patrol_event_settings.lua',
+    'lib\pa26_patrol_event_ui.lua',
+    'lib\pa26_patrol_events.lua',
+    'lib\pa26_patrol_session.lua',
+    'lib\pa26_patrol_settings.lua',
+    'lib\pa26_patrol_ui.lua',
+    'lib\pa26_pinned_note.lua',
+    'lib\pa26_preferences.lua',
+    'lib\pa26_procedure_flow.lua',
+    'lib\pa26_procedure_input.lua',
+    'lib\pa26_procedure_settings.lua',
+    'lib\pa26_procedure_window.lua',
+    'lib\pa26_radio_guard.lua',
+    'lib\pa26_radio_text.lua',
+    'lib\pa26_recovery.lua',
+    'lib\pa26_report_context.lua',
+    'lib\pa26_road_file.lua',
+    'lib\pa26_road_sources.lua',
+    'lib\pa26_rp_presets.lua',
+    'lib\pa26_rp_settings.lua',
+    'lib\pa26_rp_text.lua',
+    'lib\pa26_rp_ui.lua',
+    'lib\pa26_runtime.lua',
+    'lib\pa26_sanctions.lua',
+    'lib\pa26_screens.lua',
+    'lib\pa26_server_commands.lua',
+    'lib\pa26_settings_ui.lua',
+    'lib\pa26_sha256.lua',
+    'lib\pa26_shutdown.lua',
+    'lib\pa26_startup.lua',
+    'lib\pa26_stolen_bulletin.lua',
+    'lib\pa26_studio.lua',
+    'lib\pa26_target.lua',
+    'lib\pa26_taser.lua',
+    'lib\pa26_text_editor.lua',
+    'lib\pa26_tracking_ui.lua',
+    'lib\pa26_training.lua',
+    'lib\pa26_ui_groups.lua',
+    'lib\pa26_update_platform.lua',
+    'lib\pa26_update_ui.lua',
+    'lib\pa26_updater.lua',
+    'lib\pa26_user_files.lua',
+    'lib\pa26_vehicle.lua',
+    'lib\pa26_vehicle_names.lua',
+    'lib\pa26_vehicle_palette.lua',
+    'lib\pa26_vehicle_settings.lua',
+    'lib\pa26_vehicle_types.lua',
+    'lib\pa26_vehicle_ui.lua',
+    'lib\pa26_vehicle_world.lua',
+    'lib\pa26_wanted_accounts.lua',
+    'lib\pa26_wanted_catalog.lua',
+    'lib\pa26_wanted_ui.lua',
+    'lib\pa26_wanted_window.lua',
+    'lib\pa26_weapon_warning.lua',
+    'lib\pa26_weapons.lua',
+    'lib\pa26_wheel.lua',
+    'lib\pa26_wheel_edit.lua',
+    'lib\pa26_wheel_order.lua',
+    'lib\pa26_wheel_scope.lua',
+    'lib\pa26_window_layout.lua',
+    'lib\pa26_workspace.lua',
+    'lib\pa26_zone_bounds.lua',
+    'pa26_guard.lua',
+    'police_assistant_2026.lua',
+    'resource\pa26\banner-bmw-lamborghini.png',
+    'resource\pa26\fonts\LICENSE.txt',
+    'resource\pa26\fonts\fa-solid-900.ttf',
+    'resource\pa26\fonts\manifest.json',
+    'resource\pa26\knowledge-base.json',
+    'resource\pa26\knowledge-policy.json',
+    'resource\pa26\roads.bin',
+    'resource\pa26\sidebar-police-assistant.png',
+    'resource\pa26\updater\pa26-update.ps1',
+    'resource\pa26\wanted-catalog.json'
 )
 if ($paManifest.files.Count -ne $paOwned.Count) { throw 'Unexpected manifest entries.' }
 function Get-PaPath([string]$root,[string]$relative) {
@@ -131,20 +294,29 @@ $paHtml=Get-PaPath $paGameRoot 'cef\assets\hud\index.html'
 $paKnownLauncher=$paDestination -ieq [IO.Path]::GetFullPath($paDefault)
 $paContract=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'CEF_CONTRACT.json') -Raw | ConvertFrom-Json
 $paMain=Get-PaPath $paGameRoot 'cef\assets\hud\main.js'
-$paReviewedCef=(Test-Path -LiteralPath $paMain -PathType Leaf) -and (Get-FileHash -LiteralPath $paMain -Algorithm SHA256).Hash -eq $paContract.hud_main_sha256
-if($paReviewedCef){$paKnownLauncher=$true}
-$paInstallCef=(Test-Path -LiteralPath $paHtml) -and ($paReviewedCef -or $paTest)
-$paCefReason=if($paInstallCef){'reviewed_contract'}elseif(Test-Path -LiteralPath $paHtml){'unreviewed_contract_native_only'}else{'native_chat'}
-if($RequireCef -and -not $paInstallCef){throw 'Launcher chat changed or is missing. CEF installation requires the reviewed SHA-256; use ordinary installation for native PA only.'}
-if(-not $paInstallCef -and (Test-Path -LiteralPath $paHtml)){Write-Output 'CEF contract is not reviewed: installing native PA only. Launcher HTML, scripts and DLLs will not be changed.'}
+# Execute only the PA-owned verifier embedded in a manifest-checked module.
+$paVerifierText=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'moonloader/lib/pa26_cef_contract.lua'))
+$paEngine=[regex]::Match($paVerifierText,'verifier=\[====\[([\s\S]*?)\]====\]')
+$paRegistry=[regex]::Match($paVerifierText,'registry=\[====\[([\s\S]*?)\]====\]')
+if(-not $paEngine.Success -or -not $paRegistry.Success){throw 'PA CEF verifier missing.'}
+$paRuntimeRegistry=$paRegistry.Groups[1].Value|ConvertFrom-Json
+if(($paRuntimeRegistry|ConvertTo-Json -Depth 30 -Compress) -cne ($paContract|ConvertTo-Json -Depth 30 -Compress)){throw 'PA CEF registry mismatch.'}
+$paCefCheck=@{schema=2;state='UNAVAILABLE';allowed=$false;known=$false;reason='files_unavailable';sha256=$null;fingerprint=$null;mode='native-only';runtime='NOT_RUN';capabilities=@{};protocol=2}
+if((Test-Path -LiteralPath $paHtml -PathType Leaf) -and (Test-Path -LiteralPath $paMain -PathType Leaf)){
+    try{
+        . ([scriptblock]::Create($paEngine.Groups[1].Value))
+        $paCefCheck=Get-PaCefContract ([IO.Path]::GetDirectoryName($paHtml)) $paRuntimeRegistry
+    }catch{$paCefCheck.reason='verifier_unavailable'}
+}
+$paInstallCef=$paCefCheck.allowed -eq $true
+if($paInstallCef){$paKnownLauncher=$true}
+$paCefReason=if($paInstallCef){'contract_compatible_pending_runtime'}elseif(Test-Path -LiteralPath $paHtml){'incompatible_contract_native_only'}else{'native_chat'}
+if($RequireCef -and -not $paInstallCef){throw ('CEF contract could not be verified: '+$paCefCheck.reason+'. Native-only installation remains available.')}
+if(-not $paInstallCef -and (Test-Path -LiteralPath $paHtml)){Write-Output ('CEF unavailable; native PA only. Reason: '+$paCefCheck.reason+'. Original chat preserved.')}
 if ($paInstallCef) {
     $paCefRoot=[IO.Path]::GetDirectoryName($paHtml)
-    $paMain=Get-PaPath $paCefRoot 'main.js'
-    $paContract=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'CEF_CONTRACT.json') -Raw | ConvertFrom-Json
-    if (-not (Test-Path -LiteralPath $paMain)) { throw 'Launcher HUD main.js is missing.' }
-    if (-not $paTest -and (Get-FileHash -LiteralPath $paMain -Algorithm SHA256).Hash -ne $paContract.hud_main_sha256) {
-        throw 'Launcher chat changed. Review its contract before applying the CEF adapter.'
-    }
+    # A launcher update between analysis and planning is never silently accepted.
+    if((Get-FileHash -LiteralPath $paMain -Algorithm SHA256).Hash.ToLowerInvariant() -cne $paCefCheck.sha256){throw 'Launcher changed during CEF verification.'}
     if ($paManifest.cef_files.Count -ne 2) { throw 'Unexpected CEF manifest.' }
     foreach ($paRelative in @('pa26-chat.js','pa26-chat-endpoint.js')) {
         $paEntry=@($paManifest.cef_files | Where-Object path -EQ $paRelative)
@@ -157,17 +329,16 @@ if ($paInstallCef) {
             Root=$paCefRoot;BackupRelative=('cef-hud\'+$paRelative);Content=$null}
     }
     $paOriginal=[IO.File]::ReadAllBytes($paHtml)
-    $paText=[Text.Encoding]::UTF8.GetString($paOriginal)
-    if (-not $paText.Contains('id="chatInputField"') -or -not $paText.Contains('id="chatInput"')) { throw 'Unexpected launcher chat markup.' }
+    $paUtf8=New-Object Text.UTF8Encoding($false,$true)
+    $paText=$paUtf8.GetString($paOriginal)
+    $paTag='<!-- PA26 CEF chat adapter --><script src="pa26-chat.js"></script>'
     $paMarker='<!-- PA26 CEF chat adapter -->'
-    if ($paText.Contains($paMarker)) {
-        if ([regex]::Matches($paText,[regex]::Escape($paMarker)).Count -ne 1 -or -not $paText.Contains('src="pa26-chat.js"')) { throw 'Existing CEF adapter tag needs review.' }
-        $paPatched=$paOriginal
-    } else {
-        $paHead=[regex]::new('</head>',[Text.RegularExpressions.RegexOptions]::IgnoreCase)
-        if ($paHead.Matches($paText).Count -ne 1) { throw 'Unexpected HUD head element.' }
-        $paPatched=[Text.Encoding]::UTF8.GetBytes($paHead.Replace($paText,$paMarker+'<script src="pa26-chat.js"></script></head>',1))
-    }
+    $paClean=$paText.Replace($paTag,'')
+    if($paClean.Contains($paMarker) -or $paClean.Contains('pa26-chat.js') -or ([regex]::Matches($paText,[regex]::Escape($paTag))).Count -gt 1){throw 'Existing PA CEF tag is ambiguous.'}
+    # Match the exact relative script accepted by the verifier; no game code is patched.
+    $paMainTag=[regex]::new('<script\s+src=["'']main\.js["'']\s*>',[Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if($paMainTag.Matches($paClean).Count -ne 1){throw 'Launcher main.js initialization tag changed.'}
+    $paPatched=$paUtf8.GetBytes($paMainTag.Replace($paClean,($paTag+'$0'),1))
     $paHash=Get-PaByteHash $paPatched
     $paPlan += [PSCustomObject]@{Relative='index.html';Source=$null;Target=$paHtml;SHA256=$paHash;Existed=$true;
         BeforeHash=(Get-PaByteHash $paOriginal);Skip=($paHash -eq (Get-PaByteHash $paOriginal));
@@ -241,6 +412,9 @@ try {
     foreach ($paItem in $paPlan) {
         Set-PaInstallProgress 'installing' (70+[int](23*$paChanged.Count/[Math]::Max(1,$paPlan.Count))) ('Устанавливаю: '+$paItem.Relative)
         if ($paItem.Skip) { continue }
+        if($paInstallCef -and $paItem.Relative -in @('index.html','pa26-chat.js','pa26-chat-endpoint.js')){
+            if((Get-FileHash -LiteralPath $paMain -Algorithm SHA256).Hash.ToLowerInvariant() -cne $paCefCheck.sha256){throw 'Launcher changed during installation; CEF transaction cancelled.'}
+        }
         Assert-PaGameClosed
         Assert-PaPersonalUnchanged
         Get-PaPath $paItem.Root $paItem.Relative | Out-Null
@@ -281,10 +455,10 @@ try {
     throw $paFailure
 }
 if (-not $paTest) {
-$paResult=[PSCustomObject]@{release=$paManifest.release;author_presets=$paPreset.summary;backup=$paBackup;changed=$paChanged.Count;cef_adapter_installed=[bool]$paInstallCef;cef_mode=$paCefReason;dependencies_added=$paDependencyPlan.Count;destination=$paDestination;native_game_tested=$false}
-$paResult | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALLATION_REPORT.json') -Encoding UTF8
+$paResult=[PSCustomObject]@{release=$paManifest.release;author_presets=$paPreset.summary;backup=$paBackup;changed=$paChanged.Count;cef_adapter_installed=[bool]$paInstallCef;cef_mode=$paCefReason;cef_diagnostics=$paCefCheck;dependencies_added=$paDependencyPlan.Count;destination=$paDestination;native_game_tested=$false}
+$paResult | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALLATION_REPORT.json') -Encoding UTF8
 }
 Write-Output ('Installed and verified ' + $paChanged.Count + ' owned files. Existing INI preserved. Backup: ' + $paBackup)
 
-$paCefSummary=if($paCefReason -eq 'unreviewed_contract_native_only'){' Установлены нативные модули. Версия CEF-чата не проверена; подключение PA к нему отключено, файлы чата сохранены.'}else{''}
+$paCefSummary=if($paCefReason -eq 'incompatible_contract_native_only'){' Установлены нативные модули. Контракт CEF недоступен или отличается; подключение PA отключено, исходный чат сохранён.'}elseif($paInstallCef){' Контракт CEF совместим; связь с чатом подтвердится при запуске PA.'}else{''}
 Set-PaInstallProgress 'completed' 100 ('PA установлен и проверен.'+$paCefSummary+' Можно запускать GTA. Резервная копия: '+$paBackup) $true $true

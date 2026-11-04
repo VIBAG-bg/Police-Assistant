@@ -1,19 +1,16 @@
-local M=require 'pa26_cef_compat';local counts={read=0,hash=0}
-local read=function(path)eq(path,'virtual/main.js');counts.read=counts.read+1;return 'known bytes'end
-local hash=function(text)counts.hash=counts.hash+1;eq(text,'known bytes');return M.reviewed end
-local checkContract=M.new('virtual/',read,hash)
-check(checkContract());for _=1,1000 do check(checkContract())end
-eq(counts.read,1);eq(counts.hash,1,'No hashing on keystrokes, bridge tick or reconnect')
-local bad=M.new('virtual/',read,function()return string.rep('0',64)end)
-local ok,reason=bad();check(not ok);eq(reason,'cef_contract_unreviewed')
-check(not M.new('x/',function()error('no file')end,hash)())
-check(not M.new('x/',function()return string.rep('a',M.max_bytes+1)end,hash)())
-check(not M.new('x/',function()return 'bytes'end,function()error('missing crypto')end)())
-check(not M.new('x/',function()return nil end,hash)())
+local M=require 'pa26_cef_compat'
+local counts={start=0,poll=0,close=0};local sample={schema=2,known=false,allowed=true,state='CONTRACT_COMPATIBLE',reason='normalized_contract_and_dom',
+ sha256=string.rep('d',64),fingerprint='test',capabilities={dom=true,outgoing=true,incoming=true,payloads=true,lifecycle=true,focus=true,ipc=true,adapter_order=true}}
+local c=M.controller({start=function()counts.start=counts.start+1;return {}end,poll=function()counts.poll=counts.poll+1;return sample end,close=function()counts.close=counts.close+1 end})
+eq(c:check(0),sample)
+for i=1,10000 do eq(c:check(i),sample)end
+eq(counts.start,1);eq(counts.poll,1);eq(counts.close,1,'No process or filesystem work after initialization')
+local timeout=M.controller({start=function()return{}end,poll=function()end});eq(timeout:check(0).reason,'analysis_pending');eq(timeout:check(30001).reason,'analysis_timeout')
+local failure=M.controller({start=function()error('denied')end});eq(failure:check(0).state,'UNAVAILABLE')
+local invalid=M.controller({start=function()return{}end,poll=function()return{schema=2,allowed=true}end});eq(invalid:check(0).reason,'analysis_invalid_reply')
 local source=assert(io.open('moonloader/police_assistant_2026.lua','rb')):read('*a')
 check(source:find('cef_chat_support and sceneServices.cefContractAllowed==true',1,true))
-local bridge=assert(io.open('moonloader/lib/pa26_chat_bridge.lua','rb')):read('*a')
-check(not bridge:find('compatibility',1,true),'Bridge protocol and processing paths remain unchanged')
+check(source:find('cefVerifier:check',1,true))
 local p=TEST_JSON_DECODE(assert(io.open('presets/pa-settings.json','rb')):read('*a'))
 local windows=p.settings.data.settings.window_layout.windows
 eq(next(windows),nil,'Shared author defaults reset old pixels and use the responsive reference')

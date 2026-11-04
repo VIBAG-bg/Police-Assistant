@@ -472,7 +472,7 @@ function Hud:preparePatrolStatus(font)
 end
 function Hud:layout(width, height)
     if not core.finite(width) or not core.finite(height) or width <= 0 or height <= 0 then return nil end
-    local baseHeight=M.HEIGHT+(self.mapSquare and 28 or 0)+(self.patrol and self.patrol.visible and((self.patrol.crew and 80 or 58)+(self.patrolExtraHeight or 0))or 0)
+    local baseHeight=M.HEIGHT+(self.navigation and 30 or 0)+(self.mapSquare and 28 or 0)+(self.patrol and self.patrol.visible and((self.patrol.crew and 80 or 58)+(self.patrolExtraHeight or 0))or 0)
     self.viewport={w=width,h=height}
     local rw,rh=self.settings.reference_width,self.settings.reference_height
     if not rw or not rh then
@@ -614,6 +614,9 @@ function Hud:draw(imgui, bodyFont, headingFont)
     if core.finite(target.distance) then stateText=stateText..string.format(' · %.1f м',target.distance) end
     line(stateText,bodyFont,14,118+mapOffset,false,254)
     line(self.data.clock, bodyFont, 14, 150+mapOffset, true, 254)
+    local navigationOffset=self.navigation and 30 or 0
+    if self.navigation then line(self.navigation,bodyFont,12,178+mapOffset,false,254)end
+    mapOffset=mapOffset+navigationOffset
     if self.patrol and self.patrol.visible then
         list:AddLine(vec(x+9*s,y+(174+mapOffset)*s),vec(x+w-9*s,y+(174+mapOffset)*s),color(.40,.62,.78,.25),s)
         line(self.patrol.label..(self.patrol.crew and ''or ' · рация'),headingFont,14,180+mapOffset,false,254)

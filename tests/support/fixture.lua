@@ -546,11 +546,16 @@ local function fixture(options)
         value.new=function(...)local v=original(...);s.knowledgeUi=v;return v end
         return value
     end
-    -- Explicit virtual-client capability; production does its one-time file hash.
-    package.loaded.pa26_cef_compat={new=function()return function()
-        s.cefContractChecks=(s.cefContractChecks or 0)+1
-        return options.reviewedCef~=false,options.reviewedCef==false and'cef_contract_unreviewed'or'cef_contract_reviewed'
-    end end}
+    -- Deterministic virtual verifier; production runs the shared read-only engine.
+    package.loaded.pa26_cef_compat={runtime=function()
+        local checked=false
+        return {close=function()end,check=function()
+            if not checked then checked=true;s.cefContractChecks=(s.cefContractChecks or 0)+1 end
+            local allowed=options.reviewedCef~=false
+            return {schema=2,allowed=allowed,known=true,state=allowed and 'CONTRACT_COMPATIBLE' or 'INCOMPATIBLE',
+                reason=allowed and 'reviewed_identity_and_dom' or 'functional_profile_mismatch',fingerprint='fixture',capabilities={}}
+        end}
+    end}
     package.loaded.pa26_custody_reports=nil
     package.preload.pa26_custody_reports=function()
         local value=dofile('moonloader/lib/pa26_custody_reports.lua');local original=value.new
@@ -564,7 +569,25 @@ local function fixture(options)
         value.new=function(env)
             -- Never touch the real launcher from a simulated game host.
             env.assetFs=options.cefAssets or {read=function()return nil end}
-            local instance=original(env);s.chatBridge=instance;return instance
+            local instance=original(env)
+            -- Existing scene tests use this deterministic CEF peer. It performs
+            -- the real hello/ack/confirm exchange, without disabling verification.
+            local exchange=instance.exchange
+            instance.exchange=function(self,raw,now)
+                local good,packet=pcall(TEST_JSON_DECODE,raw)
+                if good and type(packet)=='table' and not packet.compatibility then
+                    self.compatibilityReport=self.compatibilityReport or env.compatibility(now)
+                    self.handshakeChallenge=self.handshakeChallenge or string.rep('a',48)
+                    local hello={protocol=2,challenge=self.handshakeChallenge,phase='hello',fingerprint=self.compatibilityReport.fingerprint,
+                        capabilities={dom=true,send=true,emit=true,incoming=true,focus=true}}
+                    local p={schema=1,page=packet.page,chat=false,dialog=false,busy=false,events={},compatibility=hello}
+                    exchange(self,TEST_JSON_ENCODE(p),now)
+                    hello.phase='confirmed';p.compatibility=hello;exchange(self,TEST_JSON_ENCODE(p),now)
+                    packet.compatibility=hello;raw=TEST_JSON_ENCODE(packet)
+                end
+                return exchange(self,raw,now)
+            end
+            s.chatBridge=instance;return instance
         end
         return value
     end

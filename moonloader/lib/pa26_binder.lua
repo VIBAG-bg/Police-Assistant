@@ -135,7 +135,7 @@ local function substitute(template,ctx,params,random)
         if not core.finite(index) or index<1 or index>#list or index~=math.floor(index) then failure='Ошибка выбора варианта.'; return '' end
         return list[index]
     end)
-    template=template:gsub('{gender:([^{}|]*)|([^{}]*)}',function(male,female) return ctx.gender=='female' and female or male end)
+    template=core.expandGender(template,ctx.gender)
     local result=template:gsub('{([^{}]+)}',function(token)
         local value=params[token]; if value==nil then value=ctx.values[token] end
         if value==nil then failure='Нет значения {'..token..'}. Заполните профиль, параметры или выберите допустимую цель.'; return '' end

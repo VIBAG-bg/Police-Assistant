@@ -51,7 +51,7 @@ function C:cancel(reason)
  self.fastPtTarget=nil;self.fastPtLive=nil;self.fastPtLiveAt=nil
 end
 function C:reset(reason)
- self:cancel(reason);self.life=self.life+1;self.phase=nil;self.car=nil;self.driver=nil;self.driverLive=nil;self.motion=nil;self.stillAt=nil
+ self:cancel(reason);self.lastDispatch=nil;self.life=self.life+1;self.phase=nil;self.car=nil;self.driver=nil;self.driverLive=nil;self.motion=nil;self.stillAt=nil
  self.done={};self.dismissed={};self.pinned=nil;self.pendingTaser=false;self.hadDriver=false;self.tireWarnings=0;self.lastMegaphoneAt=nil;self.startedAt=nil;self.lastDamage=nil;self.attackConfirmed=false;self.enteredDangerInPursuit=false;self.lastArea=nil;self.wasDanger=false;self.ownMotion=nil;self.ownStillAt=nil;self.lastDriverPoint=nil
  self.stopWarnings=0;self.followupAt=nil;self.pursuitStarted=false;self.stopReportOffered=false;self.damageMail=nil;self.hiddenLife=nil;self.repeatPaused=false;self.repeatAt=nil;self.lastStopOrderAt=nil;self.lastDriverSeen=nil;self.targetStopped=nil;self.lastStopReason=nil;self.groundRequest=nil;self.groundHandoff=nil
  self.incident=nil;self.lastCar=nil;self.manualUdDone=nil;self.windowAwait=nil;self.windowQuestion=nil;self.windowReply=nil;self.windowSkipped=nil
@@ -222,19 +222,28 @@ function C:prepare(action,override)
  elseif action=='window_question'or action=='window_knock'then
   if self.phase~='10-55'or self.state.inVehicle or not self.driverLive or self.car.stale or
    not core.finite(self.driverLive.distance)or self.driverLive.distance>cfg.window_interaction_distance then return nil,'Подойдите к установленному водителю текущей остановки.'end
+  local class=require('pa26_vehicle_types').class(self.car.model_id)
+  local enclosed=class=='car'or class=='van'or class=='truck'or class=='bus'
+  if not enclosed then return nil,'У этого транспорта нет подтверждённого водительского окна. Используйте «Подойти» для внешнего осмотра.'end
   ok,err=template(action,action=='window_question'and'/do'or'/me')
   if ok and action=='window_question'and cfg.window_ooc_hint then ok,err=template('window_hint','/n')end
  elseif action=='approach'then
   if self.state.inVehicle or not self.car or self.car.stale or not core.finite(self.car.distance)or self.car.distance>self.env.vehicle.env.settings().approach_distance then return nil,'Выйдите из машины и подойдите к выбранному автомобилю.'end
   local h=self.state.gameHour;local night=core.finite(h)and(h<6 or h>=21)and cfg.night_flashlight
-  ok,err=template(night and'approach_night'or'approach_day','/me');if ok then ok,err=template('window','/do')end
-  if ok and cfg.window_ooc_hint then ok,err=template('ooc_hint','/n')end
+  local class=require('pa26_vehicle_types').class(self.car.model_id)
+  local enclosed=class=='car'or class=='van'or class=='truck'or class=='bus'
+  local key=enclosed and(night and'approach_night'or'approach_day')or class=='bike'and(night and'approach_bike_night'or'approach_bike_day')or'approach_neutral'
+  ok,err=template(key,'/me');if ok then ok,err=template(enclosed and'window'or class=='bike'and'inspect_bike'or'inspect_neutral','/do')end
+  if ok and cfg.window_ooc_hint then ok,err=template(enclosed and'ooc_hint'or'hint_bike','/n')end
  elseif action=='risk_order'then
-  ok,err=template((self.car.occupants or 0)>=2 and'risk_multi'or'risk_single','/m')
+  local class=require('pa26_vehicle_types').class(self.car.model_id)
+  ok,err=template((class=='car'or class=='van'or class=='truck'or class=='bus')and((self.car.occupants or 0)>=2 and'risk_multi'or'risk_single')or'risk_open','/m')
  elseif action=='stop_order'or action=='return_car'or action=='tire'then
   if action=='stop_order'and self.lastStopOrderAt and(core.elapsed(self.now,self.lastStopOrderAt)or 0)<cfg.stop_warning_cooldown_ms then return nil,'Дождитесь интервала между требованиями остановиться.'end
   if action=='tire'and self.lastMegaphoneAt and(core.elapsed(self.now,self.lastMegaphoneAt)or 0)<cfg.warning_cooldown_ms then return nil,'Дождитесь интервала между предупреждениями.'end
-  ok,err=template(action,action=='return_car'and not self.state.inVehicle and'/s'or'/m')
+  local class=self.car and require('pa26_vehicle_types').class(self.car.model_id)
+  local key=action=='return_car'and not(class=='car'or class=='van'or class=='truck'or class=='bus')and'return_open'or action
+  ok,err=template(key,action=='return_car'and not self.state.inVehicle and'/s'or'/m')
  else
   if not cfg.templates[action]then return nil,'Неизвестное действие Copilot.'end
   ok,err=template(action,channel)
@@ -391,6 +400,7 @@ function C:onExecution(kind,q,line)
  end
  if kind=='completed'then
   self.queued=nil;self.done[p.action]=true
+  if p.dispatchAction then self.lastDispatch={label=dispatch.byAction[p.action].label,demo=q.demo==true,action=p.action}end
   if p.groundData then
    if p.action=='explain_stop'then self.lastStopReason={ground=model.copy(p.groundData),context=model.copy(p.groundContext)}end
    if p.handoff then self.groundHandoff={kind=p.handoff,ground=model.copy(p.groundData),context=model.copy(p.groundContext)}end
@@ -536,7 +546,7 @@ function C:dispatch()
    self.intent=nil;local b=model.newBinding(999999991);b.name='Copilot · '..p.action;b.stat='none'
    local plan={binding=b,requirements={target=false,closest=false},session=p.session,createdAt=now,demo=p.demo,has_command=true,
     steps=model.copy(p.prepared.steps),lines=model.copy(p.prepared.lines),wire=model.copy(p.prepared.wires),rpSignature=p.prepared.rpSignature,textSignature=p.prepared.textSignature,
-    automatic={kind='copilot'},copilotAction={token=p.token}}
+    automatic={kind='copilot'},copilotAction={token=p.token,routineRadio=p.action=='patrol_continue'}}
    self.queued=p;local ok,err=self.env.start(plan);if not ok then self.queued=nil;if self.env.notice then self.env.notice(err)end end
   end
  end

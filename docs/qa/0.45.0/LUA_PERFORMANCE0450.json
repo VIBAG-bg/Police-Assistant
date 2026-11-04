@@ -1,0 +1,283 @@
+{
+  "environment": "LuaJIT 2.1 + Lupa + offline fixture",
+  "trials": 3,
+  "game_started": false,
+  "actual_input_latency_measured": false,
+  "actual_frame_time_spikes_measured": false,
+  "chat_contents_recorded": false,
+  "runs": [
+    {
+      "trial": 1,
+      "baseline_0.44.0": {
+        "onWindowMessage.mouse": {
+          "samples": 6000,
+          "median_ms": 0.0003,
+          "p95_ms": 0.0005,
+          "worst_handler_ms": 0.0089
+        },
+        "onWindowMessage.char": {
+          "samples": 6000,
+          "median_ms": 0.0004,
+          "p95_ms": 0.0007,
+          "worst_handler_ms": 0.0305
+        },
+        "onWindowMessage.key": {
+          "samples": 6000,
+          "median_ms": 0.001,
+          "p95_ms": 0.0011,
+          "worst_handler_ms": 0.1106
+        },
+        "Bridge.tick": {
+          "samples": 2000,
+          "median_ms": 0.0007,
+          "p95_ms": 0.0019,
+          "worst_handler_ms": 0.042
+        },
+        "Bridge.exchange": {
+          "samples": 500,
+          "median_ms": 0.1944,
+          "p95_ms": 0.3338,
+          "worst_handler_ms": 0.4471
+        },
+        "context": {
+          "samples": 800,
+          "median_ms": 0.0006,
+          "p95_ms": 0.0015,
+          "worst_handler_ms": 0.6692
+        },
+        "updateGame": {
+          "samples": 800,
+          "median_ms": 0.34914999999999996,
+          "p95_ms": 1.0056,
+          "worst_handler_ms": 4.5782
+        }
+      },
+      "candidate_0.45.0": {
+        "onWindowMessage.mouse": {
+          "samples": 6000,
+          "median_ms": 0.0004,
+          "p95_ms": 0.0004,
+          "worst_handler_ms": 0.0076
+        },
+        "onWindowMessage.char": {
+          "samples": 6000,
+          "median_ms": 0.0004,
+          "p95_ms": 0.0004,
+          "worst_handler_ms": 0.0009
+        },
+        "onWindowMessage.key": {
+          "samples": 6000,
+          "median_ms": 0.0014,
+          "p95_ms": 0.0015,
+          "worst_handler_ms": 0.1102
+        },
+        "Bridge.tick": {
+          "samples": 2000,
+          "median_ms": 0.0007,
+          "p95_ms": 0.002,
+          "worst_handler_ms": 0.0462
+        },
+        "Bridge.exchange": {
+          "samples": 500,
+          "median_ms": 0.7134,
+          "p95_ms": 1.2242,
+          "worst_handler_ms": 2.1277
+        },
+        "context": {
+          "samples": 800,
+          "median_ms": 0.0006,
+          "p95_ms": 0.0007,
+          "worst_handler_ms": 0.001
+        },
+        "updateGame": {
+          "samples": 800,
+          "median_ms": 0.2958,
+          "p95_ms": 1.1258,
+          "worst_handler_ms": 3.584
+        }
+      }
+    },
+    {
+      "trial": 2,
+      "baseline_0.44.0": {
+        "onWindowMessage.mouse": {
+          "samples": 6000,
+          "median_ms": 0.0007,
+          "p95_ms": 0.0008,
+          "worst_handler_ms": 0.0192
+        },
+        "onWindowMessage.char": {
+          "samples": 6000,
+          "median_ms": 0.0007,
+          "p95_ms": 0.0008,
+          "worst_handler_ms": 0.0354
+        },
+        "onWindowMessage.key": {
+          "samples": 6000,
+          "median_ms": 0.0007,
+          "p95_ms": 0.0011,
+          "worst_handler_ms": 0.0841
+        },
+        "Bridge.tick": {
+          "samples": 2000,
+          "median_ms": 0.0007,
+          "p95_ms": 0.0011,
+          "worst_handler_ms": 0.0423
+        },
+        "Bridge.exchange": {
+          "samples": 500,
+          "median_ms": 0.1832,
+          "p95_ms": 0.2316,
+          "worst_handler_ms": 0.4014
+        },
+        "context": {
+          "samples": 800,
+          "median_ms": 0.0006,
+          "p95_ms": 0.0013,
+          "worst_handler_ms": 0.0186
+        },
+        "updateGame": {
+          "samples": 800,
+          "median_ms": 0.2794,
+          "p95_ms": 0.9361,
+          "worst_handler_ms": 3.52
+        }
+      },
+      "candidate_0.45.0": {
+        "onWindowMessage.mouse": {
+          "samples": 6000,
+          "median_ms": 0.0004,
+          "p95_ms": 0.0004,
+          "worst_handler_ms": 0.0571
+        },
+        "onWindowMessage.char": {
+          "samples": 6000,
+          "median_ms": 0.0003,
+          "p95_ms": 0.0004,
+          "worst_handler_ms": 0.2252
+        },
+        "onWindowMessage.key": {
+          "samples": 6000,
+          "median_ms": 0.0018,
+          "p95_ms": 0.002,
+          "worst_handler_ms": 0.1699
+        },
+        "Bridge.tick": {
+          "samples": 2000,
+          "median_ms": 0.0007,
+          "p95_ms": 0.0018,
+          "worst_handler_ms": 0.0437
+        },
+        "Bridge.exchange": {
+          "samples": 500,
+          "median_ms": 0.7254,
+          "p95_ms": 1.1584,
+          "worst_handler_ms": 2.1083
+        },
+        "context": {
+          "samples": 800,
+          "median_ms": 0.0006,
+          "p95_ms": 0.0008,
+          "worst_handler_ms": 0.4474
+        },
+        "updateGame": {
+          "samples": 800,
+          "median_ms": 0.3863,
+          "p95_ms": 1.106,
+          "worst_handler_ms": 5.4293
+        }
+      }
+    },
+    {
+      "trial": 3,
+      "baseline_0.44.0": {
+        "onWindowMessage.mouse": {
+          "samples": 6000,
+          "median_ms": 0.0006,
+          "p95_ms": 0.0007,
+          "worst_handler_ms": 0.02
+        },
+        "onWindowMessage.char": {
+          "samples": 6000,
+          "median_ms": 0.0006,
+          "p95_ms": 0.0007,
+          "worst_handler_ms": 0.0548
+        },
+        "onWindowMessage.key": {
+          "samples": 6000,
+          "median_ms": 0.0008,
+          "p95_ms": 0.0008,
+          "worst_handler_ms": 0.1006
+        },
+        "Bridge.tick": {
+          "samples": 2000,
+          "median_ms": 0.0007,
+          "p95_ms": 0.002,
+          "worst_handler_ms": 0.044
+        },
+        "Bridge.exchange": {
+          "samples": 500,
+          "median_ms": 0.19855,
+          "p95_ms": 0.3819,
+          "worst_handler_ms": 0.4711
+        },
+        "context": {
+          "samples": 800,
+          "median_ms": 0.0006,
+          "p95_ms": 0.0007,
+          "worst_handler_ms": 0.4361
+        },
+        "updateGame": {
+          "samples": 800,
+          "median_ms": 0.36135,
+          "p95_ms": 0.924,
+          "worst_handler_ms": 4.3616
+        }
+      },
+      "candidate_0.45.0": {
+        "onWindowMessage.mouse": {
+          "samples": 6000,
+          "median_ms": 0.0004,
+          "p95_ms": 0.0007,
+          "worst_handler_ms": 0.0187
+        },
+        "onWindowMessage.char": {
+          "samples": 6000,
+          "median_ms": 0.0004,
+          "p95_ms": 0.0007,
+          "worst_handler_ms": 0.0158
+        },
+        "onWindowMessage.key": {
+          "samples": 6000,
+          "median_ms": 0.0008,
+          "p95_ms": 0.0016,
+          "worst_handler_ms": 0.2183
+        },
+        "Bridge.tick": {
+          "samples": 2000,
+          "median_ms": 0.0008,
+          "p95_ms": 0.0016,
+          "worst_handler_ms": 0.0468
+        },
+        "Bridge.exchange": {
+          "samples": 500,
+          "median_ms": 0.9543999999999999,
+          "p95_ms": 1.627,
+          "worst_handler_ms": 2.2992
+        },
+        "context": {
+          "samples": 800,
+          "median_ms": 0.001,
+          "p95_ms": 0.0014,
+          "worst_handler_ms": 0.7944
+        },
+        "updateGame": {
+          "samples": 800,
+          "median_ms": 0.42625,
+          "p95_ms": 1.9322,
+          "worst_handler_ms": 4.7687
+        }
+      }
+    }
+  ]
+}

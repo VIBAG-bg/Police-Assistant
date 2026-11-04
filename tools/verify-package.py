@@ -9,6 +9,11 @@ for script in [ROOT/'install.ps1', *(ROOT/'tools').glob('*.ps1'), *(ROOT/'moonlo
     if any(b>=128 for b in data):
         assert data.startswith(b'\xef\xbb\xbf'), f'Windows PowerShell needs UTF-8 BOM: {script}'
 manifest=json.loads((ROOT/'INSTALL_MANIFEST.json').read_text('utf-8-sig'))
+if manifest['release']=='0.45.0':
+    graph=ROOT/'moonloader/resource/pa26/roads.bin'
+    assert graph.stat().st_size==589664 and hashlib.sha256(graph.read_bytes()).hexdigest()=='c1d347286ccb0349940800570078c6872bef31c12ac6d6f77a4b1cf8b857d7db'
+    assert sum(row['path']=='resource\\pa26\\roads.bin' for row in manifest['files'])==1
+    assert hashlib.sha256((ROOT/'moonloader/lib/pa26_update_platform.lua').read_bytes()).hexdigest()=='995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f'
 if manifest.get('update_carried_assets'):
     fm=json.loads((ROOT/'moonloader/resource/pa26/fonts/manifest.json').read_text('utf-8'))
     font=(ROOT/'moonloader/resource/pa26/fonts/fa-solid-900.ttf').read_bytes()

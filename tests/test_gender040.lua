@@ -21,7 +21,7 @@ for _,gender in ipairs({'male','female'})do
     local warning=prefs.weaponWarningDefaults();warning.firearm_template=token..' {weapon}.'
     local w=assert(require('pa26_weapon_warning').prepare(warning,state,'Deagle','firearm',codec,1000,1));check(w.lines[1]:find(word,1,true))
     local vc=vehicles.defaults();vc.approach_template=token..' {model}.'
-    local v=assert(vehicle.preview('approach',vc,{gender=gender,model='Infernus'},codec));check(v.line:find(word,1,true))
+    local v=assert(vehicle.preview('approach',vc,{gender=gender,model='Infernus',model_id='411'},codec));check(v.line:find(word,1,true))
     vc.description_template=token..' {model}.'
     local description=assert(vehicle.describe({id=1,model_id=411,model_name='Infernus',color1=0,color2=1},vc,gender))
     check(description.vehicle_description:find(word,1,true))

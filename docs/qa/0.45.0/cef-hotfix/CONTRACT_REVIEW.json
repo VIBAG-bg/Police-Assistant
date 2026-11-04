@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-04",
+  "read_only": true,
+  "launcher_js_executed_by_installer": false,
+  "main_sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+  "profile_components": 42,
+  "outgoing": {
+    "entry": "sendMessageToChat",
+    "event": "HandleHudSendMessage",
+    "payload": "string",
+    "original_hud_delay_ms": 50,
+    "command_layout": "original HUD translates command token only; PA dot rules preserved"
+  },
+  "incoming": {
+    "registration": "cef.on",
+    "event": "chat:messages",
+    "callback": "addChatMessage",
+    "arguments": [
+      "color",
+      "text",
+      "optional metadata 1",
+      "optional metadata 2"
+    ],
+    "behavior": "same four arguments passed to saveMessageToStorage and renderChatMessage"
+  },
+  "lifecycle": [
+    "showChatInput adds active and focuses input",
+    "hideChatInput removes active and blurs input",
+    "showCursor/hideCursor coordinate cef focus",
+    "original HUD owns selection/caret/history"
+  ],
+  "proof_boundary": "Static profile + isolated decoder/handler inspection and native IPC fixtures. Not actual GTA/CEF or server acceptance."
+}

@@ -1,15 +1,15 @@
 local setup=require 'support.copilot_fixture';local copy=require('pa26_bindings').copy
 local D=require 'pa26_dispatch';local prefs=require 'pa26_copilot_settings'
 local cp,v,s=setup();s.cfg.require_patrol=true;s.cfg.megaphone_require_patrol=true;s.tick()
-eq(#D.primaryActions,6);eq(#D.actions,21)
+eq(#D.primaryActions,8);eq(#D.actions,36)
 for root,rows in pairs(D.followups)do
- eq(#rows,3)
+ check(#rows>=3)
  for _,row in ipairs(rows)do
   local p,why=cp:propose(row[1]);check(p,why);check(p.report);check(not p.needsPatrol);check(p.carFree);check(not p.dispatchRp)
   for _,line in ipairs(p.prepared.lines)do check(line:match('^/r '));check(not line:match('^/me '));check(not line:find('{',1,true))end
  end
 end
-for _,row in ipairs(D.primaryActions)do if row[1]~='gas_order'then local p=assert(cp:propose(row[1]));check(p.report);check(p.prepared.lines[1]:match('^/me '))end end
+for _,row in ipairs(D.primaryActions)do if row[1]~='gas_order'then local p=assert(cp:propose(row[1]));check(p.report);check(p.prepared.lines[1]:match(D.byAction[row[1]].radioOnly and'^/r 'or'^/me '))end end
 local p=assert(cp:propose('patrol_continue'));check(p.report);check(not p.needsPatrol);check(not cp.phase);check(not p.prepared.lines[1]:find('на неизвестно',1,true))
 local fields=copy(p.reportValues);fields.unit='2-L-42';fields.crew='Иван Петров';fields.area='Garcia';fields.map_square='J-6'
 local edited=assert(cp:editReport(p,fields));check(table.concat(edited.prepared.lines,' '):find('2-L-42',1,true));eq(s.cfg.copilot._report_values,nil)

@@ -21,7 +21,7 @@ c:tick(s,now);s.weapon=31;now=now+1;c:tick(s,now);now=now+5000;c:tick(s,now);p=p
 now=now+6000;c:tick(s,now);check(c:validPlan(p),'A split narration must stay valid beyond the old 5-second single-message guard')
 s.weapon=0;now=now+1;c:tick(s,now);check(not c:validPlan(p))
 local vehicle=require 'pa26_vehicle';local vc=require('pa26_vehicle_settings').defaults();vc.approach_template=body
-p=assert(vehicle.preview('approach',vc,{rpText=cfg,my_nick=nickname},codec,{}));check(#p.lines>1);check(p.rpSignature)
+p=assert(vehicle.preview('approach',vc,{rpText=cfg,my_nick=nickname,model_id='411'},codec,{}));check(#p.lines>1);check(p.rpSignature)
 local radio=require 'pa26_radio_text';p=assert(radio.prepare('/do',body,codec,{split_enabled=false},cfg,nickname));check(#p.lines>1)
 -- Forms preview is split before consent, while the mock command stays one final step.
 local forms=require 'pa26_case_forms';local pc=require('pa26_procedure_settings').defaults();pc.enabled=true

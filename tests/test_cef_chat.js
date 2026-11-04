@@ -9,11 +9,11 @@ const prefix = '[Русский акцент]:';
 const chatText = {version:1,skipBrackets:true,dotCommands:true,keyboardMap:{к:'r',К:'R',ы:'s',Ы:'S',е:'t',Е:'T',ф:'a',Ф:'A'}};
 const endpoint = 'http://127.0.0.1:39001/' + 'a'.repeat(48) + '/exchange';
 const flush = () => new Promise(resolve => setImmediate(resolve));
-async function page(delayed=false, adapter=install) {
+async function page(delayed=false, adapter=install, options={}) {
   const stats={textReads:0,textWrites:0,styleReads:0,rectReads:0,endpointLoads:0};
   const observers=[], fieldListeners={};
   let now = 0, sequence = 0;
-  const listeners = {}, callbacks = {}, sent = [], observed = [], requests = [], timers = new Map(),warnings=[];
+  const listeners = {}, windowListeners = {}, callbacks = {}, sent = [], observed = [], requests = [], timers = new Map(),warnings=[];
   const panel = {classList: {contains: () => panel.open},open: true,children: [],
     appendChild(el) {this.insertBefore(el,null);},
     insertBefore(el,next) {const index=this.children.indexOf(next);this.children.splice(index<0?this.children.length:index,0,el);el.parentElement=this;el.isConnected=true;elements[el.id]=el;}};
@@ -37,6 +37,7 @@ async function page(delayed=false, adapter=install) {
     addEventListener(name,cb,capture) {cb.capture=!!capture;(listeners[name] ||= []).push(cb);},
     head: {appendChild(el) {stats.endpointLoads++;if (el.onload) el.onload();}}};
   const root = {document, performance: {now: () => now}, Date: {now: () => now},Math: {random: () => 0.1234},
+    addEventListener(name,cb) {(windowListeners[name] ||= []).push(cb);},
     getComputedStyle(el) {stats.styleReads++;return {display: 'flex',visibility: 'visible',opacity: String(el.opacity ?? (el === panel && !panel.open ? 0 : 1))};},
     console: {warn(value) {warnings.push(value);}},
     MutationObserver:class {constructor(cb){this.cb=cb;observers.push(this);}observe(target,options){this.target=target;this.options=options;this.live=true;}disconnect(){this.live=false;}},
@@ -45,15 +46,18 @@ async function page(delayed=false, adapter=install) {
     cef: {on(name,cb) {callbacks[name] = cb;},emit(...args) {sent.push(args);return this;},set_focus() {}},
     isDialogActive: () => false};
   let config = {schema:1,session:'one',enabled:true,accentEnabled:true,accent:prefix,filters:[],localCommands:['pa26','pa26demo'],chatText};
-  let failure = false,responseStatus=200,malformed=false,hang=false;
+  let failure = !!options.offline,responseStatus=200,malformed=false,hang=false;
   root.fetch = async (url, options) => {
     requests.push({url,options});if(failure)throw Error('offline');
     if(hang)return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(Error('timeout')),{once:true}));
     const request=JSON.parse(options.body);observed.push(...request.events);
     return {ok:responseStatus===200,status:responseStatus,json:async()=>malformed?{schema:0}:({...config,ack:request.events.at(-1)?.id || 0})};
   };
+  if(options.beforeInstall)options.beforeInstall(root);
   const api = adapter ? adapter(root) : {endpoint(){},exchange(){},stop(){}};
-  root.cef.on('chat:messages', (...args) => callbacks.rendered.push(args));callbacks.rendered=[];
+  callbacks.rendered=[];
+  function registerIncoming() {root.cef.on('chat:messages', (...args) => callbacks.rendered.push(args));}
+  if(root.cef && options.register!==false)registerIncoming();
   root.sendMessageToChat = text => {if(delayed)root.setTimeout(()=>root.cef.emit('HandleHudSendMessage',text),50);else root.cef.emit('HandleHudSendMessage',text);panel.open=false;};
   function fire(name,event={}) {
     event.target ||= input; event.key ||= '';
@@ -63,8 +67,10 @@ async function page(delayed=false, adapter=install) {
     if(!event.stopped && !event.bubbleStopped)for(const cb of (listeners[name]||[]).filter(cb=>!cb.capture)) {cb(event);if(event.stopped)break;}
     return event;
   }
-  fire('DOMContentLoaded');api.endpoint(endpoint);await flush();
-  return {root,api,input,panel,sent,observed,requests,callbacks,fire,timers,warnings,elements,observers,stats,
+  fire('DOMContentLoaded');if(options.endpoint!==false)api.endpoint(endpoint);await flush();
+  return {root,api,input,panel,sent,observed,requests,callbacks,fire,timers,warnings,elements,observers,stats,registerIncoming,
+    windowEvent(name) {for(const cb of windowListeners[name]||[])cb();},
+    async heartbeat() {for(const t of [...timers.values()])if(t.interval)t.cb();await flush();},
     mutate(){for(const o of observers)if(o.live)o.cb([{type:'attributes'}]);},
     type(text,cursor=text.length) {panel.open=true;input.value=text;input.selectionStart=input.selectionEnd=cursor;fire('input');},
     async config(value) {config={...config,...value};await api.exchange();await flush();},
@@ -137,11 +143,11 @@ if(require.main===module)(async () => {
   p.offline(true);for(let i=0;i<5;i++)await p.exchange();eq(p.warnings.length,0);
   // Failed exchanges are reported once per reason, without URL or player text.
   p=await page();p.status(403);await p.exchange();await p.exchange();eq(p.warnings,['[PA26 CEF] exchange_failed: http_403']);
-  p.status(200);p.malformed(true);await p.exchange();eq(p.warnings.at(-1),'[PA26 CEF] exchange_failed: bad_response');
-  p.malformed(false);await p.exchange();p.type('Снова работает.');eq(p.input.value,'Снова работает.');
+  p.status(200);p.malformed(true);p.time(750);await p.exchange();eq(p.warnings.at(-1),'[PA26 CEF] exchange_failed: bad_response');
+  p.malformed(false);p.time(1500);await p.exchange();p.type('Снова работает.');eq(p.input.value,'Снова работает.');
   // The abort timeout clears a pending exchange so a later request can recover.
   p=await page();p.hang(true);const waiting=p.exchange();p.runTimers(1600);await waiting;eq(p.warnings.at(-1),'[PA26 CEF] exchange_failed: network');
-  p.hang(false);await p.exchange();p.type('После таймаута.');eq(p.input.value,'После таймаута.');
+  p.hang(false);p.time(750);await p.exchange();p.type('После таймаута.');eq(p.input.value,'После таймаута.');
   // Burst input remains bounded; rendering of ordinary incoming chat continues.
   p=await page();for(let i=0;i<100;i++)p.callbacks['chat:messages'](1,'Строка '+i);
   await flush();for(let i=0;i<6;i++)await p.exchange();eq(p.callbacks.rendered.length,100);
@@ -174,7 +180,7 @@ if(require.main===module)(async () => {
   await p.config({keyboardLayout:'RU'});p.offline(true);p.time(2100);
   for(const timer of p.timers.values())if(timer.interval&&timer.ms===750)timer.cb();
   eq(p.elements['pa26-chat-layout'],undefined,'stale badge disappears even while a request is pending');await flush();
-  p.offline(false);await p.exchange();eq(p.elements['pa26-chat-layout'].textContent,'RU','connection recovers');
+  p.offline(false);p.time(750);await p.exchange();eq(p.elements['pa26-chat-layout'].textContent,'RU','connection recovers');
   await p.config({enabled:false});eq(p.elements['pa26-chat-layout'],undefined);
   await p.config({enabled:true});eq(p.elements['pa26-chat-layout'].textContent,'RU');
   // HUD input replacement reattaches just one badge to the new parent.
@@ -272,8 +278,8 @@ if(require.main===module)(async () => {
   eq([...p.timers.values()].filter(t=>!t.interval&&t.ms===150).length,0,'no live text-processing timers');
   eq(p.requests.length,requestsBeforeTyping,'typing is independent of loopback requests');
   const endpointTimer=[...p.timers.values()].find(t=>t.interval&&t.ms===750),loads=p.stats.endpointLoads;
-  endpointTimer.cb();eq(p.stats.endpointLoads,loads,'healthy connections do not reload endpoint scripts');
-  p.offline(true);await p.exchange();p.time(3000);endpointTimer.cb();eq(p.stats.endpointLoads,loads+1,'a failed connection can discover a replacement endpoint');p.offline(false);await p.exchange();
+  endpointTimer.cb();eq(p.stats.endpointLoads,loads,'healthy connections do not reload endpoint scripts');await flush();
+  p.offline(true);await p.exchange();p.time(3000);endpointTimer.cb();eq(p.stats.endpointLoads,loads+1,'a failed connection can discover a replacement endpoint');await flush();p.offline(false);p.time(1500);await p.exchange();
   p.type('Привет',2);p.runTimers(150);await flush();
   eq(p.input.value,'Привет');eq(p.input.selectionStart,2);
   p.type('Очень длинное слово '.repeat(20),5);const held=p.input.value;await p.enter();

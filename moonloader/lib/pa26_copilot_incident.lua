@@ -76,7 +76,9 @@ function M.install(C)
    local age=core.elapsed(now,self.windowAwait.at)
    if c.stale or not same(self.windowAwait.driver,self.driverLive)or not age or age>cfg.window_reply_ms then self.windowAwait=nil end
   end
-  if cfg.window_offer and self.done.approach and not contact and not c.stale and not s.inVehicle and self.driverLive and
+  local class=require('pa26_vehicle_types').class(c.model_id)
+  local enclosed=class=='car'or class=='van'or class=='truck'or class=='bus'
+  if enclosed and cfg.window_offer and self.done.approach and not contact and not c.stale and not s.inVehicle and self.driverLive and
    core.finite(self.driverLive.distance)and self.driverLive.distance<=cfg.window_interaction_distance then self:offer('window_question')end
  end
  function C:windowAnswer(answer,manual)

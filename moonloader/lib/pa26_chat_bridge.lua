@@ -52,6 +52,13 @@ function Bridge:installed()
 end
 function Bridge:start()
     if self.server or self.closed then return self.server~=nil end
+    if self.env.compatibility then
+        self.compatibilityReport=self.env.compatibility(self.retryAt or 0)
+        if not self.compatibilityReport or not self.compatibilityReport.allowed then
+            local why=self.compatibilityReport and self.compatibilityReport.reason or'analysis_pending'
+            self:setStatus(why=='analysis_pending' and'waiting'or'disabled',why);return false
+        end
+    end
     if self.env.settings().enabled~=true then self:setStatus('disabled','setting_disabled');return false end
     if not self.assetVerified then
         local installed,reason=self:installed()
@@ -73,7 +80,13 @@ function Bridge:start()
     local endpoint='http://127.0.0.1:'..string.format('%d',port)..self.route
     local encoded=call(self.env.json,'encode',endpoint)
     if not encoded then return self:fail('endpoint_encode',server)end
-    local script='window.PA26Chat && window.PA26Chat.endpoint('..encoded..');\n'
+    local metadata=''
+    if self.env.compatibility then
+        self.handshakeChallenge=token;self.handshakeAt=nil;self.handshakeFailed=false
+        self.compatibilityReport.runtime='WAITING';self.compatibilityReport.state='CONTRACT_COMPATIBLE'
+        metadata=','..self.env.json.encode({protocol=2,challenge=token,fingerprint=self.compatibilityReport.fingerprint})
+    end
+    local script='window.PA26Chat && window.PA26Chat.endpoint('..encoded..metadata..');\n'
     local written
     if self.env.assetFs then written=assets.commit(self.env.path..'pa26-chat-endpoint.js',script,self.env.assetFs)
     else written=call(self.env.fs,'write',self.env.path..'pa26-chat-endpoint.js',script)end
@@ -168,6 +181,32 @@ function Bridge:exchange(raw,now)
         page={ack=0,at=now};self.pages[value.page]=page
     end
     page.at=now
+    if self.env.compatibility then
+        local hello=value.compatibility
+        if page.challenge~=self.handshakeChallenge then page.challenge=self.handshakeChallenge;page.verified=false;page.hello=false end
+        self.handshakeAt=self.handshakeAt or now
+        local age=core.elapsed(now,self.handshakeAt)
+        local valid=type(hello)=='table'and hello.protocol==2 and hello.challenge==self.handshakeChallenge
+        if not age or age>12000 and not page.verified then self.handshakeFailed=true;self.handshakeReason='handshake_timeout'end
+        if not page.verified and not self.handshakeFailed then
+            if valid and hello.phase=='hello'and hello.fingerprint==self.compatibilityReport.fingerprint and type(hello.capabilities)=='table'then
+                local caps=hello.capabilities
+                if caps.dom==true and caps.send==true and caps.emit==true and caps.incoming==true and caps.focus==true then page.hello=true end
+            elseif valid and hello.phase=='confirmed'and page.hello then page.verified=true end
+        end
+        local ready=valid and page.verified and not self.handshakeFailed
+        if not ready then
+            local failed=self.handshakeFailed
+            self.compatibilityReport.runtime=failed and'FAILED'or'WAITING'
+            self.compatibilityReport.mode=failed and'native-only'or'cef-provisional'
+            self.compatibilityReport.state=failed and'INCOMPATIBLE'or'CONTRACT_COMPATIBLE'
+            self.compatibilityReport.fallback=failed and(self.handshakeReason or'handshake_failed')or nil
+            return self.env.json.encode({schema=1,ack=page.ack,enabled=false,compatibility={protocol=2,challenge=self.handshakeChallenge,
+                state=self.compatibilityReport.state,phase=page.hello and'ack'or'hello',reason=self.handshakeReason}})
+        end
+        self.compatibilityReport.runtime='CONFIRMED';self.compatibilityReport.mode='cef';self.compatibilityReport.fallback=nil
+        self.compatibilityReport.state=self.compatibilityReport.known and'KNOWN_VERIFIED'or'RUNTIME_VERIFIED'
+    end
     self.state={at=now,chat=value.chat,dialog=value.dialog,busy=value.busy or value.chat or value.dialog}
     self:setStatus('connected','browser_exchange')
     local settings=self.env.settings()
@@ -214,6 +253,7 @@ function Bridge:exchange(raw,now)
     local configuration,revision=self:configuration(settings)
     local response={schema=1,ack=page.ack,session=self.env.session and self.env.session()or nil,enabled=settings.enabled==true,
         keyboardLayout=layout,policyRevision=revision}
+    if self.env.compatibility then response.compatibility={protocol=2,challenge=self.handshakeChallenge,phase='ready',state=self.compatibilityReport.state}end
     -- Old adapters continue receiving the full contract. New adapters renew the
     -- input lease without repeatedly validating/serializing the same policy.
     if value.policyRevision==revision then response.policyUnchanged=true;response.keyboardLayout=layout or false
@@ -281,6 +321,7 @@ function Bridge:tick(now)
     self.waitStarted=self.waitStarted or now
     if not self.state and not self.waitWarned and(core.elapsed(now,self.waitStarted)or 0)>=5000 then
         self.waitWarned=true;self:setStatus('waiting','browser_no_exchange')
+        if self.compatibilityReport then self.compatibilityReport.runtime='NO_EXCHANGE';self.compatibilityReport.state='UNAVAILABLE';self.compatibilityReport.fallback='browser_no_exchange'end
     end
     for _=1,2 do
         local client,err=method(self.server,'accept')

@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "baseline_head": "ccabd376d4e899cd4fcbe12250c21b2656dea9d9",
+  "baseline_files": 697,
+  "baseline_unchanged": true,
+  "frozen_sha256": {
+    "cef/assets/hud/pa26-chat-endpoint.js": "dafae2adea0cd37d9aae06d45012279c0d4371af956e0b67d90468bb5647cfc8",
+    "moonloader/lib/pa26_update_platform.lua": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f"
+  },
+  "public_presets_and_normative_sources_unchanged": true,
+  "protected_source_files": 21,
+  "user_data_comparison": {
+    "status": "passed",
+    "input": "current local split user documents; in-memory comparison only",
+    "user_values_exported": false,
+    "existing_leaf_values_preserved": 3181,
+    "additional_leaf_count": 115,
+    "source_files_unchanged": true,
+    "notes_exported": false,
+    "live_game_written": false,
+    "baseline": "0.44.0",
+    "candidate": "0.45.0"
+  },
+  "runtime_matches_full_regression": true,
+  "cef_changes_authorized_targeted_hotfix": true
+}

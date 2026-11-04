@@ -1,0 +1,516 @@
+{
+  "version": "0.45.0",
+  "at_utc": "2026-11-04T15:26:49.583297+00:00",
+  "status": "LOCAL_CANDIDATE_WITH_EXPLICIT_GAME_GATES",
+  "baseline_head": "ccabd376d4e899cd4fcbe12250c21b2656dea9d9",
+  "lua_groups": 209,
+  "lua_checks": 13235232,
+  "lua_syntax_files": 398,
+  "lua_regression": "PASS",
+  "native_cpu_ui": {
+    "screen_sizes": 7,
+    "game_started": false,
+    "views": 19,
+    "frames": 1064,
+    "icon_states": 2,
+    "game_written": false,
+    "font_scales": 2,
+    "checks": 2128,
+    "status": "passed"
+  },
+  "cef_synthetic_callbacks": {
+    "status": "passed",
+    "checks": 578,
+    "adapter_sha256": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b",
+    "test_sha256": "4adb011014e7b6fa8436d65a05fc1444aa7309b792da5769f39f6f135c13856f",
+    "game_launched": false
+  },
+  "installer_updater_fixture_groups": 8,
+  "installer_updater_fixtures": "PASS",
+  "platform_fixture_scope": "Eight groups rerun after adding the exact roads.bin worker ownership entry; current full payload also tested separately.",
+  "current_payload_fixture": {
+    "version": "0.45.0",
+    "manifest_entries": 164,
+    "installer_sha256": "f0de29115467c9cfe45e7daa5f586ce31512ab6a20e5959a4a7d525d214107bf",
+    "manifest_sha256": "553ffe214cdd0bfad706c3f00a0c6ed4cf33002b87c63f5556616af4601e29e2",
+    "game_written": false,
+    "status": "passed",
+    "fixture_only": true,
+    "checks": 171
+  },
+  "road_graph_cpu_trials": {
+    "version": "0.45.0",
+    "status": "passed",
+    "environment": "LuaJIT 2.1 + Lupa; packaged LGPS v1; synthetic world endpoints; no launcher files",
+    "roads_sha256": "c1d347286ccb0349940800570078c6872bef31c12ac6d6f77a4b1cf8b857d7db",
+    "backend_sha256": "cf30a665f9056b5c89621b82d21c5ae02fcd3009e53d0dfe68fb9435f0ffb623",
+    "source_sha256": {
+      "pa26_navigation_roads.lua": "cf30a665f9056b5c89621b82d21c5ae02fcd3009e53d0dfe68fb9435f0ffb623",
+      "pa26_road_sources.lua": "fc584dda7f5f9023b43b4f6bf7bf110ebb42154f84708f6c1923837c30bd421c",
+      "pa26_road_file.lua": "6828b2c0a67d3319ac5708dcc4cbf3a380236838f3a9a80102e216e14929701c",
+      "pa26_sha256.lua": "ddccd0fdf43303dbd0e0c9a4a760525dc7a7fe6269cc7723fdb59ef40e16c410"
+    },
+    "trials": 3,
+    "runs": [
+      {
+        "trial": 1,
+        "file_opens": 1,
+        "phases": {
+          "prepare_graph": {
+            "slices": 107,
+            "max_work_units_per_slice": 256,
+            "total_offline_wall_ms": 32.36160000960808,
+            "slice_p50_ms": 0.2843,
+            "slice_p95_ms": 0.7727,
+            "slice_p99_ms": 1.6419,
+            "worst_slice_ms": 3.6172,
+            "worst_stage": "Подготовка дорожной сети"
+          },
+          "first_route": {
+            "slices": 129,
+            "max_work_units_per_slice": 256,
+            "total_offline_wall_ms": 20.7290000107605,
+            "slice_p50_ms": 0.1362,
+            "slice_p95_ms": 0.3185,
+            "slice_p99_ms": 0.4981,
+            "worst_slice_ms": 0.6723,
+            "worst_stage": "Дорожный GPS: доступен · 28991 узлов",
+            "route_nodes": 462,
+            "road_distance": 5998.331527048475
+          },
+          "subsequent_route": {
+            "slices": 121,
+            "max_work_units_per_slice": 256,
+            "total_offline_wall_ms": 17.293600001721643,
+            "slice_p50_ms": 0.129,
+            "slice_p95_ms": 0.355,
+            "slice_p99_ms": 0.4933,
+            "worst_slice_ms": 0.5348,
+            "worst_stage": "Дорожный GPS: доступен · 28991 узлов",
+            "route_nodes": 462,
+            "road_distance": 5998.331527048475
+          }
+        }
+      },
+      {
+        "trial": 2,
+        "file_opens": 1,
+        "phases": {
+          "prepare_graph": {
+            "slices": 102,
+            "max_work_units_per_slice": 256,
+            "total_offline_wall_ms": 29.455600000801496,
+            "slice_p50_ms": 0.31405,
+            "slice_p95_ms": 0.7065,
+            "slice_p99_ms": 0.9973,
+            "worst_slice_ms": 1.8826,
+            "worst_stage": "Подготовка дорожной сети"
+          },
+          "first_route": {
+            "slices": 128,
+            "max_work_units_per_slice": 256,
+            "total_offline_wall_ms": 23.93550000851974,
+            "slice_p50_ms": 0.15645,
+            "slice_p95_ms": 0.4464,
+            "slice_p99_ms": 0.6161,
+            "worst_slice_ms": 0.6352,
+            "worst_stage": "Дорожный GPS: доступен · 28991 узлов",
+            "route_nodes": 462,
+            "road_distance": 5998.331527048475
+          },
+          "subsequent_route": {
+            "slices": 121,
+            "max_work_units_per_slice": 256,
+            "total_offline_wall_ms": 18.8522000098601,
+            "slice_p50_ms": 0.1442,
+            "slice_p95_ms": 0.3076,
+            "slice_p99_ms": 0.4909,
+            "worst_slice_ms": 0.5154,
+            "worst_stage": "Дорожный GPS: доступен · 28991 узлов",
+            "route_nodes": 462,
+            "road_distance": 5998.331527048475
+          }
+        }
+      },
+      {
+        "trial": 3,
+        "file_opens": 1,
+        "phases": {
+          "prepare_graph": {
+            "slices": 103,
+            "max_work_units_per_slice": 256,
+            "total_offline_wall_ms": 30.237200000556186,
+            "slice_p50_ms": 0.3172,
+            "slice_p95_ms": 0.6904,
+            "slice_p99_ms": 0.9607,
+            "worst_slice_ms": 2.0206,
+            "worst_stage": "Подготовка дорожной сети"
+          },
+          "first_route": {
+            "slices": 129,
+            "max_work_units_per_slice": 256,
+            "total_offline_wall_ms": 23.243699994054623,
+            "slice_p50_ms": 0.1469,
+            "slice_p95_ms": 0.3809,
+            "slice_p99_ms": 0.6324,
+            "worst_slice_ms": 0.7688,
+            "worst_stage": "Дорожный GPS: доступен · 28991 узлов",
+            "route_nodes": 462,
+            "road_distance": 5998.331527048475
+          },
+          "subsequent_route": {
+            "slices": 122,
+            "max_work_units_per_slice": 256,
+            "total_offline_wall_ms": 18.215999996755272,
+            "slice_p50_ms": 0.1362,
+            "slice_p95_ms": 0.2646,
+            "slice_p99_ms": 0.4981,
+            "worst_slice_ms": 0.5525,
+            "worst_stage": "Дорожный GPS: доступен · 28991 узлов",
+            "route_nodes": 462,
+            "road_distance": 5998.331527048475
+          }
+        }
+      }
+    ],
+    "game_started": false,
+    "game_written": false,
+    "road_data_included_in_package": true,
+    "gta_frame_times_measured": false,
+    "actual_input_latency_measured": false,
+    "waypoint_to_visible_route_ms": "NOT RUN",
+    "time_scope": "Offline CPU/wall handler timings; slices run consecutively and are not real GTA frames"
+  },
+  "all_in_one_install_update": {
+    "checks": 47,
+    "archive_sha256": "d23419ed9e603c26a3557124445983ef3bbd1c7bf2c2206e96b50ca62d5ccdb9",
+    "updater_sha256": "9b071ffef4dd3be5032c79361f943b65eee1b73f848d63bc961818f0a798b20f",
+    "version": "0.45.0",
+    "scenarios": [
+      "fresh standalone",
+      "fresh launcher unknown CEF preserved",
+      "full installer upgrade 0.44.0",
+      "new worker all-in-one update",
+      "graph replacement crash and recovery",
+      "old worker safe refusal"
+    ],
+    "game_started": false,
+    "live_game_written": false,
+    "old_worker_direct_update": "BLOCKED_USE_FULL_INSTALLER_ONCE",
+    "manifest_sha256": "553ffe214cdd0bfad706c3f00a0c6ed4cf33002b87c63f5556616af4601e29e2",
+    "status": "passed",
+    "fixture_only": true
+  },
+  "road_graph_native32": {
+    "win7_guest_tested": false,
+    "results": [
+      {
+        "source": "bundled",
+        "nodes": 462
+      },
+      {
+        "source": "custom",
+        "nodes": 462
+      }
+    ],
+    "live_game_written": false,
+    "game_started": false,
+    "status": "passed",
+    "cases": 3,
+    "environment": "Windows x86 LuaJIT and Unicode reader; fixture files only",
+    "checks": 17
+  },
+  "current_cef_isolated_transport": {
+    "status": "passed",
+    "checks": 113,
+    "real_x86_luajit": true,
+    "real_installed_luasocket": true,
+    "real_loopback_http": true,
+    "real_hud_send_function_in_isolated_v8": true,
+    "chat_field_is_test_double": true,
+    "layout_packet_values_are_test_doubles": true,
+    "gta_launched": false,
+    "actual_game_server_contacted": false,
+    "manual_multiline_native_ipc": true,
+    "manual_sha256": "1a38d09e8c9c36e217e88b83717bf3fb69e098ec2fbbca409ba6c8c5befbb2a2",
+    "rp_sha256": "cd6023006df794bf870e0c62f0fb47c2d8b0034fc25f62fbac6a34883ffce92f",
+    "adapter_sha256": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b",
+    "bridge_sha256": "e6f31c6f227a4222a7fd8df4ba4836ea9ce3c25db90018f2c430d30ec971af3c",
+    "chat_text_sha256": "46fe144a532027ebc0c5dbed70e5ed830f252b8cc00a7bf9c675a6b70da6fafa",
+    "test_sha256": "895cbaacf80876ea5028dcaa142ae59180119f6abfba06dd5d000ca1fa60a65c",
+    "assets_sha256": "9340cfd01e1f5f5df83523a26b122fcf936c5138bacdd2b0200fb57540ffdc71",
+    "real_large_hud_bytes": 86735,
+    "real_atomic_replace": true,
+    "hud_main_sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+    "cef_client_sha256": "1c5053dc19369ee4c672ef1631e9d84bfc3cde9aecfbb415a064098508392994",
+    "host_sha256": "33ea893247dbbb62086757ae3195a1541a7b5a0e83458d9420b5b4c47895a057",
+    "lua51_sha256": "ff976f6e965e3793e278fa9bf5e80b9b226a0b3932b9da764bffc8e41e6cdb60",
+    "socket_core_sha256": "c7e65c06df09addf05fd807e964e87f4ea56476e15e19ea5e47a321419ace50e"
+  },
+  "cef_bounded_recovery": {
+    "status": "passed",
+    "checks": 74,
+    "cases": [
+      "late CEF, handshake and no duplicate handlers",
+      "bounded missing CEF; 40000 editing events without discovery/DOM/IPC",
+      "partial CEF and honest incoming-capability verification",
+      "30-minute missing endpoint, exponential backoff and lifecycle recovery",
+      "30-minute IPC outage, changed endpoint and temporary-failure recovery",
+      "rejected runtime handshake has bounded traffic and native chat fallback",
+      "provisional handshake timeout and unchanged original submission",
+      "stalled script, late callback and stop cleanup",
+      "append failure safely cleaned up",
+      "in-flight endpoint replacement"
+    ],
+    "adapter_sha256": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b",
+    "simulated_outage_minutes": 30,
+    "editing_events": 40000,
+    "editing_ipc": 0,
+    "game_started": false,
+    "actual_game_latency": "NOT RUN"
+  },
+  "packaged_graph_sha256": "c1d347286ccb0349940800570078c6872bef31c12ac6d6f77a4b1cf8b857d7db",
+  "updater_worker_change": {
+    "scope": "one exact owned path added: MoonLoader/resource/pa26/roads.bin",
+    "sha256": "9b071ffef4dd3be5032c79361f943b65eee1b73f848d63bc961818f0a798b20f",
+    "old_0.44_worker": "safe rejection; one-time upgrade via the full installer required"
+  },
+  "paired_lua_timing_trials": 3,
+  "cef_off_baseline_candidate_timing_trials": 3,
+  "user_data": {
+    "status": "passed",
+    "input": "current local split user documents; in-memory comparison only",
+    "user_values_exported": false,
+    "existing_leaf_values_preserved": 3181,
+    "additional_leaf_count": 115,
+    "source_files_unchanged": true,
+    "notes_exported": false,
+    "live_game_written": false,
+    "baseline": "0.44.0",
+    "candidate": "0.45.0"
+  },
+  "chat_bridge_and_js_unchanged": false,
+  "cef_targeted_hotfix": "shared static contract + initialization-only protocol 2 handshake",
+  "updater_platform_unchanged": true,
+  "soak": {
+    "status": "PASS_VIRTUAL_TIME_ONLY",
+    "ticks": 216000,
+    "virtual_minutes": 30,
+    "real_duration_minutes": null,
+    "scope": "accelerated deterministic field service replay; does not exercise real LGPS file or real GTA wall-clock soak"
+  },
+  "runtime_features_blocked": {
+    "native_road_pathfinder": "NO_VERIFIED_PRODUCTION_BACKEND",
+    "cruise_and_signals": "NO_VERIFIED_PRODUCTION_BACKEND"
+  },
+  "experimental_road_route": "PA-bundled, hash-pinned LGPS v1; bounded preparation/search; independent of launcher GPS; live GTA NOT RUN",
+  "launcher_waypoint_deletion": "Not patched. Optional PA retention works only for a destination actually observed by PA.",
+  "not_run": [
+    "actual GTA input latency/FPS/frame-time A-B",
+    "15-minute real CEF editing",
+    "30-minute real all-feature soak",
+    "actual Win7/Win10 guest acceptance",
+    "actual launcher waypoint retention, road route and Esc/radar drawing",
+    "fresh-install conversion on the affected PC",
+    "real server /gnews permission and signature verification"
+  ],
+  "current_launcher_contract": "CONTRACT_COMPATIBLE_WITH_ISOLATED_RUNTIME_PROOF",
+  "cef_adaptive_installation": {
+    "scenarios": [
+      "fresh current launcher",
+      "reinstall",
+      "late-tag upgrade",
+      "private preservation",
+      "incompatible native fallback",
+      "strict rejection"
+    ],
+    "checks": 21,
+    "live_game_written": false,
+    "manifest_sha256": "553ffe214cdd0bfad706c3f00a0c6ed4cf33002b87c63f5556616af4601e29e2",
+    "installer_sha256": "f0de29115467c9cfe45e7daa5f586ce31512ab6a20e5959a4a7d525d214107bf",
+    "status": "passed",
+    "game_started": false
+  },
+  "cef_adaptive_static": {
+    "old_reviewed_launcher": "BLOCKED_SOURCE_NOT_AVAILABLE",
+    "cases": [
+      {
+        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "name": "current_d7526",
+        "elapsed_ms": 370.75,
+        "reason": "normalized_contract_and_dom",
+        "allowed": true,
+        "state": "CONTRACT_COMPATIBLE"
+      },
+      {
+        "sha256": "8eb877ca08fa9253ee0b11b6ef343bd5360351777db88d93fe46ddc630f78509",
+        "name": "unrelated_comment",
+        "elapsed_ms": 241.239,
+        "reason": "normalized_contract_and_dom",
+        "allowed": true,
+        "state": "CONTRACT_COMPATIBLE"
+      },
+      {
+        "sha256": "6f6341b982df992ea16e82a999593b72def7df75084d0e30684129d7d82cf300",
+        "name": "unrelated_whitespace",
+        "elapsed_ms": 305.7594,
+        "reason": "normalized_contract_and_dom",
+        "allowed": true,
+        "state": "CONTRACT_COMPATIBLE"
+      },
+      {
+        "sha256": "4fb1e7992a458661246f1daed90dad7832f847446382e9f20b6bca37c3de6eae",
+        "name": "private_identifier_rename",
+        "elapsed_ms": 254.4036,
+        "reason": "normalized_contract_and_dom",
+        "allowed": true,
+        "state": "CONTRACT_COMPATIBLE"
+      },
+      {
+        "sha256": "bac23162babf197471254cbd12716973a17252f9a92ae92d384c26308d27af6c",
+        "name": "unrelated_function_implementation",
+        "elapsed_ms": 255.08120000000002,
+        "reason": "normalized_contract_and_dom",
+        "allowed": true,
+        "state": "CONTRACT_COMPATIBLE"
+      },
+      {
+        "sha256": "766c949f28259c0dcb655ffb41ad99d83e07fc3bed15e5a16e48a3f1c57bbe84",
+        "name": "missing_send",
+        "elapsed_ms": 237.74820000000003,
+        "reason": "files_or_analysis_unavailable",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "cbe04157a3b45f5bbce681e8449aaaa38208969aa61a921150fc969ff00f23b1",
+        "name": "wrong_send_payload",
+        "elapsed_ms": 253.08550000000002,
+        "reason": "functional_profile_mismatch",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "a7d115a65c0873d89b07055255b6d5ae5eaf7e8c7c507e479c7dc8dee25f2ec2",
+        "name": "wrong_incoming_event",
+        "elapsed_ms": 272.90000000000003,
+        "reason": "functional_profile_mismatch",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "name": "missing_input",
+        "elapsed_ms": 40.664300000000004,
+        "reason": "missing_dom:chatInputField",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "name": "wrong_input_type",
+        "elapsed_ms": 56.245200000000004,
+        "reason": "html_structure",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "name": "duplicate_input",
+        "elapsed_ms": 36.3064,
+        "reason": "html_duplicate_id",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "name": "disabled_input",
+        "elapsed_ms": 27.5329,
+        "reason": "html_input_disabled",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "name": "async_handler",
+        "elapsed_ms": 40.1647,
+        "reason": "html_async_script",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "name": "extra_script",
+        "elapsed_ms": 51.7126,
+        "reason": "html_extra_script",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "fec0398a0889f7d7f79d4670e8c718132419665e55d4062261a3a330fba5d00a",
+        "name": "names_only_not_a_contract",
+        "elapsed_ms": 44.449400000000004,
+        "reason": "files_or_analysis_unavailable",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "1b1296e9187f2c1ff0be774ecebf6e0d559628320d09bb9764d8e97bd4c9ac9c",
+        "name": "unexecuted_launcher_payload",
+        "elapsed_ms": 252.7007,
+        "reason": "functional_profile_mismatch",
+        "allowed": false,
+        "state": "INCOMPATIBLE"
+      },
+      {
+        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "name": "known_registry_path_fixture",
+        "elapsed_ms": 72.42840000000001,
+        "reason": "reviewed_identity_and_dom",
+        "allowed": true,
+        "state": "CONTRACT_COMPATIBLE"
+      }
+    ],
+    "checks": 39,
+    "live_game_written": false,
+    "environment": "Windows PowerShell 5.1 / .NET CSharp verifier; local files read-only",
+    "status": "passed",
+    "game_started": false
+  },
+  "cef_async_native": {
+    "live_game_written": false,
+    "report": {
+      "schema": 2,
+      "fingerprint": "exsellent-chat-v1:57c75fe6c2d126d65400533b3d112d657b77834be588558716d0c6c92778e95f",
+      "known": false,
+      "mode": "cef-provisional",
+      "reason": "normalized_contract_and_dom",
+      "protocol": 2,
+      "allowed": true,
+      "state": "CONTRACT_COMPATIBLE",
+      "runtime": "NOT_RUN",
+      "capabilities": {
+        "dom": true,
+        "focus": true,
+        "payloads": true,
+        "lifecycle": true,
+        "incoming": true,
+        "adapter_order": true,
+        "outgoing": true,
+        "ipc": true
+      },
+      "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2"
+    },
+    "game_started": false,
+    "checks": 100004,
+    "status": "passed",
+    "cached_100000_calls_ms": 0,
+    "environment": "Windows x86 LuaJIT + child Windows PowerShell 5.1 + shared verifier",
+    "initialization_ms": 2558.9599609375
+  },
+  "installed": false,
+  "published": false,
+  "live_game_written": false,
+  "private_author_presets_exported": false,
+  "artifact_verification": "See dist/ARTIFACT_VERIFICATION0450.json after local packaging."
+}

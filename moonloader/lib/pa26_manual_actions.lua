@@ -248,6 +248,7 @@ function M.draw(studio,ui)
     ui.text('Предпросмотр: '..M.preview(cfg[r[1]],studio.lib.profile.gender))
    end
   end
+  if head=='setmark'then ui.text('/setmark: RP обязательна из любой точки PA, даже если вопрос ручного обработчика выключен. Ни бинд, ни импорт не обходят общий исполнитель. Шаблон ниже редактируется и применяется после сохранения.')end
   rule.enabled=studio:check('Обрабатывать эту команду##manual-action-enabled',rule.enabled)
   rule.prefer_bind=studio:check('Сначала брать RP из подходящего включённого бинда##manual-action-bind',rule.prefer_bind)
   rule.rp=studio:field('Стандартная RP-отыгровка команды##manual-action-rp','manual-action-rp:'..head,rule.rp,8192,true,110)

@@ -4,8 +4,9 @@
   "policy": "Reviewed adapter update; protocol-1 workers 0.40.3+ skip CEF on native installs and require the official HUD main hash on launcher installs.",
   "hashes": {
     "pa26-chat-endpoint.js": "dafae2adea0cd37d9aae06d45012279c0d4371af956e0b67d90468bb5647cfc8",
-    "pa26-chat.js": "e7a6ea494320ba4a6483cbfc9651bc04da0ae7ab7ed2e48a8d169a521d504b43"
+    "pa26-chat.js": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b"
   },
   "include_assets": false,
-  "adapter_review": "0.43.5: exact /b .и alias at submission only; no editing listeners, timers, polling or endpoint changes. Protocol 1 and official main.js/DLL unchanged. Real GTA acceptance pending."
+  "adapter_review": "0.45.0: shared static contract, protocol-2 initialization, bounded late CEF discovery and endpoint/HTTP backoff. Submission-only text processing; original main.js/DLL unchanged. Real GTA acceptance pending.",
+  "note": "0.45.0 adaptive contract/handshake reviewed locally. Existing one-time full-installer migration retains the CEF adapter; universal update ZIP keeps CEF assets excluded."
 }

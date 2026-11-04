@@ -1,0 +1,71 @@
+{
+  "version": "0.45.0",
+  "at_utc": "2026-11-04T13:54:07.115944+00:00",
+  "environment": "Windows PowerShell 5.1; workspace fixtures only; no GUI launch",
+  "game_started": false,
+  "live_game_written": false,
+  "results": [
+    {
+      "test": "test_author_install.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 66.5,
+      "log": "tests/QA0450-test_author_install.log"
+    },
+    {
+      "test": "test_cef_installer0440.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 34.8,
+      "log": "tests/QA0450-test_cef_installer0440.log"
+    },
+    {
+      "test": "test_setup.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 11.58,
+      "log": "tests/QA0450-test_setup.log"
+    },
+    {
+      "test": "test_setup_window.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 40.05,
+      "log": "tests/QA0450-test_setup_window.log"
+    },
+    {
+      "test": "test_update_legacy_paths.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 19.92,
+      "log": "tests/QA0450-test_update_legacy_paths.log"
+    },
+    {
+      "test": "test_update_progress.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 6.94,
+      "log": "tests/QA0450-test_update_progress.log"
+    },
+    {
+      "test": "test_updater.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 64.62,
+      "log": "tests/QA0450-test_updater.log"
+    },
+    {
+      "test": "test_installer.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 402.14,
+      "log": "tests/INSTALLER-shard0.log",
+      "independent_process_shards": 3
+    }
+  ],
+  "rerun": {
+    "test": "test_installer.ps1",
+    "previous_status": "passed",
+    "reason": "Allow full installer fault-injection suite to finish beyond original ten-minute runner limit."
+  }
+}

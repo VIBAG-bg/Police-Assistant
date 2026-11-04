@@ -1,5 +1,5 @@
 -- Original Police Assistant 2026 rules. Lua 5.1 / LuaJIT, no game APIs.
-local M = {VERSION = '0.44.0', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
+local M = {VERSION = '0.45.0', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
 M.actions = {
     {key = 'introduce', label = 'Представиться', me = 'остановившись рядом, достал служебное удостоверение и раскрыл его перед собеседником.', do_text = 'Удостоверение раскрыто: данные и фотография видны собеседнику.', command = ''},
     {key = 'documents', label = 'Документы', me = 'оглянувшись по сторонам, обратился к собеседнику с просьбой предъявить паспорт.', do_text = 'Готов ли собеседник предъявить документ?', command = ''},
@@ -15,6 +15,7 @@ M.wheelKeys = {{'X', 0x58}, {'C', 0x43}, {'V', 0x56}, {'B', 0x42}}
 M.genderPattern='{gender:([^{}|%c]*)|([^{}|%c]*)}'
 function M.expandGender(text,gender)
     if type(text)~='string'then return text end
+    text=require('pa26_gender_catalog').template(text)
     return (text:gsub(M.genderPattern,function(male,female)return gender=='female'and female or male end))
 end
 function M.stripGender(text)return (text:gsub(M.genderPattern,''))end

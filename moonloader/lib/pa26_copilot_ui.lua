@@ -28,6 +28,7 @@ for _,row in ipairs(require('pa26_dispatch').primaryActions)do if row[1]~='gas_o
 function M.quick(s,ui,callbacks,offer)
  if M.editReport(s,ui,callbacks)then return end
  local send=offer or function(action)M.offer(s,callbacks,action)end
+ require('pa26_field_ui').shareControl(s,ui,callbacks)
  s:settingsHeading(ui,'Быстрые доклады')
  ui.text('Работают и без сеанса патруля. Перед отправкой — предпросмотр, юнит и экипаж, ДА / НЕТ.')
  local quick={};for _,r in ipairs(require('pa26_copilot').quick)do quick[#quick+1]={r[1],r[2]..'##copilot-quick-'..r[1]}end
@@ -39,20 +40,26 @@ function M.quick(s,ui,callbacks,offer)
   ui.text('После /cuff ID и /arrest ID эти доклады предлагаются автоматически. Нажатие здесь не выполняет команду над человеком.')
  end
  s:settingsHeading(ui,'Вызовы и спецситуации')
- local dispatch=require 'pa26_dispatch';s.dispatchExpanded=s.dispatchExpanded or{}
- local families={};for _,r in ipairs(M.dispatchFamilies)do families[#families+1]={r[1],r[2]..' · доклады##dispatch-followups-'..r[1]}end
- groups.buttons(s,ui,families,function(id)s.dispatchExpanded[id]=not s.dispatchExpanded[id]end)
- for _,r in ipairs(M.dispatchFamilies)do if s.dispatchExpanded[r[1]]then
-  s:settingsHeading(ui,r[2]);ui.text('RP и доклад — только после подтверждения. Место берётся из вашего контекста; GPS-метка не устанавливается.')
-  local rows={{r[1],r[2]..'##copilot-dispatch-'..r[1]}}
+ local dispatch=require 'pa26_dispatch'
+ local families={{'none','Выберите происшествие'}};local byId={}
+ for _,r in ipairs(M.dispatchFamilies)do families[#families+1]={r[1],r[2]};byId[r[1]]=r end
+ s.dispatchIncident=s:choice('Происшествие##dispatch-incident',s.dispatchIncident or'none',families,ui)
+ local r=byId[s.dispatchIncident]
+ if r then
+  s:settingsHeading(ui,r[2])
+  local stage=callbacks.dispatchStatus and callbacks.dispatchStatus();if stage then ui.text((stage.demo and'Последний демо-этап: 'or'Последний переданный этап: ')..stage.label)end
+  ui.text('Выберите текущий этап. Это ваша оценка ситуации: PA не подтверждает прибытие, личность или результат по метке. Отправка только после ДА.')
+  local rows={{r[1],(r[1]=='dispatch_search'and'Начинаю поиск'or'Выехал')..'##copilot-dispatch-'..r[1]}}
   for _,sub in ipairs(dispatch.followups[r[1]]or{})do rows[#rows+1]={sub[1],sub[2]..'##copilot-dispatch-'..sub[1]}end
   if r[1]=='dispatch_gas'then rows[#rows+1]={'gas_order',dispatch.byAction.gas_order.label..'##copilot-dispatch-gas_order'}end
   groups.buttons(s,ui,rows,send)
- end end
+  if r[1]=='dispatch_search'or r[1]=='dispatch_colleague'then ui.text(require('pa26_field_radio').source)end
+ end
 end
 function M.draw(s,ui,data,callbacks)
  local im=s.imgui;local v=data.copilot or{};local c=v.car;local values=v.values or{}
  s.currentNoticeScope='vehicle';s:settingsHeading(ui,'Трафик и погоня')
+ require('pa26_nearby').compact(s,ui,data,callbacks)
  if M.editReport(s,ui,callbacks)then return end
  s.copilotPage=s:choice('Раздел##copilot-page',s.copilotPage or'work',{{'work','Ситуация'},{'grounds','Причина и основание'},{'rights','Задержание и права'},{'settings','Настройки и тексты'}},ui)
  local d=s.vehicleDraft or copy(s.lib.vehicle);local cfg=d.copilot or prefs.defaults();d.copilot=cfg

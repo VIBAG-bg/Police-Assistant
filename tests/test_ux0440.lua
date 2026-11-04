@@ -25,7 +25,7 @@ eq(studio.partnerPage,'contacts');eq(studio.patrolSessionDraft.unit,'2-L-77');eq
 s.physicalDown={[0x73]=true};s.step();s.physicalDown={};s.step();studio.assistPage='traffic';s.render()
 for _,r in ipairs(require('pa26_copilot_ui').dispatchFamilies)do
  local before=#s.sent
- click(r[2]..' · доклады##dispatch-followups-'..r[1]);check(studio.dispatchExpanded[r[1]]);eq(#s.sent,before)
+ studio.dispatchIncident=r[1];s.render();eq(studio.dispatchIncident,r[1]);eq(#s.sent,before)
  check(not studio.vehicleConfirm)
 end
 onScriptTerminate(s.script)

@@ -65,6 +65,7 @@ def runtime():
 syntax_lua = runtime()
 files = sorted((ROOT / "moonloader").rglob("*.lua")) + sorted(
     file for file in (ROOT / "tests").rglob("*.lua") if not {'install-sandbox','update-sandbox','cef-contract-sandbox'}.intersection(file.parts)
+    and not any(part.startswith('roads-native32-')for part in file.parts)
 )
 for file in files:
     syntax_lua.execute(b"local f,e = loadfile(...); assert(f,e)", file.as_posix().encode("utf-8"))
@@ -121,6 +122,12 @@ test_names.append('test_win7_patrol_stability.lua')
 
 test_names.append('test_downed_scene.lua')
 test_names.extend(['test_procedures0422.lua','test_procedure_windows0422.lua','test_ground0422.lua'])
+test_names.append('test_command_policy0450.lua')
+test_names.append('test_report_delivery0450.lua')
+test_names.append('test_roads0450.lua')
+test_names.append('test_nearest_stop0450.lua')
+test_names.extend(['test_allinone0450.lua','test_gender_complete0450.lua'])
+test_names.append('test_cef_adaptive0450.lua')
 parser = argparse.ArgumentParser()
 test_names.extend(['test_cef_assets.lua','test_hud_close.lua','test_manual_radio.lua'])
 test_names.extend(['test_text_segments.lua','test_action_preferences.lua'])
@@ -153,6 +160,8 @@ test_names.extend(['test_patrol_addendum0435.lua','test_chat_alias0435.lua','tes
 test_names.append('test_ux0440.lua')
 test_names.append('test_geometry0440.lua')
 test_names.extend(['test_custody0440.lua','test_cef_contract0440.lua'])
+test_names.extend(['test_navigation0450.lua','test_coordinates0450.lua','test_field0450.lua','test_setmark_entries0450.lua','test_ui0450.lua'])
+test_names.append('test_soak0450.lua')
 
 parser.add_argument('--report')
 parser.add_argument('--only', nargs='+', choices=test_names)

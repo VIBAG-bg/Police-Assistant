@@ -1,0 +1,355 @@
+{
+  "baseline_head": "ccabd376d4e899cd4fcbe12250c21b2656dea9d9",
+  "changed_existing_files": [
+    {
+      "path": ".github/workflows/check.yml",
+      "before_sha256": "7a267311e384a6e80090d63ab404dec99c85aec8a609727ce9b97d38d209c396",
+      "after_sha256": "2fa252e4f1fe6ba7a9958834f5daf36299ceae7226a56a2b1a52cb1ac945245f"
+    },
+    {
+      "path": "CEF_CONTRACT.json",
+      "before_sha256": "93c9dce477eff58dad51a323d07595ee452b8fa7ae3e5c38bf85c3c01b34e4d9",
+      "after_sha256": "2343387e0f56fe3ef2447ede8b97f6c9d438e460e0595551caa2d8e10454db75"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "before_sha256": "338dfc62a68b594ae02f0822688d2034a586061f8869fa8c6839de23169903d9",
+      "after_sha256": "f9b22855efd52d577afebbfd3fbc8b68525bc5fea80fbe27b91c4c6723dc7310"
+    },
+    {
+      "path": "INSTALL_MANIFEST.json",
+      "before_sha256": "cae6ad9c5439ab553724b4a296725f6c5a08a125a8741f1d44346d9767b1cd65",
+      "after_sha256": "553ffe214cdd0bfad706c3f00a0c6ed4cf33002b87c63f5556616af4601e29e2"
+    },
+    {
+      "path": "README.md",
+      "before_sha256": "cfe045df218632cde757e0df60268a02e5c2325d533f8fa6b50be9869020d761",
+      "after_sha256": "0ce81a9ae097273165e38b4c3b99bfa348787b10cdafd70e4f931ef953b3b5b7"
+    },
+    {
+      "path": "UPDATE_CEF_BASELINE.json",
+      "before_sha256": "68cf1a3d0b8d377fe93a791fdeb404bb63aa4e2011f8f7a39424c203e553e604",
+      "after_sha256": "0f4d93878824233183d6158bc6550064e166870d2f7be92ef6693a305236fbf8"
+    },
+    {
+      "path": "cef/assets/hud/pa26-chat.js",
+      "before_sha256": "e7a6ea494320ba4a6483cbfc9651bc04da0ae7ab7ed2e48a8d169a521d504b43",
+      "after_sha256": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b"
+    },
+    {
+      "path": "docs/INSTALLATION.md",
+      "before_sha256": "064d9b370b33c231f9d76d67fc2fd189b6bcf15a3f1e04847de72102f6d96b25",
+      "after_sha256": "ade524c09625af9ef6ea5ba13ac07849895d5012d482789d11d27d1a99e8e1d7"
+    },
+    {
+      "path": "docs/UPDATES.md",
+      "before_sha256": "8399a5ca61b4dc87dc1e34387d79731da6ff320820ccb3f5934ec950328ba761",
+      "after_sha256": "2ed3b1a1478adfa6941dd2b1c6b827d25838f3d4be35f0c748740b3808219532"
+    },
+    {
+      "path": "install.ps1",
+      "before_sha256": "0ba57517d8995b2fefb6c1529ddddfb1a700bae430f93b1b7b95c342a5ba725a",
+      "after_sha256": "f0de29115467c9cfe45e7daa5f586ce31512ab6a20e5959a4a7d525d214107bf"
+    },
+    {
+      "path": "moonloader/lib/pa26_assist_ui.lua",
+      "before_sha256": "22dbdd9e1fe0a7185fb0540a409d3a9c8e32bcbf73f90768944466d43a12b4ac",
+      "after_sha256": "f08c18f4650c48e295434ac0fff8f51dac4176c6b010d9734e940306cd2a34a6"
+    },
+    {
+      "path": "moonloader/lib/pa26_binder.lua",
+      "before_sha256": "9f7153afc690443a67bad9bb030e4ff1d139bed0614e3a8348d8d9fc9d2f9e6b",
+      "after_sha256": "30a71047f5cae30fe3c4632e8b7c2b66bd322784f3dcc39f69b43f153a94bf65"
+    },
+    {
+      "path": "moonloader/lib/pa26_bindings.lua",
+      "before_sha256": "3750343cdb81d589f3132b7d80a4302671d5dd995508078c2650712c9ec54ef2",
+      "after_sha256": "40c4067ce451c794e577965b671e2d37c17efaef98c1090ae48ec13dd4882137"
+    },
+    {
+      "path": "moonloader/lib/pa26_case_forms.lua",
+      "before_sha256": "53a8e822eddc964552495e62c4cb07c7b093ebfb25e2853730f5b725ae719beb",
+      "after_sha256": "7a2b8dcf2f97217813d63b4477691bd3f59a696eee16c919a0063c424f367aa6"
+    },
+    {
+      "path": "moonloader/lib/pa26_case_ui.lua",
+      "before_sha256": "2dbe0c9c925f8f074bf04e4a582c3b27457da593dbf615c34e491f1a9f605d59",
+      "after_sha256": "899548fea71265bd9db01c3a5f41c333d113db2384ef0b6b7ecd3f5bf71914e8"
+    },
+    {
+      "path": "moonloader/lib/pa26_cef_assets.lua",
+      "before_sha256": "beacfa48f593527010189f3d8599a5f5b5b874e42001ac62891c288dd5695fdd",
+      "after_sha256": "9340cfd01e1f5f5df83523a26b122fcf936c5138bacdd2b0200fb57540ffdc71"
+    },
+    {
+      "path": "moonloader/lib/pa26_cef_compat.lua",
+      "before_sha256": "5cd6a9b78c784ed93336b386c4e215f15ea6838f587edd143dcc4620d3fc925e",
+      "after_sha256": "3bf7280c6b478d8c141b00ad37ba0f77f90eed397a83ef0e2b86e075d93f8e4b"
+    },
+    {
+      "path": "moonloader/lib/pa26_chat_bridge.lua",
+      "before_sha256": "097f37e4cc8fd35db8d74a31b577eaab8fce8dd62661446438411e8759678ad4",
+      "after_sha256": "e6f31c6f227a4222a7fd8df4ba4836ea9ce3c25db90018f2c430d30ec971af3c"
+    },
+    {
+      "path": "moonloader/lib/pa26_chat_perf.lua",
+      "before_sha256": "7dee9d93091c8c9d5fcdf032824e6b9d2782b3f8c3bb5346ae08665d1842227a",
+      "after_sha256": "9e42c9e611bc7a6f696aeb45d10fd7546f3fea38d1afe6aa91f852a45ca00539"
+    },
+    {
+      "path": "moonloader/lib/pa26_copilot.lua",
+      "before_sha256": "ca063223af796c7b6f2f073de7b9a8bef5c8fd55b23d8c48420dada4f79284b3",
+      "after_sha256": "4ce89b580dc077a04b1e0eeae0b9f98c568f11fd20de9422825957bd2e42efcb"
+    },
+    {
+      "path": "moonloader/lib/pa26_copilot_incident.lua",
+      "before_sha256": "a0b7f30b434fc9975468e29c627f9c72ccdf8eae563e53cb0ee1b1f2e8d20262",
+      "after_sha256": "10f5e7d6ef5834afee6369acbe43348a602fcbbbc97caa491c2405c1851a731f"
+    },
+    {
+      "path": "moonloader/lib/pa26_copilot_settings.lua",
+      "before_sha256": "d81456cae73d4cc789d47af489a8507c6bf1288ec5ef6b2d01c42353b78b7846",
+      "after_sha256": "0e3c466aac9679cd2e8fd35433f164b8cc6dbf34705a9da8483e592cf862c77f"
+    },
+    {
+      "path": "moonloader/lib/pa26_copilot_ui.lua",
+      "before_sha256": "ee04dc8acbae93f6b84eded85da104d92ed05fd766b2bc0ccc433146c73d4325",
+      "after_sha256": "f4759ddd4ec6a45c60fce0682d66d5cb316fa2340011b195c5707b7a2ac0e629"
+    },
+    {
+      "path": "moonloader/lib/pa26_core.lua",
+      "before_sha256": "0c5bd4466b949a0d8611d8fb4382771604c2359f246a1f6d8c16f3da1e4d1a87",
+      "after_sha256": "e688dda0c0c73157086949db7a2eecb3e0927512323cec2c06d548754f9be7a8"
+    },
+    {
+      "path": "moonloader/lib/pa26_dispatch.lua",
+      "before_sha256": "336435463e7b382647c981943e9f5ffc2fe661d1eb383696e2ca83bec034532e",
+      "after_sha256": "871ac1858bd1134c550a2740722b1e89cf56be87ad92bca5ad161dc50716bc30"
+    },
+    {
+      "path": "moonloader/lib/pa26_executor.lua",
+      "before_sha256": "a5d153cf752a45b831b2145d270eeba622a07c14080f98dc91347f2d7ed923dc",
+      "after_sha256": "5ebe02f90558db7a43417bac7fa48c8177215966849f48c4d9f5da9ef9a87efc"
+    },
+    {
+      "path": "moonloader/lib/pa26_hud.lua",
+      "before_sha256": "07505173087b45fc66411e373a622bdb7fe7db29d29b15a4a39fd95111482292",
+      "after_sha256": "5cdf33cb5fd308592492677ef367052514bac5cd4ef9a493a4bcfaffe909db3e"
+    },
+    {
+      "path": "moonloader/lib/pa26_manual_actions.lua",
+      "before_sha256": "e08f8babf4fb75f819a5356dc6c637e03c91cd5691b06b958642a6b38fbde68c",
+      "after_sha256": "295d217abe5e7b76386799b16b61bd7e4dd57b7052fd4ff9e33c2c81c979f9ef"
+    },
+    {
+      "path": "moonloader/lib/pa26_map_ui.lua",
+      "before_sha256": "a7dd61ae8698ec1976268346ee249d2589a0b2d60bf584784b3b87faa406b974",
+      "after_sha256": "fa2495373b222d86a0f6256c7712c945a5057de98bf7e834d227aa5a4004e72d"
+    },
+    {
+      "path": "moonloader/lib/pa26_mark_window.lua",
+      "before_sha256": "7e6338f0de80ba9f6ee39ab7de78a3b01bc16fc702d2bb7a425c32e753b3d224",
+      "after_sha256": "0a19d012e4ee35a135d772671dbefceaa15363423e9c4caf330ffa6d84ccb9f0"
+    },
+    {
+      "path": "moonloader/lib/pa26_menu.lua",
+      "before_sha256": "acdec6d57309ffaf102dacb3362d9f3e26c1bf5503e43e5670dd0f31e71b99ba",
+      "after_sha256": "481d053d23dc58d90a1c00d179f2d6a9efe764db877248251b7d28e889d8c8a3"
+    },
+    {
+      "path": "moonloader/lib/pa26_nearby.lua",
+      "before_sha256": "00142835deefa020566bbdab6c4aa89d0569022917b7f93747cf6be3d68fa8e4",
+      "after_sha256": "7383b963bbfbc29c044d7983babb8f5b9de54ee42f8d4db096b9b25cae39cd72"
+    },
+    {
+      "path": "moonloader/lib/pa26_patrol_session.lua",
+      "before_sha256": "d11ed46cae809c69e5218a26b5bccb18b23579abd5d304408b6df95ee562716a",
+      "after_sha256": "bedaf5408b48f310403c926ee3a0653620ab1b30c73ce5d91a5f17ca3c6d8dc8"
+    },
+    {
+      "path": "moonloader/lib/pa26_preferences.lua",
+      "before_sha256": "0e4d8485dc1f6cdc0bb86bbe70f5ea34bf22c3dd8206b97e0961089534f61e42",
+      "after_sha256": "8fd1523dc8fc58a24e7942218e7e0cd376feb4ccba46504601aa17eb581bf024"
+    },
+    {
+      "path": "moonloader/lib/pa26_procedure_settings.lua",
+      "before_sha256": "56d28d4e80c47818e0f42e003ad553f5fa995684e6dc95ff0a4d4d3db578c88e",
+      "after_sha256": "c57a23e8da871a3c9ef29319fda1e3d76d6298b56aea043e4889b51880823f0d"
+    },
+    {
+      "path": "moonloader/lib/pa26_radio_guard.lua",
+      "before_sha256": "5d5fbcf95cc2ed1253226ff60d6ba5ce9fdfc22384e8c341d955a812747f32c8",
+      "after_sha256": "60bd41fd56e0a894bdc1f47a60b8288b33a2a505d15faaa3cfc0bcf8aea3232d"
+    },
+    {
+      "path": "moonloader/lib/pa26_studio.lua",
+      "before_sha256": "333ae928b37c528e18ecba2a7bc90f851cd40a4785e868e553bcf2c7218bb34d",
+      "after_sha256": "8360ae539a35faba51a2173a240ea50a859b01bd00d393d0ef8a824c83aca8d2"
+    },
+    {
+      "path": "moonloader/lib/pa26_vehicle.lua",
+      "before_sha256": "5723455705ae64fe12b70b7cf580745ea93ba542912faf5d54eb8bd6a64d49a9",
+      "after_sha256": "73a42438b78a319d831c4ec874612e82981ebff91f3857030516f721901ddbdd"
+    },
+    {
+      "path": "moonloader/lib/pa26_vehicle_settings.lua",
+      "before_sha256": "56309351fd88fc41d1b87cd3620ad55877fc8268daea1932a5d2597fb8919d19",
+      "after_sha256": "b5d88bb54a82a6ca28bc848975ae217a6f63c78ef1490de1fb1199240d0acd32"
+    },
+    {
+      "path": "moonloader/lib/pa26_vehicle_ui.lua",
+      "before_sha256": "64006ab2299610dc7ee5d0ef8d45b2358a050b1c5eb0f4ddfefa046d3369107f",
+      "after_sha256": "be3bb13bfa832096482d07fc9d8213f1db9277ff21ca80dd4f78ca7901921af1"
+    },
+    {
+      "path": "moonloader/lib/pa26_wheel.lua",
+      "before_sha256": "6d02692c0df778ee0d147075d01d4c6a8b28445f95a1be7fcf19107decc34db7",
+      "after_sha256": "a3680aba88c09c081877c711121ebc2c7be25c91ef34bd13ecc48a600ec95a47"
+    },
+    {
+      "path": "moonloader/lib/pa26_wheel_scope.lua",
+      "before_sha256": "02599ec5706a53dbfd3119b96b7daf4d849ac3a19b3fda4c36e63f00bdb5feaf",
+      "after_sha256": "36a583e9cd64349b9015721e859a77ad83d3549b03df07e93da60297b0705faf"
+    },
+    {
+      "path": "moonloader/lib/pa26_workspace.lua",
+      "before_sha256": "9e40b19e1a8dc573d07affa85bfa18907eac6712ccaf69a9187f9b803f9d92fd",
+      "after_sha256": "bff2b24b2e173708cac7613e28230a7aef5285e5c43a7b9911603342608708cb"
+    },
+    {
+      "path": "moonloader/police_assistant_2026.lua",
+      "before_sha256": "5f58838fb041ab564a82903d3345973f2691bf0c27ea0eee041ffefa9278d14e",
+      "after_sha256": "5148baec469c2429f687e70e0f1206047d96652daf1cbbf763034bcd2090876c"
+    },
+    {
+      "path": "moonloader/resource/pa26/updater/pa26-update.ps1",
+      "before_sha256": "4045a42f86e3c18860fa5518a9d92d290fff3c7d931243284b5de3ceda899a22",
+      "after_sha256": "9b071ffef4dd3be5032c79361f943b65eee1b73f848d63bc961818f0a798b20f"
+    },
+    {
+      "path": "tests/run_tests.py",
+      "before_sha256": "13d16b4c08a2a9039dafd3aca0daef4e60a1262ee41aab8dd0caa9415532898f",
+      "after_sha256": "c60773be9a1f7bb65509ea1dc3240aefe8c2760fd75c1b388a42896298f80477"
+    },
+    {
+      "path": "tests/support/fixture.lua",
+      "before_sha256": "285fef2e05e0a6c4516676982410d8fcd5a4a043688010b9987600c0700ba8c1",
+      "after_sha256": "2e8b73da57f67c7b1cdc67d8b7e6c2d85855eb7b834211b322c6afc03c57d871"
+    },
+    {
+      "path": "tests/test_cef_assets.lua",
+      "before_sha256": "b4af298e814981571cf303d24520bb6156acdd5a5a298d2f0d735da04942fa75",
+      "after_sha256": "a18e85281d12a96436d2baf1d60cb73a98f634af73c52949569463df9650eec0"
+    },
+    {
+      "path": "tests/test_cef_chat.js",
+      "before_sha256": "7c3d449ce38aaf4ea69c2eb35e5224101b0ae32883b2a8c89341b0b3c145a145",
+      "after_sha256": "4adb011014e7b6fa8436d65a05fc1444aa7309b792da5769f39f6f135c13856f"
+    },
+    {
+      "path": "tests/test_cef_contract0440.lua",
+      "before_sha256": "33164de250f42e6ad8468fc5d38032380d9aa51f5da527ab8d63aebbd6cf93bb",
+      "after_sha256": "3c297ddc74cf54760f492c19249134c214d900ad7346c45ba646648600fb8865"
+    },
+    {
+      "path": "tests/test_cef_contract_native32.lua",
+      "before_sha256": "2e94dea03471041e6383397aa93276822d3b1a53c0d7879c5c6ecbec52fc1323",
+      "after_sha256": "7f05321b114bd5da095c50161d5ef1a6f4c6a9255af4f508c56ed33df88d98cc"
+    },
+    {
+      "path": "tests/test_cef_native32.js",
+      "before_sha256": "84b1ba50a605687033fe224c9463be01147712d19faf52d54db87a5b436f295e",
+      "after_sha256": "895cbaacf80876ea5028dcaa142ae59180119f6abfba06dd5d000ca1fa60a65c"
+    },
+    {
+      "path": "tests/test_dispatch0412.lua",
+      "before_sha256": "f795f7758225ccb4e137f7e57066b19c6dd17b85d395b8b04c9eed42b8f21285",
+      "after_sha256": "dee9197fc135e103d3f066e23953cd5bbc057f6515b2011bcf10869df834b15a"
+    },
+    {
+      "path": "tests/test_gender040.lua",
+      "before_sha256": "5254a42a53ec572f2307465931f5ee58c47e5ba838ee84d81d4de88df00ad625",
+      "after_sha256": "1731106f00265feb413b360b7a315452284af87c3347f89d7731f85150dc992c"
+    },
+    {
+      "path": "tests/test_installer.ps1",
+      "before_sha256": "6bed1f18152cb75a24aa6798ddfb46e14409c7b7d4684bf31ebd2a08e652a617",
+      "after_sha256": "36e1fba75958a34a08a09f4b7677088542ed4531f80d6a57f5f9425ed7bb9e0f"
+    },
+    {
+      "path": "tests/test_interaction.lua",
+      "before_sha256": "365421f85015f340ad5a2771d9eab94f37147c88641f8c4967cfa76f6ce2a9e8",
+      "after_sha256": "da97ebf63f971e2a546e236fc211b0a2d46e59229d1eaee2dd4b3122ba18af19"
+    },
+    {
+      "path": "tests/test_map_locations.lua",
+      "before_sha256": "6866c7cd07b26f35ababb56589576313c4b7f289e752df26f92b660df8f913db",
+      "after_sha256": "8f6024844f993896403684255db0fc1cd49dd7db7b0bc112b6d5f36a2c1a931c"
+    },
+    {
+      "path": "tests/test_mark_ui.lua",
+      "before_sha256": "76e0046a4b0725051384ede6ec8c52ee15a7511b9ddacb7046217a42e99c70ea",
+      "after_sha256": "a88485b0076e7565bb0dd8d00db46d898a5e402a9aef2565dfe27210efdc8c09"
+    },
+    {
+      "path": "tests/test_procedure_access.lua",
+      "before_sha256": "7b6ad1d48db9400cc0bcecddf23a74f69445d9bfc37a10bda07539b3b8dbcc7e",
+      "after_sha256": "eac06f7bf97dfbf7d51f7b400a65b22f08f2c1e2b1739318cdfc85383a3bbd1b"
+    },
+    {
+      "path": "tests/test_procedure_windows0422.lua",
+      "before_sha256": "48b58d18f8157b3d8c0328620e6712b336f664c734570c0a9c938993b38d7d5c",
+      "after_sha256": "1f00a5eb4caf488c10b5ad14caf4ddd1e782cffcb2317a6296602cfcda6cb98a"
+    },
+    {
+      "path": "tests/test_reports0432.lua",
+      "before_sha256": "b80dff9d629d04cb6c32f3caecc700a523c27b16c1615514242749da40c1bcda",
+      "after_sha256": "c4ed057fa7d79171bc1eeefda13d70a6258f8b48cf0b7c2f9673c7e0e2f51717"
+    },
+    {
+      "path": "tests/test_rp_integration.lua",
+      "before_sha256": "199f3410920bf9e1c3b5e5a2c3c4e7aead63a42ac24d59e118c2f205f4f05468",
+      "after_sha256": "5be99bf46b490925afe3f5cc9d0cce4dd0b9afdceb384f8e24fee31308fdea10"
+    },
+    {
+      "path": "tests/test_studio.lua",
+      "before_sha256": "cb6691e0875f5ad834a0ee370d94fe6689d990b019c332b95eddbaa5053245d6",
+      "after_sha256": "731338547ebb32c6d13ecdb6ead86327745803904053bc8b8dce03802bde53cd"
+    },
+    {
+      "path": "tests/test_ux0440.lua",
+      "before_sha256": "766fcc3ad3fa513efc46cee515a68907cc9f02ae214c1e803cba31512263e848",
+      "after_sha256": "e563bf934f892cb24684a8e3ab56873098b5209f6978b7f863d5dd42ac7e7391"
+    },
+    {
+      "path": "tools/verify-package.py",
+      "before_sha256": "7a07b9923524b0358ca765fee9e92d54ef778fd323bce325bf1059d5ef7bdaf3",
+      "after_sha256": "6236501232516d4a7e5440eb805e5e740a661bab38d5b95505ee98850c942967"
+    }
+  ],
+  "new_runtime_files": [
+    "moonloader/lib/pa26_cef_contract.lua",
+    "moonloader/lib/pa26_cef_job.lua",
+    "moonloader/lib/pa26_command_policy.lua",
+    "moonloader/lib/pa26_coord_share.lua",
+    "moonloader/lib/pa26_cruiser_assist.lua",
+    "moonloader/lib/pa26_field_briefings.lua",
+    "moonloader/lib/pa26_field_radio.lua",
+    "moonloader/lib/pa26_field_services.lua",
+    "moonloader/lib/pa26_field_settings.lua",
+    "moonloader/lib/pa26_field_ui.lua",
+    "moonloader/lib/pa26_gender_audit.lua",
+    "moonloader/lib/pa26_gender_catalog.lua",
+    "moonloader/lib/pa26_navigation.lua",
+    "moonloader/lib/pa26_navigation_path.lua",
+    "moonloader/lib/pa26_navigation_render.lua",
+    "moonloader/lib/pa26_navigation_roads.lua",
+    "moonloader/lib/pa26_pinned_note.lua",
+    "moonloader/lib/pa26_road_file.lua",
+    "moonloader/lib/pa26_road_sources.lua",
+    "moonloader/lib/pa26_sha256.lua",
+    "moonloader/lib/pa26_tracking_ui.lua",
+    "moonloader/resource/pa26/roads.bin"
+  ],
+  "private_config_added": false
+}

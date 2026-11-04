@@ -17,6 +17,8 @@ jobs:
       - run: python tools/verify-package.py
       - run: python tests/run_tests.py --report tests/RESULTS.json
       - run: node tests/test_cef_chat.js
+      - run: node tests/test_cef_adaptive0450.js
+      - run: node tests/test_cef_recovery0450.js
       - shell: powershell
         run: ./tests/test_updater.ps1
       - shell: powershell

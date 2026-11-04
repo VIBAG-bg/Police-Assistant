@@ -7,6 +7,7 @@ function M.draw(studio,ui,data,callbacks)
     local state=data.mapState or {}
     local preview=grid.validate(d)or studio.lib.map_grid
     studio:settingsHeading(ui,'Квадраты карты')
+    if callbacks.openField and studio:button('Навигация и OOC-координаты##map-field',ui)then callbacks.openField();return end
     ui.text('Буква и номер обозначают клетку координатной сетки, например H-18. По умолчанию 24 × 24 клетки с шагом 250 игровых единиц. Это отдельная сетка PA, а не подтверждённая карта официальных секторов SFPS.')
     ui.text('Названия районов Doherty, Hashbury и другие уже берутся из GTA и показываются отдельно. Поддерживаются обычный чат и CEF: сетка сама ничего не отправляет.')
     local autoCity,cityChanged=studio:check('Автозаполнение {city}##map-auto-city',d.auto_city)

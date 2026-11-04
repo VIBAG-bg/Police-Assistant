@@ -1,0 +1,143 @@
+{
+  "version": "0.45.0",
+  "status": "passed",
+  "environment": "LuaJIT 2.1 + Lupa; packaged LGPS v1; synthetic world endpoints; no launcher files",
+  "roads_sha256": "c1d347286ccb0349940800570078c6872bef31c12ac6d6f77a4b1cf8b857d7db",
+  "backend_sha256": "cf30a665f9056b5c89621b82d21c5ae02fcd3009e53d0dfe68fb9435f0ffb623",
+  "source_sha256": {
+    "pa26_navigation_roads.lua": "cf30a665f9056b5c89621b82d21c5ae02fcd3009e53d0dfe68fb9435f0ffb623",
+    "pa26_road_sources.lua": "fc584dda7f5f9023b43b4f6bf7bf110ebb42154f84708f6c1923837c30bd421c",
+    "pa26_road_file.lua": "6828b2c0a67d3319ac5708dcc4cbf3a380236838f3a9a80102e216e14929701c",
+    "pa26_sha256.lua": "ddccd0fdf43303dbd0e0c9a4a760525dc7a7fe6269cc7723fdb59ef40e16c410"
+  },
+  "trials": 3,
+  "runs": [
+    {
+      "trial": 1,
+      "file_opens": 1,
+      "phases": {
+        "prepare_graph": {
+          "slices": 107,
+          "max_work_units_per_slice": 256,
+          "total_offline_wall_ms": 32.36160000960808,
+          "slice_p50_ms": 0.2843,
+          "slice_p95_ms": 0.7727,
+          "slice_p99_ms": 1.6419,
+          "worst_slice_ms": 3.6172,
+          "worst_stage": "\u041f\u043e\u0434\u0433\u043e\u0442\u043e\u0432\u043a\u0430 \u0434\u043e\u0440\u043e\u0436\u043d\u043e\u0439 \u0441\u0435\u0442\u0438"
+        },
+        "first_route": {
+          "slices": 129,
+          "max_work_units_per_slice": 256,
+          "total_offline_wall_ms": 20.7290000107605,
+          "slice_p50_ms": 0.1362,
+          "slice_p95_ms": 0.3185,
+          "slice_p99_ms": 0.4981,
+          "worst_slice_ms": 0.6723,
+          "worst_stage": "\u0414\u043e\u0440\u043e\u0436\u043d\u044b\u0439 GPS: \u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d \u00b7 28991 \u0443\u0437\u043b\u043e\u0432",
+          "route_nodes": 462,
+          "road_distance": 5998.331527048475
+        },
+        "subsequent_route": {
+          "slices": 121,
+          "max_work_units_per_slice": 256,
+          "total_offline_wall_ms": 17.293600001721643,
+          "slice_p50_ms": 0.129,
+          "slice_p95_ms": 0.355,
+          "slice_p99_ms": 0.4933,
+          "worst_slice_ms": 0.5348,
+          "worst_stage": "\u0414\u043e\u0440\u043e\u0436\u043d\u044b\u0439 GPS: \u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d \u00b7 28991 \u0443\u0437\u043b\u043e\u0432",
+          "route_nodes": 462,
+          "road_distance": 5998.331527048475
+        }
+      }
+    },
+    {
+      "trial": 2,
+      "file_opens": 1,
+      "phases": {
+        "prepare_graph": {
+          "slices": 102,
+          "max_work_units_per_slice": 256,
+          "total_offline_wall_ms": 29.455600000801496,
+          "slice_p50_ms": 0.31405,
+          "slice_p95_ms": 0.7065,
+          "slice_p99_ms": 0.9973,
+          "worst_slice_ms": 1.8826,
+          "worst_stage": "\u041f\u043e\u0434\u0433\u043e\u0442\u043e\u0432\u043a\u0430 \u0434\u043e\u0440\u043e\u0436\u043d\u043e\u0439 \u0441\u0435\u0442\u0438"
+        },
+        "first_route": {
+          "slices": 128,
+          "max_work_units_per_slice": 256,
+          "total_offline_wall_ms": 23.93550000851974,
+          "slice_p50_ms": 0.15645,
+          "slice_p95_ms": 0.4464,
+          "slice_p99_ms": 0.6161,
+          "worst_slice_ms": 0.6352,
+          "worst_stage": "\u0414\u043e\u0440\u043e\u0436\u043d\u044b\u0439 GPS: \u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d \u00b7 28991 \u0443\u0437\u043b\u043e\u0432",
+          "route_nodes": 462,
+          "road_distance": 5998.331527048475
+        },
+        "subsequent_route": {
+          "slices": 121,
+          "max_work_units_per_slice": 256,
+          "total_offline_wall_ms": 18.8522000098601,
+          "slice_p50_ms": 0.1442,
+          "slice_p95_ms": 0.3076,
+          "slice_p99_ms": 0.4909,
+          "worst_slice_ms": 0.5154,
+          "worst_stage": "\u0414\u043e\u0440\u043e\u0436\u043d\u044b\u0439 GPS: \u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d \u00b7 28991 \u0443\u0437\u043b\u043e\u0432",
+          "route_nodes": 462,
+          "road_distance": 5998.331527048475
+        }
+      }
+    },
+    {
+      "trial": 3,
+      "file_opens": 1,
+      "phases": {
+        "prepare_graph": {
+          "slices": 103,
+          "max_work_units_per_slice": 256,
+          "total_offline_wall_ms": 30.237200000556186,
+          "slice_p50_ms": 0.3172,
+          "slice_p95_ms": 0.6904,
+          "slice_p99_ms": 0.9607,
+          "worst_slice_ms": 2.0206,
+          "worst_stage": "\u041f\u043e\u0434\u0433\u043e\u0442\u043e\u0432\u043a\u0430 \u0434\u043e\u0440\u043e\u0436\u043d\u043e\u0439 \u0441\u0435\u0442\u0438"
+        },
+        "first_route": {
+          "slices": 129,
+          "max_work_units_per_slice": 256,
+          "total_offline_wall_ms": 23.243699994054623,
+          "slice_p50_ms": 0.1469,
+          "slice_p95_ms": 0.3809,
+          "slice_p99_ms": 0.6324,
+          "worst_slice_ms": 0.7688,
+          "worst_stage": "\u0414\u043e\u0440\u043e\u0436\u043d\u044b\u0439 GPS: \u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d \u00b7 28991 \u0443\u0437\u043b\u043e\u0432",
+          "route_nodes": 462,
+          "road_distance": 5998.331527048475
+        },
+        "subsequent_route": {
+          "slices": 122,
+          "max_work_units_per_slice": 256,
+          "total_offline_wall_ms": 18.215999996755272,
+          "slice_p50_ms": 0.1362,
+          "slice_p95_ms": 0.2646,
+          "slice_p99_ms": 0.4981,
+          "worst_slice_ms": 0.5525,
+          "worst_stage": "\u0414\u043e\u0440\u043e\u0436\u043d\u044b\u0439 GPS: \u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d \u00b7 28991 \u0443\u0437\u043b\u043e\u0432",
+          "route_nodes": 462,
+          "road_distance": 5998.331527048475
+        }
+      }
+    }
+  ],
+  "game_started": false,
+  "game_written": false,
+  "road_data_included_in_package": true,
+  "gta_frame_times_measured": false,
+  "actual_input_latency_measured": false,
+  "waypoint_to_visible_route_ms": "NOT RUN",
+  "time_scope": "Offline CPU/wall handler timings; slices run consecutively and are not real GTA frames"
+}

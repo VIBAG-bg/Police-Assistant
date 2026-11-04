@@ -65,7 +65,8 @@ s.commands.pa26quick();s.step();click(s,'Мой розыск##quick-system-proce
 -- Overflow from the wheel keeps actions even if their normal F11 flag is off.
 s.workspace.library.procedures.mark_quick=false
 s.commands.pa26quick();s.workspace.studio.quickWheelCategory='wanted';s.render()
-click(s,'Пеленгация##quick-system-procedure-mark');eq(st.caseForm.kind,'mark');healthy(s)
+click(s,'Пеленгация##quick-system-procedure-mark');eq(st.caseKind,'mark');healthy(s)
+eq(st.caseForm,nil,'Ordinary tracking does not create the optional authorization form')
 -- Classic-wheel users still get the forms in the independent quick menu.
 s=setup(true);s.commands.pa26quick();s.step();click(s,'Розыск##quick-system-procedure-wanted');check(s.workspace.studio.caseForm);healthy(s)
 -- No selected player: opening an empty form never manufactures a target.

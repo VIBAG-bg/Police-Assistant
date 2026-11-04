@@ -5,7 +5,7 @@ local groups={citizen=true,documents=true,detention=true,frisk=true,wanted=true,
 local function copy(v)if type(v)~='table'then return v end;local out={}for k,x in pairs(v)do out[k]=copy(x)end;return out end
 M.copy=copy
 M.names={citizen='Мегафон и 10-55',documents='Проверка и бортовой ПК',detention='Погоня и 10-66',frisk='Досмотр и обыск',wanted='Розыск и штрафы',service='Рация и патруль',leadership='Вызовы и руководство',custom='Свои бинды (авто)'}
-M.systemGroups={['copilot-stop_order']='citizen',['copilot-tire']='citizen',['copilot-stop']='citizen',['copilot-explain_stop']='citizen',['assist-megaphone']='citizen',
+M.systemGroups={['assist-traffic-nearest']='citizen',['copilot-stop_order']='citizen',['copilot-tire']='citizen',['copilot-stop']='citizen',['copilot-explain_stop']='citizen',['assist-megaphone']='citizen',
  ['copilot-pursuit']='detention',['copilot-high_risk']='detention',['copilot-risk_order']='detention',['copilot-return_car']='detention',['copilot-lost']='detention',['copilot-finish']='detention',
  ['copilot-fast_pt']='wanted',['copilot-patrol_continue']='service',['copilot-fast_wanted']='wanted',['copilot-pursuit_mark']='wanted'}
 function M.fresh(settings,slots)

@@ -16,6 +16,7 @@ local windowLayout=require 'pa26_window_layout'
 local manualChat=require 'pa26_manual_chat'
 local updateSettings=require 'pa26_updater'
 local manualActions=require 'pa26_manual_actions'
+local fieldSettings=require 'pa26_field_settings'
 local M = {SCHEMA = 1, MAX_BINDS = 128, MAX_NOTES = 128, MAX_PARTNERS = 64, MAX_STEPS = 64}
 M.stats = {{'none', 'Без служебного счётчика'}, {'arrest', 'Задержания'}, {'documents', 'Проверки документов'},
     {'frisk', 'Досмотры'}, {'cuff', 'Наручники'}, {'uncuff', 'Снятие наручников'},
@@ -236,7 +237,7 @@ function M.alertShortcutDefaults()
         code0={key=0x33,alt=true,ctrl=false,shift=false},
         code1={key=0,alt=false,ctrl=false,shift=false},code4={key=0,alt=false,ctrl=false,shift=false}}
 end
-M.featureKeys={{'radio_guard','skip_shortcut','Пропустить автодоклад'}, {'weapon_warning','shortcut','Предупредить об оружии'},
+M.featureKeys={{'field','share_shortcut','Передать OOC-координаты'}, {'radio_guard','skip_shortcut','Пропустить автодоклад'}, {'weapon_warning','shortcut','Предупредить об оружии'},
     {'alert_shortcuts','sos','SOS'}, {'alert_shortcuts','shots','Shots fired'}, {'alert_shortcuts','code0','CODE 0'},
     {'alert_shortcuts','code1','CODE 1'}, {'alert_shortcuts','code4','CODE 4'},
     {'patrol_session','toggle_shortcut','Открыть патруль'}, {'patrol_session','pause_shortcut','Пауза / продолжение патруля'},
@@ -279,6 +280,7 @@ function M.defaults(cfg)
         retain_distance=40,retain_grace_ms=1500,keep_target_on_interior_change=true,aim_select_enabled=true,aim_select_control='mouse',aim_select_delay_ms=150,wheel_mode='categories',wheel_profile='compact',wheel_enabled=true,interaction_notices=true,accent_live_input=true,accent_skip_brackets=true,chat_dot_commands=true,manual_radio_prefix=true,cef_chat_support=true,cef_chat_diagnostics=true,cef_chat_profile=false,cef_layout_indicator=true,cef_chat_weapon_guard=true,cef_chat_weapon_lock=true,cef_chat_grace_ms=350,wheel_names={}},
     filters={},recruitment={min_age=18,min_level=3,min_lawfulness=0,land=true,water=false,air=false,weapon=true,medical=true}}
     local categories={introduce='Общение',documents='Документы',wanted='Проверки',frisk='Досмотр',cuff='Задержание',release='Задержание'}
+    lib.field=fieldSettings.defaults()
     lib.settings.manual_actions=manualActions.defaults();lib.settings.wheel_child_limit=0;lib.settings.wheel_system_groups={};lib.settings.wheel_order={};lib.settings.wheel_edit_enabled=true;lib.settings.shutdown_message='Police Assistant полностью отключён до перезахода в игру.'
     local female={introduce='остановившись рядом, достала служебное удостоверение и раскрыла его перед собеседником.',
         documents='оглянувшись по сторонам, обратилась к собеседнику с просьбой предъявить паспорт.',
@@ -382,7 +384,7 @@ function M.validateBinding(raw)
 end
 function M.validate(raw, cfg)
     if type(raw)~='table' or raw.schema~=M.SCHEMA then return nil,'Неизвестная версия библиотеки.' end
-    local out=M.defaults(cfg); out.bindings={}; out.notes={}; out.partners={}
+    local out=M.defaults(cfg);local fieldError;out.field,fieldError=fieldSettings.validate(raw.field);if not out.field then return nil,fieldError end;out.bindings={};out.notes={};out.partners={}
     local alertError;out.alerts,alertError=M.validateAlerts(raw.alerts);if not out.alerts then return nil,alertError end
     out.weapons,alertError=preferences.validateWeapons(raw.weapons);if not out.weapons then return nil,alertError end
     out.taser,alertError=preferences.validateTaser(raw.taser);if not out.taser then return nil,alertError end

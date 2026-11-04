@@ -45,7 +45,7 @@ function Assert-PaMarkerOwner([string]$job) {
     if(-not [IO.File]::Exists($script:PaMarker) -or [IO.File]::ReadAllText($script:PaMarker) -cne $job){throw 'journal_owner_mismatch'}
 }
 function Test-PaOwned([string]$path) {
-    return $path -cmatch '^MoonLoader/(police_assistant_2026\.lua|pa26_guard\.lua|lib/pa26_[a-z0-9_]+\.lua|resource/pa26/(knowledge-base\.json|knowledge-policy\.json|wanted-catalog\.json|banner-bmw-lamborghini\.png|sidebar-police-assistant\.png|updater/pa26-update\.ps1))$' -or
+    return $path -cmatch '^MoonLoader/(police_assistant_2026\.lua|pa26_guard\.lua|lib/pa26_[a-z0-9_]+\.lua|resource/pa26/(knowledge-base\.json|knowledge-policy\.json|wanted-catalog\.json|roads\.bin|banner-bmw-lamborghini\.png|sidebar-police-assistant\.png|updater/pa26-update\.ps1))$' -or
            $path -cmatch '^cef/assets/hud/pa26-chat(-endpoint)?\.js$'
 }
 function Read-PaJson([string]$path,[long]$limit=1048576) {

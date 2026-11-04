@@ -15,6 +15,7 @@ M.profiles={compact={'citizen','detention','wanted','service'},
     extended={'citizen','detention','wanted','service','leadership','custom'},
     full={'citizen','documents','detention','frisk','wanted','service','leadership','custom'}}
 M.systemRows={{'sos','SOS'},{'shots','Shots fired'},{'code0','CODE 0'},{'assist-megaphone','Мегафон'},
+    {'assist-traffic-nearest','Начать 10-55 с ближайшим авто'},
     {'patrol-open','Патруль · открыть'},{'patrol-pause','Патруль · пауза'},{'patrol-resume','Патруль · продолжить'},
     {'patrol-finish','Патруль · завершить'},{'procedure-wanted','Помощник розыска'},{'procedure-wanted_list','Список преступников'},
     {'procedure-fine','Штраф'},{'procedure-mark','Пеленгация'}}
@@ -140,6 +141,8 @@ function M.build(lib,revision,includeAlerts,serviceState)
     -- Operational actions have their own feature gate, independent of SOS.
     local cp=lib.vehicle and lib.vehicle.copilot
     if lib.vehicle and lib.vehicle.enabled and cp and cp.enabled and serviceState then
+        place({kind='assist',id='assist-traffic-nearest',category='service',name='Начать 10-55\nс ближайшим авто',needsTarget=false,
+            disabled=not serviceState.onDuty,reason='Включите «На службе» в настройках PA.'})
         local context=M.context(serviceState);local v=serviceState.copilot or{}
         for _,r in ipairs(M.copilotRows)do if r[4]==context or r[4]=='both'and context~='none'or r[4]=='any'then
             if (r[1]~='approach'and r[1]~='foot'or v.car)and(r[1]~='fast_wanted'or v.pinned=='fast_wanted')then

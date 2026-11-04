@@ -9,7 +9,7 @@ local function equal(a,b)
 end
 local base={session='test',ped=1,alive=true,demo=false,focused=true,paused=false,blocked=false,onDuty=true,radioEnabled=true,
     health=20,area='Doherty',city='Сан-Фиерро',map_square='H-18',square='Ручной сектор',map_grid=grid.defaults(),unit='P-01',station='SFPS',
-    crew='Victor Auditore',duration='00:12:00',my_name='Victor Auditore',local_tag='',model='PoliceCar',
+    crew='Victor Auditore',duration='00:12:00',my_name='Victor Auditore',local_tag='',model='PoliceCar',model_id='597',
     vehicle_description='PoliceCar, белый',direction='Север',radioText={split_enabled=true,max_lines=8,continuation='...'}}
 local location='Doherty, квадрат H-18'
 eq(grid.location(base),location)

@@ -311,7 +311,7 @@ function Session:dispatch()
     self:changed();p.revision=self.revision;self.queued=p
     self.awaitingReport=true;self:save(true)
 end
-function Session:onExecution(kind,q)
+function Session:onExecution(kind,q,reason)
     local p=self.queued;local mark=q and q.plan and q.plan.patrolSession
     if not p or not mark or mark.token~=p.token then return end
     local a=self.data.active
@@ -328,7 +328,7 @@ function Session:onExecution(kind,q)
         self:save(true)
     elseif kind=='cancelled'then
         self.queued=nil;self.awaitingReport=false
-        if a then a.report_status='Доклад отменён · без повтора';self:changed()end
+        if a then a.report_status=q.radioBatch and('Передано '..(q.demo and q.previewed or q.sent)..' / '..q.radioBatch..' строк · остаток отменён')or'Доклад отменён · без повтора';self:changed()end
     end
 end
 function Session:effectivePatrol(legacy)

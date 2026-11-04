@@ -5,6 +5,11 @@ local function setup(demo)
  if s.frames[1].condition()then s.commands.pa26();s.step()end;return s
 end
 local function click(s,label)s.click=label;s.render();eq(s.click,nil,'Missing: '..label);check(not s.hasLog('Ошибка интерфейса'));eq(#s.scopes,0)end
+local function ooc(s)
+ local services
+ for i=1,32 do local name,v=debug.getupvalue(s.commands.setmark,i);if not name then break end;if name=='sceneServices'then services=v;break end end
+ assert(services);s.workspace.studio.trackingOoc=true;check(services.procedureFlow:capture('setmark','37'));s.step();s.step()
+end
 for _,demo in ipairs({false,true})do
  local s=setup(demo);s.commands.ticket('37 150 Красный сигнал');s.step();s.step()
  check(s.windows['Police Assistant · Штраф (/ticket)##pa26-fine']);check(not s.frames[1].condition());eq(#s.sent,0)
@@ -24,7 +29,7 @@ for _,demo in ipairs({false,true})do
  check(not s.frames[1].condition())
  onScriptTerminate(s.script)
 end
-local s=setup(false);s.streamed=false;s.distance=5000;s.commands.setmark('37');s.step();s.step()
+local s=setup(false);s.streamed=false;s.distance=5000;ooc(s)
 check(s.windows['Police Assistant · Пеленгация (/setmark)##pa26-mark']);check(not s.frames[1].condition());eq(#s.sent,0)
 local f=s.workspace.studio.caseForm;eq(f.kind,'mark');eq(f.target.id,37)
 s.edits={['##Известный IC-номер телефона##procedure-phone_number']='555123',['##Уточнить источник номера##procedure-phone_source']='Мой IC-источник'};f.phone_known='yes';f.phone_active='yes';s.render();s.edits={};s.render();eq(f.phone_source,'Мой IC-источник')
@@ -41,7 +46,7 @@ check(bridge:exchange(payload,s.now),'CEF exchange rejected');s.step();s.step();
 check(bridge:exchange(payload,s.now));s.step();eq(s.workspace.studio.caseForm,first);eq(#s.sent,0);onScriptTerminate(s.script)
 
 -- OOC tracking reuses the persisted existing chain; no automatic /clear or /pt.
-s=setup(false);s.commands.setmark('37');s.step();s.step();f=s.workspace.studio.caseForm
+s=setup(false);ooc(s);f=s.workspace.studio.caseForm
 s.edits={['##Известный IC-номер телефона##procedure-phone_number']='555123',['##Уточнить источник номера##procedure-phone_source']='Материалы дела'}
 f.phone_known='yes';f.phone_active='yes';s.render();s.edits={};click(s,'Далее · исходный розыск##mark-next-phone')
 f.prior_ic_stars='no';f.reason_id='08.02';f.life_ack=true;f.ooc_ack=true;s.render()
@@ -51,7 +56,7 @@ for _=1,24 do s.step(1600);if s.workspace.studio.caseConfirm then break end end
 check(s.workspace.studio.caseConfirm);click(s,'ДА — выдать розыск##confirm-yes');s.step();s.step(1800)
 local reminders=s.caseForms:view().reminders;eq(#reminders,1);eq(reminders[1].status,'check');eq(s.sent[#s.sent].line,'/su 37 8 2')
 for _,row in ipairs(s.sent)do check(not row.line:match('^/clear '));check(not row.line:match('^/pt '));check(not row.line:match('^/setmark '))end
-s.commands.setmark('37');s.step();s.step();local token=reminders[1].token
+ooc(s);local token=reminders[1].token
 check(s.caseForms:changeReminder(token,'issued'));s.render()
 check(not s.caseForms:chainOffer(token,'clear',true),'A sent /su does not prove tracking has completed')
 local plan=assert(s.caseForms:chainOffer(token,'mark',true));check(plan.form.chain_token==token)

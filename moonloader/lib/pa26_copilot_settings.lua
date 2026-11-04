@@ -39,6 +39,7 @@ M.templates={{'call911','Вызов 9-1-1'},{'arrived','Прибытие и оп
  {'risk_single','10-66 · один человек'}, {'risk_multi','10-66 · несколько человек'},
  {'wanted_rp','Ориентировка перед розыском'}, {'combat_rp','RP перед розыском за нападение'},
  {'backup_risk','Метка помощи при 10-66'}, {'backup_combat','Метка помощи при CODE 0'}}
+for _,r in ipairs({{'approach_bike_day','Мотоцикл · осмотр днём'},{'approach_bike_night','Мотоцикл · осмотр ночью'},{'inspect_bike','Мотоцикл · вопрос об осмотре'},{'hint_bike','Мотоцикл · подсказка в /n'},{'approach_neutral','Другой транспорт · осмотр'},{'inspect_neutral','Другой транспорт · вопрос'},{'risk_open','Открытый транспорт · требование выйти'},{'return_open','Открытый транспорт · требование остановиться'}})do M.templates[#M.templates+1]=r end
 for _,row in ipairs(dispatch.templates)do M.templates[#M.templates+1]=row end
 for _,row in ipairs({{'explain_stop','Назвать причину остановки'},{'documents','Запросить документы'},{'explain_detention','Основание задержания'},
  {'miranda','Полная Миранда · личная произносимая версия'},{'rights_extra','Отдельное разъяснение сроков и обжалования'}})do M.templates[#M.templates+1]=row end
@@ -117,6 +118,14 @@ function M.defaults()
  d.window_question_offer_text='Вы у окна водителя · Спросить, открыто ли оно?'
  d.window_knock_offer_text='Окно закрыто · Постучаться в водительское окно?'
  d.window_open_offer_text='Представиться и назвать причину 10-55?'
+ d.templates.approach_bike_day='{gender:подошёл|подошла} к мотоциклу и {gender:осмотрел|осмотрела} его видимые детали и маркировку.'
+ d.templates.approach_bike_night='{gender:достал|достала} тактический фонарь и {gender:осветил|осветила} видимые детали и маркировку мотоцикла.'
+ d.templates.inspect_bike='Что видно при наружном осмотре мотоцикла?'
+ d.templates.hint_bike='Ответьте в /do: что видно при наружном осмотре мотоцикла.'
+ d.templates.approach_neutral='{gender:подошёл|подошла} к транспортному средству и {gender:осмотрел|осмотрела} доступные снаружи детали.'
+ d.templates.inspect_neutral='Что видно при наружном осмотре транспорта?'
+ d.templates.risk_open='Водитель {model}, остановитесь, заглушите двигатель и держите руки на виду! Не делайте резких движений, ожидайте указаний офицера!'
+ d.templates.return_open='Водитель {model}, оставайтесь рядом с транспортом, держите руки на виду и выполняйте указания офицера!'
  d.templates.window_question='Окно водительской двери открыто?'
  d.templates.window_hint='Ответьте в /do: например, /do Окно открыто. или /do Окно закрыто.'
  d.templates.window_knock='{gender:постучался|постучалась} в водительское окно.'

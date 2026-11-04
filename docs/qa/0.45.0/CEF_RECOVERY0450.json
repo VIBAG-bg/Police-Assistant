@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "checks": 74,
+  "cases": [
+    "late CEF, handshake and no duplicate handlers",
+    "bounded missing CEF; 40000 editing events without discovery/DOM/IPC",
+    "partial CEF and honest incoming-capability verification",
+    "30-minute missing endpoint, exponential backoff and lifecycle recovery",
+    "30-minute IPC outage, changed endpoint and temporary-failure recovery",
+    "rejected runtime handshake has bounded traffic and native chat fallback",
+    "provisional handshake timeout and unchanged original submission",
+    "stalled script, late callback and stop cleanup",
+    "append failure safely cleaned up",
+    "in-flight endpoint replacement"
+  ],
+  "adapter_sha256": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b",
+  "simulated_outage_minutes": 30,
+  "editing_events": 40000,
+  "editing_ipc": 0,
+  "game_started": false,
+  "actual_game_latency": "NOT RUN"
+}
