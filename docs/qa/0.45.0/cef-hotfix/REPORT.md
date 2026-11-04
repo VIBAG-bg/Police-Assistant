@@ -18,7 +18,7 @@
 | x86 LuaSocket + текущий send-handler в изолированном V8 | PASS | 113 проверок, протокол 2, преобразования, переносы, reconnect, отсутствие дублей |
 | Поздний CEF и ограниченное восстановление | PASS | 74 проверок; 30 минут виртуального отказа; без редактирования текста/IPC от 40000 событий ввода |
 | Установка текущего неизвестного SHA | PASS | 21 проверка: чистая установка, повтор, поздний тег, native-only отказ, личные файлы |
-| Windows installer/updater | PASS | 8 групп; 12 прерываний и откат; прежние ограничения worker сохранены |
+| Windows installer/updater | PASS | 8 групп; 12 прерываний и откат на самостоятельном тестовом пакете с идентичным кодом установщика; production-реестры и ограничения worker сохранены |
 | Текущий полный payload | PASS | All-in-One 47; установленный manifest 171 |
 | Native CPU UI | PASS | 1064 кадров; 19 видов; 7 размеров; включая диагностику CEF |
 | Старый реестр | PASS (fixture) | Прежний SHA сохранён; быстрый путь и KNOWN_VERIFIED проверены |
@@ -70,6 +70,7 @@ GPS-модули, roads.bin, рендер карты, /setmark policy, патр�
 - `tests/benchmark_cef0450.js`
 - `tests/run_tests.py`
 - `tests/support/fixture.lua`
+- `tests/support/installer-cef-fixture.ps1`
 - `tests/test_cef_adaptive0450.js`
 - `tests/test_cef_adaptive0450.lua`
 - `tests/test_cef_adaptive0450.ps1`
@@ -115,6 +116,7 @@ GPS-модули, roads.bin, рендер карты, /setmark policy, патр�
 - `docs/qa/0.45.0/CEF_PERFORMANCE0450.json`
 - `docs/qa/0.45.0/CEF_RECOVERY0450.json`
 - `docs/qa/0.45.0/CHANGESET.json`
+- `docs/qa/0.45.0/CI-PORTABILITY.md`
 - `docs/qa/0.45.0/FINAL-REVIEW.md`
 - `docs/qa/0.45.0/GPS_PATROL_INSTALL0450.json`
 - `docs/qa/0.45.0/LUA_PERFORMANCE0450.json`

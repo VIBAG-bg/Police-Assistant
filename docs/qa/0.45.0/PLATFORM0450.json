@@ -1,6 +1,6 @@
 {
   "version": "0.45.0",
-  "at_utc": "2026-11-04T13:54:07.115944+00:00",
+  "at_utc": "2026-11-04T16:01:12.002914+00:00",
   "environment": "Windows PowerShell 5.1; workspace fixtures only; no GUI launch",
   "game_started": false,
   "live_game_written": false,
@@ -58,7 +58,7 @@
       "test": "test_installer.ps1",
       "status": "passed",
       "exit_code": 0,
-      "elapsed_seconds": 402.14,
+      "elapsed_seconds": 444.83,
       "log": "tests/INSTALLER-shard0.log",
       "independent_process_shards": 3
     }

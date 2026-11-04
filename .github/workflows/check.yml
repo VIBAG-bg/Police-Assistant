@@ -15,7 +15,7 @@ jobs:
           node-version: '22'
       - run: python -m pip install -r requirements-dev.txt
       - run: python tools/verify-package.py
-      - run: python tests/run_tests.py --report tests/RESULTS.json
+      - run: python tools/run-regression0450.py --jobs 3
       - run: node tests/test_cef_chat.js
       - run: node tests/test_cef_adaptive0450.js
       - run: node tests/test_cef_recovery0450.js

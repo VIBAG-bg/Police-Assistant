@@ -21,8 +21,11 @@
     103,
     166
   ],
-  "manifest_sha256": "D97A8BB84CBDA81EBA4DBEDD474C0FD9ECA18E96F3A8EC762C033B1AC68DAC91",
+  "manifest_sha256": "553FFE214CDD0BFAD706C3F00A0C6ED4CF33002B87C63F5556616AF4601E29E2",
   "installer_sha256": "F0DE29115467C9CFE45E7DAA5F586CE31512AB6A20E5959A4A7D525D214107BF",
+  "cef_transaction_fixture": "synthetic_reviewed_registry_in_sandbox_copy",
+  "transaction_manifest_sha256": "64F40A6EF33DEA4A7359618EE78BE04D997E19561AB2004826AD56768B9CF8B9",
+  "production_registry_changed": false,
   "real_game_written": false,
   "sandbox": "three independent workspace fixture folders",
   "independent_process_shards": 3

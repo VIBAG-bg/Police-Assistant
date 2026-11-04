@@ -4,7 +4,7 @@
     {
       "path": ".github/workflows/check.yml",
       "before_sha256": "7a267311e384a6e80090d63ab404dec99c85aec8a609727ce9b97d38d209c396",
-      "after_sha256": "2fa252e4f1fe6ba7a9958834f5daf36299ceae7226a56a2b1a52cb1ac945245f"
+      "after_sha256": "14d32c3b0b512df926b78ad3c52a7a03aa4f8d38f47bb5f9817c4450f3c09bc2"
     },
     {
       "path": "CEF_CONTRACT.json",
@@ -274,7 +274,7 @@
     {
       "path": "tests/test_installer.ps1",
       "before_sha256": "6bed1f18152cb75a24aa6798ddfb46e14409c7b7d4684bf31ebd2a08e652a617",
-      "after_sha256": "36e1fba75958a34a08a09f4b7677088542ed4531f80d6a57f5f9425ed7bb9e0f"
+      "after_sha256": "debf0b0e787caad954b53ef44e4d000b0a5b8adec20177de83d6201651f71416"
     },
     {
       "path": "tests/test_interaction.lua",
@@ -320,6 +320,11 @@
       "path": "tests/test_ux0440.lua",
       "before_sha256": "766fcc3ad3fa513efc46cee515a68907cc9f02ae214c1e803cba31512263e848",
       "after_sha256": "e563bf934f892cb24684a8e3ab56873098b5209f6978b7f863d5dd42ac7e7391"
+    },
+    {
+      "path": "tools/publish-release.ps1",
+      "before_sha256": "8567701b12a5f962f58539f706172e01e81a9164f2f60d48f7c29e17f0a761dc",
+      "after_sha256": "b2479ce8826dbf8336d85acac0c1b2dc92862d236b01f67e713073a66a372854"
     },
     {
       "path": "tools/verify-package.py",
