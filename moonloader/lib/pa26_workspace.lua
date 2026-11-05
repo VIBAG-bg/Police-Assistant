@@ -39,6 +39,11 @@ function M.new(env,cfg,base)
     self.executor=execution.new({context=env.context,now=env.now,validate=function(t) return env.validate(t,self.cfg.main.max_distance) end,
         policyEnv=env.policyEnv,demo=env.demo,send=env.send,pressed=env.pressed,down=env.down,sound=env.sound,planValid=env.planValid,
         clearTarget=function() self:clearTarget('manual') end,
+        bindingContextValid=function(plan)return not plan.bindingContext or not env.bindingContextValid or env.bindingContextValid(plan.bindingContext,plan.target)end,
+        confirm=function(token,step,plan)
+            if self.studio then self.studio.executionConfirm={token=token,prompt=step.prompt,preview=model.copy(step.preview),name=plan.binding.name};env.openConfirm()end
+        end,
+        clearConfirmation=function()if self.studio then self.studio.executionConfirm=nil end end,
         lastSent=function() return env.demo() and demoSent or env.lastSent() end,
         markSent=function(now,demo) if demo then demoSent=now else env.markSent(now) end end,
         event=function(kind,q,reason)
@@ -65,7 +70,7 @@ function Workspace:refreshTarget()
 end
 function Workspace:cancel(reason)
     self.pending=nil; self.executor:cancel(reason); self.prepared=nil
-    if self.studio then self.studio.confirmPlan=nil end
+    if self.studio then self.studio.confirmPlan=nil;self.studio.bindingVariant=nil;self.studio.executionConfirm=nil end
 end
 function Workspace:saveLayout(value)
     local clean,why=require('pa26_window_layout').validate(value);if not clean then return nil,why end
@@ -142,6 +147,7 @@ function Workspace:snapshot(binding,request)
     if values.my_nick then values.my_name,values.my_firstname,values.my_lastname=names(values.my_nick) end
     if profile.name~='' then values.my_name,values.my_firstname,values.my_lastname=names(profile.name) end
     for _,key in ipairs({'local_tag','global_tag','prison_tag','department','rank','accent'}) do values[key]=profile[key] end
+    values.badge_number=profile.badge_number or''
     values.my_mark=profile.callsign
     for _,key in ipairs({'my_plate','select_plate','closest_plate'}) do if profile[key]~='' then values[key]=profile[key] end end
     if self.library.map_grid.auto_city==false and profile.city~=''then values.city=profile.city
@@ -189,7 +195,9 @@ function Workspace:snapshot(binding,request)
     if demo then
         for _,prefix in ipairs({'my_','select_','closest_'}) do values[prefix..'weapon']=values[prefix..'weapon'] or 'Дубинка (демо)'; values[prefix..'vehicle']=values[prefix..'vehicle'] or 'GTA model 596 (демо)'; values[prefix..'speed']=values[prefix..'speed'] or '0' end
     end
-    return {values=values,gender=profile.gender,target=req.target and target or nil,closest=closest,session=context.session,now=self.env.now(),demo=demo}
+    local known=target and self.env.icIdentity and self.env.icIdentity(target)
+    if known and known.name and known.name~=''then values.select_name,values.select_firstname,values.select_lastname=names(known.name);values.suspect_name=values.select_name end
+    return {icIdentity=known~=nil,values=values,gender=profile.gender,target=req.target and target or nil,closest=closest,session=context.session,now=self.env.now(),demo=demo}
 end
 function Workspace:process()
     local pending=self.pending
@@ -208,11 +216,26 @@ function Workspace:process()
     local binding=pending.binding or model.find(self.library,pending.id)
     if not binding then self.status='Сценарий не найден.'; self:notifyRequest(pending); self.env.openReturn(pending.returnTo); return end
     local snapshot,err=self:snapshot(binding,pending)
+    local source,contextStamp
+    if snapshot and binding.rp_context then
+        source=self.env.bindingContext and self.env.bindingContext(binding,snapshot.target)or{}
+        if pending.variantStamp and self.env.bindingContextValid and not self.env.bindingContextValid(pending.variantStamp,snapshot.target)then
+            self.status='Транспорт изменился, выберите вариант заново.';self:notifyRequest(pending);return
+        end
+        local resolved,why,choice=require('pa26_rp_context').resolve(binding,source,pending.rpChoice)
+        if choice then
+            if self.studio then self.studio.bindingVariant={request=model.copy(pending),stamp=model.copy(source),binding=model.copy(binding),snapshot=snapshot,codec=self.env.codec,rpSettings=model.copy(self.library.rp_text)};self.env.openConfirm()end
+            return
+        end
+        if not resolved then self.status=why;self:notifyRequest(pending);return end
+        binding=resolved
+        if binding.rp_context.vehicle or binding.rp_context.contact_phase then contextStamp=model.copy(source)end
+    end
     local plan
     if snapshot then plan,err=binder.compile(binding,snapshot,pending.args,self.env.codec,math.random,
         {rpSettings=self.library.rp_text,sound=self.env.soundAvailable(),screen=false,reservedKeys={[0x1B]=true,[self.library.settings.cancel_key]=true,
             [self.cfg.main.menu_key]=true,[self.cfg.main.radial_key]=true,[self.library.settings.quick_key]=true,[self.library.settings.tips_key]=true}}) end
-    if plan then plan,err=self.executor:prepare(plan,snapshot)end
+    if plan then plan.bindingContext=contextStamp;plan,err=self.executor:prepare(plan,snapshot)end
     if not plan then self.status=err or 'Подготовка не выполнена.'; self:notifyRequest(pending); self.env.openReturn(pending.returnTo); return end
     if self.studio then self.studio.plan=plan end
     self.status='Предпросмотр подготовлен. Отправки нет.'
@@ -227,6 +250,17 @@ function Workspace:process()
         else local ok; ok,err=self.executor:start(plan,self.env.demo(),self.cfg.main.interval_ms); self.status=err or self.executor.status; if not ok then outcomeKind='warning';self.env.openReturn(pending.returnTo) end end
     end
     self:notifyRequest(pending,outcomeKind)
+end
+function Workspace:chooseVariant(choice)
+    local v=self.studio and self.studio.bindingVariant
+    if not v or(choice~='car'and choice~='bike')then return nil,'Выбор варианта устарел.'end
+    local r=model.copy(v.request);r.hiddenAt=nil;r.rpChoice=choice;r.variantStamp=v.stamp;r.target=v.snapshot.target
+    self.studio.bindingVariant=nil;return self:request(r)
+end
+function Workspace:confirmExecution(token,yes)
+    local ok,why=self.executor:decide(token,yes)
+    if ok then self.env.hideUi()end
+    return ok,why
 end
 function Workspace:tick()
     self:refreshTarget(); self:process(); self.executor:step()

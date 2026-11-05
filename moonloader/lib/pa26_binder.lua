@@ -176,9 +176,15 @@ function M.compile(binding,ctx,args,codec,random,capabilities)
     local plan={binding=model.copy(b),target=model.copy(ctx.target),closest=model.copy(ctx.closest),
         steps={},lines={},wire={},requirements=requirements,has_command=false,session=ctx.session,createdAt=ctx.now,demo=ctx.demo}
     local duration=0
+    local decisions=require('pa26_rp_context').checks(b,ctx);local messageIndex=0
     for i,step in ipairs(parsed) do
         local prepared=model.copy(step)
         if step.kind=='message' then
+            messageIndex=messageIndex+1
+            local checkpoint=decisions[messageIndex]
+            if checkpoint then plan.steps[#plan.steps+1]={kind='confirm',prompt=checkpoint.prompt,preview={},timeout_ms=b.rp_context and b.rp_context.approval_timeout_ms or 90000}end
+            local checkpointStep=checkpoint and plan.steps[#plan.steps]
+            if step.template:find('{badge_number}',1,true)and(not ctx.values.badge_number or ctx.values.badge_number=='')then return nil,'Заполните номер служебного значка в Профиле. SA:MP ID не подставляется вместо него.'end
             local options; options,err=variants(step.template); if not options then return nil,err end
             for _,option in ipairs(options) do local variant; variant,err=substitute(option,ctx,params)
                 if not variant then return nil,'Шаг '..i..': '..err end
@@ -195,6 +201,7 @@ function M.compile(binding,ctx,args,codec,random,capabilities)
             local ready;ready,err=rp.line(line,codec,capabilities and capabilities.rpSettings,ctx.values.my_nick)
             if not ready then return nil,'Шаг '..i..': '..err end
             local added;added,err=rp.append(plan,ready);if not added then return nil,err end;prepared=nil
+            if checkpointStep then checkpointStep.preview=model.copy(ready.lines)end
         elseif step.kind=='select' then
             local value; value,err=substitute(step.value,ctx,params,random)
             if not value then return nil,err end
@@ -207,6 +214,8 @@ function M.compile(binding,ctx,args,codec,random,capabilities)
         if step.kind=='wait' then duration=duration+step.ms end
         if prepared then plan.steps[#plan.steps+1]=prepared end
     end
+    for index in pairs(decisions)do if index>messageIndex then return nil,'Подтверждение ссылается на отсутствующую реплику '..index..'.'end end
+    if #plan.steps>model.MAX_STEPS then return nil,'Максимум 64 подготовленных шага с подтверждениями и переносами.'end
     if duration>300000 then return nil,'Сумма пауз не должна превышать 5 минут.' end
     return plan
 end

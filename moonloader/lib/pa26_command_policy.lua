@@ -110,7 +110,7 @@ function Policy:prepare(plan,provided)
     if s.text and(s.text:match('^/me%s')or s.text:match('^/do%s')or s.text:match('^/try%s')or s.text:match('^/todo%s'))then
      previous[#previous+1]=s.text
     else previous={}end
-   elseif s.kind~='wait'and s.kind~='key'and s.kind~='check'then previous={}end
+   elseif s.kind~='wait'and s.kind~='key'and s.kind~='check'and s.kind~='confirm'then previous={}end
   end
   if #out.steps>64 then return nil,'Обязательная RP превысит лимит 64 шагов. Сократите бинд.'end
  end

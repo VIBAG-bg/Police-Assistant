@@ -1,6 +1,6 @@
 {
   "format": "police-assistant.binds",
-  "schema": 1,
+  "schema": 2,
   "next_id": 89,
   "wheel": [
     1,
@@ -13,32 +13,6 @@
   "bindings": [
     {
       "command_alias": "",
-      "wheel_group": "frisk",
-      "parameters": {},
-      "shortcut": {
-        "alt": false,
-        "ctrl": false,
-        "shift": false,
-        "key": 0
-      },
-      "quick": true,
-      "target_required": false,
-      "script": "/s Внимание, работает {department}! Всем оставаться на местах и поднять руки вверх!",
-      "wheel_car_visible": true,
-      "wheel_visible": true,
-      "stat": "none",
-      "favorite": false,
-      "command": "",
-      "skip_confirmation": true,
-      "name": "Кричалка предупреждение",
-      "no_accent": false,
-      "enabled": true,
-      "id": 12,
-      "category": "Мои сценарии",
-      "wheel_car_group": "frisk"
-    },
-    {
-      "command_alias": "",
       "wheel_group": "citizen",
       "parameters": {},
       "shortcut": {
@@ -49,8 +23,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/do На груди на видном месте поверх формы закреплен полицейский бейдж с именем {my_name}, должностью {rank} и номером значка \"{my_id}\".\n@wait(1500)\n/todo Доброго времени суток! Вас беспокоит {rank} {my_lastname}, {department}.*указав на значок, закрепленный на груди.\n@wait(1500)\n/ud {select_id}",
-      "wheel_car_visible": true,
+      "script": "/do На груди на видном месте поверх формы закреплён полицейский бейдж с именем {my_name}, должностью {rank} и номером значка \"{badge_number}\".\n@wait(1400)\n/todo Доброго времени суток! Вас беспокоит {rank} {my_lastname}, {department}.*указав на значок, закреплённый на груди.\n@wait(1200)\n/ud {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": true,
@@ -61,7 +35,9 @@
       "enabled": true,
       "id": 1,
       "category": "Общение",
-      "wheel_car_group": "citizen"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A01"
     },
     {
       "command_alias": "",
@@ -76,7 +52,7 @@
       "quick": true,
       "target_required": true,
       "script": "/todo Передайте, пожалуйста, ваш паспорт и лицензии для проверки.*внимательно наблюдая за руками {select_firstname}.\n@wait(1500)\n/n /pass {my_id} | /lic {my_id}",
-      "wheel_car_visible": true,
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "documents",
       "favorite": false,
@@ -87,7 +63,12 @@
       "enabled": true,
       "id": 2,
       "category": "Документы",
-      "wheel_car_group": "citizen"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A02"
     },
     {
       "command_alias": "",
@@ -101,7 +82,7 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/me активировал бортовой терминал {department} и открыл актуальную сводку лиц, находящихся в федеральном розыске\n@wait(1000)\n/wanted",
+      "script": "/me {gender:активировал|активировала} бортовой терминал {department} и {gender:открыл|открыла} актуальную сводку лиц, находящихся в федеральном розыске.\n@wait(1000)\n/wanted",
       "wheel_car_visible": true,
       "wheel_visible": true,
       "stat": "none",
@@ -113,11 +94,13 @@
       "enabled": true,
       "id": 3,
       "category": "Проверки",
-      "wheel_car_group": "wanted"
+      "wheel_car_group": "wanted",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A03"
     },
     {
       "command_alias": "",
-      "wheel_group": "documents",
+      "wheel_group": "frisk",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -127,8 +110,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me достав плотные нитриловые перчатки из подсумка, надел их на руки, подошёл ближе к саспекту.\n@wait(1500)\n/me быстрыми движениями прохлопал верхнюю одежду, пояс и внешние карманы саспекта сверху вниз на наличие оружия.\n@wait(1000)\n/frisk {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me {gender:поставил|поставила} задержанного у опоры и быстрыми движениями без перчаток {gender:прохлопал|прохлопала} верхнюю одежду, пояс, торс и ноги саспекта сверху вниз на наличие оружия.\n@wait(1400)\n/do Что офицер {gender:мог|могла} нащупать под одеждой задержанного?\n@wait(1000)\n/frisk {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "frisk",
       "favorite": true,
@@ -139,11 +122,13 @@
       "enabled": true,
       "id": 4,
       "category": "Досмотр",
-      "wheel_car_group": "documents"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A04"
     },
     {
       "command_alias": "",
-      "wheel_group": "documents",
+      "wheel_group": "detention",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -153,8 +138,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me придерживая руку саспекта, снял с тактического пояса стальные наручники и защёлкнул их на запястьях саспекта.\n@wait(1200)\n/cuff {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me придерживая руку саспекта, {gender:снял|сняла} с тактического пояса стальные наручники, {gender:завёл|завела} его руки за спину и {gender:защёлкнул|защёлкнула} браслеты на запястьях.\n@wait(1200)\n/do Фиксация стальных наручников на запястьях задержанного проверена.\n@wait(800)\n/cuff {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "cuff",
       "favorite": false,
@@ -165,7 +150,37 @@
       "enabled": true,
       "id": 5,
       "category": "Задержание",
-      "wheel_car_group": "documents"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A05"
+    },
+    {
+      "command_alias": "",
+      "wheel_group": "detention",
+      "parameters": {},
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      },
+      "quick": true,
+      "target_required": true,
+      "script": "/me достав универсальный ключ из подсумка, {gender:вставил|вставила} его в замок наручников, {gender:разомкнул|разомкнула} браслеты и {gender:убрал|убрала} их на пояс.\n@wait(1200)\n/uncuff {select_id}",
+      "wheel_car_visible": false,
+      "wheel_visible": true,
+      "stat": "uncuff",
+      "favorite": false,
+      "command": "",
+      "skip_confirmation": false,
+      "name": "Снять наручники (/uncuff)",
+      "no_accent": false,
+      "enabled": true,
+      "id": 6,
+      "category": "Задержание",
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A06"
     },
     {
       "command_alias": "",
@@ -178,20 +193,22 @@
         "key": 0
       },
       "quick": true,
-      "target_required": true,
-      "script": "/me достав универсальный ключ из подсумка, вставил его в замок наручников, разомкнул браслеты и убрал их на пояс.\n@wait(1200)\n/uncuff {select_id}",
-      "wheel_car_visible": true,
+      "target_required": false,
+      "script": "/s Внимание, работает {department}! Всем оставаться на местах и поднять руки вверх!",
+      "wheel_car_visible": false,
       "wheel_visible": true,
-      "stat": "uncuff",
+      "stat": "none",
       "favorite": false,
       "command": "",
-      "skip_confirmation": false,
-      "name": "Снять наручники (/uncuff)",
+      "skip_confirmation": true,
+      "name": "Кричалка предупреждение",
       "no_accent": false,
       "enabled": true,
-      "id": 6,
-      "category": "Задержание",
-      "wheel_car_group": "documents"
+      "id": 12,
+      "category": "Мои сценарии",
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A12"
     },
     {
       "command_alias": "",
@@ -205,23 +222,25 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/do На груди поверх формы закреплен служебный жетон {department} с именем {my_name} и номером \"{my_id}\".\n@wait(1500)\n/ud {select_id}",
-      "wheel_car_visible": true,
+      "script": "/do На груди поверх формы закреплён служебный бейдж {department} с именем {my_name}, должностью {rank} и номером \"{badge_number}\".\n@wait(1200)\n/me {gender:указал|указала} рукой на закреплённый на груди полицейский бейдж, демонстрируя его собеседнику.\n@wait(1000)\n/ud {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
       "skip_confirmation": true,
-      "name": "Показать бейджик / Удостоверение",
+      "name": "Показать бейджик (/ud)",
       "no_accent": false,
       "enabled": true,
       "id": 13,
       "category": "Общение",
-      "wheel_car_group": "citizen"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A13"
     },
     {
       "command_alias": "",
-      "wheel_group": "detention",
+      "wheel_group": "citizen",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -231,8 +250,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me подходя к автомобилю, коснулся ладонью задней левой фары и встал у стойки водительской двери\n@wait(1500)\n/todo Доброго времени суток, {rank} {my_lastname}, {department}.*осмотрев саспекта и салон авто, улыбнувшись и указав на жетон.\n@wait(1500)\n/do На груди поверх формы закреплен служебный жетон {department} с именем {my_name} и номером \"{my_id}\".\n@wait(1500)\n/ud {select_id}\n@wait(1500)\nПредъявите, пожалуйста, ваш паспорт, техпаспорт на транспортное средство и лицензии.\n@wait(1500)\n/n /pass {my_id} | /lic {my_id} | /pts {my_id}\n",
-      "wheel_car_visible": true,
+      "script": "/me подходя к автомобилю, {gender:коснулся|коснулась} ладонью задней левой фары и {gender:встал|встала} у стойки водительской двери.\n@wait(1500)\n/todo Доброго времени суток, {rank} {my_lastname}, {department}.*осмотрев салон авто и указав на полицейский бейдж на груди.\n@wait(1500)\n/do На груди поверх формы закреплён служебный бейдж {department} с именем {my_name} и номером \"{badge_number}\".\n@wait(1200)\n/ud {select_id}\n@wait(1500)\nПредъявите, пожалуйста, ваш паспорт, техпаспорт на транспортное средство и лицензии.\n@wait(1200)\n/n /pass {my_id} | /lic {my_id} | /pts {my_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "documents",
       "favorite": true,
@@ -243,11 +262,17 @@
       "enabled": true,
       "id": 14,
       "category": "Общение",
-      "wheel_car_group": "detention"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "vehicle": "traffic",
+        "bike_script": "/me приблизившись к остановленному мотоциклу с безопасной стороны, {gender:осмотрел|осмотрела} его видимые детали и положение рук водителя.\n@wait(1200)\n/todo Добрый день, {rank} {my_lastname}, {department}.*указав на полицейский бейдж, закреплённый на груди.\n@wait(1000)\n/ud {select_id}\n@wait(1000)\nПредъявите, пожалуйста, паспорт, водительскую лицензию и документы на мотоцикл."
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A14"
     },
     {
       "command_alias": "",
-      "wheel_group": "detention",
+      "wheel_group": "citizen",
       "parameters": [
         {
           "required": true,
@@ -265,7 +290,7 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "{param:arg1} {select_lastname}, Вы были остановлены за нарушение Дорожного кодекса штата, все действия фиксируются на нагрудную камеру.\n@wait(1500)\nНе совершайте резких движений, держите руки так, чтобы я их видел и ожидайте окончания проверки документов.",
+      "script": "{param:arg1} {select_lastname}, Вы были остановлены за нарушение Дорожного кодекса штата, все действия фиксируются на нагрудную камеру.\n@wait(1500)\nНе совершайте резких движений, держите руки так, чтобы я их {gender:видел|видела}, и ожидайте окончания проверки документов.",
       "wheel_car_visible": true,
       "wheel_visible": true,
       "stat": "none",
@@ -277,11 +302,17 @@
       "enabled": true,
       "id": 15,
       "category": "Общение",
-      "wheel_car_group": "detention"
+      "wheel_car_group": "citizen",
+      "rp_context": {
+        "identity": true,
+        "contact_phase": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A15"
     },
     {
       "command_alias": "",
-      "wheel_group": "wanted",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -291,9 +322,9 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/s Сэр, немедленно отойдите на безопасную дистанцию 6 метров от сотрудников {department}!\n@wait(1500)\n/s При приближении или помехе процессуальным действиям к вам будет применена сила!",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
+      "script": "/s Немедленно отойдите на безопасную дистанцию 6 метров от сотрудников {department}!\n@wait(1500)\n/s Не препятствуйте законным действиям полиции и выполняйте требования сотрудников!",
+      "wheel_car_visible": true,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
@@ -303,7 +334,9 @@
       "enabled": true,
       "id": 16,
       "category": "Общение",
-      "wheel_car_group": "wanted"
+      "wheel_car_group": "custom",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A16"
     },
     {
       "command_alias": "",
@@ -317,8 +350,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me аккуратно взял документы в руки, раскрыл их и начал  внимательно рассматривать и изучать, попутно сверив фотографию с лицом {select_firstname}.\n@wait(1500)\n/do Данные из документов зафиксированы нагрудной боди-камерой офицера.\n@wait(1500)\n/todo Держите ваши документы, благодарю за содействие.*улыбнувшись и протянув паспорт и лицензии обратно {select_firstname}.",
-      "wheel_car_visible": true,
+      "script": "/me аккуратно {gender:взял|взяла} документы в руки, {gender:раскрыл|раскрыла} их и {gender:начал|начала} внимательно изучать, сверив фотографию с лицом {select_firstname}.\n@wait(1500)\n/do Данные из документов зафиксированы нагрудной боди-камерой офицера.\n@wait(1500)\n/me улыбнувшись и протянув паспорт и лицензии обратно {select_firstname}.\nДержите ваши документы, благодарю за содействие.",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -329,11 +362,16 @@
       "enabled": true,
       "id": 17,
       "category": "Документы",
-      "wheel_car_group": "citizen"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A17"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "citizen",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -343,9 +381,9 @@
       },
       "quick": false,
       "target_required": true,
-      "script": "/me достал из внутреннего кармана формы папку с личными документами и передал её проверяющему\n@wait(1500)\n/pass {select_id}\n@wait(1500)\n/lic {select_id}\n@wait(1500)\n/med {select_id}",
+      "script": "/me {gender:достал|достала} из внутреннего кармана формы папку с личными документами и {gender:передал|передала} её проверяющему.\n@wait(1200)\n/pass {select_id}\n@wait(1200)\n/lic {select_id}\n@wait(1200)\n/med {select_id}",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -355,7 +393,9 @@
       "enabled": true,
       "id": 18,
       "category": "Документы",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A18"
     },
     {
       "command_alias": "bodycamera",
@@ -369,7 +409,7 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/me проверил крепление нагрудной камеры AXON Body 3 на разгрузке и нажал кнопку старта записи.\n@wait(1500)\n/do Нагрудная боди-камера издала двойной звуковой сигнал, замигал красный индикатор записи аудио и видео.\n@wait(1500)\n/time\n@wait(1500)\n/bodycamera",
+      "script": "/me {gender:проверил|проверила} крепление нагрудной камеры AXON Body 3 на разгрузке и {gender:нажал|нажала} кнопку старта записи.\n@wait(1500)\n/do Нагрудная боди-камера издала двойной звуковой сигнал, замигал красный индикатор записи аудио и видео.\n@wait(1200)\n/time\n@wait(1200)\n/bodycamera",
       "wheel_car_visible": true,
       "wheel_visible": true,
       "stat": "none",
@@ -381,7 +421,9 @@
       "enabled": true,
       "id": 19,
       "category": "Документы",
-      "wheel_car_group": "service"
+      "wheel_car_group": "service",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A19"
     },
     {
       "command_alias": "",
@@ -395,8 +437,8 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/me зажал кнопку питания на боди-камере AXON Body 3 и синхронизировал видеозапись с защищённым облаком {department}.\n@wait(1500)\n/do Запись смены успешно сохранена на сервере департамента, боди-камера переведена в спящий режим.\n@wait(1500)\n/time",
-      "wheel_car_visible": true,
+      "script": "/me {gender:зажал|зажала} кнопку питания на боди-камере AXON Body 3 и {gender:синхронизировал|синхронизировала} видеозапись с защищённым облаком {department}.\n@wait(1500)\n/do Запись смены успешно сохранена на сервере департамента, боди-камера переведена в спящий режим.\n@wait(1200)\n/time",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -407,11 +449,13 @@
       "enabled": true,
       "id": 20,
       "category": "Документы",
-      "wheel_car_group": "service"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A20"
     },
     {
       "command_alias": "",
-      "wheel_group": "documents",
+      "wheel_group": "detention",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -421,23 +465,25 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me перехватил задержанного за предплечье, зафиксировал замок рук и повёл его впереди себя.\n@wait(1000)\n/hold {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me {gender:перехватил|перехватила} задержанного за предплечье, {gender:зафиксировал|зафиксировала} замок рук и {gender:повёл|повела} его впереди себя.\n@wait(1000)\n/hold {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
       "skip_confirmation": true,
-      "name": "Взять под конвой / Отпустить хват (/hold)",
+      "name": "Взять под конвой (/hold)",
       "no_accent": false,
       "enabled": true,
       "id": 21,
       "category": "Задержание",
-      "wheel_car_group": "documents"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A21"
     },
     {
       "command_alias": "",
-      "wheel_group": "documents",
+      "wheel_group": "detention",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -447,8 +493,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me ухватившись за край балаклавы на лице задержанного, резким движением стянул маску и убрал её в подсумок/\n@wait(1200)\n/do Лицо подозреваемого полностью открыто и зафиксировано нагрудной камерой.\n@wait(800)\n/unmask {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me ухватившись за край балаклавы на лице задержанного, резким движением {gender:стянул|стянула} маску и {gender:убрал|убрала} её в подсумок.\n@wait(1200)\n/do Лицо подозреваемого полностью открыто и зафиксировано нагрудной камерой.\n@wait(800)\n/unmask {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -459,11 +505,13 @@
       "enabled": true,
       "id": 22,
       "category": "Задержание",
-      "wheel_car_group": "documents"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A22"
     },
     {
       "command_alias": "",
-      "wheel_group": "service",
+      "wheel_group": "detention",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -473,23 +521,25 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "Вы задержаны сотрудником {department}. Вы имеете право хранить молчание.\n@wait(1800)\nВсё, что вы скажете, может и будет использовано против вас в суде.\n@wait(1800)\nВы имеете право на адвоката. Если вы не можете оплатить его услуги, он будет предоставлен государством.\n@wait(1800)\nВам ясны ваши права?",
-      "wheel_car_visible": true,
+      "script": "Вы задержаны сотрудником {department}. Вы имеете право хранить молчание.\n@wait(1600)\nВсё, что вы скажете, может и будет использовано против вас в суде.\n@wait(1600)\nВы имеете право на один телефонный звонок и на присутствие адвоката на допросе.\n@wait(1600)\nЕсли вы не можете оплатить услуги адвоката, он будет предоставлен вам государством. Вам ясны ваши права?",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
       "skip_confirmation": true,
-      "name": "Зачитать Правило Миранды (Полный текст + /mirand)",
+      "name": "Зачитать Правило Миранды (Полный текст)",
       "no_accent": false,
       "enabled": true,
       "id": 23,
       "category": "Задержание",
-      "wheel_car_group": "service"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A23"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "detention",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -499,9 +549,9 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "Повторяю ваши права во второй и последний раз: вы имеете право хранить молчание и право на адвоката.\n@wait(1800)\nВсё, что вы скажете с этого момента, будет приобщено к материалам дела в суде.",
+      "script": "Повторяю ваши права во второй и последний раз: вы имеете право хранить молчание, право на один звонок и на адвоката.\n@wait(1800)\nВсё, что вы скажете с этого момента, будет приобщено к материалам дела в суде. Вам ясны ваши права?",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
@@ -511,11 +561,13 @@
       "enabled": true,
       "id": 24,
       "category": "Задержание",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A24"
     },
     {
       "command_alias": "",
-      "wheel_group": "documents",
+      "wheel_group": "detention",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -525,8 +577,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me открыл заднюю дверь служебного автомобиля, пригнул голову задержанного и аккуратно усадил его на сиденье.\n@wait(1200)\n/me пристегнул задержанного ремнём безопасности и захлопнул заднюю дверь крузера.\n@wait(800)\n/push {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me {gender:открыл|открыла} заднюю дверь служебного автомобиля, {gender:пригнул|пригнула} голову задержанного и аккуратно {gender:усадил|усадила} его на сиденье.\n@wait(1200)\n/me {gender:пристегнул|пристегнула} задержанного ремнём безопасности и {gender:захлопнул|захлопнула} заднюю дверь крузера.\n@wait(800)\n/push {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": true,
@@ -537,11 +589,13 @@
       "enabled": true,
       "id": 25,
       "category": "Задержание",
-      "wheel_car_group": "documents"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A25"
     },
     {
       "command_alias": "",
-      "wheel_group": "service",
+      "wheel_group": "detention",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -551,8 +605,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me открыл заднюю дверь служебного крузера, отстегнул ремень безопасности и вывел задержанного наружу.\n@wait(1200)\n/do Задержанный находится под контролем офицера у служебного автомобиля.\n@wait(800)\n/hold {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me {gender:открыл|открыла} заднюю дверь служебного крузера, {gender:отстегнул|отстегнула} ремень безопасности и {gender:вывел|вывела} задержанного наружу.\n@wait(1200)\n/do Задержанный находится под контролем офицера у служебного автомобиля.\n@wait(800)\n/hold {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": true,
@@ -563,11 +617,13 @@
       "enabled": true,
       "id": 26,
       "category": "Задержание",
-      "wheel_car_group": "service"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A26"
     },
     {
       "command_alias": "",
-      "wheel_group": "service",
+      "wheel_group": "detention",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -577,8 +633,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me резким ударом локтя разбил стекло водительской двери, разблокировал замок изнутри и распахнул дверь.\n@wait(1200)\n/me отстегнул ремень безопасности, перехватил подозреваемого за воротник и вытащил его на асфальт.\n@wait(800)\n/eject {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me резким ударом локтя {gender:разбил|разбила} стекло водительской двери, {gender:разблокировал|разблокировала} замок изнутри и {gender:распахнул|распахнула} дверь.\n@wait(1200)\n/me {gender:отстегнул|отстегнула} ремень безопасности, {gender:перехватил|перехватила} подозреваемого за воротник и {gender:вытащил|вытащила} его на асфальт.\n@wait(800)\n/eject {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -589,11 +645,13 @@
       "enabled": true,
       "id": 27,
       "category": "Задержание",
-      "wheel_car_group": "service"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A27"
     },
     {
       "command_alias": "",
-      "wheel_group": "documents",
+      "wheel_group": "detention",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -603,8 +661,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me снял тангенту рации и вызвал дежурного конвоира изолятора временного содержания {department}.\n@wait(1500)\n/do Из дежурного блока вышли два сотрудника конвоя, приняли бланки ареста и завели {select_name} в камеру.\n@wait(1000)\n/arrest {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me {gender:снял|сняла} тангенту рации и {gender:вызвал|вызвала} дежурного конвоира изолятора временного содержания {department}.\n@wait(1400)\n/me {gender:оформил|оформила} материалы задержания и {gender:передал|передала} бланки ареста вместе с задержанным дежурному конвою.\n@wait(1000)\n/arrest {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -615,7 +673,137 @@
       "enabled": true,
       "id": 28,
       "category": "Задержание",
-      "wheel_car_group": "documents"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A28"
+    },
+    {
+      "command_alias": "",
+      "wheel_group": "wanted",
+      "parameters": {},
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      },
+      "quick": true,
+      "target_required": true,
+      "script": "/me {gender:достал|достала} служебный КПК, {gender:навёл|навела} объектив камеры на лицо задержанного и {gender:запустил|запустила} биометрический поиск.\n@wait(1500)\n/do Какие сведения удалось установить по результатам проверки, если такая система доступна в текущей RP-ситуации?\n@wait(1000)\n/me {gender:сверил|сверила} полученные сведения с наблюдаемой внешностью задержанного.",
+      "wheel_car_visible": false,
+      "wheel_visible": true,
+      "stat": "none",
+      "favorite": false,
+      "command": "",
+      "skip_confirmation": true,
+      "name": "Фоторобот и установление личности по лицу",
+      "no_accent": false,
+      "enabled": true,
+      "id": 29,
+      "category": "Задержание",
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "checkpoints": [
+          {
+            "before": 3,
+            "prompt": "Результат идентификации действительно получен по RP? Клиентский ник и ID не являются проверкой базы."
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A29"
+    },
+    {
+      "command_alias": "",
+      "wheel_group": "wanted",
+      "parameters": {},
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      },
+      "quick": true,
+      "target_required": false,
+      "script": "/me {gender:открыл|открыла} на терминале электронный протокол задержания и {gender:внёс|внесла} статьи обвинения и список изъятых улик.\n@wait(1500)\n/do Электронный протокол подписан цифровой подписью {rank} {my_lastname} и передан в архив {department}.",
+      "wheel_car_visible": false,
+      "wheel_visible": true,
+      "stat": "none",
+      "favorite": true,
+      "command": "",
+      "skip_confirmation": true,
+      "name": "Регистрация личного дела арестованного в базе",
+      "no_accent": false,
+      "enabled": true,
+      "id": 30,
+      "category": "Задержание",
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Факты для этой отыгровки подтверждены по RP? PA не определяет результаты экспертиз, документы и данные базы автоматически."
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A30"
+    },
+    {
+      "command_alias": "",
+      "wheel_group": "detention",
+      "parameters": {},
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      },
+      "quick": true,
+      "target_required": false,
+      "script": "/todo Вы имеете право на один телефонный звонок и вызов адвоката. Кому будете звонить?*сверив время задержания по часам.\n@wait(1400)\n/me {gender:зафиксировал|зафиксировала} время обращения в бланке задержания и {gender:передал|передала} запрос дежурному диспетчеру на вызов государственного адвоката.\n@wait(1400)\n/do Запрос на предоставление юридической помощи и телефонного звонка зарегистрирован в журнале дежурной части.",
+      "wheel_car_visible": false,
+      "wheel_visible": true,
+      "stat": "none",
+      "favorite": true,
+      "command": "",
+      "skip_confirmation": true,
+      "name": "Предоставить телефонный звонок / Вызов адвоката",
+      "no_accent": false,
+      "enabled": true,
+      "id": 31,
+      "category": "Задержание",
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A31"
+    },
+    {
+      "command_alias": "",
+      "wheel_group": "detention",
+      "parameters": {},
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      },
+      "quick": true,
+      "target_required": false,
+      "script": "/me {gender:открыл|открыла} один браслет наручников с правой руки задержанного и {gender:пристегнул|пристегнула} второй браслет к стальному поручню стола.\n@wait(1500)\n/do Правая рука задержанного свободна для подписи протокола или звонка, левая рука надёжно прикована к столу.",
+      "wheel_car_visible": false,
+      "wheel_visible": true,
+      "stat": "none",
+      "favorite": false,
+      "command": "",
+      "skip_confirmation": true,
+      "name": "Временное освобождение одной руки (для подписи/телефона)",
+      "no_accent": false,
+      "enabled": true,
+      "id": 32,
+      "category": "Задержание",
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A32"
     },
     {
       "command_alias": "",
@@ -629,112 +817,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me достал служебный КПК, навёл объектив камеры на лицо задержанного и запустил биометрический поиск.\n@wait(1500)\n/do Система распознавания лиц выдала карточку гражданина с именем {select_name} и номером дела \"{select_id}\" из единого реестра штата.\n@wait(1000)\n/me сверил анкетные данные на экране КПК с внешностью задержанного.",
-      "wheel_car_visible": true,
-      "wheel_visible": true,
-      "stat": "none",
-      "favorite": false,
-      "command": "",
-      "skip_confirmation": true,
-      "name": "Фоторобот и установление личности по лицу",
-      "no_accent": false,
-      "enabled": true,
-      "id": 29,
-      "category": "Задержание",
-      "wheel_car_group": "frisk"
-    },
-    {
-      "command_alias": "",
-      "wheel_group": "documents",
-      "parameters": {},
-      "shortcut": {
-        "alt": false,
-        "ctrl": false,
-        "shift": false,
-        "key": 0
-      },
-      "quick": true,
-      "target_required": false,
-      "script": "/me открыл на терминале электронный протокол задержания и внёс статьи обвинения и список изъятых улик.\n@wait(1500)\n/do Электронный протокол подписан цифровой подписью {rank} {my_lastname} и передан в архив {department}.",
+      "script": "/me {gender:надел|надела} плотные чёрные резиновые перчатки, тщательно {gender:проверил|проверила} все карманы, пояс и обувь задержанного и {gender:выложил|выложила} найденные вещи под камеру.\n@wait(1500)\n/do Предметы, подлежащие изъятию по результатам обыска, подготовлены к упаковке в зип-пакет и бокс для улик.\n@wait(1000)\n/frisk {select_id}",
       "wheel_car_visible": false,
-      "wheel_visible": false,
-      "stat": "none",
-      "favorite": true,
-      "command": "",
-      "skip_confirmation": true,
-      "name": "Регистрация личного дела арестованного в базе",
-      "no_accent": false,
-      "enabled": true,
-      "id": 30,
-      "category": "Задержание",
-      "wheel_car_group": "documents"
-    },
-    {
-      "command_alias": "",
-      "wheel_group": "documents",
-      "parameters": {},
-      "shortcut": {
-        "alt": false,
-        "ctrl": false,
-        "shift": false,
-        "key": 0
-      },
-      "quick": true,
-      "target_required": false,
-      "script": "/me зафиксировал время в бланке задержания и передал запрос дежурному диспетчеру на вызов государственного адвоката.\n@wait(1500)\n/do Запрос на предоставление юридической помощи зарегистрирован в журнале дежурной части.",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
-      "stat": "none",
-      "favorite": true,
-      "command": "",
-      "skip_confirmation": true,
-      "name": "Предоставить телефонный звонок / Вызов адвоката",
-      "no_accent": false,
-      "enabled": true,
-      "id": 31,
-      "category": "Задержание",
-      "wheel_car_group": "documents"
-    },
-    {
-      "command_alias": "",
-      "wheel_group": "documents",
-      "parameters": {},
-      "shortcut": {
-        "alt": false,
-        "ctrl": false,
-        "shift": false,
-        "key": 0
-      },
-      "quick": true,
-      "target_required": false,
-      "script": "/me открыл один браслет наручников с правой руки задержанного и пристегнул второй браслет к стальному поручню стола\n@wait(1500)\n/do Правая рука задержанного свободна для подписи протокола, левая рука надёжно прикована к столу.",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
-      "stat": "none",
-      "favorite": false,
-      "command": "",
-      "skip_confirmation": true,
-      "name": "Временное освобождение одной руки (для подписи/телефона)",
-      "no_accent": false,
-      "enabled": true,
-      "id": 32,
-      "category": "Задержание",
-      "wheel_car_group": "documents"
-    },
-    {
-      "command_alias": "",
-      "wheel_group": "service",
-      "parameters": {},
-      "shortcut": {
-        "alt": false,
-        "ctrl": false,
-        "shift": false,
-        "key": 0
-      },
-      "quick": true,
-      "target_required": true,
-      "script": "/me стоя под камерой видеонаблюдения участка, надел свежие перчатки и достал герметичный зип-пакет для улик.\n@wait(1500)\n/me тщательно вывернул все карманы одежды, проверил швы, пояс и обувь задержанного, складывая найденное в зип-пакет.\n@wait(1500)\n/do Все запрещённые предметы и личные вещи {select_name} упакованы в промаркированный зип-пакет.\n@wait(800)\n/frisk {select_id}",
-      "wheel_car_visible": true,
       "wheel_visible": true,
       "stat": "frisk",
       "favorite": false,
@@ -745,11 +829,13 @@
       "enabled": true,
       "id": 33,
       "category": "Досмотр",
-      "wheel_car_group": "service"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A33"
     },
     {
       "command_alias": "",
-      "wheel_group": "service",
+      "wheel_group": "frisk",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -759,8 +845,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me аккуратно извлёк оружие у задержанного, поставил его на предохранитель и разрядил магазин.\n@wait(1500)\n/me уложил изъятое оружие и боеприпасы в плотный спецконтейнер для вещественных доказательств, предварительно высунув его из подсумка.\n@wait(800)\n/take {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me в плотных перчатках аккуратно {gender:извлёк|извлекла} оружие у задержанного, {gender:поставил|поставила} его на предохранитель и {gender:разрядил|разрядила} магазин.\n@wait(1500)\n/me {gender:уложил|уложила} изъятое оружие и боеприпасы в плотный спецконтейнер для вещественных доказательств, предварительно достав его из подсумка.\n@wait(800)\n/take {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -771,11 +857,13 @@
       "enabled": true,
       "id": 34,
       "category": "Досмотр",
-      "wheel_car_group": "service"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A34"
     },
     {
       "command_alias": "",
-      "wheel_group": "service",
+      "wheel_group": "frisk",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -785,8 +873,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me изъял у задержанного запрещённые вещества и предметы, поместил их в герметичный зип-пакет и запечатал пломбой.\n@wait(1200)\n/do Зип-пакет с изъятым содержимым опломбирован и убран в кейс.\n@wait(800)\n/take {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me {gender:надел|надела} перчатки, {gender:подготовил|подготовила} пакеты для улик и, изъяв у задержанного запрещённые вещества и предметы и запечатав зип-лок пакет, {gender:приступил|приступила} к оформлению протокола.\n@wait(1200)\n/do Зип-пакет с изъятым содержимым опломбирован и убран в кейс для улик.\n@wait(800)\n/take {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -797,11 +885,13 @@
       "enabled": true,
       "id": 35,
       "category": "Досмотр",
-      "wheel_car_group": "service"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A35"
     },
     {
       "command_alias": "",
-      "wheel_group": "service",
+      "wheel_group": "frisk",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -811,8 +901,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me открыл в служебном КПК реестр лицензий гражданина, указал статью нарушения и аннулировал разрешение.\n@wait(1200)\n/do Лицензия {select_name} официально аннулирована в государственной базе данных.\n@wait(800)\n/take {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me {gender:открыл|открыла} в служебном планшете реестр лицензий гражданина, {gender:указал|указала} статью нарушения и {gender:аннулировал|аннулировала} разрешение.\n@wait(1200)\n/do Лицензия {select_name} официально аннулирована в государственной базе данных.\n@wait(800)\n/take {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -823,11 +913,22 @@
       "enabled": true,
       "id": 36,
       "category": "Досмотр",
-      "wheel_car_group": "service"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true,
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Факты для этой отыгровки подтверждены по RP? PA не определяет результаты экспертиз, документы и данные базы автоматически."
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A36"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "frisk",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -837,23 +938,28 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me прощупав воротник и нагрудные карманы задержанного, в поисках средства связи и фиксации.\n@wait(1500)\n/do Есть ли у {select_name} рация, телефон и/или иные записывающие устройства?",
+      "script": "/me в плотных перчатках {gender:прощупал|прощупала} воротник и нагрудные карманы задержанного в поисках средств связи и фиксации.\n@wait(1500)\n/do Есть ли у {select_name} при себе рация, телефон или иные записывающие устройства?",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
       "skip_confirmation": true,
-      "name": "Изъятие аудио/видеозаписывающих устройств и рации у задержанного",
+      "name": "Поиск аудио/видеозаписывающих устройств и рации у задержанного",
       "no_accent": false,
       "enabled": true,
       "id": 37,
       "category": "Досмотр",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A37"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "frisk",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -863,9 +969,9 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/me надев тактические перчатки и включив фонарик, открыл багажник и двери автомобиля для проведения досмотра.\n@wait(1500)\n/me последовательно проверил бардачок, пространство под сиденьями и нишу запасного колеса в багажнике.\n@wait(1200)\n/do Что офицер мог обнаружить в салоне или багажнике транспортного средства?",
+      "script": "/me надев тактические перчатки и включив фонарик, {gender:открыл|открыла} багажник и двери автомобиля для проведения досмотра.\n@wait(1500)\n/me последовательно {gender:проверил|проверила} бардачок, пространство под сиденьями и нишу запасного колеса в багажнике.\n@wait(1200)\n/do Что офицер {gender:мог|могла} обнаружить в салоне или багажнике транспортного средства?",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
@@ -875,11 +981,16 @@
       "enabled": true,
       "id": 38,
       "category": "Досмотр",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "vehicle": "inspection"
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A38"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "frisk",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -889,9 +1000,9 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/me сфотографировал серийный номер на рамке на служебный КПК и отправил запрос в криминалистический реестр {department}.\n@wait(1500)\n/do На экране КПК отобразился результат проверки серийного номера по базе угнанного и нелегального имущества.",
+      "script": "/me {gender:сфотографировал|сфотографировала} серийный номер на рамке на служебный КПК и {gender:отправил|отправила} запрос в криминалистический реестр {department}.\n@wait(1500)\n/do На экране КПК отобразился результат проверки серийного номера по базе угнанного и нелегального имущества.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
@@ -901,11 +1012,21 @@
       "enabled": true,
       "id": 39,
       "category": "Досмотр",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Факты для этой отыгровки подтверждены по RP? PA не определяет результаты экспертиз, документы и данные базы автоматически."
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A39"
     },
     {
       "command_alias": "",
-      "wheel_group": "detention",
+      "wheel_group": "wanted",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -915,7 +1036,7 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me ввёл ориентировку подозреваемого в навигационный комплекс крузера и запросил пеленг сигнала со спутника.\n@wait(1200)\n/do На тактической карте бортового компьютера отмечен последний сектор нахождения {select_name}.\n@wait(800)\n/setmark {select_id}",
+      "script": "/me зайдя в федеральную базу розыска, просмотрев личные данные разыскиваемого, {gender:ввёл|ввела} его номер телефона в служебный терминал и {gender:запросил|запросила} пеленгацию.\n@wait(1200)\n/do На терминале отобразился запрос на определение местоположения по сигналу телефона, и высвечивается ответ от спутника.\n@wait(800)\n/setmark {select_id}",
       "wheel_car_visible": true,
       "wheel_visible": true,
       "stat": "none",
@@ -927,11 +1048,13 @@
       "enabled": true,
       "id": 40,
       "category": "Проверки",
-      "wheel_car_group": "detention"
+      "wheel_car_group": "wanted",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A40"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "leadership",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -941,9 +1064,9 @@
       },
       "quick": false,
       "target_required": true,
-      "script": "/me открыл на служебном планшете базу данных {department} и ввёл имя гражданина для сверки с Чёрным списком\n@wait(1200)\n/blackcheck {select_id}",
+      "script": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и введя \"{select_name}\", {gender:нажал|нажала} на кнопку \"Проверить на наличие в чёрном списке\".\n@wait(1000)\n/blackcheck {select_id}",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -953,7 +1076,12 @@
       "enabled": true,
       "id": 41,
       "category": "Проверки",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A41"
     },
     {
       "command_alias": "",
@@ -967,9 +1095,9 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me взяв в руки планшет авторизовался в реестре кадров {department}, заполнил в формуляр личные данные {select_name} и внёс его в Чёрный список.\n@wait(1200)\n/blacklist {select_id}",
+      "script": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Добавить в чёрный список\".\n@wait(1000)\n/blacklist {select_id}",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -979,7 +1107,105 @@
       "enabled": true,
       "id": 42,
       "category": "Проверки",
-      "wheel_car_group": "leadership"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A42"
+    },
+    {
+      "command_alias": "",
+      "wheel_group": "leadership",
+      "parameters": {},
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      },
+      "quick": true,
+      "target_required": true,
+      "script": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Убрать из чёрного списка\".\n@wait(1000)\n/unblacklist {select_id}",
+      "wheel_car_visible": false,
+      "wheel_visible": true,
+      "stat": "none",
+      "favorite": false,
+      "command": "",
+      "skip_confirmation": false,
+      "name": "Вынести из Чёрного списка организации (/unblacklist)",
+      "no_accent": false,
+      "enabled": true,
+      "id": 43,
+      "category": "Проверки",
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A43"
+    },
+    {
+      "command_alias": "",
+      "wheel_group": "wanted",
+      "parameters": {},
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      },
+      "quick": true,
+      "target_required": true,
+      "script": "/me {gender:открыл|открыла} на планшете карточку розыска гражданина, {gender:указал|указала} причину закрытия дела и {gender:удалил|удалила} ориентировку.\n@wait(1200)\n/do Ориентировка на {select_name} снята с базы розыска {department}.\n@wait(800)\n/clear {select_id}",
+      "wheel_car_visible": true,
+      "wheel_visible": true,
+      "stat": "none",
+      "favorite": false,
+      "command": "",
+      "skip_confirmation": false,
+      "name": "Снять розыск с гражданина (/clear)",
+      "no_accent": false,
+      "enabled": true,
+      "id": 44,
+      "category": "Розыск и штрафы",
+      "wheel_car_group": "wanted",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A44"
+    },
+    {
+      "command_alias": "",
+      "wheel_group": "citizen",
+      "parameters": {},
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      },
+      "quick": true,
+      "target_required": true,
+      "script": "/me {gender:достал|достала} служебный планшет и портативный термопринтер, {gender:заполнил|заполнила} электронный бланк штрафа и {gender:распечатал|распечатала} квитанцию.\n@wait(1500)\n/todo Ознакомьтесь с протоколом и оплатите квитанцию.*протянув распечатанный чек {select_name}.\n@wait(1000)\n/ticket {select_id}",
+      "wheel_car_visible": false,
+      "wheel_visible": true,
+      "stat": "none",
+      "favorite": false,
+      "command": "",
+      "skip_confirmation": false,
+      "name": "Выписать административный штраф (/ticket)",
+      "no_accent": false,
+      "enabled": true,
+      "id": 45,
+      "category": "Розыск и штрафы",
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A45"
     },
     {
       "command_alias": "",
@@ -992,88 +1218,10 @@
         "key": 0
       },
       "quick": true,
-      "target_required": true,
-      "script": "/me открыл реестр Чёрного списка {department}, нашёл дело {select_name} и аннулировал его.\n@wait(1200)\n/unblacklist {select_id}",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
-      "stat": "none",
-      "favorite": false,
-      "command": "",
-      "skip_confirmation": false,
-      "name": "Вынести из Чёрного списка организации (/unblacklist)",
-      "no_accent": false,
-      "enabled": true,
-      "id": 43,
-      "category": "Проверки",
-      "wheel_car_group": "auto"
-    },
-    {
-      "command_alias": "",
-      "wheel_group": "wanted",
-      "parameters": {},
-      "shortcut": {
-        "alt": false,
-        "ctrl": false,
-        "shift": false,
-        "key": 0
-      },
-      "quick": true,
-      "target_required": true,
-      "script": "/me открыл на планшете карточку розыска гражданина, указал причину закрытия дела и удалил ориентировку.\n@wait(1200)\n/do Ориентировка на {select_name} снята с базы розыска {department}.\n@wait(800)\n/clear {select_id}",
-      "wheel_car_visible": true,
-      "wheel_visible": true,
-      "stat": "none",
-      "favorite": false,
-      "command": "",
-      "skip_confirmation": false,
-      "name": "Снять розыск с гражданина (/clear)",
-      "no_accent": false,
-      "enabled": true,
-      "id": 44,
-      "category": "Розыск и штрафы",
-      "wheel_car_group": "wanted"
-    },
-    {
-      "command_alias": "",
-      "wheel_group": "wanted",
-      "parameters": {},
-      "shortcut": {
-        "alt": false,
-        "ctrl": false,
-        "shift": false,
-        "key": 0
-      },
-      "quick": true,
-      "target_required": true,
-      "script": "/me достал служебный планшет и портативный термопринтер, заполнил электронный бланк штрафа и распечатал квитанцию.\n@wait(1500)\n/todo Ознакомьтесь с протоколом и оплатите квитанцию.*протянув распечатанный чек {select_name}.\n@wait(1000)\n/ticket {select_id}",
-      "wheel_car_visible": true,
-      "wheel_visible": true,
-      "stat": "none",
-      "favorite": false,
-      "command": "",
-      "skip_confirmation": false,
-      "name": "Выписать административный штраф (/ticket)",
-      "no_accent": false,
-      "enabled": true,
-      "id": 45,
-      "category": "Розыск и штрафы",
-      "wheel_car_group": "wanted"
-    },
-    {
-      "command_alias": "",
-      "wheel_group": "detention",
-      "parameters": {},
-      "shortcut": {
-        "alt": false,
-        "ctrl": false,
-        "shift": false,
-        "key": 0
-      },
-      "quick": true,
       "target_required": false,
       "script": "/m Водитель, прижмитесь к правой обочине, остановите транспортное средство и заглушите двигатель!\n@wait(1500)\n/m Держите руки на руле на виду у офицеров {department} и не покидайте салон без приказа!",
       "wheel_car_visible": true,
-      "wheel_visible": true,
+      "wheel_visible": false,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1083,11 +1231,17 @@
       "enabled": true,
       "id": 46,
       "category": "Трафик и погоня",
-      "wheel_car_group": "detention"
+      "wheel_car_group": "citizen",
+      "rp_context": {
+        "vehicle": "traffic",
+        "bike_script": "/m Водитель мотоцикла, снизьте скорость и остановитесь в ближайшем безопасном разрешённом месте!\n@wait(1200)\n/m Заглушите двигатель, держите руки на виду и ожидайте дальнейших указаний полиции!"
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A46"
     },
     {
       "command_alias": "",
-      "wheel_group": "detention",
+      "wheel_group": "auto",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1097,23 +1251,25 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/m Водитель, немедленно остановите транспортное средство и прижмитесь к обочине!\n@wait(1500)\n/m В случае продолжения движения сотрудники {department} откроют огонь по колёсам!",
+      "script": "/m Водитель, говорит полиция! Немедленно снизьте скорость и остановитесь в безопасном месте!\n@wait(1500)\n/m Вы подвергаете опасности участников движения. Прекратите движение и выполняйте законные требования полиции!",
       "wheel_car_visible": true,
-      "wheel_visible": true,
+      "wheel_visible": false,
       "stat": "none",
       "favorite": false,
       "command": "",
       "skip_confirmation": true,
-      "name": "Мегафон: Погоня — Последнее предупреждение перед огнём",
+      "name": "Мегафон: Погоня — Повторное требование остановиться",
       "no_accent": false,
       "enabled": true,
       "id": 47,
       "category": "Трафик и погоня",
-      "wheel_car_group": "detention"
+      "wheel_car_group": "detention",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A47"
     },
     {
       "command_alias": "",
-      "wheel_group": "detention",
+      "wheel_group": "auto",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1123,19 +1279,39 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/m Водитель, заглушите двигатель, вытащите ключи из замка зажигания и выбросьте их в окно!\n@wait(1800)\n/m Медленно откройте дверь снаружи, выйдите из авто с поднятыми руками спиной к офицерам!\n@wait(1800)\n/m Сделайте три шага влево от машины и лягте на землю, руки за голову! Любое резкое движение — огонь на поражение!",
+      "script": "/m Водитель, заглушите двигатель, держите обе руки на виду и не совершайте резких движений!\n@wait(1800)\n/m По команде извлеките ключи и положите их на видное место. Ожидайте следующего указания!\n@wait(1800)\n/m По моей команде медленно откройте дверь и выходите по одному, держа руки поднятыми!",
       "wheel_car_visible": true,
-      "wheel_visible": true,
+      "wheel_visible": false,
       "stat": "none",
       "favorite": false,
       "command": "",
       "skip_confirmation": true,
-      "name": "Мегафон: Трафик-стоп повышенного риска 10-66 (Выход с ключами)",
+      "name": "Мегафон: Трафик-стоп повышенного риска 10-66 (поэтапно, авто/мото)",
       "no_accent": false,
       "enabled": true,
       "id": 48,
       "category": "Трафик и погоня",
-      "wheel_car_group": "detention"
+      "wheel_car_group": "detention",
+      "rp_context": {
+        "vehicle": "traffic",
+        "bike_script": "/m Водитель мотоцикла, заглушите двигатель и оставьте руки на виду у сотрудников полиции!\n@wait(1400)\n/m Не сходите с мотоцикла до отдельной команды. Не совершайте резких движений!\n@wait(1400)\n/m По моей команде медленно сойдите с мотоцикла и отойдите в указанное место, держа руки поднятыми!",
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Этап 10-66: обстановка позволяет передать это указание?"
+          },
+          {
+            "before": 2,
+            "prompt": "Этап 10-66: обстановка позволяет передать это указание?"
+          },
+          {
+            "before": 3,
+            "prompt": "Этап 10-66: обстановка позволяет передать это указание?"
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A48"
     },
     {
       "command_alias": "",
@@ -1150,7 +1326,7 @@
       "quick": true,
       "target_required": false,
       "script": "/m Водители, прижмитесь вправо и уступите дорогу спецтранспорту {department} с включёнными маячками!",
-      "wheel_car_visible": false,
+      "wheel_car_visible": true,
       "wheel_visible": false,
       "stat": "none",
       "favorite": false,
@@ -1161,11 +1337,13 @@
       "enabled": true,
       "id": 49,
       "category": "Трафик и погоня",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "citizen",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A49"
     },
     {
       "command_alias": "",
-      "wheel_group": "detention",
+      "wheel_group": "wanted",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1175,7 +1353,7 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me зафиксировал гос. номер и приметы подозреваемого в бортовом прицеле и активировал протокол преследования.\n@wait(800)\n/pt {select_id}",
+      "script": "/me {gender:зафиксировал|зафиксировала} гос. номер и приметы подозреваемого в бортовом терминале и {gender:передал|передала} диспетчеру сведения о начале преследования.\n@wait(800)\n/pt {select_id}",
       "wheel_car_visible": true,
       "wheel_visible": true,
       "stat": "none",
@@ -1187,11 +1365,21 @@
       "enabled": true,
       "id": 50,
       "category": "Трафик и погоня",
-      "wheel_car_group": "detention"
+      "wheel_car_group": "detention",
+      "wheel_car_extra_groups": [],
+      "rp_context": {
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Госномер и приметы подозреваемого действительно наблюдали по RP? ID не заменяет эти сведения."
+          }
+        ]
+      },
+      "author_ref": "A50"
     },
     {
       "command_alias": "",
-      "wheel_group": "frisk",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1201,7 +1389,7 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/s Внимание, работает {department}! Всем оставаться на местах, бросить оружие и поднять руки за голову!\n@wait(1500)\n/s Любая попытка сопротивления или бегства будет подавлена огнём на поражение!",
+      "script": "/s Внимание, работает {department}! Всем оставаться на местах, бросить оружие и поднять руки за голову!\n@wait(1500)\n/s Не совершайте резких движений, выполняйте законные требования сотрудников полиции!",
       "wheel_car_visible": true,
       "wheel_visible": true,
       "stat": "none",
@@ -1213,11 +1401,13 @@
       "enabled": true,
       "id": 51,
       "category": "Трафик и погоня",
-      "wheel_car_group": "frisk"
+      "wheel_car_group": "custom",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A51"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "service",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1227,7 +1417,7 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/me экстренно нажал красную тревожную кнопку на плечевой тангенте рации, передавая GPS-координаты всем экипажам\n@wait(800)\n/mark CODE 0! Нападение на офицера, требуется срочная поддержка всех свободных юнитов!",
+      "script": "/me экстренно {gender:нажал|нажала} красную тревожную кнопку на плечевой тангенте рации, передавая GPS-координаты всем экипажам.\n@wait(800)\n/mark CODE 0! Срочно требуется помощь сотруднику полиции, направьте ближайшие свободные экипажи!",
       "wheel_car_visible": true,
       "wheel_visible": true,
       "stat": "none",
@@ -1239,11 +1429,21 @@
       "enabled": true,
       "id": 52,
       "category": "Трафик и погоня",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "custom",
+      "rp_context": {
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Есть действительная безотлагательная угроза сотруднику? Подтвердите основание для CODE 0."
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A52"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "service",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1253,23 +1453,27 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "/me передал через бортовой навигатор активную геолокацию преследования экипажам {department}\n@wait(800)\n/mark 10-57 VICTOR / CODE 1! Веду активную погоню, требуется перекрытие по GPS-маячку!",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
+      "script": "/me {gender:передал|передала} через бортовой навигатор активную геолокацию преследования экипажам {department}.\n@wait(800)\n/mark 10-57 VICTOR! Веду активную погоню, запрашиваю поддержку и перекрытие по GPS-маячку!",
+      "wheel_car_visible": true,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
       "skip_confirmation": true,
-      "name": "Запрос подкрепления в погоню Code 1 / 10-57 (/mark)",
+      "name": "Запрос подкрепления в погоню 10-57 VICTOR (/mark)",
       "no_accent": false,
       "enabled": true,
       "id": 53,
       "category": "Трафик и погоня",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "detention",
+      "wheel_car_extra_groups": [
+        "custom"
+      ],
+      "author_ref": "A53"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "service",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1279,9 +1483,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/r Докладывает {my_lastname}: Выхожу в маркированный патруль юрисдикции, доступен для вызовов 9-1-1. Code 4.",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
+      "script": "/r Докладывает {my_lastname}: Выхожу в маркированный патруль юрисдикции, {gender:доступен|доступна} для вызовов 9-1-1. Code 4.",
+      "wheel_car_visible": true,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1291,11 +1495,13 @@
       "enabled": true,
       "id": 54,
       "category": "Трафик и погоня",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "service",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A54"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "service",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1305,9 +1511,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/r Докладывает {my_lastname}: Провожу трафик-стоп 10-55, временно 10-6. Состояние стабильное, Code 4.",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
+      "script": "/r Докладывает {my_lastname}: Провожу трафик-стоп 10-55, временно 10-8. Состояние стабильное, Code 4.",
+      "wheel_car_visible": true,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1317,11 +1523,13 @@
       "enabled": true,
       "id": 55,
       "category": "Трафик и погоня",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "citizen",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A55"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "service",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1332,8 +1540,8 @@
       "quick": false,
       "target_required": false,
       "script": "/r Докладывает {my_lastname}: Провожу 10-15, доставляю задержанного саспекта в участок {department}. Code 4.",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_car_visible": true,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1343,11 +1551,13 @@
       "enabled": true,
       "id": 56,
       "category": "Трафик и погоня",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "service",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A56"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "service",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1357,9 +1567,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me переключил тумблер рации на защищённую межведомственную частоту департамента и вышел в эфир\n@wait(1000)\n/d [{department}] — [ALL]: На связи {rank} {my_lastname}, выйдите на связь по государственной волне.",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
+      "script": "/me {gender:переключил|переключила} тумблер рации на защищённую межведомственную частоту департамента и {gender:вышел|вышла} в эфир.\n@wait(1000)\n/d [{department}] — [ALL]: На связи {rank} {my_lastname}, выйдите на связь по государственной волне.",
+      "wheel_car_visible": true,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1369,11 +1579,13 @@
       "enabled": true,
       "id": 57,
       "category": "Трафик и погоня",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "service",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A57"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1383,9 +1595,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me отстегнул ремешок кобуры на левой стороне тактического пояса, выхватил электрошокер Taser X26 и снял его с предохранителя\n@wait(1200)\n/do Дистанционный электрошокер Taser X26 заряжен картриджем и приведён в боевую готовность.",
+      "script": "/me {gender:отстегнул|отстегнула} ремешок кобуры на левой стороне тактического пояса, {gender:выхватил|выхватила} электрошокер Taser X26 и {gender:снял|сняла} его с предохранителя.\n@wait(1200)\n/do Дистанционный электрошокер Taser X26 заряжен картриджем и приведён в боевую готовность.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1395,11 +1607,13 @@
       "enabled": true,
       "id": 58,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A58"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1409,9 +1623,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me снял с поясного крепления телескопическую дубинку и резким взмахом кисти разложил её в рабочее положение\n@wait(1200)\n/do Спецсредство четвёртой стадии применения силы находится в руке офицера.",
+      "script": "/me {gender:снял|сняла} с поясного крепления телескопическую дубинку и резким взмахом кисти {gender:разложил|разложила} её в рабочее положение.\n@wait(1200)\n/do Спецсредство четвёртой стадии применения силы находится в руке офицера.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1421,11 +1635,13 @@
       "enabled": true,
       "id": 59,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A59"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1435,9 +1651,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me открыл багажное отделение крузера, достал складное дорожное заграждение и установил его на проезжей части\n@wait(1000)\n/break",
-      "wheel_car_visible": false,
-      "wheel_visible": false,
+      "script": "/me {gender:открыл|открыла} багажное отделение крузера, {gender:достал|достала} складное дорожное заграждение и {gender:установил|установила} его на проезжей части.\n@wait(1000)\n/break",
+      "wheel_car_visible": true,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1447,11 +1663,13 @@
       "enabled": true,
       "id": 60,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "custom",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A60"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1461,9 +1679,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me достал из оружейного отсека тяжёлый кевларовый бронежилет, баллистический шлем и тактический щит\n@wait(1500)\n/me закрепил пластины бронежилета на торсе, надел шлем с забралом и перехватил рукоять штурмового щита\n@wait(1200)\n/do Боец укомплектован тяжёлой штурмовой бронёй и баллистическим щитом.",
+      "script": "/me {gender:достал|достала} из оружейного отсека тяжёлый кевларовый бронежилет, баллистический шлем и тактический щит.\n@wait(1500)\n/me {gender:закрепил|закрепила} пластины бронежилета на торсе, {gender:надел|надела} шлем с забралом и {gender:перехватил|перехватила} рукоять штурмового щита.\n@wait(1200)\n/do Сотрудник укомплектован тяжёлой штурмовой бронёй и баллистическим щитом.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1473,11 +1691,13 @@
       "enabled": true,
       "id": 61,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A61"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1487,9 +1707,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me извлёк из набедренной сумки тактический противогаз Avon M50, натянул маску на лицо и затянул ремни оголовья\n@wait(1200)\n/do Герметичный противогаз плотно прилегает к лицу, дыхательные пути защищены угольными фильтрами.",
+      "script": "/me {gender:извлёк|извлекла} из набедренной сумки тактический противогаз Avon M50, {gender:натянул|натянула} маску на лицо и {gender:затянул|затянула} ремни оголовья.\n@wait(1200)\n/do Герметичный противогаз плотно прилегает к лицу, дыхательные пути защищены угольными фильтрами.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1499,11 +1719,13 @@
       "enabled": true,
       "id": 62,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A62"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1513,9 +1735,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me снял с разгрузки светошумовую гранату M84, выдернул предохранительную чеку и забросил гранату внутрь помещения\n@wait(1500)\n/do В помещении раздался оглушительный хлопок с яркой ослепляющей вспышкой.",
+      "script": "/me {gender:снял|сняла} с разгрузки светошумовую гранату M84, {gender:выдернул|выдернула} предохранительную чеку и {gender:забросил|забросила} гранату внутрь помещения.\n@wait(1500)\n/do В помещении раздался оглушительный хлопок с яркой ослепляющей вспышкой.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1525,11 +1747,13 @@
       "enabled": true,
       "id": 63,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A63"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1539,9 +1763,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me перехватил двуручный стальной таран обеими руками, размахнулся и нанёс мощный удар в область дверного замка\n@wait(1500)\n/do Замок вырван из дверной коробки, входная дверь распахнута внутрь помещения.",
+      "script": "/me {gender:перехватил|перехватила} двуручный стальной таран обеими руками, {gender:размахнулся|размахнулась} и {gender:нанёс|нанесла} мощный удар в область дверного замка.\n@wait(1500)\n/do Замок вырван из дверной коробки, входная дверь распахнута внутрь помещения.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1551,11 +1775,13 @@
       "enabled": true,
       "id": 64,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A64"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1565,9 +1791,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me расстегнул подсумок индивидуальной аптечки IFAK, достал кровоостанавливающий турникет CAT и стерильный перевязочный пакет\n@wait(1500)\n/me наложил турникет выше места кровотечения, затянул вороток до остановки крови и зафиксировал плотную давящую повязку\n@wait(1500)\n/do Кровотечение у пострадавшего остановлено, состояние стабилизировано до прибытия парамедиков.",
+      "script": "/me {gender:расстегнул|расстегнула} подсумок индивидуальной аптечки IFAK, {gender:достал|достала} кровоостанавливающий турникет CAT и стерильный перевязочный пакет.\n@wait(1500)\n/me {gender:наложил|наложила} турникет выше места кровотечения, {gender:затянул|затянула} вороток до остановки крови и {gender:зафиксировал|зафиксировала} плотную давящую повязку.\n@wait(1500)\n/do Кровотечение у пострадавшего остановлено, состояние стабилизировано до прибытия парамедиков.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1577,11 +1803,13 @@
       "enabled": true,
       "id": 65,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A65"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1591,9 +1819,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me достал из защитного кофра компактный разведывательный дрон с тепловизором, разложил лопасти и запустил его в воздух\n@wait(1500)\n/do Квадрокоптер набрал высоту и транслирует картинку сектора на экран пульта управления.",
+      "script": "/me {gender:достал|достала} из защитного кофра компактный разведывательный дрон с тепловизором, {gender:разложил|разложила} лопасти и {gender:запустил|запустила} его в воздух.\n@wait(1500)\n/do Квадрокоптер набрал высоту и транслирует картинку сектора на экран пульта управления.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1603,11 +1831,13 @@
       "enabled": true,
       "id": 66,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A66"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "service",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1617,9 +1847,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me открыл индивидуальный металлический шкафчик в раздевалке {department}, надел служебную форму и закрепил снаряжение на тактическом поясе\n@wait(1500)\n/do Форма и табельное снаряжение офицера приведены в полный порядок.",
+      "script": "/me {gender:открыл|открыла} индивидуальный металлический шкафчик в раздевалке {department}, {gender:надел|надела} служебную форму и {gender:закрепил|закрепила} снаряжение на тактическом поясе.\n@wait(1500)\n/do Форма и табельное снаряжение офицера приведены в полный порядок.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1629,7 +1859,9 @@
       "enabled": true,
       "id": 67,
       "category": "Спецсредства",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A67"
     },
     {
       "command_alias": "",
@@ -1643,7 +1875,7 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me включил стационарный терминал записи в допросной комнате и положил на стол чистый бланк протокола допроса\n@wait(1500)\n/do Камеры в углах допросной и настольный микрофон ведут непрерывную запись со звуком.\n@wait(1500)\nНачинаем процедуру допроса. Назовите ваше полное имя, фамилию и отношение к инкриминируемому деянию.",
+      "script": "/me {gender:включил|включила} стационарный терминал записи в допросной комнате и {gender:положил|положила} на стол чистый бланк протокола допроса.\n@wait(1500)\n/do Камеры в углах допросной и настольный микрофон ведут непрерывную запись со звуком.\n@wait(1500)\nНачинаем процедуру допроса. Назовите ваше полное имя, фамилию и отношение к инкриминируемому деянию.",
       "wheel_car_visible": false,
       "wheel_visible": false,
       "stat": "none",
@@ -1654,8 +1886,10 @@
       "no_accent": false,
       "enabled": true,
       "id": 68,
-      "category": "Экспертизы и следствие",
-      "wheel_car_group": "auto"
+      "category": "Следствие и криминалистика",
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A68"
     },
     {
       "command_alias": "",
@@ -1669,7 +1903,7 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me внёс показания задержанного в итоговый протокол допроса, поставил свою подпись и пододвинул лист задержанному\n@wait(1500)\n/me остановил запись на терминале допросной и сохранил видеофайл в криминалистическом архиве {department}\n@wait(1200)\n/do Протокол допроса оформлен, видеозапись приобщена к материалам уголовного дела.",
+      "script": "/me {gender:внёс|внесла} показания задержанного в итоговый протокол допроса, {gender:поставил|поставила} свою подпись и {gender:пододвинул|пододвинула} лист задержанному.\n@wait(1500)\n/me {gender:остановил|остановила} запись на терминале допросной и {gender:сохранил|сохранила} видеофайл в криминалистическом архиве {department}.\n@wait(1200)\n/do Протокол допроса оформлен, видеозапись приобщена к материалам уголовного дела.",
       "wheel_car_visible": false,
       "wheel_visible": false,
       "stat": "none",
@@ -1680,8 +1914,10 @@
       "no_accent": false,
       "enabled": true,
       "id": 69,
-      "category": "Экспертизы и следствие",
-      "wheel_car_group": "auto"
+      "category": "Следствие и криминалистика",
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A69"
     },
     {
       "command_alias": "",
@@ -1695,7 +1931,7 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me открыл криминалистический чемоданчик, достал магнитную кисть, дактилоскопический порошок и прозрачную плёнку\n@wait(1500)\n/me аккуратно обработал поверхность предмета порошком, перенёс проявившиеся папиллярные узоры на плёнку и отсканировал их через КПК\n@wait(1500)\n/do Сканер КПК сопоставил отпечатки пальцев с единой дактилоскопической базой данных штата.",
+      "script": "/me {gender:открыл|открыла} криминалистический чемоданчик, {gender:достал|достала} магнитную кисть, дактилоскопический порошок и прозрачную плёнку.\n@wait(1500)\n/me аккуратно {gender:обработал|обработала} поверхность предмета порошком, {gender:перенёс|перенесла} проявившиеся папиллярные узоры на плёнку и {gender:отсканировал|отсканировала} их через КПК.\n@wait(1500)\n/do Сканер КПК сопоставил отпечатки пальцев с единой дактилоскопической базой данных штата.",
       "wheel_car_visible": false,
       "wheel_visible": false,
       "stat": "none",
@@ -1706,8 +1942,18 @@
       "no_accent": false,
       "enabled": true,
       "id": 70,
-      "category": "Экспертизы и следствие",
-      "wheel_car_group": "auto"
+      "category": "Следствие и криминалистика",
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Факты для этой отыгровки подтверждены по RP? PA не определяет результаты экспертиз, документы и данные базы автоматически."
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A70"
     },
     {
       "command_alias": "",
@@ -1721,7 +1967,7 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me достал из экспертного набора ампулу с реагентом Marquis, взял микропробу порошка из зип-пакета и поместил в пробирку\n@wait(1500)\n/me встряхнул пробирку с химическим реагентом и сверил изменение цвета раствора с контрольной шкалой\n@wait(1500)\n/do Химическая реакция окрасила раствор в тёмно-фиолетовый цвет, подтвердив наркотическое происхождение вещества.",
+      "script": "/me {gender:достал|достала} из экспертного набора ампулу с реагентом Marquis, {gender:взял|взяла} микропробу порошка из зип-пакета и {gender:поместил|поместила} в пробирку.\n@wait(1500)\n/me {gender:встряхнул|встряхнула} пробирку с химическим реагентом и {gender:сверил|сверила} изменение цвета раствора с контрольной шкалой.\n@wait(1500)\n/do Химическая реакция окрасила раствор в тёмно-фиолетовый цвет, подтвердив наркотическое происхождение вещества.",
       "wheel_car_visible": false,
       "wheel_visible": false,
       "stat": "none",
@@ -1732,8 +1978,18 @@
       "no_accent": false,
       "enabled": true,
       "id": 71,
-      "category": "Экспертизы и следствие",
-      "wheel_car_group": "auto"
+      "category": "Следствие и криминалистика",
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Факты для этой отыгровки подтверждены по RP? PA не определяет результаты экспертиз, документы и данные базы автоматически."
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A71"
     },
     {
       "command_alias": "",
@@ -1747,7 +2003,7 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me пинцетом собрал стреляные гильзы с места происшествия, поместил их под портативный микроскоп и отсканировал следы бойка\n@wait(1500)\n/do Баллистическая база {department} определила калибр и совпадение нарезов ствола с изъятым оружием.",
+      "script": "/me пинцетом {gender:собрал|собрала} стреляные гильзы с места происшествия, {gender:поместил|поместила} их под портативный микроскоп и {gender:отсканировал|отсканировала} следы бойка.\n@wait(1500)\n/do Баллистическая база {department} определила калибр и совпадение нарезов ствола с изъятым оружием.",
       "wheel_car_visible": false,
       "wheel_visible": false,
       "stat": "none",
@@ -1758,12 +2014,22 @@
       "no_accent": false,
       "enabled": true,
       "id": 72,
-      "category": "Экспертизы и следствие",
-      "wheel_car_group": "auto"
+      "category": "Следствие и криминалистика",
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Факты для этой отыгровки подтверждены по RP? PA не определяет результаты экспертиз, документы и данные базы автоматически."
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A72"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "documents",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -1773,9 +2039,9 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me разложил сапёрный комплект, установил подавитель радиочастот и аккуратно вскрыл корпус таймера взрывного устройства\n@wait(1800)\n/me проследив схему питания детонатора, перекусил диэлектрическими кусачками ведущий провод цепи инициации и извлёк капсюль\n@wait(1500)\n/do Взрывное устройство полностью обесточено и переведено в безопасное состояние, таймер остановлен.",
+      "script": "/me {gender:разложил|разложила} сапёрный комплект, {gender:установил|установила} подавитель радиочастот и аккуратно {gender:вскрыл|вскрыла} корпус таймера взрывного устройства.\n@wait(1800)\n/me проследив схему питания детонатора, {gender:перекусил|перекусила} диэлектрическими кусачками ведущий провод цепи инициации и {gender:извлёк|извлекла} капсюль.\n@wait(1500)\n/do Взрывное устройство полностью обесточено и переведено в безопасное состояние, таймер остановлен.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -1785,7 +2051,9 @@
       "enabled": true,
       "id": 73,
       "category": "Экспертизы и следствие",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A73"
     },
     {
       "command_alias": "",
@@ -1799,7 +2067,7 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me расставил номерные жёлтые маркеры рядом с обнаруженными уликами и сделал серию детальных снимков на криминалистическую камеру\n@wait(1500)\n/me упаковал вещественные доказательства в отдельные зип-пакеты, подписал бирки с временем и сектором и убрал в опечатанный кейс\n@wait(1200)\n/do Все улики с места происшествия зафиксированы и упакованы по процессуальному стандарту.",
+      "script": "/me {gender:расставил|расставила} номерные жёлтые маркеры рядом с обнаруженными уликами и {gender:сделал|сделала} серию детальных снимков на криминалистическую камеру.\n@wait(1500)\n/me {gender:упаковал|упаковала} вещественные доказательства в отдельные зип-пакеты, {gender:подписал|подписала} бирки с временем и сектором и {gender:убрал|убрала} в опечатанный кейс.\n@wait(1200)\n/do Все улики с места происшествия зафиксированы и упакованы по процессуальному стандарту.",
       "wheel_car_visible": false,
       "wheel_visible": false,
       "stat": "none",
@@ -1810,8 +2078,10 @@
       "no_accent": false,
       "enabled": true,
       "id": 74,
-      "category": "Экспертизы и следствие",
-      "wheel_car_group": "auto"
+      "category": "Следствие и криминалистика",
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A74"
     },
     {
       "command_alias": "",
@@ -1825,7 +2095,7 @@
       },
       "quick": false,
       "target_required": false,
-      "script": "/me подключил защищённый крипто-накопитель к видеорегистратору камер наблюдения и запустил экспорт архива за последний час\n@wait(1500)\n/do Видеозаписи с камер наблюдения успешно скопированы на накопитель следователя {department}.",
+      "script": "/me {gender:подключил|подключила} защищённый крипто-накопитель к видеорегистратору камер наблюдения и {gender:запустил|запустила} экспорт архива за последний час.\n@wait(1500)\n/do Видеозаписи с камер наблюдения успешно скопированы на накопитель следователя {department}.",
       "wheel_car_visible": false,
       "wheel_visible": false,
       "stat": "none",
@@ -1836,8 +2106,18 @@
       "no_accent": false,
       "enabled": true,
       "id": 75,
-      "category": "Экспертизы и следствие",
-      "wheel_car_group": "auto"
+      "category": "Следствие и криминалистика",
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "checkpoints": [
+          {
+            "before": 1,
+            "prompt": "Факты для этой отыгровки подтверждены по RP? PA не определяет результаты экспертиз, документы и данные базы автоматически."
+          }
+        ]
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A75"
     },
     {
       "command_alias": "",
@@ -1851,8 +2131,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me открыл на планшете кадровый реестр {department}, оформил приказ о зачислении и достал из кейса комплект формы и жетон.\n@wait(1500)\n/todo Поздравляю с зачислением на службу в {department}!*передав новую форму, рацию и жетон сотруднику.\n@wait(1000)\n/invite {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Зачислить в академию департамента\".\n@wait(1400)\n/me достав из сумки, висящей на плече, новую форму, рацию и бейджик, {gender:передал|передала} их {select_firstname} в руки.\n@wait(1200)\n/todo Поздравляю с зачислением на службу в {department}!*пожав руку сотруднику.\n@wait(1000)\n/invite {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "invite",
       "favorite": false,
@@ -1863,7 +2143,12 @@
       "enabled": true,
       "id": 76,
       "category": "Управление составом",
-      "wheel_car_group": "leadership"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A76"
     },
     {
       "command_alias": "",
@@ -1877,8 +2162,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me открыл личное дело сотрудника в КПК {department}, подписал приказ об отстранении от службы.\n@wait(1200)\n/do Доступ сотрудника к базам данных и арсеналу департамента аннулирован.\n@wait(800)\n/uninvite {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Удалить личное дело\".\n@wait(1200)\n/do Доступ сотрудника к базам данных и арсеналу департамента аннулирован.\n@wait(800)\n/uninvite {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -1889,7 +2174,12 @@
       "enabled": true,
       "id": 77,
       "category": "Управление составом",
-      "wheel_car_group": "leadership"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A77"
     },
     {
       "command_alias": "",
@@ -1903,8 +2193,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me внёс изменения о присвоении нового звания в электронное личное дело сотрудника {department} и передал новые шевроны.\n@wait(1200)\n/rang {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department}, {gender:внёс|внесла} изменения о присвоении нового звания в личное дело \"{select_name}\" и {gender:передал|передала} сотруднику новые шевроны.\n@wait(1200)\n/rang {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -1915,7 +2205,12 @@
       "enabled": true,
       "id": 78,
       "category": "Управление составом",
-      "wheel_car_group": "leadership"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A78"
     },
     {
       "command_alias": "",
@@ -1929,8 +2224,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me открыл структуру подразделений {department} в планшете и закрепил сотрудника за соответствующим дивизионом.\n@wait(1200)\n/division {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Выдать дивизион\".\n@wait(1000)\n/division {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -1941,7 +2236,12 @@
       "enabled": true,
       "id": 79,
       "category": "Управление составом",
-      "wheel_car_group": "leadership"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A79"
     },
     {
       "command_alias": "",
@@ -1955,8 +2255,8 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me достал из сумки с надписью {department} чистый комплект формы по дресс-коду отдела и передал сотруднику.\n@wait(1200)\n/setskin {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me {gender:достал|достала} из сумки с символикой {department} чистый комплект формы по дресс-коду отдела и {gender:передал|передала} его сотруднику в руки.\n@wait(1200)\n/setskin {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
@@ -1967,7 +2267,9 @@
       "enabled": true,
       "id": 80,
       "category": "Управление составом",
-      "wheel_car_group": "leadership"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A80"
     },
     {
       "command_alias": "",
@@ -1981,23 +2283,28 @@
       },
       "quick": true,
       "target_required": true,
-      "script": "/me открыл дисциплинарный реестр {department} в служебном планшете и зафиксировал запись о взыскании в личном деле сотрудника\n@wait(1200)\n/fwarn {select_id}",
-      "wheel_car_visible": true,
+      "script": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные и выбрав сотрудника \"{select_name}\", {gender:нажал|нажала} на кнопку \"Выдать дисциплинарное взыскание\".\n@wait(1000)\n/fwarn {select_id}",
+      "wheel_car_visible": false,
       "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
       "skip_confirmation": false,
-      "name": "Выдать / Снять дисциплинарный выговор (/fwarn)",
+      "name": "Выдать дисциплинарный выговор (/fwarn)",
       "no_accent": false,
       "enabled": true,
       "id": 81,
       "category": "Управление составом",
-      "wheel_car_group": "leadership"
+      "wheel_car_group": "auto",
+      "rp_context": {
+        "identity": true
+      },
+      "wheel_car_extra_groups": [],
+      "author_ref": "A81"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "leadership",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -2007,9 +2314,9 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "Приветствую состав на вводной лекции учебного отдела {department}. Тема: Субординация и правила радиоэфира.\n@wait(3500)\nКаждый сотрудник обязан строго соблюдать устав департамента, дресс-код и деловой тон общения со старшими и гражданами.\n@wait(3500)\nКурсантам Полицейской Академии запрещено самостоятельно выезжать в патруль, выдавать розыск и брать спецтранспорт без инструктора.\n@wait(3500)\nВ локальной рации доклады ведутся строго с тегом вашего отдела, использованием тен-кодов и ситуационных кодов (Code 0 — Code 4).\n@wait(3500)\nДля экстренного вызова подкрепления при угрозе жизни используется тревожная кнопка с указанием кода ситуации.\n@wait(3000)\nНа этом вводная лекция окончена. Если есть вопросы по уставу и радиообмену — задавайте.",
+      "script": "Приветствую состав на вводной лекции учебного отдела {department}. Тема: Субординация и правила радиоэфира.\n@wait(3500)\nКаждый сотрудник обязан строго соблюдать устав департамента, дресс-код и деловой тон общения со старшими и гражданами.\n@wait(3500)\nКурсантам Полицейской Академии запрещено самостоятельно выезжать в патруль, выдавать розыск и брать спецтранспорт без инструктора.\n@wait(3500)\nВ локальной рации доклады ведутся строго с маркировкой вашего экипажа, использованием тен-кодов и ситуационных кодов (Code 0 — Code 4).\n@wait(3500)\nДля экстренного вызова подкрепления при угрозе жизни используется тревожная кнопка с указанием кода ситуации.\n@wait(3000)\nНа этом вводная лекция окончена. Если есть вопросы по уставу и радиообмену — задавайте.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
@@ -2019,11 +2326,13 @@
       "enabled": true,
       "id": 82,
       "category": "Лекции RTD",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A82"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "leadership",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -2035,7 +2344,7 @@
       "target_required": false,
       "script": "Внимание, состав! Прослушайте лекцию на тему: «Пять стадий применения силы и тактическое Правило 6 метров».\n@wait(3500)\nПервая стадия — Присутствие офицера в форме. Вторая стадия — Устные законные приказы и предупреждения.\n@wait(3500)\nТретья стадия — Простое физическое воздействие: заламывание рук, надевание наручников и конвоирование.\n@wait(3500)\nЧетвёртая стадия — Применение спецсредств: дубинка, перцовый газ и электрошокер Taser.\n@wait(3500)\nЗапомните главное правило: применять тайзер в лобовом столкновении против преступника с огнестрельным оружием строго запрещено!\n@wait(3500)\nПятая стадия — Летальная сила: открытие огня из табельного оружия при прямой угрозе жизни офицера или граждан.\n@wait(3500)\nПравило 6 метров: минимальная безопасная дистанция до подозреваемого с холодным оружием составляет 6 метров.\n@wait(3500)\nНа дистанции 1,5–3 метра при рывке преступника с ножом офицер не успеет извлечь пистолет из кобуры. Лекция окончена!",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
@@ -2045,11 +2354,13 @@
       "enabled": true,
       "id": 83,
       "category": "Лекции RTD",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A83"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "leadership",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -2059,9 +2370,9 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "Уважаемые сотрудники, тема текущей лекции: «Процессуальный порядок задержания и Правило Миранды».\n@wait(3500)\nПри задержании подозреваемого вы обязаны надеть на него наручники и зафиксировать хват конвоирования.\n@wait(3500)\nЕсли на лице задержанного надета маска или балаклава — она обязательно срывается для сверки личности с базой.\n@wait(3500)\nДалее вы представляетесь, называете причину задержания и в обязательном порядке зачитываете Правило Миранды.\n@wait(3500)\nВы разъясняете задержанному право хранить молчание и право на присутствие адвоката на допросе.\n@wait(3500)\nЕсли задержанный ответил «Нет» или промолчал — права зачитываются повторно второй раз, более двух раз повторять не требуется.\n@wait(3000)\nЛекция по процедуре задержания окончена. Сделайте фиксацию времени для отчёта.",
+      "script": "Уважаемые сотрудники, тема текущей лекции: «Процессуальный порядок задержания и Правило Миранды».\n@wait(3500)\nПри задержании подозреваемого вы обязаны надеть на него наручники и зафиксировать хват конвоирования.\n@wait(3500)\nЕсли на лице задержанного надета маска или балаклава — она обязательно снимается для установления личности.\n@wait(3500)\nДалее вы представляетесь, называете причину задержания и в обязательном порядке зачитываете Правило Миранды.\n@wait(3500)\nВы разъясняете задержанному право хранить молчание, право на один телефонный звонок и право на присутствие адвоката.\n@wait(3500)\nЕсли задержанный ответил «Нет» или промолчал — права зачитываются повторно второй раз, более двух раз повторять не требуется.\n@wait(3000)\nЛекция по процедуре задержания окончена. Сделайте фиксацию времени для отчёта.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
@@ -2071,11 +2382,13 @@
       "enabled": true,
       "id": 84,
       "category": "Лекции RTD",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A84"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "leadership",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -2085,9 +2398,9 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "Внимание, состав! Тема лекции: «Различие между первичным и вторичным обыском задержанного».\n@wait(3500)\nВ практике {department} строго разграничиваются два этапа личного досмотра: первичный и вторичный обыск.\n@wait(3500)\nПервичный обыск проводится сразу на месте задержания у капота крузера после надевания наручников.\n@wait(3500)\nЕго единственная цель — личная безопасность офицера: быстрое прохлопывание верхней одежды и пояса для изъятия оружия.\n@wait(3500)\nВторичный (полный) обыск проводится уже по прибытии в здание станции под объективами камер видеонаблюдения.\n@wait(3500)\nОфицер надевает плотные перчатки, выворачивает все карманы задержанного и изымает запрещённые вещества и улики в зип-пакеты.\n@wait(3000)\nЛекция по регламенту обысков окончена. Вопросы по теме имеются?",
+      "script": "Внимание, состав! Тема лекции: «Различие между первичным и вторичным обыском задержанного».\n@wait(3500)\nВ практике {department} строго разграничиваются два этапа личного досмотра: первичный и полный (вторичный) обыск.\n@wait(3500)\nПервичный обыск проводится сразу на месте задержания после надевания наручников без перчаток.\n@wait(3500)\nЕго единственная цель — личная безопасность офицера: быстрое прохлопывание верхней одежды, пояса, торса и ног на наличие оружия.\n@wait(3500)\nВторичный (полный) обыск проводится под камерой крузера или в участке в плотных резиновых перчатках.\n@wait(3500)\nОфицер проверяет все карманы и обувь задержанного и упаковывает запрещённые вещества и улики в зип-пакеты и бокс.\n@wait(3000)\nЛекция по регламенту обысков окончена. Вопросы по теме имеются?",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
@@ -2097,11 +2410,13 @@
       "enabled": true,
       "id": 85,
       "category": "Лекции RTD",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A85"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "leadership",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -2111,9 +2426,9 @@
       },
       "quick": true,
       "target_required": false,
-      "script": "Тема сегодняшней лекции: «Проведение обычного Трафик-стопа 10-55 и остановки повышенного риска 10-66».\n@wait(3500)\nПри проведении 10-55 требование об остановке и заглушении двигателя подаётся через мегафон. Водитель остаётся в салоне.\n@wait(3500)\nКрузер паркуется позади автомобиля нарушителя: левая фара на уровне середины заднего номера, колёса вывернуты влево.\n@wait(3500)\nПодходя к автомобилю, офицер касается ладонью задней фары, чтобы оставить отпечаток и убедиться, что багажник закрыт.\n@wait(3500)\nТрафик-стоп повышенного риска (10-66) проводится после погони (10-57) или если подозреваемый в салоне вооружён и особо опасен.\n@wait(3500)\nПри 10-66 офицеры НЕ подходят к авто, а работают из-за открытых дверей крузеров с оружием на прицеле.\n@wait(3500)\nЧерез мегафон подаётся приказ выбросить ключи в окно, выйти спиной с поднятыми руками и лечь на землю для задержания.\n@wait(3000)\nНа этом лекция по трафик-стопам завершена!",
+      "script": "Тема сегодняшней лекции: «Проведение обычного Трафик-стопа 10-55 и остановки повышенного риска 10-66».\n@wait(3500)\nПри проведении 10-55 требование об остановке и заглушении двигателя подаётся через мегафон. Водитель закрытого автомобиля остаётся в салоне, мотоциклист — у своего мотоцикла до дальнейшей команды.\n@wait(3500)\nКрузер паркуется позади автомобиля нарушителя: левая фара на уровне середины заднего номера, колёса вывернуты влево.\n@wait(3500)\nПодходя к автомобилю, офицер касается ладонью задней фары, чтобы оставить отпечаток и убедиться, что багажник закрыт.\n@wait(3500)\nТрафик-стоп повышенного риска (10-66) проводится после погони (10-57) или если подозреваемый в салоне вооружён и особо опасен.\n@wait(3500)\nПри 10-66 офицеры не подходят к авто, а работают из-за открытых дверей крузеров с оружием на прицеле.\n@wait(3500)\nДля закрытого автомобиля команды на остановку двигателя, размещение ключей на видном месте и выход подаются поэтапно. Для мотоцикла используются отдельные команды: заглушить двигатель, держать руки на виду, по приказу медленно сойти и отойти в указанное место. Офицер подтверждает каждый этап.\n@wait(3000)\nНа этом лекция по трафик-стопам завершена!",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": true,
       "command": "",
@@ -2123,11 +2438,13 @@
       "enabled": true,
       "id": 86,
       "category": "Лекции RTD",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A86"
     },
     {
       "command_alias": "",
-      "wheel_group": "auto",
+      "wheel_group": "leadership",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -2139,7 +2456,7 @@
       "target_required": false,
       "script": "Внимание, состав! Заключительная лекция курса: «Тактика штурма зданий, действия при терактах, ограблениях и похищениях».\n@wait(3500)\nПри объявлении ЧС, захвата заложников или ограбления банка весь личный состав обязан переключиться на волну спец. операции.\n@wait(3500)\nПервая задача патрульных экипажей — немедленное оцепление периметра (/break) и отвод гражданских на безопасное расстояние.\n@wait(3500)\nСамовольный штурм здания или открытие огня при наличии заложников строго запрещены — приоритетом всегда является жизнь заложников!\n@wait(3500)\nКомандование на спец. операции и ведение переговоров осуществляет старший офицер штаба {department} или руководство ФБР/SWAT.\n@wait(3500)\nПри команде «Штурм» входная группа использует баллистические щиты, противогазы и светошумовые гранаты для подавления преступников.\n@wait(3000)\nЛекция окончена! Благодарю за службу.",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "",
@@ -2149,11 +2466,13 @@
       "enabled": true,
       "id": 87,
       "category": "Лекции RTD",
-      "wheel_car_group": "auto"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A87"
     },
     {
       "command_alias": "add",
-      "wheel_group": "custom",
+      "wheel_group": "auto",
       "parameters": {},
       "shortcut": {
         "alt": false,
@@ -2170,12 +2489,14 @@
       "favorite": false,
       "command": "pa26_ad",
       "skip_confirmation": true,
-      "name": "Рекламное объявление",
+      "name": "Рекламное объявление (личный шаблон, не на колесе)",
       "no_accent": false,
       "enabled": true,
       "id": 88,
       "category": "Мои сценарии",
-      "wheel_car_group": "custom"
+      "wheel_car_group": "auto",
+      "wheel_car_extra_groups": [],
+      "author_ref": "A88"
     }
   ],
   "wheel_car_classic": [

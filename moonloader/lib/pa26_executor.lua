@@ -30,6 +30,7 @@ function Executor:event(kind,q,reason)
 end
 function Executor:cancel(reason)
     local q=self.queue; self.queue=nil
+    if self.env.clearConfirmation then self.env.clearConfirmation()end
     if q then self.status=reason or 'Отменено.'
         if q.radioBatch then self.status='Доклад прерван · '..(q.demo and q.previewed or q.sent)..' / '..q.radioBatch..' строк. '..self.status..' Переданные строки не повторяются.'end
         self:event('cancelled',q,self.status)
@@ -45,6 +46,7 @@ function Executor:start(plan,demo,interval)
     if not core.finite(now) or not ctx.session or unsafe(ctx) or (not demo and ctx.alive~=true) then return nil,'Игра или ввод сейчас недоступны.' end
     if plan.session~=ctx.session then return nil,'Подключение изменилось после подготовки.' end
     if (plan.alert or plan.automatic or plan.rpSignature or plan.textSignature) and self.env.planValid and not self.env.planValid(plan) then return nil,'Данные действия изменились. Подготовьте его заново.' end
+    if self.env.bindingContextValid and not self.env.bindingContextValid(plan)then return nil,'Контекст RP изменился. Подготовьте действие заново.'end
     local preparedAge=core.elapsed(now,plan.createdAt); if not preparedAge or preparedAge>60000 then return nil,'Предпросмотр устарел. Подготовьте сценарий заново.' end
     if not demo then
         for _, target in ipairs({plan.target or false,plan.closest or false}) do
@@ -60,6 +62,11 @@ function Executor:start(plan,demo,interval)
     end
     self.queue=q; self.status=plan.binding.name..': начато.'; self:event('started',q)
     return true
+end
+function Executor:decide(token,yes)
+    local q=self.queue
+    if not q or q.confirmToken~=token or type(yes)~='boolean'then return nil,'Этап уже изменился.'end
+    q.decision=yes;return true
 end
 function Executor:step()
     local q=self.queue; if not q then return end
@@ -88,6 +95,7 @@ function Executor:step()
         q.radioPauseAt=nil
     end
     if unsafe(ctx)then self:cancel('Сценарий остановлен: ввод или игровое окно недоступны.');return end
+    if self.env.bindingContextValid and not self.env.bindingContextValid(q.plan)then self:cancel('Машина или личность контекста RP изменились.');return end
     if not self.policy:valid(q.plan)then self:cancel('Пеленгация остановлена: RP, профиль или личность изменились.');return end
     if (q.plan.alert or q.plan.automatic or q.plan.rpSignature or q.plan.textSignature) and self.env.planValid and not self.env.planValid(q.plan) then
         self:cancel('Данные действия изменились. Отправка остановлена.');return
@@ -100,7 +108,21 @@ function Executor:step()
     local step=q.plan.steps[q.index]
     if not step then self.queue=nil; self.status='Сценарий завершён; результат команды определяет сервер.'; self:event('completed',q); return end
     local advanced=false
-    if step.kind=='message' then
+    if step.kind=='confirm'then
+        if not q.waitAt then q.waitAt=now end
+        local timeout=step.timeout_ms or 90000
+        if not core.finite(timeout)or timeout<1000 or timeout>90000 then self:cancel('Неверный срок подтверждения этапа.');return end
+        if(core.elapsed(now,q.waitAt)or(timeout+1))>timeout then self:cancel('Время подтверждения этапа истекло.');return end
+        if not q.confirmToken then
+            q.confirmToken=tostring(q.startedAt)..':'..q.index;q.plan.rpStageWaiting=true
+            if not self.env.confirm then self:cancel('Окно подтверждения недоступно; этап не отправлен.');return end
+            self.env.confirm(q.confirmToken,step,q.plan)
+        end
+        self.status='Этап ожидает отдельного ДА / НЕТ; отправки нет.'
+        if q.decision==false then self:cancel('Офицер отменил оставшиеся этапы.');return end
+        advanced=q.decision==true
+        if advanced then q.confirmToken=nil;q.decision=nil;q.plan.rpStageWaiting=nil;if self.env.clearConfirmation then self.env.clearConfirmation()end end
+    elseif step.kind=='message' then
         local last=self.env.lastSent(); local elapsed=last and core.elapsed(now,last)
         if last and not elapsed then self:cancel('Таймер отправки сбросился.'); return end
         if last and elapsed<q.interval then self.status='Ожидание интервала отправки…'; return end

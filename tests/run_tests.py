@@ -162,6 +162,8 @@ test_names.append('test_geometry0440.lua')
 test_names.extend(['test_custody0440.lua','test_cef_contract0440.lua'])
 test_names.extend(['test_navigation0450.lua','test_coordinates0450.lua','test_field0450.lua','test_setmark_entries0450.lua','test_ui0450.lua'])
 test_names.append('test_soak0450.lua')
+test_names.extend(['test_unified_rp0451.lua','test_rp_context0451.lua','test_wheels0451.lua','test_pipeline0451.lua','test_migration0451.lua','test_author_merge0451.lua','test_copilot0451.lua'])
+test_names.append('test_help0452.lua')
 
 parser.add_argument('--report')
 parser.add_argument('--only', nargs='+', choices=test_names)

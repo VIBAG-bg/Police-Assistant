@@ -3,6 +3,7 @@ $ErrorActionPreference='Stop'
 $release=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $release 'tools/pa-setup.ps1')
 . (Join-Path $release 'tools/pa-seed-presets.ps1')
+. (Join-Path $release 'tools/pa-legacy-migration.ps1')
 $manifest=Get-Content (Join-Path $release 'INSTALL_MANIFEST.json') -Raw|ConvertFrom-Json
 $data=Read-PaAuthorPresets $release $manifest
 $root=Join-Path $release ('tests/install-sandbox/author-'+[guid]::NewGuid().ToString('N'));[IO.Directory]::CreateDirectory($root)|Out-Null
@@ -15,33 +16,34 @@ function New-Case([string]$Name,[bool]$Stock=$false){
   [IO.File]::WriteAllText($ini,(Get-PaPresetIni $data.baseline.config),(New-Object Text.UTF8Encoding($false)))
   foreach($kind in @('binds','settings','notes')){[IO.File]::WriteAllText((Join-Path $ml ('config/police_assistant_2026_'+$kind+'.json')),(Write-PaPresetJson $data.baseline.$kind),(New-Object Text.UTF8Encoding($false)))}
  }
- return @{ml=$ml;ini=[PSCustomObject]@{Target=$ini;Existed=(Test-Path $ini);Source='';SHA256='';Skip=$true}}
+ return @{ml=$ml;ini=[PSCustomObject]@{Target=$ini;Existed=(Test-Path $ini);Source='';SHA256='';Skip=$true;Content=$null}}
 }
 foreach($mode in @(@($true,$true),@($true,$false),@($false,$true),@($false,$false))){
  $c=New-Case ([guid]::NewGuid().ToString('N'))
  $plan=Get-PaPresetSeedPlan $release $c.ml $manifest $mode[0] $mode[1] $c.ini
- Check ($plan.plan.Count -eq $(if($mode[0] -or $mode[1]){3}else{0})) 'fresh options create a complete split set or nothing'
+ Check ($plan.plan.Count -eq 3) 'fresh choices always create a complete split set with onboarding'
  if($plan.plan.Count){
   $bind=@($plan.plan|Where-Object Relative -Like '*_binds.json')[0];$note=@($plan.plan|Where-Object Relative -Like '*_notes.json')[0]
-  Check (@((Get-Content $bind.Source -Raw|ConvertFrom-Json).bindings).Count -eq $(if($mode[0]){83}else{6})) 'bind checkbox is independent'
-  Check (@((Get-Content $note.Source -Raw|ConvertFrom-Json).notes).Count -eq 2) 'exactly two public notes'
+  Check (@((Read-PaPresetJson ([Text.Encoding]::UTF8.GetString($bind.Content))).bindings).Count -eq $(if($mode[0]){83}else{6})) 'bind checkbox is independent'
+  Check (@((Read-PaPresetJson ([Text.Encoding]::UTF8.GetString($note.Content))).notes).Count -eq 2) 'exactly two public notes'
   Check (-not(Test-Path (Join-Path $c.ml 'config/police_assistant_2026_settings.json'))) 'planning does not write game data'
   $settingRow=@($plan.plan|Where-Object Relative -Like '*_settings.json')[0]
-  $freshSettings=Read-PaPresetJson (Get-Content -LiteralPath $settingRow.Source -Raw -Encoding UTF8)
+  $freshSettings=Read-PaPresetJson ([Text.Encoding]::UTF8.GetString($settingRow.Content))
+  Check ($freshSettings.data.settings.help.welcome) 'fresh onboarding persists regardless of preset choice'
   Check ($freshSettings.data.settings.window_layout.default_style -ceq 'author') 'fresh geometry uses responsive author layout'
   Check ($freshSettings.data.settings.window_layout.windows.Count -eq 0) 'reference pixels are not copied as saved user windows'
-  if($mode[1]){Check ((Get-Content -LiteralPath $c.ini.Source -Raw) -match '(?m)^demo_mode=false$') 'fresh author settings start in real mode'}
-  if($mode[1]){Check ((Get-Content -LiteralPath $c.ini.Source -Raw) -match '(?m)^reference_width=2560$') 'fresh HUD retains resolution reference'}
+  if($mode[1]){Check (([Text.Encoding]::UTF8.GetString($c.ini.Content)) -match '(?m)^demo_mode=false$') 'fresh author settings start in real mode'}
+  if($mode[1]){Check (([Text.Encoding]::UTF8.GetString($c.ini.Content)) -match '(?m)^reference_width=2560$') 'fresh HUD retains resolution reference'}
  }
 }
 $c=New-Case 'stock' $true;$p=Get-PaPresetSeedPlan $release $c.ml $manifest $true $true $c.ini
-Check ($p.summary.binds -ceq 'installed' -and $p.summary.settings -ceq 'installed') 'untouched defaults can be seeded'
+Check ($p.plan.Count -eq 0) 'ordinary installation preserves untouched old defaults too'
 $c=New-Case 'private-profile' $true;$path=Join-Path $c.ml 'config/police_assistant_2026_settings.json';$value=Read-PaPresetJson (Get-Content $path -Raw -Encoding UTF8);$value.data.profile.name='PRIVATE NAME';Write-PaPresetJson $value|Set-Content $path -Encoding UTF8
 $p=Get-PaPresetSeedPlan $release $c.ml $manifest $true $true $c.ini
-$row=@($p.plan|Where-Object Relative -Like '*_settings.json')[0];Check ((Read-PaPresetJson (Get-Content $row.Source -Raw -Encoding UTF8)).data.profile.name -ceq 'PRIVATE NAME') 'private profile survives default-setting seed'
+Check ($p.plan.Count -eq 0) 'ordinary install preserves existing private profile'
 $value.data.settings.opacity=.63;Write-PaPresetJson $value|Set-Content $path -Encoding UTF8
 $p=Get-PaPresetSeedPlan $release $c.ml $manifest $true $true $c.ini
-Check ($p.summary.settings -ceq 'preserved' -and $p.summary.binds -ceq 'installed') 'one custom setting protects settings without replacing bind choice'
+Check ($p.plan.Count -eq 0) 'ordinary install preserves config regardless of author options'
 $bindPath=Join-Path $c.ml 'config/police_assistant_2026_binds.json';$value=Get-Content $bindPath -Raw -Encoding UTF8|ConvertFrom-Json;$value.bindings[0].name='MY BIND';$value|ConvertTo-Json -Depth 64|Set-Content $bindPath -Encoding UTF8
 $p=Get-PaPresetSeedPlan $release $c.ml $manifest $true $true $c.ini;Check ($p.plan.Count -eq 0) 'custom binds and settings are both preserved'
 $c=New-Case 'partial';[IO.File]::WriteAllText((Join-Path $c.ml 'config/police_assistant_2026_binds.json'),'{}');$p=Get-PaPresetSeedPlan $release $c.ml $manifest $true $true $c.ini;Check ($p.plan.Count -eq 0) 'partial or corrupt personal set is never guessed empty'

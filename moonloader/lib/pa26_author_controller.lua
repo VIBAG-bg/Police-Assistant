@@ -75,6 +75,17 @@ end
 function M.modal(s)
  local r=s.authorPresetConfirm;if not r then return end
  local binds=r.kind=='binds'
+ if binds and r.prepared.changes then
+  local c=r.prepared.changes
+  local lines={'Проверенный набор из GitHub '..tostring(r.repository or'')..' '..tostring(r.version or'')..'.',
+   'Личные тексты, избранное, клавиши и ваши перемещённые действия сохраняются. Обновляются только точно распознанные неизменённые авторские тексты. Личная копия не заменяется новым эталоном.',
+   'Обновится: '..#c.updated..'. Добавится: '..#c.added..'. Исходных записей сохранено: '..c.preserved..'.',
+   'Профиль, контакты, заметки и геометрия окон не меняются. Перед применением создаётся проверенная резервная копия. PA перезапустится после ОК, GTA продолжит работать.',
+   'ДА — сохранить копию и применить изменения ниже. НЕТ — оставить всё как есть.'}
+  for _,item in ipairs(c.updated)do lines[#lines+1]='Обновление ['..item.id..'] '..item.name end
+  for _,item in ipairs(c.added)do lines[#lines+1]='Новая копия ['..item.id..'] '..item.name..' (при конфликте клавиша и имя команды сняты; первое выполнение с предпросмотром).'end
+  return{kind='author_preset',token='author-preset:'..r.id,title='Обновить авторские сценарии без потери личных?',lines=lines}
+ end
  return {kind='author_preset',token='author-preset:'..r.id,title=binds and'Заменить бинд-лист?'or'Применить авторские настройки?',lines={
   'Проверенный набор из GitHub '..tostring(r.repository or'')..' '..tostring(r.version or'')..'.',
   binds and('Будут заменены все '..#r.library.bindings..' текущих биндов на '..#r.prepared.library.bindings..' авторских, включая команды, клавиши и назначения биндов колесу.')or'Будут заменены настройки интерфейса, колеса, размеров окон, HUD, клавиш и функций PA.',

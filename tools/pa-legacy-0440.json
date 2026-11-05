@@ -1,0 +1,1296 @@
+{
+  "release": "0.44.0",
+  "commit": "ccabd376d4e899cd4fcbe12250c21b2656dea9d9",
+  "files": {
+    "police_assistant_2026.lua": "5f58838fb041ab564a82903d3345973f2691bf0c27ea0eee041ffefa9278d14e",
+    "lib/pa26_core.lua": "0c5bd4466b949a0d8611d8fb4382771604c2359f246a1f6d8c16f3da1e4d1a87"
+  },
+  "author_sha256": "77a0ebc78ab7750e0e4a61ec402f9098d506980ea0e4b06dadae52d10ff510d0",
+  "author": [
+    {
+      "id": 12,
+      "name": "Кричалка предупреждение",
+      "category": "Мои сценарии",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 1,
+      "name": "Представиться + бейджик",
+      "category": "Общение",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 2,
+      "name": "Запросить паспорт у гражданина",
+      "category": "Документы",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 3,
+      "name": "Открыть базу разыскиваемых (/wanted)",
+      "category": "Проверки",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 4,
+      "name": "Первичный обыск на месте задержания (/frisk)",
+      "category": "Досмотр",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 5,
+      "name": "Надеть наручники (/cuff)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 6,
+      "name": "Снять наручники (/uncuff)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 13,
+      "name": "Показать бейджик / Удостоверение",
+      "category": "Общение",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 14,
+      "name": "Представиться (Трафик-стоп 10-55)",
+      "category": "Общение",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 15,
+      "name": "Разъяснить причину остановки / обращения",
+      "category": "Общение",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 16,
+      "name": "Предупреждение о соблюдении дистанции (6 метров)",
+      "category": "Общение",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 17,
+      "name": "Изучить и вернуть документы гражданину",
+      "category": "Документы",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 18,
+      "name": "Передать свой пакет документов (На проверке)",
+      "category": "Документы",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 19,
+      "name": "Включить нагрудную боди-камеру (Начало смены)",
+      "category": "Документы",
+      "command": "",
+      "command_alias": "bodycamera",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 20,
+      "name": "Выключить боди-камеру и выгрузить запись в облако",
+      "category": "Документы",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 21,
+      "name": "Взять под конвой / Отпустить хват (/hold)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 22,
+      "name": "Сорвать маску с подозреваемого (/unmask)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 23,
+      "name": "Зачитать Правило Миранды (Полный текст + /mirand)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 24,
+      "name": "Повторное зачитывание Миранды (2-й раз)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 25,
+      "name": "Посадить задержанного в крузер (/push)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 26,
+      "name": "Высадить задержанного из крузера у участка",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 27,
+      "name": "Вытащить подозреваемого из автомобиля (/eject)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 28,
+      "name": "Передача задержанного в КПЗ (/arrest)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 29,
+      "name": "Фоторобот и установление личности по лицу",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 30,
+      "name": "Регистрация личного дела арестованного в базе",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 31,
+      "name": "Предоставить телефонный звонок / Вызов адвоката",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 32,
+      "name": "Временное освобождение одной руки (для подписи/телефона)",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 33,
+      "name": "Вторичный (полный) обыск в участке с зип-пакетом (/frisk)",
+      "category": "Досмотр",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 34,
+      "name": "Изъятие огнестрельного / холодного оружия (/take)",
+      "category": "Досмотр",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 35,
+      "name": "Изъятие запрещённых веществ и нелегальных предметов (/take)",
+      "category": "Досмотр",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 36,
+      "name": "Аннулирование лицензии через базу КПК (/take)",
+      "category": "Досмотр",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 37,
+      "name": "Изъятие аудио/видеозаписывающих устройств и рации у задержанного",
+      "category": "Досмотр",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 38,
+      "name": "Обыск салона и багажного отделения автомобиля",
+      "category": "Досмотр",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 39,
+      "name": "Проверка серийного номера оружия / VIN-кода авто",
+      "category": "Досмотр",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 40,
+      "name": "Пеленгация подозреваемого по спутнику (/setmark)",
+      "category": "Проверки",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 41,
+      "name": "Проверить гражданина по Чёрному списку (/blackcheck)",
+      "category": "Проверки",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 42,
+      "name": "Внести в Чёрный список организации (/blacklist)",
+      "category": "Проверки",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 43,
+      "name": "Вынести из Чёрного списка организации (/unblacklist)",
+      "category": "Проверки",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 44,
+      "name": "Снять розыск с гражданина (/clear)",
+      "category": "Розыск и штрафы",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 45,
+      "name": "Выписать административный штраф (/ticket)",
+      "category": "Розыск и штрафы",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 46,
+      "name": "Мегафон: Трафик-стоп 10-55 (1-е требование)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 47,
+      "name": "Мегафон: Погоня — Последнее предупреждение перед огнём",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 48,
+      "name": "Мегафон: Трафик-стоп повышенного риска 10-66 (Выход с ключами)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 49,
+      "name": "Мегафон: Пропустить спецтранспорт с маячками (Code 3)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 50,
+      "name": "Накинуть метку погони на подозреваемого (/pt)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 51,
+      "name": "Кричалка: Предупреждение / Работает департамент (/s)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 52,
+      "name": "Экстренный сигнал бедствия Code 0 (/mark)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 53,
+      "name": "Запрос подкрепления в погоню Code 1 / 10-57 (/mark)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 54,
+      "name": "Доклад в рацию: Выезд в патруль (/r)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 55,
+      "name": "Доклад в рацию: Проведение 10-55 (/r)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 56,
+      "name": "Доклад в рацию: Транспортировка задержанного 10-15 (/r)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 57,
+      "name": "Рация департамента: Связь с гос. структурами (/d)",
+      "category": "Трафик и погоня",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 58,
+      "name": "Достать электрошокер Taser X26 (4-я стадия силы)",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 59,
+      "name": "Снять с пояса полимерную дубинку / Перцовый спрей",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 60,
+      "name": "Установить дорожное ограждение / Шипы (/break)",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 61,
+      "name": "Взять баллистический штурмовой щит и экипировку SWAT",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 62,
+      "name": "Надеть тактический противогаз (Защита от газа)",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 63,
+      "name": "Применить светошумовую / газовую гранату (Штурм)",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 64,
+      "name": "Выбить дверь помещения штурмовым тараном",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 65,
+      "name": "Оказать Первую Медицинскую Помощь (ПМП / Жгут)",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 66,
+      "name": "Запустить тактический квадрокоптер разведки",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 67,
+      "name": "Переодеться в рабочую / тактическую форму в раздевалке",
+      "category": "Спецсредства",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 68,
+      "name": "Начало допроса: Включить камеры и аудиопротокол допросной",
+      "category": "Экспертизы и следствие",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 69,
+      "name": "Завершение допроса: Подписание протокола и сохранение записи",
+      "category": "Экспертизы и следствие",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 70,
+      "name": "Дактилоскопическая экспертиза (Снятие отпечатков пальцев)",
+      "category": "Экспертизы и следствие",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 71,
+      "name": "Химический экспресс-анализ изъятого вещества (Наркотест)",
+      "category": "Экспертизы и следствие",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 72,
+      "name": "Баллистическая экспертиза гильз и оружия",
+      "category": "Экспертизы и следствие",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 73,
+      "name": "Обезвреживание взрывного устройства (Сапёрный набор)",
+      "category": "Экспертизы и следствие",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 74,
+      "name": "Осмотр места преступления и фотофиксация улик",
+      "category": "Экспертизы и следствие",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 75,
+      "name": "Копирование записей с камер видеонаблюдения объекта",
+      "category": "Экспертизы и следствие",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 76,
+      "name": "Принять кандидата в организацию (/invite)",
+      "category": "Управление составом",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 77,
+      "name": "Уволить сотрудника из организации (/uninvite)",
+      "category": "Управление составом",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 78,
+      "name": "Изменить звание / должность сотрудника (/rang)",
+      "category": "Управление составом",
+      "command": "pa26_rang",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 79,
+      "name": "Назначить подразделение / отдел сотруднику (/division)",
+      "category": "Управление составом",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 80,
+      "name": "Выдать комплект служебной формы (/setskin)",
+      "category": "Управление составом",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 81,
+      "name": "Выдать / Снять дисциплинарный выговор (/fwarn)",
+      "category": "Управление составом",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 82,
+      "name": "Лекция №1: Вводный инструктаж, Субординация и Рация",
+      "category": "Лекции RTD",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 83,
+      "name": "Лекция №2: Пять стадий применения силы и Правило 6 метров",
+      "category": "Лекции RTD",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 84,
+      "name": "Лекция №3: Процедура задержания и Правило Миранды",
+      "category": "Лекции RTD",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 85,
+      "name": "Лекция №4: Регламент проведения первичного и вторичного обыска",
+      "category": "Лекции RTD",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 86,
+      "name": "Лекция №5: Трафик-стоп (10-55) и Повышенного риска (10-66)",
+      "category": "Лекции RTD",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 87,
+      "name": "Лекция №6: Тактика штурма, действия при терактах и похищениях",
+      "category": "Лекции RTD",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 88,
+      "name": "Рекламное объявление",
+      "category": "Мои сценарии",
+      "command": "pa26_ad",
+      "command_alias": "add",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    }
+  ],
+  "builtins_sha256": "070b440081266945321bede19da9d931a1f7f27d3ef4cffa20597a59119069e3",
+  "builtins": [
+    {
+      "id": 1,
+      "name": "Представиться",
+      "category": "Общение",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 2,
+      "name": "Документы",
+      "category": "Документы",
+      "command": "",
+      "command_alias": "",
+      "favorite": true,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 3,
+      "name": "Розыск",
+      "category": "Проверки",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 4,
+      "name": "Досмотр",
+      "category": "Досмотр",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 5,
+      "name": "Наручники",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    },
+    {
+      "id": 6,
+      "name": "Освободить",
+      "category": "Задержание",
+      "command": "",
+      "command_alias": "",
+      "favorite": false,
+      "shortcut": {
+        "alt": false,
+        "ctrl": false,
+        "shift": false,
+        "key": 0
+      }
+    }
+  ],
+  "settings_sha256": "014229d3b1b420ebf76e729043e1669884794ea33e8232e12a12d110ce61533a",
+  "manual_heads": [
+    "break",
+    "find",
+    "clear",
+    "cuff",
+    "uncuff",
+    "taser",
+    "arrest",
+    "unmask",
+    "fmission",
+    "take",
+    "skip",
+    "unskip",
+    "blackcheck",
+    "ticket",
+    "setmark",
+    "unblack",
+    "ud",
+    "fmenu",
+    "division",
+    "undivision",
+    "push",
+    "uninvite",
+    "mark",
+    "frisk",
+    "invite",
+    "unhold",
+    "hold",
+    "black",
+    "pt",
+    "fwarn",
+    "takelic",
+    "fwarnoff",
+    "unpt"
+  ]
+}

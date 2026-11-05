@@ -71,7 +71,9 @@ function M.draw(s,ui,data,callbacks,tab,ctx)
             ctx.general('mode')
             require('pa26_interface_settings').draw(s,ui,data,callbacks,ctx.menu,'windows')
             s:drawOptions(ui,data,callbacks,'appearance')
-        elseif s.screenSettingsPage=='hud'then ctx.general('hud')
+        elseif s.screenSettingsPage=='hud'then
+            ctx.general('hud')
+            if callbacks.openInstructions then require('pa26_help').settings(s,ui,callbacks)end
         elseif s.screenSettingsPage=='map'then require('pa26_map_ui').draw(s,ui,data,callbacks)
         else ctx.general('recovery')end
     end

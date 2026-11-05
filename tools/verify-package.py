@@ -9,7 +9,7 @@ for script in [ROOT/'install.ps1', *(ROOT/'tools').glob('*.ps1'), *(ROOT/'moonlo
     if any(b>=128 for b in data):
         assert data.startswith(b'\xef\xbb\xbf'), f'Windows PowerShell needs UTF-8 BOM: {script}'
 manifest=json.loads((ROOT/'INSTALL_MANIFEST.json').read_text('utf-8-sig'))
-if manifest['release']=='0.45.0':
+if manifest['release'] in {'0.45.0','0.45.1','0.45.2'}:
     graph=ROOT/'moonloader/resource/pa26/roads.bin'
     assert graph.stat().st_size==589664 and hashlib.sha256(graph.read_bytes()).hexdigest()=='c1d347286ccb0349940800570078c6872bef31c12ac6d6f77a4b1cf8b857d7db'
     assert sum(row['path']=='resource\\pa26\\roads.bin' for row in manifest['files'])==1
@@ -58,8 +58,12 @@ for p in [ROOT/'README.md', *(ROOT/'docs').rglob('*.md')]:
         target=link.split('#')[0]
         assert (p.parent/target).exists(), f'Broken link in {p.relative_to(ROOT)}: {target}'
         links+=1
+setup_files={'tools/pa-setup.ps1','tools/pa-setup-window.ps1','tools/pa-start.ps1','tools/pa-seed-presets.ps1','DEPENDENCIES.json'}
+if manifest['release']=='0.45.2':
+    setup_files.update({'tools/pa-legacy-0440.json','tools/pa-legacy-migration.ps1','tools/pa-legacy-lua.ps1','tools/pa-legacy-presets.lua'})
+assert len(manifest['setup_files'])==len(setup_files)
+assert {row['path'] for row in manifest['setup_files']}==setup_files
 for row in manifest['setup_files']:
-    assert row['path'] in {'tools/pa-setup.ps1','tools/pa-setup-window.ps1','tools/pa-start.ps1','tools/pa-seed-presets.ps1','DEPENDENCIES.json'}
     assert hashlib.sha256((ROOT/row['path']).read_bytes()).hexdigest()==row['sha256']
 print(f'Package verified: {count} runtime entries, version {manifest["release"]}, {links} local documentation links.')
 

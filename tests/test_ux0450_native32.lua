@@ -26,7 +26,10 @@ local stack={};local ui={push=function(fn)stack[#stack+1]=fn end,finish=function
  text=function(t)im.PushTextWrapPos(0);im.TextUnformatted(t);im.PopTextWrapPos()end}
 studio.currentUi=ui
 local callbacks={save=function()error('No save from an untouched draw')end,patrolPreview=function()return '/f 1-L-1, продолжаю патруль.'end}
-local screens={'patrol','patrol-settings','f4','f4-dispatch','f4-shell','f9-shell','home','knowledge','guide','appearance','field-navigation','field-coordinates','field-cruiser','field-pinned','field-leadership','field-briefings','pinned-overlay','route','cef-diagnostics'}
+local screens={'patrol','patrol-settings','f4','f4-dispatch','f4-shell','f9-shell','home','knowledge','guide','appearance','field-navigation','field-coordinates','field-cruiser','field-pinned','field-leadership','field-briefings','pinned-overlay','route','cef-diagnostics','help-guide','help-overlay','help-position'}
+local hotkeys=require 'pa26_help'
+local help=hotkeys.new(lib.settings.help)
+local helpKeys=help:shortcuts(0x77,0x56,{key=0x73,ctrl=false,alt=true,shift=false})
 local frames,checks=0,0;local function check(ok,why)checks=checks+1;assert(ok,why)end
 local data={radioState={area='Doherty',city='Сан-Фиерро',map_square='J-6'},patrolSession={},copilot={phase='10-55',
  car={id=42,distance=12},driver={id=37,name='Known_Driver'},values={model='Sultan',vehicle_color='Чёрный',vehicle_plate='PA-42',occupants_text='Водитель и 1 пассажир',unit='1-A-12'},
@@ -59,7 +62,7 @@ for _,display in ipairs({{640,480},{800,600},{800,1100},{1024,768},{1366,768},{1
     local shell=require('pa26_menu').new();shell.section=screen=='home'and'home'or'partners'
     shell:draw(im,ui,{connected=true,nickname='Officer_Demo',id=45,ping=61,district='Doherty',clock='01.11.2026',menuKey='F9'},
      {partners=function()studio:drawPartners(ui,data,callbacks)end,actions=function()end,
-      updates=function()end,openAssist=function()error('Unexpected navigation')end,openPatrol=function()error('Unexpected navigation')end,openSettings=function()error('Unexpected navigation')end},
+      updates=function()end,openInstructions=function()end,openAssist=function()error('Unexpected navigation')end,openPatrol=function()error('Unexpected navigation')end,openSettings=function()error('Unexpected navigation')end},
      {heading=heading,brand=heading,button=button,compact=button,small=body})
    elseif screen=='f4-shell'then studio.assistPage='traffic';require('pa26_assist_ui').draw(studio,ui,data,callbacks)
    elseif screen=='patrol'then require('pa26_patrol_ui').draw(studio,ui,data,callbacks,'partners')
@@ -80,6 +83,14 @@ for _,display in ipairs({{640,480},{800,600},{800,1100},{1024,768},{1366,768},{1
    elseif screen=='cef-diagnostics'then
     studio.showCefDiagnostics=true;data.cefCompatibility={state='RUNTIME_VERIFIED',known=false,sha256=string.rep('d',64),fingerprint='exsellent-chat-v1:demo',mode='cef',runtime='CONFIRMED',capabilities={dom=true,outgoing=true,incoming=true,payloads=true,lifecycle=true,focus=true,ipc=true,adapter_order=true},reason='normalized_contract_and_dom'}
     studio:drawProfile(ui,data,callbacks,'chat_cef')
+   elseif screen=='help-guide'then
+    studio.helpGuide={automatic=true};studio.helpKeys=helpKeys
+    studio:drawModal(ui,data,callbacks);check(studio.helpGuide.shown,'Welcome popup did not draw')
+    studio.helpGuide=nil;studio:drawModal(ui,data,callbacks);studio.modalToken=nil
+   elseif screen=='help-overlay'or screen=='help-position'then
+    help.editing=screen=='help-position'and{}or nil
+    help:draw(im,ui,lib.settings.help,helpKeys,studio)
+    check(#help.layout.rows>=5 and help.layout.keys==helpKeys,'Native shortcut text missing')
    elseif screen=='appearance'then studio:drawOptions(ui,data,callbacks,'appearance')
    else require('pa26_knowledge_important_ui').draw(view,ui,callbacks)end
    im.EndChild();check(#stack==themeDepth,'Unbalanced view scopes');while #stack>0 do ui.finish()end
@@ -89,5 +100,5 @@ for _,display in ipairs({{640,480},{800,600},{800,1100},{1024,768},{1366,768},{1
  end end end
 end
 icons.clear();im.DestroyContext(ctx)
-write('tests/UX_NATIVE32_0450.json',json.encode({status='passed',checks=checks,frames=frames,screen_sizes=7,views=#screens,font_scales=2,icon_states=2,game_started=false,game_written=false}))
-print('UX 0.45.0 native32: '..frames..' frames; '..#screens..' views, seven sizes, two scales and icon states.')
+write('tests/UX_NATIVE32_0452.json',json.encode({status='passed',checks=checks,frames=frames,screen_sizes=7,views=#screens,font_scales=2,icon_states=2,game_started=false,game_written=false}))
+print('UX 0.45.2 native32: '..frames..' frames; '..#screens..' views, seven sizes, two scales and icon states.')

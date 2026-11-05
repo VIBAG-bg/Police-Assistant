@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "baseline": "0.45.0",
+  "results": [
+    {
+      "kind": "binds",
+      "status": "PASS",
+      "result": "Old PA rejects schema 2 before applying it"
+    },
+    {
+      "kind": "settings",
+      "status": "PASS",
+      "result": "Old PA rejects schema 2 before applying it"
+    }
+  ],
+  "game_started": false
+}

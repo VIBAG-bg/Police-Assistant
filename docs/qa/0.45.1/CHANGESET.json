@@ -1,0 +1,461 @@
+{
+  "version": "0.45.1",
+  "baseline": "93259614db652aec6a6010665a34a65b422dab51",
+  "files": [
+    {
+      "path": ".github/workflows/check.yml",
+      "change": "modified",
+      "sha256": "ed54cec4cc8a978a66f89bb47825ba515b56d3b213c9299474ff6de116a5ce43"
+    },
+    {
+      "path": "AGENTS.md",
+      "change": "new",
+      "sha256": "11cf36a08a1582b1f863e80add53d5b4ba2b5e6e70ba61392f33ab2de69a622d"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "change": "modified",
+      "sha256": "a46809fd1e0fb12d50772e3847d88912444d74eafda1fa08d4a5e7852ad4f371"
+    },
+    {
+      "path": "INSTALL_MANIFEST.json",
+      "change": "modified",
+      "sha256": "0f3d521ff3eb165ee1bdc727a2c942e43d6d88c8dbab70c52e749f2f07c2b3c5"
+    },
+    {
+      "path": "README.md",
+      "change": "modified",
+      "sha256": "84666496dc9ff35f57a106c95273adf81d45dc2f988d10d35b2b82127920d8f3"
+    },
+    {
+      "path": "docs/ACCEPTANCE-0.45.1.md",
+      "change": "new",
+      "sha256": "c63d2e7e7c68763c4386c4ce8705d8115ae77cb49d470a0c4bd34f3605b47c89"
+    },
+    {
+      "path": "docs/BUILD-0.45.1.md",
+      "change": "new",
+      "sha256": "8ae898ca207dd8369949d9338a68d5d3e233649fa16909938f92da2c486c64b8"
+    },
+    {
+      "path": "docs/RELEASE-0.45.1.md",
+      "change": "new",
+      "sha256": "20ea9f44cfc83c141c391113d0cccfa49a250b66aaf614b81200dec919639dd6"
+    },
+    {
+      "path": "docs/TODO-0.45.1.md",
+      "change": "new",
+      "sha256": "6015176fc460831b5e2b403ce8b3d3e17570ae62b3fcb77e200820ffe132e340"
+    },
+    {
+      "path": "docs/qa/0.45.1/ALLINONE.json",
+      "change": "new",
+      "sha256": "ef155fec3f9718f5bb80ee059f018d94bf7b990824e25e798f60ae2cc4482588"
+    },
+    {
+      "path": "docs/qa/0.45.1/AUTHOR_ORACLE.json",
+      "change": "new",
+      "sha256": "46484dc43837195ddfcd34575ca5abf3366405f23dd808ed230c7e42c49daedf"
+    },
+    {
+      "path": "docs/qa/0.45.1/AUTHOR_REPRODUCIBILITY.json",
+      "change": "new",
+      "sha256": "d1ceafae5789f9bcaa73e4aead7d098fb01b10b932962180a7ffbf18337d6292"
+    },
+    {
+      "path": "docs/qa/0.45.1/BASELINE.json",
+      "change": "new",
+      "sha256": "2dcba5d3915ad11b45fef1059f12a322477351e6c24ef6efec4d9f4daed753e5"
+    },
+    {
+      "path": "docs/qa/0.45.1/CEF_NATIVE32.json",
+      "change": "new",
+      "sha256": "e45c1882f95d808cb5e1d8de6de1b7be52f251776a8b5afd8ba9caef59b528b5"
+    },
+    {
+      "path": "docs/qa/0.45.1/CEF_PERFORMANCE.json",
+      "change": "new",
+      "sha256": "f0caa1eeb5e4304b6040443b8fefafd45ea512a95f72b1851c6edfd3d7a2c53f"
+    },
+    {
+      "path": "docs/qa/0.45.1/CEF_REVIEWED_REFERENCE_INSTALL.json",
+      "change": "new",
+      "sha256": "a2da272ade5191883dbcc4bde52aca4a349149d1181f0f26aa768bd071933bcc"
+    },
+    {
+      "path": "docs/qa/0.45.1/CEF_REVIEWED_REFERENCE_STATIC.json",
+      "change": "new",
+      "sha256": "7fffa4c377a2a103f877ddd405b7781c8d3c0e2f1e8889ccac9769213d2492d8"
+    },
+    {
+      "path": "docs/qa/0.45.1/CHANGESET.json",
+      "change": "new",
+      "checksum_scope": "outer archive"
+    },
+    {
+      "path": "docs/qa/0.45.1/CURRENT_CEF.json",
+      "change": "new",
+      "sha256": "103ff7208120d27543772215cfc387e1016c6c364c66f79afda232c12ae09c76"
+    },
+    {
+      "path": "docs/qa/0.45.1/DOWNGRADE.json",
+      "change": "new",
+      "sha256": "7c57e20a662e7e5aaf477d44ecf8a6f3749e53bc8f67c70ef56892b966f6e94a"
+    },
+    {
+      "path": "docs/qa/0.45.1/EXTRA.json",
+      "change": "new",
+      "sha256": "6462f340a438ee48243d960a7a2da18734d2c0fea42877478b2f22da17a6902d"
+    },
+    {
+      "path": "docs/qa/0.45.1/FINAL-REVIEW.md",
+      "change": "new",
+      "checksum_scope": "outer archive"
+    },
+    {
+      "path": "docs/qa/0.45.1/INSTALLER.json",
+      "change": "new",
+      "sha256": "f5adf8a6094a31104a1bcf56dfaaf90574e841fc04c8751c5b43819b49f17b84"
+    },
+    {
+      "path": "docs/qa/0.45.1/LUA_PERFORMANCE.json",
+      "change": "new",
+      "sha256": "5f4dfbb978007a0bbb961945b1e92197628ca4ce056c2c54a23fce4188a19a4d"
+    },
+    {
+      "path": "docs/qa/0.45.1/PLATFORM.json",
+      "change": "new",
+      "sha256": "24d9ff8248861b1666b0733ff459c1048aca6c620d873882d0feb8b84105892b"
+    },
+    {
+      "path": "docs/qa/0.45.1/PRESERVATION.json",
+      "change": "new",
+      "sha256": "3c1d2cd29b6647a4eb80306e50f12f30553c564ee23228b51e95371a69bf4691"
+    },
+    {
+      "path": "docs/qa/0.45.1/REGRESSION.json",
+      "change": "new",
+      "sha256": "450b1513e3e4be95a529bfab72ec73995190e7dc3d5d33deca3f3ea2c977b551"
+    },
+    {
+      "path": "docs/qa/0.45.1/RP-DEVIATIONS.md",
+      "change": "new",
+      "sha256": "f90b2f8eddfdda172602a99f7432a57380de36fc8e3164dc09ed3a4b04e3a669"
+    },
+    {
+      "path": "docs/qa/0.45.1/STATE.json",
+      "change": "new",
+      "sha256": "a22554a47aee27230f1fce3406009f91ae40fe7a2822afd7e9f526c890c59e30"
+    },
+    {
+      "path": "docs/qa/0.45.1/UX_EXISTING_NATIVE32.json",
+      "change": "new",
+      "sha256": "0c8d8178fb954257cbfe9f4a64fc9999c28572539698ebe75364ed15e0a4e661"
+    },
+    {
+      "path": "docs/qa/0.45.1/UX_RP_NATIVE32.json",
+      "change": "new",
+      "sha256": "a628d6a16f829d7511a44f9fdf0b39ed4ec7a72e5c0fe81078d089226e5df1c0"
+    },
+    {
+      "path": "docs/specs/PA-0.45.0-AUTHOR-BASELINE.json",
+      "change": "new",
+      "sha256": "77a0ebc78ab7750e0e4a61ec402f9098d506980ea0e4b06dadae52d10ff510d0"
+    },
+    {
+      "path": "docs/specs/PA-0.45.0-INSTALLER.txt",
+      "change": "new",
+      "sha256": "f0de29115467c9cfe45e7daa5f586ce31512ab6a20e5959a4a7d525d214107bf"
+    },
+    {
+      "path": "docs/specs/PA-0.45.0-SETTINGS-BASELINE.json",
+      "change": "new",
+      "sha256": "014229d3b1b420ebf76e729043e1669884794ea33e8232e12a12d110ce61533a"
+    },
+    {
+      "path": "docs/specs/PA-0.45.1-AUTHORITATIVE.md",
+      "change": "new",
+      "sha256": "a1716b9068f328ea2a0f9c8f9a9b0016c86b13ef6104a15cd0c0a1c54911658f"
+    },
+    {
+      "path": "install.ps1",
+      "change": "modified",
+      "sha256": "29cce5bca3cf830c4d7b3fc5861ed7e30092928af8b4265f5b6d66466a97afdc"
+    },
+    {
+      "path": "moonloader/lib/pa26_author_controller.lua",
+      "change": "modified",
+      "sha256": "e6efb322e358e095c5df34aaf51633e014b4f64ccd0c3b78c1901cc5f6efed06"
+    },
+    {
+      "path": "moonloader/lib/pa26_author_merge.lua",
+      "change": "new",
+      "sha256": "f27535ac91fd0cc8e83659a4fb92896696816687c6bdb65af605144221688480"
+    },
+    {
+      "path": "moonloader/lib/pa26_author_presets.lua",
+      "change": "modified",
+      "sha256": "b8eec2df57a2a2695ba782e3af0cebc740250cb00cc3d1784a2dfe6a21432b65"
+    },
+    {
+      "path": "moonloader/lib/pa26_author_rp.lua",
+      "change": "new",
+      "sha256": "9f9e0360ba764d7c23831901e28473bbe80e5cbc125271c2d46c6132ed256e85"
+    },
+    {
+      "path": "moonloader/lib/pa26_binder.lua",
+      "change": "modified",
+      "sha256": "4e0b790899fb40b8957253d4a492420778fda096a7e1616bcb9114604e8a306e"
+    },
+    {
+      "path": "moonloader/lib/pa26_bindings.lua",
+      "change": "modified",
+      "sha256": "7230fc9897d9974439187c35b962abfa17c6da71541479c6ac3037c0e8d04c10"
+    },
+    {
+      "path": "moonloader/lib/pa26_command_policy.lua",
+      "change": "modified",
+      "sha256": "1f5e997730581f18929fe37327959306ded54947a4eb76d2d5bda2920a0f4872"
+    },
+    {
+      "path": "moonloader/lib/pa26_copilot.lua",
+      "change": "modified",
+      "sha256": "1e1bdb02939be2eec19641c54d085f7f89fd945a85ea5bef9a57d30186b6b52e"
+    },
+    {
+      "path": "moonloader/lib/pa26_copilot_settings.lua",
+      "change": "modified",
+      "sha256": "7c62b4b47f76e25fe3c710756fd97d35f8052137b4d2c48af0eba10b2fdcf582"
+    },
+    {
+      "path": "moonloader/lib/pa26_copilot_ui.lua",
+      "change": "modified",
+      "sha256": "2583580f9534a9c3a97fc3fc0f8c9c7c7461ffecfaf327e65e567a1facb5c51d"
+    },
+    {
+      "path": "moonloader/lib/pa26_core.lua",
+      "change": "modified",
+      "sha256": "5b6bc9e0991ef271fdf2bb4218f37100187bff16f5d696b6229d74d5919f82ba"
+    },
+    {
+      "path": "moonloader/lib/pa26_executor.lua",
+      "change": "modified",
+      "sha256": "2a446abd5751165c0b437708027808487269f0a9d4cec6d69c296cafbce7c8ac"
+    },
+    {
+      "path": "moonloader/lib/pa26_manual_actions.lua",
+      "change": "modified",
+      "sha256": "cce7ee181661f847a71053de723824988af50eb2d2488f809d6cd2cbdb59ab70"
+    },
+    {
+      "path": "moonloader/lib/pa26_rp_context.lua",
+      "change": "new",
+      "sha256": "797ee1bd2c3a93c16b9fa3ba988bb125acaae66a11d0e02dd153aa8bee4c3c23"
+    },
+    {
+      "path": "moonloader/lib/pa26_rp_context_ui.lua",
+      "change": "new",
+      "sha256": "74c99cc503470bfeae47260b23b766cf81a1162bd51cb54ead8d9f4fbe117ce3"
+    },
+    {
+      "path": "moonloader/lib/pa26_studio.lua",
+      "change": "modified",
+      "sha256": "d46851b6f323ea34cba2f79b576e80f3a87568528dbaf42f94a2cbe2f3a49153"
+    },
+    {
+      "path": "moonloader/lib/pa26_user_files.lua",
+      "change": "modified",
+      "sha256": "96502c76a0c2c1f172e34d119157bbaff0f36991cd9d13200336b7b615915531"
+    },
+    {
+      "path": "moonloader/lib/pa26_wheel.lua",
+      "change": "modified",
+      "sha256": "50e3b4eeda43a95b1351383869c621bd8e9ca46e595b7e33e5938131235c61c7"
+    },
+    {
+      "path": "moonloader/lib/pa26_wheel_scope.lua",
+      "change": "modified",
+      "sha256": "f60673fc726fab88ea93c12ef330e1dcd2fefe95f63fba62bd561b4e925d9148"
+    },
+    {
+      "path": "moonloader/lib/pa26_workspace.lua",
+      "change": "modified",
+      "sha256": "4f1cdab228ecee382bc2ec0f6ea69c631c365ebc4472cd5ab9078a7749480b20"
+    },
+    {
+      "path": "moonloader/police_assistant_2026.lua",
+      "change": "modified",
+      "sha256": "a850c930d49927e26809d13c0713aae33117ebe382473fffad4d7b40f9859d42"
+    },
+    {
+      "path": "presets/manifest.json",
+      "change": "modified",
+      "sha256": "652524dc32370a8c5063f5e79de136273e08bd9e8d227c15c3636f380bd8d230"
+    },
+    {
+      "path": "presets/pa-binds.json",
+      "change": "modified",
+      "sha256": "00ae28a076b88af6279d43930e28bf79508f75f7c294124c8d87373f4d227fb3"
+    },
+    {
+      "path": "presets/pa-settings.json",
+      "change": "modified",
+      "sha256": "42c0b0befc5f05ffdd1736046fe9d2e4c7ab4bf6080b5250633b9dcb2c6d09d4"
+    },
+    {
+      "path": "tests/benchmark_cef0451.js",
+      "change": "new",
+      "sha256": "e98c17c1554aac4f928aa899f08faf4a6d42f828ede9f7a2788d1ea33d2df688"
+    },
+    {
+      "path": "tests/run_tests.py",
+      "change": "modified",
+      "sha256": "335d43e406928a912fe0771f08245341cd7569f18ab05a11da783499984ead3e"
+    },
+    {
+      "path": "tests/test_allinone0451.ps1",
+      "change": "new",
+      "sha256": "9b677e2ac5b1fb5fe5932264ce40a2aef7a65c7b50992f4b6a0459c8eb11e4b3"
+    },
+    {
+      "path": "tests/test_author_merge0451.lua",
+      "change": "new",
+      "sha256": "063b14bfe725c3ac5433c4e57824d16cb5288f53aed04e39be1cac7bd822763c"
+    },
+    {
+      "path": "tests/test_author_presets.lua",
+      "change": "modified",
+      "sha256": "9c0cb304383dc068a41905ad592a51fd9289cfa139877cfe3eef59bcec512b8e"
+    },
+    {
+      "path": "tests/test_cef_adaptive0451.ps1",
+      "change": "new",
+      "sha256": "e727c7c6e2af5a87fec7831dba2d2273f03e85d3c221d92f5376463c6e205b92"
+    },
+    {
+      "path": "tests/test_cef_install_adaptive0451.ps1",
+      "change": "new",
+      "sha256": "446a3a55e275f28bd494cfc0492dbf39d5779b9c81f03c382838418846d6d2b9"
+    },
+    {
+      "path": "tests/test_copilot0451.lua",
+      "change": "new",
+      "sha256": "7460bc6aa225d3487ac34cb2114068f903bd35af24c4bb58df603f7404dbd918"
+    },
+    {
+      "path": "tests/test_copilot_traffic.lua",
+      "change": "modified",
+      "sha256": "f0caf51b8b99f94a810dc34c141d3034a6a280e6e2e197fac8ccf056bbb692bf"
+    },
+    {
+      "path": "tests/test_hotfix0404.lua",
+      "change": "modified",
+      "sha256": "6d3673b0a2752b1bce49120b130094c30d7eb015f32a737634bd27a5f70c8769"
+    },
+    {
+      "path": "tests/test_migration0451.lua",
+      "change": "new",
+      "sha256": "5366f34d0814e9d642343fc552d1c8045a42dbdcfdf550bff45e5c16a3f8bc33"
+    },
+    {
+      "path": "tests/test_pipeline0451.lua",
+      "change": "new",
+      "sha256": "0324c89940b41be1a37b43e13500e3ebe486efb50badd4b35cc946370beaf702"
+    },
+    {
+      "path": "tests/test_rp0451_native32.lua",
+      "change": "new",
+      "sha256": "b068fc7028b717f22a5afced6fe7075937944fb6fcd637e4ea97f5f9259f1ce4"
+    },
+    {
+      "path": "tests/test_rp_context0451.lua",
+      "change": "new",
+      "sha256": "70644aec7551918f0cd18d3f055e5db75d55b4c2d47ff3415d63e17223360ddf"
+    },
+    {
+      "path": "tests/test_unified_rp0451.lua",
+      "change": "new",
+      "sha256": "2b8534218726d8c19823f06fd5996aa4c8d8c9f51dbac8835c001cacdc9e4933"
+    },
+    {
+      "path": "tests/test_variables.lua",
+      "change": "modified",
+      "sha256": "04a8420bc521bcc9f694e0945ced401ea1d52b5dabee28bd821737a727e14731"
+    },
+    {
+      "path": "tests/test_wheels0451.lua",
+      "change": "new",
+      "sha256": "180b04ddb965a8dfb1a1772cdef1ff62afde438411209eee60916a7f82c0def2"
+    },
+    {
+      "path": "tools/audit-preservation0451.py",
+      "change": "new",
+      "sha256": "9b375945c48f3359f38b292ec50c5629ef1f28d17b8b2b21e7b8cdef8fbd60c6"
+    },
+    {
+      "path": "tools/benchmark-cef0451.py",
+      "change": "new",
+      "sha256": "c5339a30844191e8006cd987f19d9448370772964efcc89931db0a7934eb1748"
+    },
+    {
+      "path": "tools/benchmark0451.py",
+      "change": "new",
+      "sha256": "a609ad2884146e4187e51c591058917fa91381ed3433a922b5d5029cd4c4a593"
+    },
+    {
+      "path": "tools/build-author0451.py",
+      "change": "new",
+      "sha256": "16119154a0004796b7c60433eb6ff3bff4670ff51b911d1b02a7056c4b4dd802"
+    },
+    {
+      "path": "tools/build-source0451.py",
+      "change": "new",
+      "sha256": "7093145e2c36079bb81e0d5be3d7fdd836d3117d13bc48069c6c9f6251fdbd9a"
+    },
+    {
+      "path": "tools/check-downgrade0451.py",
+      "change": "new",
+      "sha256": "90bf4a4121f4b41a685706286f026824060b9d631da7a3da0ef6f4e8cf71e7b5"
+    },
+    {
+      "path": "tools/collect-qa0451.py",
+      "change": "new",
+      "sha256": "2f39518e41fcc6ea44760023aec1933c51c396f2fe423ef2e6e35ef82265afbf"
+    },
+    {
+      "path": "tools/refresh-release0451.py",
+      "change": "new",
+      "sha256": "1b9a55c888a60e68250f70608011235f58faf9bb93156c8c5ac42b834b6de157"
+    },
+    {
+      "path": "tools/run-extra0451.py",
+      "change": "new",
+      "sha256": "c4e5d2e994af6ee6629b5f445fb493977da41245961e479d40b3e5ecdebe02d6"
+    },
+    {
+      "path": "tools/run-installer-shards0451.py",
+      "change": "new",
+      "sha256": "f8f36c15f4607c27e901af6b3a519a17bf73bea766bdf223a9a4d8479277a8df"
+    },
+    {
+      "path": "tools/run-platform0451.py",
+      "change": "new",
+      "sha256": "118e9933638e9769b432bb6bdd31d2e45a10e41fc0c5d768f3c9b964d9e164e9"
+    },
+    {
+      "path": "tools/run-regression0451.py",
+      "change": "new",
+      "sha256": "07a384be60dad378e095b308fff41e1f098b38b8840d1bf461bc1d2f8e3ad371"
+    },
+    {
+      "path": "tools/verify-artifacts0451.py",
+      "change": "new",
+      "sha256": "8b84041f6fec4cb2c51c0aa6d98a46843eebd59d8537dde1060a536de52c52dc"
+    },
+    {
+      "path": "tools/verify-package.py",
+      "change": "modified",
+      "sha256": "70fc0f9494ff8f626d7de3e4fc12d36e59cdaa02b4baa9d2236354547f1ba690"
+    }
+  ]
+}

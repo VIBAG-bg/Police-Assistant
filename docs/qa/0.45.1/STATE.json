@@ -1,0 +1,53 @@
+{
+  "version": "0.45.1",
+  "at_utc": "2026-11-04T23:16:29.803482+00:00",
+  "status": "LOCAL_RC_WITH_EXPLICIT_GAME_AND_CURRENT_CEF_GATES",
+  "baseline_head": "93259614db652aec6a6010665a34a65b422dab51",
+  "lua_groups": 216,
+  "lua_checks": 13427112,
+  "lua_syntax_files": 410,
+  "lua_regression": "PASS",
+  "installer_updater_fixtures": "PASS",
+  "platform_fixture_groups": 14,
+  "rollback_points": 12,
+  "native_ipc": "PASS",
+  "native_cpu_frames": 1148,
+  "native_cpu_ui": "PASS",
+  "preservation": "PASS",
+  "current_launcher_full_cef": "BLOCKED",
+  "current_cef": {
+    "mode": "native-only",
+    "runtime": "NOT_RUN",
+    "capabilities": {
+      "dom": true
+    },
+    "fingerprint": null,
+    "state": "INCOMPATIBLE",
+    "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+    "allowed": false,
+    "schema": 2,
+    "reason": "functional_profile_mismatch",
+    "known": false,
+    "protocol": 2
+  },
+  "reviewed_d7526_fixture": "PASS",
+  "game_acceptance": "NOT RUN",
+  "real_game_input_latency": "NOT RUN",
+  "actual_windows_7": "NOT RUN",
+  "second_pc_installation": "NOT RUN",
+  "installed": false,
+  "published": false,
+  "live_game_written": false,
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "lua": "LuaJIT 2.1 / Lupa",
+    "powershell": "Windows PowerShell 5.1",
+    "native": "installed x86 LuaJIT + mimgui CPU + real loopback, no GTA"
+  },
+  "known_limitations": [
+    "Current launcher f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0 fails the preserved functional CEF profile: functional_profile_mismatch",
+    "The original c458 launcher source is unavailable; known-registry fast path is fixture-tested only.",
+    "Real GTA/Exsellent, second PC and native Windows 7 acceptance not run."
+  ]
+}

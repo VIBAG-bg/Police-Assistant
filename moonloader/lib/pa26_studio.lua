@@ -666,6 +666,12 @@ function Studio:drawEditorBody(ui,data,callbacks)
     b.wheel_car_group,changed=self:choice('Секция в машине##bind-wheel-car-group',b.wheel_car_group or'auto',
         wheelModel.categoryChoices(self.lib.settings.wheel_car_names),ui)
     if changed then self.dirty=true;self.plan=nil end
+    ui.text('Дополнительные секции в автомобильном колесе (один бинд может быть доступен в двух местах):')
+    for _,r in ipairs(wheelModel.categoryChoices(self.lib.settings.wheel_car_names))do if r[1]~='auto'and r[1]~=b.wheel_car_group then
+        local list=b.wheel_car_extra_groups or{};local index;for i,g in ipairs(list)do if g==r[1]then index=i end end
+        local enabled,edited=self:check(r[2]..'##extra-car-'..r[1],index~=nil)
+        if edited then if enabled then list[#list+1]=r[1]elseif index then table.remove(list,index)end;b.wheel_car_extra_groups=list;self.dirty=true;self.plan=nil end
+    end end
     ui.text('Клавиша: '..model.shortcutName(b.shortcut))
     if im.Button('Записать сочетание##bindkey') then callbacks.capture({kind='binding',id=b.id}) end
     im.SameLine(); if im.Button('Убрать##bindkey') then b.shortcut={key=0,ctrl=false,alt=false,shift=false}; self.dirty=true end
@@ -680,6 +686,7 @@ function Studio:drawEditorBody(ui,data,callbacks)
         value,changed=self:field('##script','script',b.script,16385,true,230); if changed then b.script=value; self.dirty=true; self.plan=nil; self:clearSteps() end
     else self:drawSteps(ui) end
     if self.lib.profile.gender=='female'and #require('pa26_gender_audit').inspect(b.script)>0 then ui.text('В личном /me есть мужские формы. PA сохраняет ваш текст: используйте {gender:достал|достала} для действий офицера. Род цели не угадывается.')end
+    require('pa26_rp_context_ui').draw(self,ui,b)
     self.variable=self.variable or 'my_name'
     local variableSearch=self:field('Найти переменную##search','variableSearch','',256)
     local variableChoices={}; local needle=model.casefold(variableSearch)
@@ -1467,7 +1474,7 @@ function Studio:drawProfile(ui,data,callbacks,part)
     ui.text('Выбранный режим сохраняется после перезапуска. При первой установке включён реальный режим.')
     im.Separator()
     ui.text('Данные персонажа и службы. Изменения сохраняются автоматически.')
-    self:profileGroup(ui,copy,'Персонаж и служба',{{'name','RP-имя'},{'department','Ведомство'},{'rank','Должность'},{'case_number','Личное дело'}})
+    self:profileGroup(ui,copy,'Персонаж и служба',{{'name','RP-имя'},{'department','Ведомство'},{'rank','Должность'},{'case_number','Личное дело'},{'badge_number','Номер служебного значка (не SA:MP ID)'}})
     self:profileGroup(ui,copy,'Экипаж и рация',{{'callsign','Позывной экипажа'},{'local_tag','Префикс локальной волны'},
         {'global_tag','Префикс общей волны'},{'prison_tag','Префикс тюремной волны'}})
     self:profileGroup(ui,copy,'Место и транспорт · ручные значения',{{'city','Город (вручную)'},{'square','Сектор патруля (вручную)'},
@@ -1705,11 +1712,13 @@ function Studio:drawFilters(ui,data,callbacks)
     self:drawNotice(ui)
 end
 function Studio:hasModal()
-    return self:hasWarning()or self.shutdownConfirm==true or self.authorPresetConfirm~=nil or self.manualAction~=nil or self.wantedAppearance~=nil or self.rpPresetConfirm~=nil or self.assistConfirm~=nil or self.vehicleConfirm~=nil or self.operationConfirm~=nil or self.caseConfirm~=nil or self.patrolEventConfirm~=nil or self.patrolConfirm~=nil or self.remove~=nil or self.reset~=nil or self.importPreview~=nil or self.confirmPlan~=nil or self.confirmResult~=nil or
+    if self.helpGuide then return true end
+    return self:hasWarning()or self.bindingVariant~=nil or self.executionConfirm~=nil or self.copilotVariant~=nil or self.shutdownConfirm==true or self.authorPresetConfirm~=nil or self.manualAction~=nil or self.wantedAppearance~=nil or self.rpPresetConfirm~=nil or self.assistConfirm~=nil or self.vehicleConfirm~=nil or self.operationConfirm~=nil or self.caseConfirm~=nil or self.patrolEventConfirm~=nil or self.patrolConfirm~=nil or self.remove~=nil or self.reset~=nil or self.importPreview~=nil or self.confirmPlan~=nil or self.confirmResult~=nil or
         self.pendingSelection~=nil or self.pendingNavigation~=nil or self.keyCapture~=nil or self.customRemove~=nil
 end
 function Studio:cancelModal()
     local pending=self:hasModal()
+    if self.helpGuide then require('pa26_help').dismiss(self)end
     if self.caseConfirm and self.caseConfirm.phase=='command'then self.cancelledCaseToken=self.caseConfirm.token end
     self.feedback:clear()
     if self.wantedAppearance then self.wantedAppearance.form.stage='identity' end
@@ -1718,6 +1727,7 @@ function Studio:cancelModal()
     self.authorPresetConfirm=nil
     self.rpPresetConfirm=nil
     self.assistConfirm=nil;self.operationConfirm=nil
+    self.bindingVariant=nil;self.executionConfirm=nil;self.copilotVariant=nil
     self.vehicleConfirm=nil;self.caseConfirm=nil;self.patrolEventConfirm=nil;self.patrolConfirm=nil; self.remove=nil; self.reset=nil; self.importPreview=nil; self.confirmPlan=nil; self.confirmResult=nil
     self.pendingSelection=nil; self.pendingNavigation=nil; self.pendingEditorTab=nil; self.keyCapture=nil
     self.customRemove=nil
@@ -1781,11 +1791,33 @@ function Studio:resolveSelection(save,callbacks)
 end
 function Studio:selectProcedure(kind)caseUi.select(self,kind)end
 function Studio:modalIntent(data)
+    if self.copilotVariant then
+        local p=self.copilotVariant
+        if not p.lines then
+            p.lines={'Тип транспорта неизвестен. Выберите подходящий вариант; отправки пока нет. При смене машины потребуется новый предпросмотр.'}
+            for _,kind in ipairs({'car','bike'})do
+                p.lines[#p.lines+1]=kind=='car'and'ЗАКРЫТЫЙ АВТОМОБИЛЬ'or'МОТОЦИКЛ / ОТКРЫТЫЙ ТРАНСПОРТ'
+                for _,line in ipairs(p.variants[kind].prepared.lines)do p.lines[#p.lines+1]=line end
+            end
+        end
+        return{kind='copilot_variant',token=p.token,title='Выбрать вариант Copilot',lines=p.lines}
+    end
+    if self.executionConfirm then
+        local c=self.executionConfirm;local lines={c.name,c.prompt,'ДА — передать только этот этап. НЕТ / Esc — остановить оставшиеся шаги.'}
+        for _,line in ipairs(c.preview or{})do lines[#lines+1]=line end
+        return{kind='execution_stage',token='stage:'..c.token,title='Подтвердить этап RP?',lines=lines}
+    end
+    if self.bindingVariant then return require('pa26_rp_context_ui').variantIntent(self.bindingVariant)end
     local warning=self.feedback:peek()
     if warning then
         local lines={warning.message}
         if warning.skipped then lines[#lines+1]='Несколько повторных предупреждений объединены. Проверьте журнал PA при необходимости.'end
         return{kind='warning',token=warning.token,title=warning.kind=='info'and 'Уведомление'or 'Предупреждение',lines=lines}
+    end
+    if self.helpGuide then
+        return {kind='help',token='pa26-instructions',
+            title=self.helpGuide.automatic and 'Добро пожаловать в Police Assistant' or 'Инструкции Police Assistant',
+            lines=require('pa26_help').instructions(self.helpKeys)}
     end
     if self.authorPresetConfirm then return require('pa26_author_controller').modal(self)end
     if self.shutdownConfirm then
@@ -1959,6 +1991,7 @@ function Studio:modalIntent(data)
 end
 function Studio:acceptModal(data,callbacks)
     if self:hasWarning()then return nil,'Сначала закройте предупреждение кнопкой «ОК».'end
+    if self.executionConfirm then return callbacks.confirmExecution(self.executionConfirm.token,true)end
     if self.authorPresetConfirm then return callbacks.authorPresetAccept()end
     if self.shutdownConfirm then return callbacks.requestShutdown()end
     if self.rpPresetConfirm then return require('pa26_rp_presets').accept(self,callbacks)end
@@ -2066,7 +2099,7 @@ function Studio:drawModal(ui,data,callbacks)
     local escape=io.KeysDown[27]==true
     if escape and not self.guiEscapeDown and self:hasModal() then
         if self:hasWarning()then self:ackWarning()else
-            if self.manualAction then callbacks.stop()end
+            if self.manualAction or self.executionConfirm then callbacks.stop()end
             self:cancelModal();callbacks.cancelCapture()end
     end
     self.guiEscapeDown=escape
@@ -2092,6 +2125,10 @@ function Studio:drawModal(ui,data,callbacks)
             intent and intent.kind=='wanted_appearance_choice'and {'Общая (без ввода)','С приметами'}or
             intent and intent.kind=='wanted_appearance_input'and {'Далее · к выбору статьи','Назад'}or{'ДА','НЕТ'}}
     local confirmationBinding=intent and intent.kind=='plan'and self.confirmPlan and model.find(self.lib,self.confirmPlan.binding.id)
+    if intent and intent.kind=='help'then
+        spec.icon='book-open'
+        spec.buttons={'Начать работу','Больше не показывать автоматически','Закрыть'}
+    end
     if confirmationBinding then spec.checkboxLabel='Больше не показывать предупреждение для этого действия.'end
     if self.modalError then spec.lines[#spec.lines+1]='Не выполнено: '..self.modalError end
     local layout=menuModule.confirmationLayout(im,spec)
@@ -2143,7 +2180,29 @@ function Studio:drawModal(ui,data,callbacks)
                 if worked and ok then self:cancelModal(); im.CloseCurrentPopup(); self.modalVisible=false
                 else self.modalError=tostring(worked and (err or 'Не удалось сохранить изменения.') or ok);self:notify(self.modalError)end
             end
-            if intent.kind=='warning'then
+            if intent.kind=='help'then
+                self.helpGuide.shown=true
+                local width=math.max(1,(im.GetContentRegionAvail().x-10)/2)
+                local start=green(spec.buttons[1]..'##pa26-help-start',width)
+                im.SameLine(0,10)
+                local disable=neutral(spec.buttons[2]..'##pa26-help-disable',width)
+                local dismiss=neutral(spec.buttons[3]..'##pa26-help-close',width)
+                if disable then require('pa26_help').dismiss(self,true)end
+                if start or disable or dismiss then close()end
+            elseif intent.kind=='copilot_variant'then
+                local width=math.max(1,(im.GetContentRegionAvail().x-10)/2)
+                local car=neutral('Закрытый автомобиль##cp-variant-car',width);im.SameLine(0,10)
+                local bike=neutral('Мотоцикл / открытый транспорт##cp-variant-bike',width)
+                if car or bike then
+                    local p=self.copilotVariant.variants[car and'car'or'bike']
+                    self:cancelModal();im.CloseCurrentPopup();self.modalVisible=false;self.vehicleConfirm=p
+                end
+            elseif intent.kind=='binding_variant'then
+                local width=math.max(1,(im.GetContentRegionAvail().x-10)/2)
+                local car=neutral('Закрытый автомобиль##rp-variant-car',width);im.SameLine(0,10)
+                local bike=neutral('Мотоцикл / внешний осмотр##rp-variant-bike',width)
+                if car or bike then execute(function()return callbacks.chooseBindingVariant(car and'car'or'bike')end)end
+            elseif intent.kind=='warning'then
                 local available=im.GetContentRegionAvail().x;local width=math.min(180,available)
                 local cursor=im.GetCursorPosX();im.SetCursorPosX(cursor+(available-width)/2)
                 if neutral('ОК##warning-ok',width)then self:ackWarning();im.CloseCurrentPopup()end
@@ -2211,7 +2270,8 @@ function Studio:drawModal(ui,data,callbacks)
                 if intent.kind=='manual_action'then
                     if no or yes then execute(function()return callbacks.manualActionDecide(self.manualAction.token,yes==true)end)end
                 elseif no then
-                    if intent.kind=='vehicle'then self:declineVehicle();im.CloseCurrentPopup();self.modalVisible=false else close()end
+                    if intent.kind=='execution_stage'then callbacks.confirmExecution(self.executionConfirm.token,false);close()
+                    elseif intent.kind=='vehicle'then self:declineVehicle();im.CloseCurrentPopup();self.modalVisible=false else close()end
                 elseif yes then execute(function() return self:acceptModal(data,callbacks) end) end
             end
         end

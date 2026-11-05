@@ -36,9 +36,12 @@ local function coherent(state,expected)
     check(not s.data.bindings and not s.data.notes and not s.data.wheel)
 end
 local state=fixture();local storage=state.open();local lib,warnings,fresh=storage:load()
-check(fresh);eq(#warnings,0);eq(lib.profile.name,original.profile.name);check(storage:save(lib))
+check(fresh);check(not lib.settings.help.welcome);eq(#warnings,0);eq(lib.profile.name,original.profile.name);check(storage:save(lib))
 coherent(state,original);eq(state.data[base..'_library.json'],legacy,'migration changed the original backup')
 local active=model.copy(state.data)
+local cleanInstall=fixture({});local newStore=cleanInstall.open()
+local newLib,_,first=newStore:load();check(first and newLib.settings.help.welcome)
+newLib.settings.help.welcome=false;check(newStore:save(newLib));check(not cleanInstall.open():load().settings.help.welcome)
 storage=state.open();lib,warnings,fresh=storage:load();check(not fresh);eq(#warnings,0)
 local bindsBefore=state.data[base..'_binds.json'];local settingsBefore=state.data[base..'_settings.json']
 state.writes={};lib.notes[1].body='Новая заметка';check(storage:save(lib))

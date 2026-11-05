@@ -3,7 +3,7 @@ local copy=require('pa26_bindings').copy;local menu=require 'pa26_menu';local pr
 local M={}
 function M.offer(s,callbacks,action)
  local p,err=callbacks.copilotOffer(action)
- if p then if p.navigation then callbacks.openGround(p)else s.vehicleConfirm=p end else s:notify(err,'vehicle',false)end
+ if p then if p.rpVariants then s.copilotVariant=p elseif p.navigation then callbacks.openGround(p)else s.vehicleConfirm=p end else s:notify(err,'vehicle',false)end
 end
 function M.editReport(s,ui,callbacks)
  if s.reportEdit then
@@ -68,6 +68,12 @@ function M.draw(s,ui,data,callbacks)
   if not s.autosaves.vehicle then M.offer(s,callbacks,action)else s:notify('Исправьте и сохраните настройки транспорта.','vehicle',false)end
  end
  if s.copilotPage=='work'then
+  if s.copilotDuty then
+   s:settingsHeading(ui,'Доступность экипажа · выберите доклад')
+   groups.buttons(s,ui,{{'busy_report','Временно занят · 10-8##wheel-duty-busy'},{'break_report','Перерыв · Код 7##wheel-duty-break'},{'patrol_continue','Снова доступен · Код 4##wheel-duty-available'}},offer)
+   ui.text('Это отдельный доклад с предпросмотром. Таймер и состояние сеанса патруля меняются в разделе «Патруль и экипаж».')
+   if s:button('Скрыть выбор доступности##wheel-duty-close',ui)then s.copilotDuty=nil end
+  end
   if not s.lib.alerts.on_duty or not s.lib.alerts.enabled then ui.text('Режим PA для докладов выключен. Включите «На службе» и связь в «Настройки и тексты».')end
   if c then
    s:settingsHeading(ui,(values.model or'Машина')..' ['..c.id..'] · '..(v.phase or'Выбрана'))

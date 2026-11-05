@@ -925,6 +925,9 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         if callbacks.updates then
             withFont(imgui,ui,fonts.compact or fonts.small,function()
                 if imgui.Button((callbacks.updateLabel or 'Обновления PA')..'##pa26-updates',vec(math.max(1,imgui.GetContentRegionAvail().x),36))then self:navigate('updates')end
+                if callbacks.openInstructions and imgui.Button('Инструкции##pa26-instructions',vec(math.max(1,imgui.GetContentRegionAvail().x),36))then
+                    callbacks.openInstructions()
+                end
             end)
             imgui.Dummy(vec(0,6))
         end

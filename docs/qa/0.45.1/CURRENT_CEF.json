@@ -1,0 +1,15 @@
+﻿{
+    "mode":  "native-only",
+    "runtime":  "NOT_RUN",
+    "capabilities":  {
+                         "dom":  true
+                     },
+    "fingerprint":  null,
+    "state":  "INCOMPATIBLE",
+    "sha256":  "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+    "allowed":  false,
+    "schema":  2,
+    "reason":  "functional_profile_mismatch",
+    "known":  false,
+    "protocol":  2
+}

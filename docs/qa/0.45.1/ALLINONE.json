@@ -1,0 +1,20 @@
+{
+    "checks":  47,
+    "archive_sha256":  "11c842c3340d51c56b71aca7c9dbc7f7fde16b1470a44e0503a20b544ea2710d",
+    "updater_sha256":  "9b071ffef4dd3be5032c79361f943b65eee1b73f848d63bc961818f0a798b20f",
+    "version":  "0.45.1",
+    "scenarios":  [
+                      "fresh standalone",
+                      "fresh launcher unknown CEF preserved",
+                      "full installer upgrade 0.44.0",
+                      "new worker all-in-one update",
+                      "graph replacement crash and recovery",
+                      "old worker safe refusal"
+                  ],
+    "game_started":  false,
+    "live_game_written":  false,
+    "old_worker_direct_update":  "BLOCKED_USE_FULL_INSTALLER_ONCE",
+    "manifest_sha256":  "0f3d521ff3eb165ee1bdc727a2c942e43d6d88c8dbab70c52e749f2f07c2b3c5",
+    "status":  "passed",
+    "fixture_only":  true
+}

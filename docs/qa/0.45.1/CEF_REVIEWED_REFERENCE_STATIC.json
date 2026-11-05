@@ -1,0 +1,146 @@
+﻿{
+    "old_reviewed_launcher":  "BLOCKED_SOURCE_NOT_AVAILABLE",
+    "cases":  [
+                  {
+                      "sha256":  "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+                      "name":  "current_d7526",
+                      "elapsed_ms":  419.89840000000004,
+                      "reason":  "normalized_contract_and_dom",
+                      "allowed":  true,
+                      "state":  "CONTRACT_COMPATIBLE"
+                  },
+                  {
+                      "sha256":  "8eb877ca08fa9253ee0b11b6ef343bd5360351777db88d93fe46ddc630f78509",
+                      "name":  "unrelated_comment",
+                      "elapsed_ms":  310.99,
+                      "reason":  "normalized_contract_and_dom",
+                      "allowed":  true,
+                      "state":  "CONTRACT_COMPATIBLE"
+                  },
+                  {
+                      "sha256":  "6f6341b982df992ea16e82a999593b72def7df75084d0e30684129d7d82cf300",
+                      "name":  "unrelated_whitespace",
+                      "elapsed_ms":  261.35290000000003,
+                      "reason":  "normalized_contract_and_dom",
+                      "allowed":  true,
+                      "state":  "CONTRACT_COMPATIBLE"
+                  },
+                  {
+                      "sha256":  "4fb1e7992a458661246f1daed90dad7832f847446382e9f20b6bca37c3de6eae",
+                      "name":  "private_identifier_rename",
+                      "elapsed_ms":  268.8328,
+                      "reason":  "normalized_contract_and_dom",
+                      "allowed":  true,
+                      "state":  "CONTRACT_COMPATIBLE"
+                  },
+                  {
+                      "sha256":  "bac23162babf197471254cbd12716973a17252f9a92ae92d384c26308d27af6c",
+                      "name":  "unrelated_function_implementation",
+                      "elapsed_ms":  263.3451,
+                      "reason":  "normalized_contract_and_dom",
+                      "allowed":  true,
+                      "state":  "CONTRACT_COMPATIBLE"
+                  },
+                  {
+                      "sha256":  "766c949f28259c0dcb655ffb41ad99d83e07fc3bed15e5a16e48a3f1c57bbe84",
+                      "name":  "missing_send",
+                      "elapsed_ms":  241.43470000000002,
+                      "reason":  "files_or_analysis_unavailable",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "cbe04157a3b45f5bbce681e8449aaaa38208969aa61a921150fc969ff00f23b1",
+                      "name":  "wrong_send_payload",
+                      "elapsed_ms":  265.7769,
+                      "reason":  "functional_profile_mismatch",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "a7d115a65c0873d89b07055255b6d5ae5eaf7e8c7c507e479c7dc8dee25f2ec2",
+                      "name":  "wrong_incoming_event",
+                      "elapsed_ms":  235.49190000000002,
+                      "reason":  "functional_profile_mismatch",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+                      "name":  "missing_input",
+                      "elapsed_ms":  43.647800000000004,
+                      "reason":  "missing_dom:chatInputField",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+                      "name":  "wrong_input_type",
+                      "elapsed_ms":  50.105700000000006,
+                      "reason":  "html_structure",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+                      "name":  "duplicate_input",
+                      "elapsed_ms":  54.0212,
+                      "reason":  "html_duplicate_id",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+                      "name":  "disabled_input",
+                      "elapsed_ms":  31.2358,
+                      "reason":  "html_input_disabled",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+                      "name":  "async_handler",
+                      "elapsed_ms":  45.596000000000004,
+                      "reason":  "html_async_script",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+                      "name":  "extra_script",
+                      "elapsed_ms":  34.607600000000005,
+                      "reason":  "html_extra_script",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "fec0398a0889f7d7f79d4670e8c718132419665e55d4062261a3a330fba5d00a",
+                      "name":  "names_only_not_a_contract",
+                      "elapsed_ms":  34.6953,
+                      "reason":  "files_or_analysis_unavailable",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "1b1296e9187f2c1ff0be774ecebf6e0d559628320d09bb9764d8e97bd4c9ac9c",
+                      "name":  "unexecuted_launcher_payload",
+                      "elapsed_ms":  262.6865,
+                      "reason":  "functional_profile_mismatch",
+                      "allowed":  false,
+                      "state":  "INCOMPATIBLE"
+                  },
+                  {
+                      "sha256":  "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+                      "name":  "known_registry_path_fixture",
+                      "elapsed_ms":  63.0073,
+                      "reason":  "reviewed_identity_and_dom",
+                      "allowed":  true,
+                      "state":  "CONTRACT_COMPATIBLE"
+                  }
+              ],
+    "checks":  39,
+    "live_game_written":  false,
+    "environment":  "Windows PowerShell 5.1 / .NET CSharp verifier; local files read-only",
+    "status":  "passed",
+    "game_started":  false
+}

@@ -13,6 +13,8 @@ $workerEntry=@($paSetupManifest.files|Where-Object path -CEQ 'resource\pa26\upda
 if($workerEntry.Count -ne 1 -or (Get-FileHash -LiteralPath $paSetupWorker -Algorithm SHA256).Hash.ToLowerInvariant() -cne $workerEntry[0].sha256){throw 'Setup window integrity failed.'}
 . (Join-Path $paSetupSource 'tools/pa-setup.ps1')
 . $paSetupWorker -Mode Library
+. (Join-Path $paSetupSource 'tools/pa-seed-presets.ps1')
+. (Join-Path $paSetupSource 'tools/pa-legacy-migration.ps1')
 $paSetupDependencies=Read-PaDependencyManifest (Join-Path $paSetupSource 'DEPENDENCIES.json')
 
 function Get-PaSetupExplanation([string]$Code){
@@ -43,7 +45,7 @@ function Get-PaSetupPreflight([string]$Selected){
     }
     return @{moonloader=$ml;missing=$missing.Count;details=($lines -join "`n")+"`n"+$cef;running=(@(Get-Process -Name gta_sa,gta-sa -ErrorAction SilentlyContinue).Count -gt 0)}
 }
-function Start-PaSetupChild([string]$Selected,[string]$Job,[string]$Cache='',[int]$FailAfter=0,[bool]$IncludeBinds=$true,[bool]$IncludeSettings=$true){
+function Start-PaSetupChild([string]$Selected,[string]$Job,[string]$Cache='',[int]$FailAfter=0,[bool]$IncludeBinds=$true,[bool]$IncludeSettings=$true,[bool]$Legacy=$true,[string]$Preview=''){
     $jobRoot=[IO.Path]::GetFullPath($Job)
     $base=[IO.Path]::GetFullPath((Join-Path $paSetupSource 'installation-backups/ui-jobs')).TrimEnd('\')
     if(-not $jobRoot.StartsWith($base+'\',[StringComparison]::OrdinalIgnoreCase) -or $jobRoot.Substring($base.Length+1) -cnotmatch '^[a-f0-9]{32}$'){throw 'Invalid setup job.'}
@@ -53,6 +55,8 @@ function Start-PaSetupChild([string]$Selected,[string]$Job,[string]$Cache='',[in
     $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File '+(&$quote (Join-Path $paSetupSource 'install.ps1'))+' -DestinationRoot '+(&$quote $Selected)+' -FetchDependencies -ProgressFile '+(&$quote (Join-Path $jobRoot 'progress.json'))
     if(-not $IncludeBinds){$args+=' -SkipAuthorBinds'}
     if(-not $IncludeSettings){$args+=' -SkipAuthorSettings'}
+    if(-not $Legacy){$args+=' -SkipLegacyPresets'}
+    if($Preview){$args+=' -LegacyPreview '+(&$quote $Preview)}
     if($Cache){$args+=' -DependencyCache '+(&$quote $Cache)}
     if($FailAfter){$args+=' -TestFailAfter '+$FailAfter}
     $exe=Join-Path ([Environment]::SystemDirectory) 'WindowsPowerShell/v1.0/powershell.exe'
@@ -69,8 +73,8 @@ function Read-PaSetupJob([string]$Job){
 function New-PaSetupForm {
  $form=New-Object PaSetupWindow
  $hostPanel=New-Object Windows.Forms.FlowLayoutPanel;$hostPanel.Dock='Fill';$hostPanel.FlowDirection='TopDown';$hostPanel.WrapContents=$false;$hostPanel.Margin=New-Object Windows.Forms.Padding(0)
- $binds=New-Object Windows.Forms.CheckBox;$binds.Text='Установить авторский бинд-лист';$binds.Checked=$true;$binds.AutoSize=$true;$binds.ForeColor=[PaUpdateWindow]::Ink
- $settings=New-Object Windows.Forms.CheckBox;$settings.Text='Установить авторские настройки';$settings.Checked=$true;$settings.AutoSize=$true;$settings.ForeColor=[PaUpdateWindow]::Ink
+ $binds=New-Object Windows.Forms.CheckBox;$binds.Text='Авторский бинд-лист при первой установке';$binds.Checked=$true;$binds.AutoSize=$true;$binds.ForeColor=[PaUpdateWindow]::Ink
+ $settings=New-Object Windows.Forms.CheckBox;$settings.Text='Авторские настройки при первой установке';$settings.Checked=$true;$settings.AutoSize=$true;$settings.ForeColor=[PaUpdateWindow]::Ink
  $hostPanel.Controls.Add($binds);$hostPanel.Controls.Add($settings)
  $form.Current.Controls.Remove($form.Footer);$form.Current.Controls.Add($hostPanel,0,4)
  $form|Add-Member -NotePropertyName AuthorBinds -NotePropertyValue $binds
@@ -78,6 +82,71 @@ function New-PaSetupForm {
  $form|Add-Member -NotePropertyName AuthorPanel -NotePropertyValue $hostPanel
  $form.Steps.Text='Свои данные сохраняются';$form.Steps.Width=200
  return $form
+}
+function Get-PaLegacyReviewText($Review){
+    $lines=New-Object 'Collections.Generic.List[string]'
+    $lines.Add('Обновляются стандартные настройки PA, оба колеса и штатные правила ручных команд.')
+    $lines.Add('Сохраняются личные записи, контакты, профиль, пол персонажа, заметки и размеры окон.')
+    $lines.Add('')
+    foreach($pair in @(@('added','Новые официальные записи'),@('updated','Обновлённые штатные записи'),@('personal','Личные записи в «Свои бинды»'))){
+        $lines.Add($pair[1])
+        foreach($row in $Review[$pair[0]]){
+            $lines.Add(('№ '+$row.id+' · '+$row.name))
+            if($row -is [Collections.IDictionary] -and $row.ContainsKey('after')){
+                if($row.ContainsKey('before') -and $row.before -cne $row.after){$lines.Add("Было`r`n"+$row.before)}
+                $lines.Add("В наборе 0.45.2`r`n"+$row.after)
+            }
+        }
+        $lines.Add('')
+    }
+    $lines.Add('Сохранённые личные правила команд')
+    foreach($item in $Review.personalRules){$lines.Add($item)}
+    $lines.Add('Разрешение конфликтов')
+    foreach($item in $Review.conflicts){$lines.Add($item)}
+    return $lines -join "`r`n"
+}
+function Show-PaLegacyReview($Owner,$Review){
+    $dialog=New-Object Windows.Forms.Form
+    $dialog.Text='Первичное обновление биндов и настроек PA'
+    $dialog.StartPosition='CenterParent';$dialog.MinimizeBox=$false;$dialog.MaximizeBox=$false
+    $area=[Windows.Forms.Screen]::FromControl($Owner).WorkingArea
+    $dialog.ClientSize=New-Object Drawing.Size([Math]::Min(680,$area.Width-36),[Math]::Min(365,$area.Height-72))
+    $dialog.Font=New-Object Drawing.Font('Segoe UI',10)
+    $dialog.BackColor=[Drawing.Color]::FromArgb(23,33,51);$dialog.ForeColor=[PaUpdateWindow]::Ink
+    $panel=New-Object Windows.Forms.TableLayoutPanel
+    $panel.Dock='Fill';$panel.Padding=New-Object Windows.Forms.Padding(20);$panel.ColumnCount=1;$panel.RowCount=4
+    foreach($style in @('Percent','AutoSize','AutoSize','AutoSize')){
+        $row=New-Object Windows.Forms.RowStyle;$row.SizeType=$style;if($style -ceq 'Percent'){$row.Height=100}
+        $panel.RowStyles.Add($row)|Out-Null
+    }
+    $summary=New-Object Windows.Forms.Label;$summary.Dock='Fill'
+    $summary.Text="Найдена PA 0.44.0. Набор 0.45.2 заменит штатные бинды и их RP, включая ранее отредактированные. Отдельные личные записи сохранятся.`r`n`r`n"+
+        ('Новые бинды · '+$Review.added.Count+'     Обновляемые · '+$Review.updated.Count+'     Личные · '+$Review.personal.Count)+"`r`n"+
+        ('Конфликты с приоритетом личных записей · '+$Review.conflicts.Count)+"`r`n`r`n"+
+        'Сохранятся профиль, пол персонажа, контакты, заметки и размеры окон. Если снять галочку, установится только программа.'
+    $option=New-Object Windows.Forms.CheckBox;$option.AutoSize=$true;$option.Checked=$true
+    $option.Text='Обновить авторские бинды и стандартные настройки до 0.45.2'
+    $details=New-Object Windows.Forms.Button;$details.AutoSize=$true;$details.Text='Посмотреть изменения'
+    $details.Tag=Get-PaLegacyReviewText $Review
+    $details.Add_Click({
+        $owner=$this.FindForm()
+        $view=New-Object Windows.Forms.Form;$view.Text='Предпросмотр набора PA 0.45.2';$view.StartPosition='CenterParent'
+        $view.ClientSize=New-Object Drawing.Size($owner.ClientSize.Width,$owner.ClientSize.Height)
+        $body=New-Object Windows.Forms.TextBox;$body.Dock='Fill';$body.Multiline=$true;$body.ReadOnly=$true
+        $body.WordWrap=$true;$body.ScrollBars='Vertical';$body.Text=[string]$this.Tag
+        $view.Controls.Add($body)
+        try{$null=$view.ShowDialog($owner)}finally{$view.Dispose()}
+    })
+    $actions=New-Object Windows.Forms.FlowLayoutPanel;$actions.AutoSize=$true;$actions.FlowDirection='RightToLeft';$actions.Dock='Fill'
+    $accept=New-Object Windows.Forms.Button;$accept.Text='Продолжить установку';$accept.AutoSize=$true;$accept.DialogResult='OK'
+    $cancel=New-Object Windows.Forms.Button;$cancel.Text='Отмена';$cancel.AutoSize=$true;$cancel.DialogResult='Cancel'
+    $actions.Controls.Add($accept);$actions.Controls.Add($cancel)
+    $panel.Controls.Add($summary,0,0);$panel.Controls.Add($option,0,1);$panel.Controls.Add($details,0,2);$panel.Controls.Add($actions,0,3)
+    $dialog.Controls.Add($panel);$dialog.AcceptButton=$accept;$dialog.CancelButton=$cancel
+    try{
+        $result=$dialog.ShowDialog($Owner)
+        return @{proceed=$result -eq [Windows.Forms.DialogResult]::OK;apply=$option.Checked}
+    }finally{$dialog.Dispose()}
 }
 function Show-PaSetupWindow {
     $unused=New-PaProgressForm;$unused.Dispose()
@@ -113,8 +182,27 @@ function Show-PaSetupWindow {
         try{
             & $script:PaSetupUi.refresh
             if(-not $state.preflight -or $state.preflight.running){return}
+            $ml=$state.preflight.moonloader
+            $offer=Get-PaLegacyOffer $paSetupSource $ml $paSetupManifest.release
+            $legacy=$false;$token=''
+            if($offer -ceq 'offer'){
+                $form.Requirements.Text='Подготавливаю предпросмотр набора. Файлы PA пока сохранены без изменений.'
+                $form.Refresh()
+                try{$prepared=Get-PaLegacyPresetPlan $paSetupSource $ml $paSetupManifest $DependencyCache $true}
+                catch{
+                    $answer=[Windows.Forms.MessageBox]::Show($form,($_.Exception.Message+"`r`n`r`nПродолжить установку программы с прежними личными файлами?"),'Предпросмотр набора недоступен','YesNo','Warning')
+                    if($answer -ne [Windows.Forms.DialogResult]::Yes){return}
+                    $prepared=$null
+                }
+                if($prepared){
+                    $choice=Show-PaLegacyReview $form $prepared.review
+                    if(-not $choice.proceed){return}
+                    $legacy=$choice.apply
+                    if($legacy){$token=$prepared.token}
+                }
+            }
             $state.job=Join-Path $paSetupSource ('installation-backups/ui-jobs/'+[guid]::NewGuid().ToString('N'))
-            $state.child=Start-PaSetupChild $state.preflight.moonloader $state.job $DependencyCache $TestFailAfter $form.AuthorBinds.Checked $form.AuthorSettings.Checked
+            $state.child=Start-PaSetupChild $ml $state.job $DependencyCache $TestFailAfter $form.AuthorBinds.Checked $form.AuthorSettings.Checked $legacy $token
             $form.Current.Controls.Remove($form.AuthorPanel);$form.Current.Controls.Add($form.Footer,0,4);$form.BeginInstallation();$state.last=2
         }catch{[Windows.Forms.MessageBox]::Show($form,(Get-PaSetupExplanation $_.Exception.Message),'Установка не началась','OK','Error')|Out-Null}
     })
@@ -136,8 +224,8 @@ function Show-PaSetupWindow {
                 $state.child.WaitForExit();$code=$state.child.ExitCode
                 $row=Read-PaSetupJob $state.job
                 $state.finished=$true
-                if($code -eq 0 -and $row -and (Get-PaField $row 'stage') -ceq 'completed' -and (Get-PaField $row 'version') -ceq $paSetupManifest.release -and (Get-PaField $row 'terminal') -eq $true -and (Get-PaField $row 'safe') -eq $true){
-                    $form.SetState('SUCCESS','PA установлен и проверен. Настройки и бинды сохранены. Можно запускать игру.',100,'green',$true,$true,$paSetupManifest.release)
+                if($code -eq 0 -and $row -and (Get-PaField $row 'stage') -cin @('completed','recovered') -and (Get-PaField $row 'version') -ceq $paSetupManifest.release -and (Get-PaField $row 'terminal') -eq $true -and (Get-PaField $row 'safe') -eq $true){
+                    $form.SetState('SUCCESS',[string](Get-PaField $row 'detail'),100,'green',$true,$true,$paSetupManifest.release)
                 }else{
                     $safe=$row -and (Get-PaField $row 'stage') -ceq 'failed' -and (Get-PaField $row 'safe') -eq $true
                     $detail=if($row){Get-PaSetupExplanation ([string](Get-PaField $row 'detail'))}else{'Помощник установки завершился без подтверждения. Логи и копии сохранены в папке installation-backups.'}

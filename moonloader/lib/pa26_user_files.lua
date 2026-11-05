@@ -36,11 +36,14 @@ function M.partition(lib)
         notes={format=formats.notes,schema=M.SCHEMA,next_note_id=lib.next_note_id,notes=model.copy(lib.notes)},
         settings={format=formats.settings,schema=M.SCHEMA,data={}}}
     for k,v in pairs(lib)do if not separated[k]then p.settings.data[k]=model.copy(v)end end
+    -- Older PA must reject a staged/vehicle-aware document instead of silently
+    -- dropping its safety metadata and playing every stage automatically.
+    for _,b in ipairs(lib.bindings)do if b.author_ref or b.rp_context or #(b.wheel_extra_groups or{})>0 or #(b.wheel_car_extra_groups or{})>0 then p.binds.schema=2;break end end
     p.settings.data.settings.wheel_car_classic=nil -- Slot IDs belong to the bind exchange, not another user's settings.
     return p
 end
 function M.validate(kind,raw,cfg)
-    if not formats[kind]or type(raw)~='table'or raw.format~=formats[kind]or raw.schema~=M.SCHEMA then
+    if not formats[kind]or type(raw)~='table'or raw.format~=formats[kind]or(raw.schema~=M.SCHEMA and not(kind=='binds'and raw.schema==2))then
         return nil,'Неверный тип или версия файла: '..tostring(kind)..'.'
     end
     local allowed=kind=='binds'and{format=true,schema=true,next_id=true,bindings=true,wheel=true,wheel_car_classic=true}or
@@ -54,7 +57,15 @@ function M.validate(kind,raw,cfg)
             if v[k]==nil then return nil,'Неизвестное поле настроек: '..tostring(k)..'.'end
             v[k]=model.copy(x)
         end
-    elseif kind=='binds'then v.bindings=raw.bindings;v.next_id=raw.next_id;v.wheel=raw.wheel;v.settings.wheel_car_classic=raw.wheel_car_classic;if v.settings.wheel_car_classic==nil then v.settings.wheel_car_classic=raw.wheel end
+    elseif kind=='binds'then
+        v.bindings=raw.bindings;v.next_id=raw.next_id;v.wheel=raw.wheel
+        v.settings.wheel_car_classic=raw.wheel_car_classic
+        if v.settings.wheel_car_classic==nil then v.settings.wheel_car_classic=raw.wheel end
+        -- A split bind file has no feature shortcuts. Validate the real
+        -- settings together with it in combine, not against fictitious F4 etc.
+        for _,spec in ipairs(model.featureKeys)do
+            v[spec[1]][spec[2]]={key=0,ctrl=false,alt=false,shift=false}
+        end
     else v.notes=raw.notes;v.next_note_id=raw.next_note_id end
     local clean,err=model.validate(v,kind=='settings'and cfg or nil)
     if not clean then return nil,err end
@@ -214,6 +225,7 @@ function UserFiles:load()
     end
     for _,kind in ipairs(kinds)do self.raw[kind]=false end
     self.legacy=present(self.fs,legacyPath)and true or false
+    if not self.legacy then lib.settings.help.welcome=true end
     return lib,warnings,true
 end
 function UserFiles:save(lib)

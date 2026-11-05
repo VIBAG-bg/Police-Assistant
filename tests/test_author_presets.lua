@@ -9,7 +9,8 @@ eq(settings.settings.data.profile.name,'');eq(#settings.settings.data.partners,0
 local cfg=core.defaults();cfg.main.demo_mode=false
 local lib=model.defaults(cfg);lib.profile.name='Private Officer';lib.notes[1].body='PRIVATE NOTE'
 lib.settings.updates.repository='Private/Repo';lib.settings.wheel_names.citizen='MY WHEEL'
-local a=assert(m.prepare('binds',binds,lib,cfg));eq(#a.library.bindings,83);check(m.equal(a.library.notes,lib.notes));check(m.equal(a.library.settings,lib.settings));eq(a.library.profile.name,'Private Officer')
+local a=assert(m.prepare('binds',binds,lib,cfg));eq(#a.library.bindings,89);check(m.equal(a.library.notes,lib.notes));check(m.equal(a.library.settings,lib.settings));eq(a.library.profile.name,'Private Officer')
+for i=1,6 do check(m.equal(a.library.bindings[i],lib.bindings[i]),'Existing personal bindings must survive author update')end
 local b=assert(m.prepare('settings',settings,lib,cfg));check(m.equal(b.library.bindings,lib.bindings));check(m.equal(b.library.notes,lib.notes));check(m.equal(b.library.profile,lib.profile));eq(b.library.settings.updates.repository,'Private/Repo');check(not b.config.main.demo_mode)
 local demoCfg=model.copy(cfg);demoCfg.main.demo_mode=true;check(assert(m.prepare('settings',settings,lib,demoCfg)).config.main.demo_mode,'Applying settings preserves an explicit demo choice')
 check(m.equal(b.library.settings.window_layout,settings.settings.data.settings.window_layout));check(m.equal(b.library.settings.wheel_names,settings.settings.data.settings.wheel_names))

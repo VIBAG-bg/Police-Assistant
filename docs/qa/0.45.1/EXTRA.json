@@ -1,0 +1,53 @@
+{
+  "version": "0.45.1",
+  "at_utc": "2026-11-04T23:09:51.150016+00:00",
+  "environment": "Windows PowerShell 5.1; fixture destinations only; HUD source read only",
+  "game_started": false,
+  "live_game_written": false,
+  "results": [
+    {
+      "test": "test_setup_launch.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 6.06,
+      "log": "tests/QA0451-test_setup_launch.log"
+    },
+    {
+      "test": "test_cef_adaptive0451.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 31.2,
+      "log": "tests/QA0451-test_cef_adaptive0451.log"
+    },
+    {
+      "test": "test_installer_legacy_paths.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 42.88,
+      "log": "tests/QA0451-test_installer_legacy_paths.log"
+    },
+    {
+      "test": "test_gps_patrol_install0450.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 28.81,
+      "log": "tests/QA0451-test_gps_patrol_install0450.log"
+    },
+    {
+      "test": "test_cef_install_adaptive0451.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 166.03,
+      "log": "tests/QA0451-test_cef_install_adaptive0451.log"
+    },
+    {
+      "test": "test_allinone0451.ps1",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 262.0,
+      "log": "tests/QA0451-test_allinone0451.log"
+    }
+  ],
+  "cef_reference_sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+  "cef_reference_is_live_installation": false
+}

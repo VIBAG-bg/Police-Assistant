@@ -16,7 +16,7 @@ local env={encodeJson=TEST_JSON_ENCODE,decodeJson=TEST_JSON_DECODE,context=funct
 local workspace=require 'pa26_workspace'.new(env,core.defaults(),'test-variables')
 local profile=workspace.library.profile
 profile.name='Profile Officer'; profile.my_plate='MY-123'; profile.select_plate='SEL-123'; profile.closest_plate='NEAR-123'
-profile.callsign='P-12'; profile.city='Los Santos'; profile.square='A-3'
+profile.callsign='P-12'; profile.city='Los Santos'; profile.square='A-3';profile.badge_number='EPD-101'
 profile.local_tag='PD'; profile.global_tag='SAPD'; profile.prison_tag='DOC'; profile.department='SAPD'; profile.rank='Officer'; profile.accent='Без акцента'
 workspace.library.partners={{id=1,nickname='Visible_Person',callsign='P-2'}}; workspace.library.next_partner_id=2
 check(model.validate(workspace.library,core.defaults()))
@@ -33,8 +33,8 @@ for _,entry in ipairs(model.variables) do
     local plan; plan,err=binder.compile(b,snapshot,args,codec)
     check(plan,name..': '..tostring(err)); eq(#plan.lines,1); check(plan.lines[1]~='')
 end
-eq(#model.variables,63)
-eq(counts.api,17); eq(counts.profile,12); eq(counts.derived,12); eq(counts.clock,7); eq(counts.team,6); eq(counts.argument,9)
+eq(#model.variables,64)
+eq(counts.api,17); eq(counts.profile,13); eq(counts.derived,12); eq(counts.clock,7); eq(counts.team,6); eq(counts.argument,9)
 local b=model.newBinding(7); b.script='{my_name} {my_firstname} {my_lastname}'
 local snapshot=workspace:snapshot(b,{})
 local plan=binder.compile(b,snapshot,{},codec); eq(plan.lines[1],'Profile Officer Profile Officer')

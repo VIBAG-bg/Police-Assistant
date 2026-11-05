@@ -144,6 +144,7 @@ local function fixture(options)
     if TEST_KNOWLEDGE_POLICY_JSON then s.files['moonloader\\resource\\pa26\\knowledge-policy.json']=TEST_KNOWLEDGE_POLICY_JSON end
     local config = core.defaults()
     config.main.demo_mode = options.demo ~= false
+    if options.helpKeys then config.main.menu_key,config.main.radial_key=options.helpKeys[1],options.helpKeys[2]end
     if options.widgetScale then config.widget.scale=options.widgetScale end
     local function log(line) s.logs[#s.logs + 1] = tostring(line) end
     print = log
@@ -362,6 +363,7 @@ local function fixture(options)
         renderer(); s.currentWindow.width,s.currentWindow.height=size.x,size.y; s.area={x=size.x,y=size.y}
     end
     imgui.SetWindowPosVec2=function(pos) renderer(); s.currentWindow.x,s.currentWindow.y=pos.x,pos.y end
+    imgui.SetNextWindowBgAlpha=function(alpha) renderer(); check(alpha>0 and alpha<=1);s.overlayAlpha=alpha end
     imgui.BeginChild = function(name,size,border,flags)
         renderer(); check(type(name)=='string' and type(flags)=='number'); beginScope('child')
         s.childCalls[#s.childCalls+1]={name=name,border=border,flags=flags,width=size.x,height=size.y,padding=s.padding,
@@ -462,6 +464,7 @@ local function fixture(options)
     imgui.BeginCombo=function(label) renderer(); if blockedByModal() then return false end; if s.combo==label then beginScope('combo'); return true end; return false end
     imgui.EndCombo=function() endScope('combo') end
     imgui.IsMouseDown=function(button)renderer();return s.io.MouseDown[button]==true end
+    imgui.IsMouseDragging=function(button)renderer();return s.io.MouseDown[button]==true and s.dragging==true end
     imgui.IsMouseClicked = function(button) renderer(); return s.mouseClicks and s.mouseClicks[button]==true or false end
     s.textures, s.textureLoads, s.textureReleases, s.imageDraws = {},0,0,{}
     imgui.CreateTextureFromFile = function(path)

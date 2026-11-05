@@ -12,10 +12,12 @@ M.actions[#M.actions+1]={'explain_stop','10-55 · Назвать причину 
 M.actions[#M.actions+1]={'explain_detention','Задержание · Основание и права'}
 M.quick={{'call911','Вызов 9-1-1 · Код 3'},{'arrived','Прибыл на место · опрос граждан'},{'break_report','Перерыв · Код 7, до 15 минут'},{'lost','Потерян · Код 4 АДАМ'}}
 M.quick[#M.quick+1]={'patrol_continue','Продолжаю патрулирование · Код 4'}
+M.quick[#M.quick+1]={'busy_report','Временно занят · 10-8'}
 M.dispatchActions=dispatch.actions
 local carFree={call911=true,arrived=true,break_report=true,lost=true,patrol_continue=true,finish=true,explain_stop=true,documents=true,explain_detention=true}
 for _,row in ipairs(dispatch.actions)do carFree[row[1]]=true end
 carFree.fast_pt=true
+carFree.busy_report=true
  local labels={stop_order='Машина выбрана · Предложить остановиться?',tire='Погоня продолжается · Предупредить об огне по колёсам?',stop='Машина остановилась · Доложить о 10-55?',return_car='Водитель вышел · Потребовать вернуться?',
  pursuit='Машина уезжает · Начать 10-57 VICTOR?',foot='Водитель убегает · 10-57 FOXTROT?',
  approach='Вы подошли к машине · Осмотреть салон?',high_risk='Машина остановилась после погони · 10-66?',
@@ -120,6 +122,7 @@ function C:values(override)
  local v,err=self.env.vehicle:values(s,self.car);if not v then return nil,err end
  local cfg=override or self.env.settings();local c=self.car or self.lastCar or{}
  local colleagues=s.colleagues or{};local profile=self.env.profile()or{}
+ v.department=profile.department or''
  if not v.unit or v.unit==''then v.unit=profile.callsign~=''and profile.callsign or colleagues.autoCallsign or'1-L-1'end
  if not v.station or v.station==''then v.station=colleagues.station or'LSPS'end
  if not v.crew or v.crew==''then v.crew=profile.name~=''and profile.name or s.my_name or'Офицер'end
@@ -149,6 +152,12 @@ end
 function C:prepare(action,override)
  action=dispatch.aliases[action]or action
  local cfg=override or self.env.settings();local values,why=self:values(cfg);if not values then return nil,why end
+ local vehicleVariant
+ if action=='stop_order'or action=='risk_order'then
+  vehicleVariant=require('pa26_rp_context').class({car=self.car})
+  if vehicleVariant=='unknown'then vehicleVariant=cfg._vehicle_variant end
+  if vehicleVariant~='car'and vehicleVariant~='bike'then return nil,'Класс транспорта не подтверждён. Выберите авто / мотоцикл с предпросмотром.'end
+ end
  if override and override._ground_target then values.driver_id=tostring(override._ground_target.id);values.driver_name=override._ground_target.name:gsub('_',' ')end
  local lines,wires,steps={},{},{};local rpSignature,textSignature
  local function add(channel,text)
@@ -164,7 +173,17 @@ function C:prepare(action,override)
  end
  local function template(key,channel)
   if type(cfg.templates[key])~='string'then return nil,'Заполните текст Copilot: '..tostring(key)end
-  for line in(cfg.templates[key]..'\n'):gmatch('(.-)\n')do if line~=''then local ok,err=add(channel,line);if not ok then return nil,err end end end;return true
+  local stage=0
+  for line in(cfg.templates[key]..'\n'):gmatch('(.-)\n')do if line~=''then
+   local checkpoint
+   if action=='risk_order'then
+    if stage>0 then steps[#steps+1]={kind='wait',ms=vehicleVariant=='bike'and cfg.risk_bike_stage_ms or cfg.risk_car_stage_ms}end;stage=stage+1
+    local prompt,why=M.expand(cfg.templates.risk_stage_question,values);if not prompt then return nil,why end
+    checkpoint={kind='confirm',prompt=prompt,preview={},timeout_ms=cfg.risk_confirm_ms};steps[#steps+1]=checkpoint
+   end
+   local first=#lines+1;local ok,err=add(channel,line);if not ok then return nil,err end
+   if checkpoint then for i=first,#lines do checkpoint.preview[#checkpoint.preview+1]=lines[i]end end
+  end end;return true
  end
  local function explicitRp(key)
   if type(cfg.templates[key])~='string'then return nil,'Заполните RP Copilot: '..tostring(key)end
@@ -236,13 +255,13 @@ function C:prepare(action,override)
   ok,err=template(key,'/me');if ok then ok,err=template(enclosed and'window'or class=='bike'and'inspect_bike'or'inspect_neutral','/do')end
   if ok and cfg.window_ooc_hint then ok,err=template(enclosed and'ooc_hint'or'hint_bike','/n')end
  elseif action=='risk_order'then
-  local class=require('pa26_vehicle_types').class(self.car.model_id)
-  ok,err=template((class=='car'or class=='van'or class=='truck'or class=='bus')and((self.car.occupants or 0)>=2 and'risk_multi'or'risk_single')or'risk_open','/m')
+  ok,err=template(vehicleVariant=='car'and((self.car.occupants or 0)>=2 and'risk_multi'or'risk_single')or'risk_open','/m')
  elseif action=='stop_order'or action=='return_car'or action=='tire'then
   if action=='stop_order'and self.lastStopOrderAt and(core.elapsed(self.now,self.lastStopOrderAt)or 0)<cfg.stop_warning_cooldown_ms then return nil,'Дождитесь интервала между требованиями остановиться.'end
   if action=='tire'and self.lastMegaphoneAt and(core.elapsed(self.now,self.lastMegaphoneAt)or 0)<cfg.warning_cooldown_ms then return nil,'Дождитесь интервала между предупреждениями.'end
   local class=self.car and require('pa26_vehicle_types').class(self.car.model_id)
   local key=action=='return_car'and not(class=='car'or class=='van'or class=='truck'or class=='bus')and'return_open'or action
+  if action=='stop_order'and vehicleVariant=='bike'then key='stop_order_bike'end
   ok,err=template(key,action=='return_car'and not self.state.inVehicle and'/s'or'/m')
  else
   if not cfg.templates[action]then return nil,'Неизвестное действие Copilot.'end
@@ -274,7 +293,7 @@ function C:propose(action,options)
  local mega=({stop_order=true,risk_order=true,tire=true,return_car=true})[action]or dispatchAction and dispatchAction.mega
  if mega and not vcfg.megaphone_enabled then return nil,'Включите мегафон в настройках.'end
  local patrol=v.env.patrol and v.env.patrol();local manualReport=dispatchAction and not dispatchAction.mega or
-  ({call911=true,arrived=true,break_report=true,lost=true,patrol_continue=true,fast_pt=true})[action]
+  ({call911=true,arrived=true,break_report=true,busy_report=true,lost=true,patrol_continue=true,fast_pt=true})[action]
  local needsPatrol=not manualReport and(vcfg.require_patrol or mega and vcfg.megaphone_require_patrol)or false
  if needsPatrol and(not patrol or patrol.status~='active')then return nil,'Сначала начните патруль или измените условие доступа.'end
  if not carFree[action]and not self.car then return nil,'Сначала выберите видимую машину.'end
@@ -283,6 +302,15 @@ function C:propose(action,options)
   not(action=='pursuit'and self.incident and self.incident.departed)then return nil,'Нужно свежее наблюдение машины. Сохранена только ситуация.'end
  if self.intent or self.queued then return nil,'Дождитесь текущего действия.'end
  if (action=='explain_stop'or action=='explain_detention')and not options then return self:groundNavigation(action)end
+ if (action=='stop_order'or action=='risk_order')and require('pa26_rp_context').class({car=self.car})=='unknown'and not(options and options.variant_choice)then
+  local variants={}
+  for _,variant in ipairs({'car','bike'})do
+   local override=model.copy(cfg);override._vehicle_variant=variant
+   local p,why=self:propose(action,{cfg=override,variant_choice=true});if not p then return nil,why end
+   variants[variant]=p
+  end
+  return{rpVariants=true,variants=variants,token='copilot-variant:'..self.life..':'..self.serial}
+ end
  local prepared,err=self:prepare(action,options and options.cfg);if not prepared then return nil,err end
  local note=fast[action]and action~='pursuit_mark'and'Автомобильная ориентировка PA: проверьте водителя и IC-основание. /su 8 1 — неподчинение ПД/ФБР; /su 2 2 — вооружённое нападение на гос. сотрудника. Погоня сама по себе не доказывает состав нарушения. Условный номер из ID авто — ваша RP-конвенция. ДА передаст только показанную RP и /su; /pt предлагается отдельно. Вопросов о маске и паспорте в этом пути нет; личность и основание подтверждает офицер. Результат определяет сервер.'or nil
  local guardRisk=action=='dispatch_business'and cfg.robbery_guard and dispatch.officers(s)<cfg.robbery_min_officers or false
@@ -351,6 +379,8 @@ function C:valid(p,started)
  if p.dispatchRp and p.inVehicle~=(s.inVehicle==true)then return false end
  if p.action=='dispatch_business'and self.env.settings().robbery_guard and p.guardRisk~=(dispatch.officers(s)<self.env.settings().robbery_min_officers)then return false end
  if not p.carFree and(not vehicleModel.same(p.car,self.car)or p.car.color1~=self.car.color1 or p.car.color2~=self.car.color2)then return false end
+ if p.action=='risk_order'and p.car and p.car.occupants~=self.car.occupants then return false end
+ if(p.action=='risk_order'or p.action=='stop_order')and p.car and(p.car.driver_id~=self.car.driver_id or p.car.driver_ped~=self.car.driver_ped)then return false end
  local patrol=self.env.vehicle.env.patrol and self.env.vehicle.env.patrol()
  if p.needsPatrol and(not patrol or patrol.status~='active'or p.patrol_id~=patrol.id)then return false end
  if p.action=='taser_warning'and(self.driverLive and self.driverLive.armed or self.env.settings().pursuit_armed or self.state.taserCombatText)then return false end
@@ -376,7 +406,7 @@ function C:validPlan(plan)
  local p=self.queued
  if p and p.driver and not idSame(p.driver,self:observeDriver(p.driver))then return false end
  return p and plan.copilotAction and plan.copilotAction.token==p.token and self:valid(p,p.started)and
-  radio.key(plan)==table.concat(p.prepared.wires,'\0')and not self.state.typing and not self.state.modal or false
+  radio.key(plan)==table.concat(p.prepared.wires,'\0')and((not self.state.typing and not self.state.modal)or plan.rpStageWaiting==true)or false
 end
 function C:onExecution(kind,q,line)
  if kind=='sent_line'and not q.demo and not q.plan.demo then self:observeManualCommand(line,'executor')end
@@ -428,7 +458,7 @@ function C:offer(action,repeatOffer)
  if self.state.colleagues and self.state.colleagues.ownCruiserRole=='driver'and self.env.settings().adam_driver_mute_radio and
   ({stop=true,pursuit=true,foot=true,high_risk=true})[action]then return end
  for _,p in ipairs(self.offers)do if p.action==action then return end end
- local p=self:propose(action);if p then p.repeatOffer=repeatOffer==true;p.autoFlight=action=='pursuit'and self.incident and self.incident.confirmedFlight==true or nil;self.offers[#self.offers+1]=p end
+ local p=self:propose(action);if p and not p.rpVariants then p.repeatOffer=repeatOffer==true;p.autoFlight=action=='pursuit'and self.incident and self.incident.confirmedFlight==true or nil;self.offers[#self.offers+1]=p end
 end
 function C:shown(token)for _,p in ipairs(self.offers)do if p.token==token then p.seen=true end end end
 function C:decide(token,yes)

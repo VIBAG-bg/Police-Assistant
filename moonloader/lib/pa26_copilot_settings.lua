@@ -31,7 +31,7 @@ M.texts={{'plate_prefix','Начало условного номера (напр
  {'lost_vehicle_fallback','Машина не выбрана: текст для «Потерян»',160},
  {'robbery_warning','Предупреждение о составе на ограбление',2048},
  {'dispatch_confirmation_note','Подтверждение RP-вызова',2048}, {'gas_confirmation_note','Подсказка перед требованием на АЗС',2048}}
-M.templates={{'call911','Вызов 9-1-1'},{'arrived','Прибытие и опрос граждан'},{'break_report','Перерыв · Код 7'},{'lost','Потерян · Код 4 АДАМ'},{'stop','Доклад 10-55'},{'pursuit','Доклад 10-57 VICTOR'},{'foot','Доклад 10-57 FOXTROT'},
+M.templates={{'risk_stage_question','10-66 · вопрос перед каждым этапом (не отправляется в чат)'},{'stop_order_bike','Мотоцикл · требование остановиться'},{'call911','Вызов 9-1-1'},{'arrived','Прибытие и опрос граждан'},{'break_report','Перерыв · Код 7'},{'lost','Потерян · Код 4 АДАМ'},{'stop','Доклад 10-55'},{'pursuit','Доклад 10-57 VICTOR'},{'foot','Доклад 10-57 FOXTROT'},
  {'high_risk','Доклад 10-66'},{'combat','CODE 0 · попадание по офицеру'}, {'armed','Вооружённый водитель · без подтверждения стрельбы'},
  {'finish','Завершение ситуации'}, {'approach_day','Подход днём'}, {'approach_night','Подход ночью'},
  {'taser_warning','Предупреждение тайзера при пешей погоне'}, {'window','Вопрос об осмотре'}, {'ooc_hint','Подсказка новичку'}, {'return_car','Вернуться в машину'},
@@ -51,7 +51,9 @@ M.variables={vehicle_type=true,vehicle_type_gen=true,unit=true,station=true,crew
  tac=true,armed_text=true,stop_outcome=true,area=true,location=true,map_square=true,sector=true,direction=true,
  my_name=true,my_firstname=true,officers=true,min_officers=true,warnings=true,warning_count=true,ooc_warning_count=true}
 local legacyRadio={stop="{local_tag}{unit}, провожу остановку {vehicle_description} в районе {area} ({map_square}), {occupants_text}, Код 4.",pursuit="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Направление: {direction}, район: {area} ({map_square}), {tac}, Код 3.{armed_text}",foot="{local_tag}{unit}, подозреваемый покинул {model}, веду пешую погоню 10-57 FOXTROT в районе {area} ({map_square}), направление: {direction}, {tac}, Код 3!",high_risk="{local_tag}{unit}, провожу остановку повышенного риска 10-66 {vehicle_description}, {occupants_text}, район {area} ({map_square}), запрашиваю свободные экипажи по Код 3!",finish="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area}, {stop_outcome}, продолжаю патрулирование. Код 4."}
-M.variables.city=true;M.variables.dispatch_officers=true;M.variables.robbery_min_officers=true
+M.variables.city=true;M.variables.department=true;M.variables.dispatch_officers=true;M.variables.robbery_min_officers=true
+for _,r in ipairs({{'risk_confirm_ms','10-66: ожидание решения, мс',1000,90000},{'risk_car_stage_ms','10-66: пауза этапов авто, мс',1000,60000},{'risk_bike_stage_ms','10-66: пауза этапов мото, мс',1000,60000}})do M.numbers[#M.numbers+1]=r end
+M.templates[#M.templates+1]={'busy_report','Рация · временно занят 10-8'}
 M.variables.rank=true
 for _,r in ipairs({{'ground_offer','После осмотра предложить назвать причину'},{'ground_intro','В форме причины сначала представляться'},{'ground_ud','При представлении показывать удостоверение через /ud'},{'ground_miranda','В форме задержания читать полную Миранду'}})do M.booleans[#M.booleans+1]=r end
 M.templates[#M.templates+1]={'intro','Представление перед причиной остановки'}
@@ -120,11 +122,19 @@ function M.defaults()
  d.window_open_offer_text='Представиться и назвать причину 10-55?'
  d.templates.approach_bike_day='{gender:подошёл|подошла} к мотоциклу и {gender:осмотрел|осмотрела} его видимые детали и маркировку.'
  d.templates.approach_bike_night='{gender:достал|достала} тактический фонарь и {gender:осветил|осветила} видимые детали и маркировку мотоцикла.'
+ local author=require('pa26_author_rp').bindings
+ local function speech(id,bike)local b=author[tostring(id)];local text=bike and b.rp_context.bike_script or b.script;local rows={}
+  for line in(text..'\n'):gmatch('(.-)\n')do if line:match('^/m ')then rows[#rows+1]=line:sub(4)end end;return table.concat(rows,'\n')end
+ d.templates.stop_order=speech(46);d.templates.stop_order_bike=speech(46,true)
+ d.templates.risk_single=speech(48);d.templates.risk_multi=speech(48);d.templates.risk_open=speech(48,true)
+ d.templates.risk_stage_question='Обстановка позволяет передать следующий отдельный этап 10-66?'
+ d.risk_confirm_ms=90000;d.risk_car_stage_ms=1800;d.risk_bike_stage_ms=1400
+ d.templates.busy_report='{local_tag}{unit}, временно 10-8. О возвращении в патруль доложу отдельно.'
  d.templates.inspect_bike='Что видно при наружном осмотре мотоцикла?'
  d.templates.hint_bike='Ответьте в /do: что видно при наружном осмотре мотоцикла.'
  d.templates.approach_neutral='{gender:подошёл|подошла} к транспортному средству и {gender:осмотрел|осмотрела} доступные снаружи детали.'
  d.templates.inspect_neutral='Что видно при наружном осмотре транспорта?'
- d.templates.risk_open='Водитель {model}, остановитесь, заглушите двигатель и держите руки на виду! Не делайте резких движений, ожидайте указаний офицера!'
+ d.templates.risk_open=speech(48,true)
  d.templates.return_open='Водитель {model}, оставайтесь рядом с транспортом, держите руки на виду и выполняйте указания офицера!'
  d.templates.window_question='Окно водительской двери открыто?'
  d.templates.window_hint='Ответьте в /do: например, /do Окно открыто. или /do Окно закрыто.'
@@ -133,7 +143,7 @@ function M.defaults()
  d.stolen_enabled=true;d.stolen_highlight=true;d.stolen_ttl_ms=600000
  d.fast_pt_enabled=true;d.fast_pt_distance=50
  d.templates.intro='Здравствуйте. Вас беспокоит {rank} {my_name}, {station}.'
- d.templates.badge='{gender:показал|показала} служебный жетон и удостоверение собеседнику.'
+ d.templates.badge='{gender:указал|указала} рукой на закреплённый на груди полицейский бейдж, демонстрируя его собеседнику.'
  d.templates.explain_stop='{ground_speech}'
  d.ground_speech=require('pa26_bindings').copy(require('pa26_ground_speech').defaults)
  d.templates.documents='Предъявите, пожалуйста, документы для проверки. Основание: {stop_ground}.'

@@ -9,6 +9,10 @@ param(
     [string]$ProgressFile = '',
     [switch]$SkipAuthorBinds,
     [switch]$SkipAuthorSettings,
+    [switch]$SkipLegacyPresets,
+    [switch]$PreviewLegacyPresets,
+    [string]$LegacyPreview = '',
+    [switch]$TestInterrupt,
     [switch]$RequireCef
 )
 Set-StrictMode -Version Latest
@@ -17,7 +21,7 @@ if($Interactive -and -not $VerifyOnly){
     & (Join-Path $PSScriptRoot 'tools/pa-start.ps1') -Mode Install
     return
 }
-$paChanged=@();$paRollbackCompleted=$false;$paProgressPath='';$paManifest=$null
+$paChanged=@();$paRollbackCompleted=$false;$paRecoveryRequired=$false;$paProgressPath='';$paManifest=$null
 if($ProgressFile -and -not $VerifyOnly){
     $paProgressPath=[IO.Path]::GetFullPath($ProgressFile)
     $paUIRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'installation-backups/ui-jobs')).TrimEnd('\')
@@ -39,14 +43,15 @@ function Set-PaInstallProgress([string]$Stage,[int]$Percent,[string]$Detail,[boo
     }catch{} # Status display must not change the file transaction.
 }
 trap {
-    Set-PaInstallProgress 'failed' 0 $_.Exception.Message $true ($paRollbackCompleted -or $paChanged.Count -eq 0)
+    Set-PaInstallProgress 'failed' 0 $_.Exception.Message $true (-not $paRecoveryRequired -and ($paRollbackCompleted -or $paChanged.Count -eq 0))
     break
 }
 Set-PaInstallProgress 'checking' 2 'Проверяю установочный архив и выбранную папку.'
 $paSource = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'moonloader'))
 $paManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALL_MANIFEST.json') -Raw | ConvertFrom-Json
-$paSetupAllow=@('tools/pa-setup.ps1','tools/pa-setup-window.ps1','tools/pa-start.ps1','tools/pa-seed-presets.ps1','DEPENDENCIES.json')
-if(@($paManifest.setup_files).Count -ne 5){throw 'Missing setup manifest.'}
+$paSetupAllow=@('tools/pa-setup.ps1','tools/pa-setup-window.ps1','tools/pa-start.ps1','tools/pa-seed-presets.ps1','DEPENDENCIES.json',
+    'tools/pa-legacy-0440.json','tools/pa-legacy-migration.ps1','tools/pa-legacy-lua.ps1','tools/pa-legacy-presets.lua')
+if(@($paManifest.setup_files).Count -ne $paSetupAllow.Count){throw 'Missing setup manifest.'}
 $paSetupSeen=@{}
 foreach($paRow in $paManifest.setup_files){
  if($paRow.path -cnotin $paSetupAllow -or $paSetupSeen.ContainsKey($paRow.path)){throw 'Unexpected setup file.'}
@@ -56,13 +61,20 @@ foreach($paRow in $paManifest.setup_files){
 }
 . (Join-Path $PSScriptRoot 'tools/pa-setup.ps1')
 . (Join-Path $PSScriptRoot 'tools/pa-seed-presets.ps1')
+. (Join-Path $PSScriptRoot 'tools/pa-legacy-migration.ps1')
+$paWorker=Get-PaSetupPath $paSource 'resource/pa26/updater/pa26-update.ps1'
+$paWorkerRow=@($paManifest.files|Where-Object path -CEQ 'resource\pa26\updater\pa26-update.ps1')
+if($paWorkerRow.Count -ne 1 -or (Get-FileHash -LiteralPath $paWorker -Algorithm SHA256).Hash.ToLowerInvariant() -cne $paWorkerRow[0].sha256){throw 'Installer transaction library integrity failed.'}
+. $paWorker -Mode Library
 $paDefault=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Exsellent Launcher\game\MoonLoader'
 if(-not $DestinationRoot){$DestinationRoot=$paDefault}
 $paTestRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'tests\install-sandbox')).TrimEnd('\')
 $paInput=[IO.Path]::GetFullPath($DestinationRoot).TrimEnd('\')
 $paTest=$paInput.StartsWith($paTestRoot+'\',[StringComparison]::OrdinalIgnoreCase)
 $paDestination=Resolve-PaSetupRoot $DestinationRoot $paTest
-if($TestFailAfter -ne 0 -and -not $paTest){throw 'Failure injection is allowed only in the test sandbox.'}
+if(($TestFailAfter -ne 0 -or $TestInterrupt) -and -not $paTest){throw 'Failure injection is allowed only in the test sandbox.'}
+if($TestInterrupt -and $TestFailAfter -lt 1){throw 'Interruption requires a write count.'}
+if($LegacyPreview -and $LegacyPreview -cnotmatch '^[a-f0-9]{64}$'){throw 'Invalid legacy preview token.'}
 $paDependencyManifest=Read-PaDependencyManifest (Join-Path $PSScriptRoot 'DEPENDENCIES.json')
 $paDependencyPlan=@()
 $paOwned = @(
@@ -72,7 +84,9 @@ $paOwned = @(
     'lib\pa26_assist_ui.lua',
     'lib\pa26_author_controller.lua',
     'lib\pa26_author_io.lua',
+    'lib\pa26_author_merge.lua',
     'lib\pa26_author_presets.lua',
+    'lib\pa26_author_rp.lua',
     'lib\pa26_author_store.lua',
     'lib\pa26_binder.lua',
     'lib\pa26_bindings.lua',
@@ -118,6 +132,7 @@ $paOwned = @(
     'lib\pa26_geometry.lua',
     'lib\pa26_ground_speech.lua',
     'lib\pa26_ground_window.lua',
+    'lib\pa26_help.lua',
     'lib\pa26_hud.lua',
     'lib\pa26_icon_font.lua',
     'lib\pa26_icon_glyphs.lua',
@@ -174,6 +189,8 @@ $paOwned = @(
     'lib\pa26_report_context.lua',
     'lib\pa26_road_file.lua',
     'lib\pa26_road_sources.lua',
+    'lib\pa26_rp_context.lua',
+    'lib\pa26_rp_context_ui.lua',
     'lib\pa26_rp_presets.lua',
     'lib\pa26_rp_settings.lua',
     'lib\pa26_rp_text.lua',
@@ -250,6 +267,38 @@ function Assert-PaGameClosed {
         Set-PaInstallProgress 'paused' 55 'Закройте GTA. Установка продолжится после закрытия игры.'
         Start-Sleep -Milliseconds 500
     }
+}
+$paLegacyOffer=Get-PaLegacyOffer $PSScriptRoot $paDestination $paManifest.release
+if($PreviewLegacyPresets){
+    $preview=@{state=$paLegacyOffer}
+    if($paLegacyOffer -ceq 'offer'){
+        $previewPlan=Get-PaLegacyPresetPlan $PSScriptRoot $paDestination $paManifest $DependencyCache ([bool]$FetchDependencies)
+        $preview.token=$previewPlan.token;$preview.review=$previewPlan.review
+    }
+    Write-Output ([PSCustomObject]$preview)
+    return
+}
+$paLock=$null
+try {
+$paLegacy=$false;$paLegacyJob=''
+if(-not $VerifyOnly){
+    $paLock=Open-PaManualInstallLock $paDestination $paTest $PSScriptRoot
+    $paLegacyOffer=Get-PaLegacyOffer $PSScriptRoot $paDestination $paManifest.release
+    $paRecoveryRequired=[IO.File]::Exists((Get-PaLegacyMarker $paDestination)) -or $paLegacyOffer -ceq 'recover'
+    if($paLegacyOffer -ceq 'recover'){
+        Assert-PaGameClosed
+        $committed=Repair-PaLegacyTransaction $paDestination $paManifest $paDependencyManifest
+        $paRecoveryRequired=$false
+        $detail=if($committed){'Предыдущая установка проверена. Перенос уже завершён. Можно запускать GTA.'}
+            else{'Прежняя версия и личные данные восстановлены. Запустите установщик снова, чтобы заново проверить перенос.'}
+        Set-PaInstallProgress 'recovered' 100 $detail $true $true
+        Write-Output $detail
+        return
+    }
+    if($paRecoveryRequired){throw 'Сначала завершите обычное обновление PA и восстановление его файлов.'}
+    $paLegacy=$paLegacyOffer -ceq 'offer' -and -not $SkipLegacyPresets
+    if($LegacyPreview -and -not $paLegacy){throw 'Исходная версия изменилась после предпросмотра. Запустите установщик снова.'}
+    if($TestInterrupt -and -not $paLegacy){throw 'Interruption is supported only for the legacy migration test.'}
 }
 if(-not $paTest){
  $paMissing=@(Get-PaMissingDependencies $paDestination $paDependencyManifest)
@@ -348,7 +397,15 @@ if ($paInstallCef) {
 $paPreset=@{plan=@();replace=@{};summary=@{binds='disabled';settings='disabled'}}
 if(-not $VerifyOnly){
  $paIniRow=@($paPlan|Where-Object Relative -CEQ 'config\police_assistant_2026.ini')[0]
- $paPreset=Get-PaPresetSeedPlan $PSScriptRoot $paDestination $paManifest (-not $SkipAuthorBinds) (-not $SkipAuthorSettings) $paIniRow
+ if($paLegacy){
+    Assert-PaGameClosed
+    Set-PaInstallProgress 'checking' 45 'Проверяю и объединяю авторские и личные сценарии PA.'
+    $paPreset=Get-PaLegacyPresetPlan $PSScriptRoot $paDestination $paManifest $DependencyCache ([bool]$FetchDependencies)
+    if($LegacyPreview -and $LegacyPreview -cne $paPreset.token){throw 'Личные файлы изменились после предпросмотра. Откройте установщик снова.'}
+    if(@($paPreset.plan|Where-Object Relative -CEQ $paIniRow.Relative).Count){$paPlan=@($paPlan|Where-Object Relative -CNE $paIniRow.Relative)}
+ }else{
+    $paPreset=Get-PaPresetSeedPlan $PSScriptRoot $paDestination $paManifest (-not $SkipAuthorBinds) (-not $SkipAuthorSettings) $paIniRow
+ }
  $paPlan+=@($paPreset.plan)
 }
 $paPlan=@($paPlan|Sort-Object @{Expression={if($_.Relative -ceq 'police_assistant_2026.lua'){1}else{0}}},@{Expression={$_.Target}})
@@ -358,7 +415,9 @@ if ($VerifyOnly) {
 }
 Assert-PaGameClosed
 Set-PaInstallProgress 'backup' 55 'Создаю резервные копии личных данных и прежних файлов PA.'
-$paBackup = Join-Path $PSScriptRoot ('installation-backups\before-' + [Guid]::NewGuid().ToString('N'))
+$paInstallId=[Guid]::NewGuid().ToString('N')
+$paBackup=if($paLegacy){Get-PaSetupPath (Get-PaLegacyStateRoot $paDestination) ('backup-'+$paInstallId)}
+    else{Join-Path $PSScriptRoot ('installation-backups\before-'+$paInstallId)}
 Assert-PaSetupPlain $paBackup
 New-Item -ItemType Directory -Path $paBackup -Force | Out-Null
 $paBackupIndex=0
@@ -385,8 +444,7 @@ foreach($paPersonalItem in $paPersonal){
  $paPersonalItem.backup_file='personal\'+$paPersonalIndex.ToString('D6')+'.bin';$paPersonalIndex++
  $paPersonalCopy=Get-PaPath $paBackup $paPersonalItem.backup_file
  New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($paPersonalCopy)) -Force|Out-Null
- Copy-Item -LiteralPath $paPersonalItem.path -Destination $paPersonalCopy
- if((Get-FileHash -LiteralPath $paPersonalCopy -Algorithm SHA256).Hash -ne $paPersonalItem.sha256){throw 'Personal backup integrity failed.'}
+ Copy-PaVerified $paPersonalItem.path $paPersonalCopy $paPersonalItem.sha256
 }
 $paPersonal|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $paBackup 'PERSONAL.json') -Encoding UTF8
 function Assert-PaPersonalUnchanged {
@@ -402,13 +460,19 @@ foreach ($paItem in $paPlan) {
     if ($paItem.Existed) {
         $paSaved = Get-PaPath $paBackup $paItem.BackupRelative
         New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($paSaved)) -Force | Out-Null
-        Copy-Item -LiteralPath $paItem.Target -Destination $paSaved
-        if ((Get-FileHash -LiteralPath $paSaved -Algorithm SHA256).Hash -ne $paItem.BeforeHash) { throw 'Backup integrity failed.' }
+        Copy-PaVerified $paItem.Target $paSaved $paItem.BeforeHash
     }
 }
 $paChanged = @()
 $paStage = $null
 try {
+    if($paLegacy){
+        Assert-PaGameClosed
+        if((Get-PaLegacyOffer $PSScriptRoot $paDestination $paManifest.release) -cne 'offer'){throw 'Исходная версия изменилась перед установкой.'}
+        $paLegacyJob='manual-0452-'+$paInstallId
+        $paRecoveryRequired=$true
+        Start-PaLegacyTransaction $paDestination $paLegacyJob $paPlan
+    }
     foreach ($paItem in $paPlan) {
         Set-PaInstallProgress 'installing' (70+[int](23*$paChanged.Count/[Math]::Max(1,$paPlan.Count))) ('Устанавливаю: '+$paItem.Relative)
         if ($paItem.Skip) { continue }
@@ -424,15 +488,18 @@ try {
         }
         New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($paItem.Target)) -Force | Out-Null
         $paStage = $paItem.Target + '.pa26-' + [Guid]::NewGuid().ToString('N') + '.tmp'
-        if ($null -ne $paItem.Content) { [IO.File]::WriteAllBytes($paStage,$paItem.Content) }
-        else { Copy-Item -LiteralPath $paItem.Source -Destination $paStage }
+        if ($null -ne $paItem.Content) { Write-PaBytes $paStage $paItem.Content }
+        else { Copy-PaVerified $paItem.Source $paStage $paItem.SHA256 }
         if ((Get-FileHash -LiteralPath $paStage -Algorithm SHA256).Hash -ne $paItem.SHA256) { throw 'Staged copy integrity failed.' }
         if ($paItem.Existed) { [IO.File]::Replace($paStage,$paItem.Target,[NullString]::Value) }
         else { [IO.File]::Move($paStage,$paItem.Target) }
         $paStage = $null
         $paChanged += $paItem
         if ((Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.SHA256) { throw 'Installed file integrity failed.' }
-        if ($paTest -and $TestFailAfter -gt 0 -and $paChanged.Count -eq $TestFailAfter) { throw 'Injected installation failure.' }
+        if ($paTest -and $TestFailAfter -gt 0 -and $paChanged.Count -eq $TestFailAfter) {
+            if($TestInterrupt){throw 'Injected installer interruption; resume with the same manual installer.'}
+            throw 'Injected installation failure.'
+        }
     }
     Set-PaInstallProgress 'verifying_install' 95 'Проверяю все установленные файлы и сохранность личных данных.'
     Assert-PaGameClosed
@@ -441,11 +508,24 @@ try {
         if ((Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.BeforeHash) { throw 'Existing settings changed.' }
     }
     Assert-PaPersonalUnchanged
+    if($paLegacy){
+        Complete-PaLegacyTransaction $paDestination $paLegacyJob
+        $paRecoveryRequired=$false
+    }
 } catch {
     $paFailure = $_
+    if($TestInterrupt -and $paFailure.Exception.Message.StartsWith('Injected installer interruption')){throw $paFailure}
     Set-PaInstallProgress 'rollback' 70 'Восстанавливаю прежние файлы PA после ошибки.'
     Assert-PaGameClosed
     if ($paStage -and (Test-Path -LiteralPath $paStage)) { Remove-Item -LiteralPath $paStage }
+    if($paLegacyJob){
+        if([IO.File]::Exists((Get-PaSetupPath (Get-PaLegacyStateRoot $paDestination) 'pending.json'))){
+            $null=Repair-PaLegacyTransaction $paDestination $paManifest $paDependencyManifest
+        }
+        $paRecoveryRequired=$false
+        $paRollbackCompleted=$true
+        throw $paFailure
+    }
     foreach ($paItem in $paChanged) {
         if((Test-Path -LiteralPath $paItem.Target) -and (Get-FileHash -LiteralPath $paItem.Target -Algorithm SHA256).Hash -ne $paItem.SHA256){throw ('External edit during rollback; files and backup retained: '+$paBackup)}
         if ($paItem.Existed) { Copy-Item -LiteralPath (Get-PaPath $paBackup $paItem.BackupRelative) -Destination $paItem.Target -Force }
@@ -458,7 +538,11 @@ if (-not $paTest) {
 $paResult=[PSCustomObject]@{release=$paManifest.release;author_presets=$paPreset.summary;backup=$paBackup;changed=$paChanged.Count;cef_adapter_installed=[bool]$paInstallCef;cef_mode=$paCefReason;cef_diagnostics=$paCefCheck;dependencies_added=$paDependencyPlan.Count;destination=$paDestination;native_game_tested=$false}
 $paResult | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'INSTALLATION_REPORT.json') -Encoding UTF8
 }
-Write-Output ('Installed and verified ' + $paChanged.Count + ' owned files. Existing INI preserved. Backup: ' + $paBackup)
+Write-Output ('Installed and verified ' + $paChanged.Count + ' owned files. Backup: ' + $paBackup)
 
 $paCefSummary=if($paCefReason -eq 'incompatible_contract_native_only'){' Установлены нативные модули. Контракт CEF недоступен или отличается; подключение PA отключено, исходный чат сохранён.'}elseif($paInstallCef){' Контракт CEF совместим; связь с чатом подтвердится при запуске PA.'}else{''}
-Set-PaInstallProgress 'completed' 100 ('PA установлен и проверен.'+$paCefSummary+' Можно запускать GTA. Резервная копия: '+$paBackup) $true $true
+$paPresetSummary=if($paLegacy){' Штатные бинды и настройки обновлены. Личные записи сохранены.'}else{''}
+Set-PaInstallProgress 'completed' 100 ('PA установлен и проверен.'+$paPresetSummary+$paCefSummary+' Можно запускать GTA. Резервная копия: '+$paBackup) $true $true
+} finally {
+    if($paLock){$paLock.Dispose()}
+}

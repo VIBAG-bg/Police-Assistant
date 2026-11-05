@@ -30,7 +30,7 @@ function M.project(lib,scope)
  out.settings=M.settings(lib.settings,scope);out.wheel=M.slots(lib,scope);out.bindings={}
  for i,b in ipairs(lib.bindings)do local v={}for k,x in pairs(b)do v[k]=x end
   v.wheel_visible=b.wheel_car_visible==nil and b.wheel_visible or b.wheel_car_visible
-  v.wheel_group=b.wheel_car_group or b.wheel_group or'auto';out.bindings[i]=v
+  v.wheel_group=b.wheel_car_group or b.wheel_group or'auto';v.wheel_extra_groups=b.wheel_car_extra_groups or{};out.bindings[i]=v
  end
  return out
 end

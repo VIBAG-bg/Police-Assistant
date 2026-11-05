@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "files": {
+    "presets/pa-binds.json": "00ae28a076b88af6279d43930e28bf79508f75f7c294124c8d87373f4d227fb3",
+    "presets/pa-settings.json": "42c0b0befc5f05ffdd1736046fe9d2e4c7ab4bf6080b5250633b9dcb2c6d09d4",
+    "moonloader/lib/pa26_author_rp.lua": "9f9e0360ba764d7c23831901e28473bbe80e5cbc125271c2d46c6132ed256e85",
+    "docs/qa/0.45.1/AUTHOR_ORACLE.json": "46484dc43837195ddfcd34575ca5abf3366405f23dd808ed230c7e42c49daedf",
+    "docs/qa/0.45.1/RP-DEVIATIONS.md": "f90b2f8eddfdda172602a99f7432a57380de36fc8e3164dc09ed3a4b04e3a669"
+  },
+  "live_game_written": false
+}

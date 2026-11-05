@@ -32,11 +32,13 @@ check(s.authorPresets:start('binds'));s.step();check(s.workspace.studio.authorPr
 eq(#s.workspace.library.bindings,6);s.click='ДА##confirm-yes';s.render();check(s.authorPresets.applied)
 s.step();check(s.workspace.studio:hasWarning());check(not s.inputDisabled(),'OK must receive mouse and keyboard after the old pages close')
 check(not s.frames[4].HideCursor,'The acknowledgement must show the cursor')
-eq(#s.workspace.library.bindings,83);eq(s.workspace.library.profile.name,'Private Officer');eq(s.workspace.library.notes[1].body,'PRIVATE NOTE')
+-- 0.45.1 merges 83 author records while retaining the six legacy personal
+-- entries. A downloadable default set no longer deletes existing scenarios.
+eq(#s.workspace.library.bindings,89);eq(s.workspace.library.profile.name,'Private Officer');eq(s.workspace.library.notes[1].body,'PRIVATE NOTE')
 eq(s.files[base..'.ini'],beforeIni);eq(s.files[base..'_notes.json'],beforeNotes);eq(s.files[base..'_settings.json'],beforeSettings)
 check(not s.reloads);s.click='ОК##warning-ok';s.render();eq(s.click,nil)
 for _=1,5 do s.step()end;eq(s.reloads,1,'One acknowledgement queues exactly one reload')
-local installed=s.savedLibrary();eq(#installed.bindings,83);eq(installed.profile.name,'Private Officer')
+local installed=s.savedLibrary();eq(#installed.bindings,89);eq(installed.profile.name,'Private Officer')
 eq(#s.sent,0);check(not s.hasLog('Ошибка интерфейса'));eq(#s.scopes,0);eq(s.invalidIOReads,0);onScriptTerminate(s.script)
-s=fixture({demo=false,library=installed});s.step();eq(#s.workspace.library.bindings,83);eq(s.workspace.library.notes[1].body,'PRIVATE NOTE')
+s=fixture({demo=false,library=installed});s.step();eq(#s.workspace.library.bindings,89);eq(s.workspace.library.notes[1].body,'PRIVATE NOTE')
 eq(#s.sent,0);onScriptTerminate(s.script)

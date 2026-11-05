@@ -36,24 +36,6 @@ function Get-PaPresetIni($Cfg){
  foreach($section in (Get-PaPresetKeys $Cfg)){$lines+=('['+$section+']');foreach($key in (Get-PaPresetKeys $Cfg[$section])){$value=$Cfg[$section][$key];if($value -is [bool]){$value=$value.ToString().ToLowerInvariant()}elseif($value -is [ValueType]){$value=[Convert]::ToString($value,[Globalization.CultureInfo]::InvariantCulture)};$lines+=($key+'='+$value)};$lines+=''}
  return ($lines -join "`n")+"`n"
 }
-function Test-PaStockIni([string]$Text,$Default){
- $parsed=@{};$section=''
- foreach($line in ($Text -split '\r?\n')){
-  $line=$line.Trim();if(-not $line -or $line.StartsWith(';') -or $line.StartsWith('#')){continue}
-  if($line -cmatch '^\[([A-Za-z_]+)\]$'){$section=$Matches[1];if($parsed.ContainsKey($section)){return $false};$parsed[$section]=@{};continue}
-  if(-not $section -or $line -cnotmatch '^([A-Za-z_]+)=(.*)$'){return $false};$key=$Matches[1];$value=$Matches[2];if($parsed[$section].ContainsKey($key)){return $false};$parsed[$section][$key]=$value
- }
- if($parsed.Count -ne @(Get-PaPresetKeys $Default).Count){return $false}
- foreach($group in (Get-PaPresetKeys $Default)){
-  if(-not $parsed.ContainsKey($group) -or $parsed[$group].Count -ne @(Get-PaPresetKeys $Default[$group]).Count){return $false}
-  foreach($key in (Get-PaPresetKeys $Default[$group])){
-   if(-not $parsed[$group].ContainsKey($key)){return $false};$a=$parsed[$group][$key];$b=$Default[$group][$key]
-   if($b -is [bool]){if($a.ToLowerInvariant() -cne $b.ToString().ToLowerInvariant()){return $false}}
-   elseif($b -is [ValueType]){$n=0.0;if(-not [double]::TryParse($a,[Globalization.NumberStyles]::Float,[Globalization.CultureInfo]::InvariantCulture,[ref]$n) -or $n -ne $b){return $false}}
-   elseif($a -cne $b){return $false}
-  }
- };return $true
-}
 function Set-PaFreshLayout($Settings,$Cfg,$Manifest){
  # Only a fresh installation reaches this path. Shared presets and all existing
  # custom files remain untouched; geometry is a separate sanitized program seed.
@@ -75,62 +57,33 @@ function Set-PaFreshLayout($Settings,$Cfg,$Manifest){
  foreach($key in @('x','y','scale','reference_width','reference_height','responsive')){$Cfg.widget[$key]=$layout.widget.$key}
 }
 function Get-PaPresetSeedPlan([string]$Source,[string]$ML,$Manifest,[bool]$Binds,[bool]$Settings,$IniRow){
- $result=@{plan=@();replace=@{};summary=@{binds='disabled';settings='disabled';notes='preserved'}}
- if(-not $Binds -and -not $Settings){return $result}
- $data=Read-PaAuthorPresets $Source $Manifest;$paths=@{}
- foreach($kind in @('binds','settings','notes')){$paths[$kind]=Join-Path $ML ('config/police_assistant_2026_'+$kind+'.json');Assert-PaSetupPlain $paths[$kind]}
- $base=Join-Path $ML 'config/police_assistant_2026'
- foreach($tail in @('_files_pending.json','_preset_pending.json')){
-  foreach($suffix in @('','.bak','.rollback')){if(Test-Path -LiteralPath ($base+$tail+$suffix)){if($Binds){$result.summary.binds='preserved'};if($Settings){$result.summary.settings='preserved'};return $result}}
+ $result=@{plan=@();replace=@{};summary=@{binds='preserved';settings='preserved';notes='preserved'}}
+ # An incomplete, older or edited personal set is still an existing installation.
+ if($IniRow.Existed){return $result}
+ foreach($file in @('police_assistant_2026.lua','pa26_guard.lua','lib/pa26_core.lua','pa26-update.pending')){
+  if(Test-Path -LiteralPath (Get-PaSetupPath $ML $file)){return $result}
  }
- $existing=@{};$present=0
- foreach($kind in $paths.Keys){
-  foreach($suffix in @('.rollback','.pa26-next','.pa26-previous')){if(Test-Path -LiteralPath ($paths[$kind]+$suffix)){if($Binds){$result.summary.binds='preserved'};if($Settings){$result.summary.settings='preserved'};return $result}}
-  if(Test-Path -LiteralPath $paths[$kind]){
-   $present++;try{if((Get-Item -LiteralPath $paths[$kind]).Length -gt 1048576){throw 'size'};$existing[$kind]=Read-PaPresetJson ([IO.File]::ReadAllText($paths[$kind],[Text.Encoding]::UTF8))}catch{if($Binds){$result.summary.binds='preserved'};if($Settings){$result.summary.settings='preserved'};return $result}
-  }
+ $config=Get-PaSetupPath $ML 'config'
+ if([IO.Directory]::Exists($config) -and @(Get-ChildItem -LiteralPath $config -Force -Filter 'police_assistant_2026*').Count){return $result}
+
+ $data=Read-PaAuthorPresets $Source $Manifest
+ $docs=@{binds=$data.baseline.binds;settings=$data.baseline.settings;notes=$data.baseline.notes}
+ if($Binds){$docs.binds=$data['pa-binds']}
+ if($Settings){$docs.settings=$data['pa-settings'].settings}
+ $cfg=if($Settings){$data['pa-settings'].config}else{$data.baseline.config}
+ $docs.settings.data.settings.help=@{welcome=$true;visible=$true;opacity=.74;scale=1.0}
+ Set-PaFreshLayout $docs.settings $cfg $Manifest
+ $result.summary=@{binds=$(if($Binds){'installed'}else{'standard'});settings=$(if($Settings){'installed'}else{'standard'});notes='two standard notes'}
+ $utf8=New-Object Text.UTF8Encoding($false)
+ foreach($kind in @('binds','settings','notes')){
+  $relative='config/police_assistant_2026_'+$kind+'.json'
+  $bytes=$utf8.GetBytes((Write-PaPresetJson $docs[$kind]))
+  $result.plan+=,[PSCustomObject]@{Relative=$relative.Replace('/','\');Source=$null;Target=(Get-PaSetupPath $ML $relative);
+   SHA256=(Get-PaLegacyByteHash $bytes);Existed=$false;BeforeHash=$null;Skip=$false;Root=$ML;BackupRelative='';Content=$bytes}
  }
- if(($present -ne 0 -and $present -ne 3) -or ($IniRow.Existed -and -not(Test-PaStockIni ([IO.File]::ReadAllText($IniRow.Target,[Text.Encoding]::UTF8)) $data.baseline.config))){
-  if($Binds){$result.summary.binds='preserved'};if($Settings){$result.summary.settings='preserved'};return $result
- }
- if($present -eq 0 -and ((Test-Path -LiteralPath ($base+'_library.json')) -or @($paths.Values|Where-Object {Test-Path -LiteralPath ($_+'.bak')}).Count)){if($Binds){$result.summary.binds='preserved'};if($Settings){$result.summary.settings='preserved'};return $result}
- $fresh=$present -eq 0;$applyBinds=$Binds -and ($fresh -or (Test-PaPresetEqual $existing.binds $data.baseline.binds))
- $applySettings=$Settings
- if(-not $fresh){
-  try{
-  $current=Read-PaPresetJson (Write-PaPresetJson $existing.settings)
-  $stock=Read-PaPresetJson (Write-PaPresetJson $data.baseline.settings)
-  foreach($key in @('profile','partners','next_partner_id','wanted_reminders','filters')){$current.data.$key=$stock.data.$key}
-  $current.data.assist.history=$stock.data.assist.history
-  $applySettings=$Settings -and (Test-PaPresetEqual $current $stock)
-  }catch{if($Binds){$result.summary.binds='preserved'};if($Settings){$result.summary.settings='preserved'};return $result}
- }
- $docs=@{}
- if($fresh){$docs.binds=$data.baseline.binds;$docs.settings=$data.baseline.settings;$docs.notes=$data.baseline.notes;$result.summary.notes='two standard notes'}
- if($applyBinds){$docs.binds=$data['pa-binds'];$result.summary.binds='installed'}elseif($Binds){$result.summary.binds='preserved'}
- if($applySettings){
-  $docs.settings=Read-PaPresetJson (Write-PaPresetJson $data['pa-settings'].settings)
-  if(-not $fresh){foreach($key in @('profile','partners','next_partner_id','wanted_reminders','filters')){$docs.settings.data.$key=$existing.settings.data.$key};$docs.settings.data.assist.history=$existing.settings.data.assist.history;$docs.settings.data.settings.updates=$existing.settings.data.settings.updates}
-  $result.summary.settings='installed'
- }elseif($Settings){$result.summary.settings='preserved'}
- $freshConfig=$null
- if($fresh){
-  $freshConfig=Read-PaPresetJson (Write-PaPresetJson $(if($applySettings){$data['pa-settings'].config}else{$data.baseline.config}))
-  Set-PaFreshLayout $docs.settings $freshConfig $Manifest
- }
- if(-not $docs.Count){return $result}
- $stage=Join-Path $Source ('installation-backups/preset-stage-'+[guid]::NewGuid().ToString('N'));Assert-PaSetupPlain $stage;[IO.Directory]::CreateDirectory($stage)|Out-Null
- foreach($kind in $docs.Keys){
-  $from=Join-Path $stage ($kind+'.json');[IO.File]::WriteAllText($from,(Write-PaPresetJson $docs[$kind]),(New-Object Text.UTF8Encoding($false)))
-  $to=$paths[$kind];$exists=Test-Path -LiteralPath $to;$hash=(Get-FileHash -LiteralPath $from -Algorithm SHA256).Hash
-  $result.plan+=,[PSCustomObject]@{Relative=('config\police_assistant_2026_'+$kind+'.json');Source=$from;Target=$to;SHA256=$hash;Existed=$exists;BeforeHash=$(if($exists){(Get-FileHash -LiteralPath $to -Algorithm SHA256).Hash}else{$null});Skip=$false;Root=$ML;BackupRelative=('presets/'+$kind+'.json');Content=$null}
-  if($exists){$result.replace[$to]=$hash}
- }
- if($applySettings){
-  $paSeedConfig=$(if($freshConfig){$freshConfig}else{$data['pa-settings'].config})
-  $from=Join-Path $stage 'config.ini';[IO.File]::WriteAllText($from,(Get-PaPresetIni $paSeedConfig),(New-Object Text.UTF8Encoding($false)))
-  $IniRow.Source=$from;$IniRow.SHA256=(Get-FileHash -LiteralPath $from -Algorithm SHA256).Hash;$IniRow.Skip=$false
-  if($IniRow.Existed){$result.replace[$IniRow.Target]=$IniRow.SHA256}
- }
+ $IniRow.Content=$utf8.GetBytes((Get-PaPresetIni $cfg))
+ $IniRow.Source=$null
+ $IniRow.SHA256=Get-PaLegacyByteHash $IniRow.Content
+ $IniRow.Skip=$false
  return $result
 }

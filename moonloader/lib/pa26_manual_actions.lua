@@ -28,10 +28,12 @@ function M.specs()
   local head=row[1]:sub(2);if not excluded[head]then out[#out+1]={head=head,title=row[2],target=targets[head]==true}end
  end;out[#out+1]={head='mask',title='Надеть маску · подтверждено пользователем',target=false};return out
 end
+standard=require('pa26_author_rp').manual
 function M.defaults()
  local out={enabled=true,rules={},mask_delay_ms=700,mask_cleanup_enabled=true,mask_cleanup_command='/offobject',frisk_mode='saved',
   frisk_primary_rp='/me {gender:поставил|поставила} задержанного у опоры и быстрыми движениями без перчаток {gender:прохлопал|прохлопала} верхнюю одежду, торс и ноги на наличие оружия.\n/do Что офицер {gender:мог|могла} нащупать под одеждой задержанного?',
   frisk_full_rp='/me {gender:надел|надела} плотные чёрные резиновые перчатки, тщательно {gender:проверил|проверила} все карманы и обувь задержанного и {gender:выложил|выложила} вещи под камеру крузера.\n/do Предметы, подлежащие изъятию по результатам обыска, подготовлены к упаковке в зип-пакет и бокс для улик.'}
+ out.frisk_primary_rp=standard.frisk;out.frisk_full_rp=require('pa26_author_rp').frisk_full
  for _,s in ipairs(M.specs())do out.rules[s.head]={enabled=s.head~='find'and s.head~='taser',prefer_bind=false,
   rp=standard[s.head]or('/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: '..s.title:lower()..'.')}end
  return out
@@ -103,6 +105,7 @@ function M.plan(lib,head,raw,args,ctx,source,codec,rpSettings)
  local model=require 'pa26_bindings';local binder=require 'pa26_binder'
  local rule=M.rule(lib,head);if not rule then return nil,'Обработка этой команды отключена.'end
  local b=source or model.newBinding(1);if not source then b.name='Ручная /'..head;b.script=rule.rp end
+ if not source and b.script:match('{select_[a-z]*name}')then b.rp_context={identity=true}end
  b.stat='none';b.parameters=b.parameters or{}
  for i,p in ipairs(b.parameters)do args[p.name]=args['param'..i]or''end
  local plan,why=binder.compile(b,ctx,args,codec,math.random,{rpSettings=rpSettings})

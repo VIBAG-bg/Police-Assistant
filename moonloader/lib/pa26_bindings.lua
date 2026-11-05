@@ -31,7 +31,7 @@ M.variables = {
     {'select_plate', 'Номер транспорта: ручное поле'}, {'my_id', 'Собственный SA:MP ID'}, {'my_nick', 'Собственный ник'},
     {'my_name', 'Имя из профиля или ника'}, {'my_firstname', 'Имя'}, {'my_lastname', 'Фамилия'},
     {'my_weapon', 'Собственное текущее оружие'}, {'my_vehicle', 'Модель собственного транспорта'},
-    {'my_speed', 'Скорость движения, единицы GTA'}, {'my_plate', 'Номер: ручное поле профиля'}, {'my_mark', 'Маркировка / позывной экипажа'},
+    {'badge_number', 'Номер служебного значка: личный профиль, не SA:MP ID'}, {'my_speed', 'Скорость движения, единицы GTA'}, {'my_plate', 'Номер: ручное поле профиля'}, {'my_mark', 'Маркировка / позывной экипажа'},
     {'city', 'Город GTA'}, {'area', 'Английское название района'}, {'square', 'Ручной сектор или выбранный в настройках квадрат карты'},
     {'map_square','Квадрат координатной сетки карты'}, {'location','Район и доступный квадрат карты'},
     {'s', 'Секунды'}, {'m', 'Минуты'}, {'h', 'Часы'}, {'D', 'День'}, {'M', 'Месяц'}, {'Y', 'Год'},
@@ -47,7 +47,7 @@ M.variables = {
     {'param6', 'Шестой аргумент'}, {'param7', 'Седьмой аргумент'}, {'param8', 'Восьмой аргумент'}, {'params', 'Аргументы вместе'},
 }
 M.variableNames = {}; for _, v in ipairs(M.variables) do M.variableNames[v[1]] = true end
-local manualVariables={my_plate=true,select_plate=true,closest_plate=true,my_mark=true,city=true,square=true,
+local manualVariables={badge_number=true,my_plate=true,select_plate=true,closest_plate=true,my_mark=true,city=true,square=true,
     local_tag=true,global_tag=true,prison_tag=true,department=true,rank=true,accent=true}
 local nameVariables={my_name=true,my_firstname=true,my_lastname=true,select_name=true,select_firstname=true,
     select_lastname=true,suspect_name=true,closest_name=true,closest_firstname=true,closest_lastname=true}
@@ -175,7 +175,7 @@ end
 function M.newBinding(id)
     return {id=id,name='Новый сценарий',category='Мои сценарии',enabled=true,quick=false,favorite=false,
         target_required=false,skip_confirmation=false,no_accent=false,wheel_visible=false,wheel_group='auto',wheel_car_visible=false,wheel_car_group='auto',command='',command_alias='',shortcut={key=0,ctrl=false,alt=false,shift=false},stat='none',
-        script='Здравствуйте.',parameters={}}
+        script='Здравствуйте.',parameters={},wheel_extra_groups={},wheel_car_extra_groups={}}
 end
 -- Native chat input can be prepared before Enter, independently from outgoing
 -- RPC filtering. Preserve its observed encoding; wire validation stays CP1251.
@@ -273,7 +273,7 @@ function M.defaults(cfg)
         {id=1,name='Как пользоваться биндами',body='Создайте сценарий в разделе «Бинды».\n{my_name} в фигурных скобках подставляет имя из профиля.\n@wait(1500) добавляет паузу в миллисекундах.\n@sleep(F11) ждёт отдельного нажатия клавиши.\nБыстрое меню содержит только сценарии с отметкой «В быстром меню».\nДемо выполняет шаги без отправки в игру.',favorite=true},
         {id=2,name='Перед реальным запуском',body='Проверьте итоговый текст, цель и команду вашего сервера.\nID закрепляется на время сценария.\nEnd или Esc останавливают оставшиеся шаги.\nФакт передачи команды клиенту не доказывает её принятие сервером.',favorite=false},
     },next_note_id=3,partners={},next_partner_id=1,wheel={1,2,3,4,5,6},
-    profile={name='',gender='male',accent='',department='',rank='',case_number='',local_tag='',global_tag='',prison_tag='',callsign='',my_plate='',select_plate='',closest_plate='',square='',city='',timezone='local'},
+    profile={name='',gender='male',accent='',department='',rank='',case_number='',badge_number='',local_tag='',global_tag='',prison_tag='',callsign='',my_plate='',select_plate='',closest_plate='',square='',city='',timezone='local'},
     alerts=M.alertDefaults(),weapons=preferences.weaponDefaults(),taser=preferences.taserDefaults(),
     wanted_reminders={},nearby=nearbyModel.defaults(),map_grid=mapGrid.defaults(),rp_text=rpSettings.defaults(),assist=assistSettings.defaults(),vehicle=vehicleSettings.defaults(),operations=operationSettings.defaults(),procedures=procedureSettings.defaults(),identity=identitySettings.defaults(),patrol_session=patrolSettings.defaults(),patrol_events=eventSettings.defaults(),radio_guard=preferences.radioGuardDefaults(),weapon_warning=preferences.weaponWarningDefaults(),alert_shortcuts=M.alertShortcutDefaults(),
     settings={updates=updateSettings.defaults(),window_layout=windowLayout.defaults(),manual_chat=manualChat.defaults(),quick_key=0x7A,tips_key=0x7B,cancel_key=0x23,opacity=.86,compact=false,ui_icons=true,ask_screenshot_path=false,
@@ -281,6 +281,7 @@ function M.defaults(cfg)
     filters={},recruitment={min_age=18,min_level=3,min_lawfulness=0,land=true,water=false,air=false,weapon=true,medical=true}}
     local categories={introduce='Общение',documents='Документы',wanted='Проверки',frisk='Досмотр',cuff='Задержание',release='Задержание'}
     lib.field=fieldSettings.defaults()
+    lib.settings.help=require('pa26_help').defaults()
     lib.settings.manual_actions=manualActions.defaults();lib.settings.wheel_child_limit=0;lib.settings.wheel_system_groups={};lib.settings.wheel_order={};lib.settings.wheel_edit_enabled=true;lib.settings.shutdown_message='Police Assistant полностью отключён до перезахода в игру.'
     local female={introduce='остановившись рядом, достала служебное удостоверение и раскрыла его перед собеседником.',
         documents='оглянувшись по сторонам, обратилась к собеседнику с просьбой предъявить паспорт.',
@@ -363,6 +364,11 @@ function M.validateBinding(raw)
     b.wheel_car_visible=raw.wheel_car_visible;if b.wheel_car_visible==nil then b.wheel_car_visible=b.wheel_visible end
     b.wheel_car_group=raw.wheel_car_group;if b.wheel_car_group==nil then b.wheel_car_group=b.wheel_group end
     if not groups[b.wheel_car_group]then return nil,'Неизвестная секция бинда в машине.'end
+    for _,key in ipairs({'wheel_extra_groups','wheel_car_extra_groups'})do
+        local rows=raw[key]or{};if not M.array(rows,7)then return nil,'Дополнительные секции: список до 7 элементов.'end
+        b[key]={};local seen={}
+        for _,g in ipairs(rows)do if not groups[g]or g=='auto'or seen[g]then return nil,'Проверьте дополнительные секции бинда.'end;seen[g]=true;b[key][#b[key]+1]=g end
+    end
     b.shortcut,error=M.shortcut(raw.shortcut); if not b.shortcut then return nil,error end
     local found=false; for _, s in ipairs(M.stats) do if s[1]==raw.stat then found=true end end
     if not found then return nil,'Неизвестный служебный счётчик.' end; b.stat=raw.stat
@@ -376,6 +382,13 @@ function M.validateBinding(raw)
         if not label or not default then return nil,'Повреждён параметр.' end
         if p.type=='integer' and default~='' and not default:match('^%-?%d+$') then return nil,'Значение по умолчанию должно быть целым.' end
         names[p.name]=true; b.parameters[#b.parameters+1]={name=p.name,label=label,default=default,type=p.type,required=p.required}
+    end
+    if raw.author_ref~=nil then
+        if type(raw.author_ref)~='string'or not raw.author_ref:match('^A%d%d$')or not require('pa26_author_rp').bindings[tostring(tonumber(raw.author_ref:sub(2)))]then return nil,'Неизвестный номер авторского сценария.'end
+        b.author_ref=raw.author_ref
+    end
+    if raw.rp_context~=nil then
+        b.rp_context,error=require('pa26_rp_context').validate(raw.rp_context);if not b.rp_context then return nil,error end
     end
     if raw.knowledge~=nil then
         b.knowledge,error=M.knowledgeOrigin(raw.knowledge);if not b.knowledge then return nil,error end
@@ -438,7 +451,7 @@ function M.validate(raw, cfg)
         if id~=0 then for n,b in ipairs(out.bindings) do if b.id==id and raw.bindings[n].wheel_visible==nil then b.wheel_visible=true end end end
     end
     if type(raw.profile)~='table' or type(raw.settings)~='table' then return nil,'Отсутствует профиль или настройки.' end
-    for key,default in pairs(out.profile) do local value=M.clean(raw.profile[key],240); if not value then return nil,'Неверное поле профиля: '..key end; out.profile[key]=value end
+    for key,default in pairs(out.profile) do local value=M.clean(raw.profile[key]or(key=='badge_number'and default),240); if not value then return nil,'Неверное поле профиля: '..key end; out.profile[key]=value end
     if out.profile.gender~='male' and out.profile.gender~='female' then return nil,'Выберите грамматический род.' end
     if out.profile.timezone~='local' and out.profile.timezone~='utc' and out.profile.timezone~='moscow' then return nil,'Неверный часовой пояс.' end
     local global={}; for _,key in ipairs({'quick_key','tips_key','cancel_key'}) do
@@ -497,6 +510,7 @@ function M.validate(raw, cfg)
     end
     out.settings.updates,alertError=updateSettings.validate(raw.settings.updates);if not out.settings.updates then return nil,alertError end
     out.settings.window_layout,alertError=windowLayout.validate(raw.settings.window_layout);if not out.settings.window_layout then return nil,alertError end
+    out.settings.help,alertError=require('pa26_help').validate(raw.settings.help);if not out.settings.help then return nil,alertError end
     out.settings.manual_chat,alertError=manualChat.validate(raw.settings.manual_chat);if not out.settings.manual_chat then return nil,alertError end
     out.settings.wheel_names={}
     local names=raw.settings.wheel_names

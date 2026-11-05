@@ -1,4 +1,16 @@
+## 0.45.2 · локальный кандидат
+
+- Приветствие при первом входе после чистой установки. Кнопка «Инструкции» под «Обновления PA» открывает полный справочник с назначенными клавишами.
+- Подсказки клавиш поверх игры с настройками прозрачности, масштаба и расположения. При открытии чата, меню или карты подсказки скрываются.
+- В полном установщике 0.45.2 появился отдельный предпросмотр переноса с подтверждённой версии 0.44.0. Он обновляет штатные записи и сохраняет отдельно созданные бинды, личные шаблоны, заметки и профиль. При сбое установщик восстанавливает прежние файлы из проверенной копии.
+- Обычная переустановка сохраняет личные документы даже при совпадении со старыми значениями по умолчанию. [Подробности](docs/RELEASE-0.45.2.md).
+
 ## 0.45.0 · локальный CEF hotfix (04.11.2026)
+
+## 0.45.1 — local release candidate
+
+83 author RP bindings and 34 manual rules from the approved specification; eight on-foot and six vehicle wheel sections, gender and motorcycle variants, separately approved high-risk stages and safe author merging. Personal settings and scripts preserved. CEF/GPS/updater core unchanged. See [release notes](docs/RELEASE-0.45.1.md) and [QA report](docs/qa/0.45.1/FINAL-REVIEW.md). No installation or publication; current launcher full CEF contract and actual GTA acceptance remain gated.
+
 
 - Общий read-only проверяющий контракт для установщика и Lua; новый SHA допускается при совпадении проверенного профиля.
 - Ограниченное подтверждение адаптера и IPC перед включением функций; понятная диагностика и безопасный native-only отказ.

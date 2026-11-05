@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.45.0')
+script_version('0.45.2')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -44,6 +44,7 @@ local studioClock=0 -- Shared by target scoring and UI; updated only in main.
 local sceneServices={rp=dependency('pa26_rp_text'),rpUi=dependency('pa26_rp_ui'),commands=dependency('pa26_server_commands'),model=dependency('pa26_vehicle'),worldModule=dependency('pa26_vehicle_world'),evidenceModule=dependency('pa26_evidence'),filesModule=dependency('pa26_evidence_files'),assistUi=dependency('pa26_assist_ui'),hooks={}}
 sceneServices.mapGrid=dependency('pa26_map_grid')
 sceneServices.settingsUi=dependency('pa26_settings_ui')
+sceneServices.helpModule=dependency('pa26_help')
 sceneServices.mapAdapterModule=dependency('pa26_map_adapter')
 sceneServices.chatModule=dependency('pa26_chat_bridge')
 sceneServices.perfModule=dependency('pa26_chat_perf')
@@ -65,7 +66,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.45.0' then
+if #missing > 0 or not core or core.VERSION ~= '0.45.2' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -584,6 +585,21 @@ workspace = workspaceModule.new({
     decodeJson=function(v) if type(decodeJson)~='function' then error('MoonLoader decodeJson unavailable') end; return decodeJson(v) end,
     context=context,now=env.now,codec=codec,log=pushLog,demo=function() return runtime.demo end,
     acquire=acquireTarget,validate=env.validate,nearby=nearbyVisible,readPed=pedValues,
+    bindingContext=function(binding,target)
+        local c=sceneServices.copilot;local car=c and c.car
+        if target and car and car.driver_id and car.driver_id~=target.id then car=nil end
+        return{car=bindingModel.copy(car),life=c and c.life,phase=c and c.phase,inspect_bike=c and c.env.settings().templates.inspect_bike}
+    end,
+    bindingContextValid=function(stamp,target)
+        local c=sceneServices.copilot;if not c or c.life~=stamp.life then return false end
+        if stamp.car then return c.car and(c.car.stale==true)==(stamp.car.stale==true)and require('pa26_vehicle').same(stamp.car,c.car)and stamp.car.driver_id==c.car.driver_id and stamp.car.driver_ped==c.car.driver_ped and stamp.car.occupants==c.car.occupants and(not target or not c.car.driver_id or c.car.driver_id==target.id)or false end
+        return not c.car or c.car.stale==true
+    end,
+    icIdentity=function(target)
+        if not identity then return end
+        local known=identity:wantedRecord(target)
+        if known and known.passport_seen=='yes'then return{name=known.ic_name and known.ic_name~=''and known.ic_name or target.name:gsub('_',' ')}end
+    end,
     inspectSelected=inspectSelected,targetEvent=targetEvent,
     readLocal=function()
         local values={my_id=hud.data.id and tostring(hud.data.id),my_nick=hud.data.nickname,area=hud.data.district}
@@ -986,6 +1002,10 @@ patrol=patrolModule.new({settings=effectivePatrol,clockPolicy=function()return w
     view=function(key)return radioGuard.tickets[key]end,
     pending=function()return alerts.pending end,dispatch=function(kind,confirmation,key)return radioGuard:dispatch(key)end})
 studio=studioModule.new(imgui,ffi,workspace.library,function() return studioClock end); workspace.studio=studio
+sceneServices.help=sceneServices.helpModule.new(workspace.library.settings.help)
+sceneServices.helpKeys=function()
+    return sceneServices.help:shortcuts(cfg.main.menu_key,cfg.main.radial_key,workspace.library.assist.open_shortcut)
+end
 knowledge=knowledgeModule.new({json=workspace.json,now=function()return studioClock end,
     path=getWorkingDirectory()..'\\config\\police_assistant_2026_knowledge.json',
     bundle=getWorkingDirectory()..'\\resource\\pa26\\knowledge-base.json',
@@ -1096,6 +1116,16 @@ function sceneServices.requestVehicleAction(action,select)
     return true
 end
 studioCallbacks={
+    openInstructions=function()
+        if hasUiModal() then return false end
+        sceneServices.help.editing=nil
+        studio.helpKeys=sceneServices.helpKeys()
+        studio.helpGuide={automatic=false}
+        return true
+    end,
+    editHelpPosition=function(position,reset)
+        sceneServices.help.editing=not reset and {position=position} or nil
+    end,
     nearestTrafficStop=function()return sceneServices.requestVehicleAction('stop_order',true)end,
     requestShutdown=function()sceneServices.shutdownRequested=true;return true end,
     manualFriskMode=function(token,mode)return sceneServices.manualActions:friskMode(token,mode)end,
@@ -1274,6 +1304,8 @@ studioCallbacks={
     warnWeapon=function()return weaponWarning:request()end,
     save=function(lib,options) if options and options.scope=='window_layout'then return workspace:saveLayout(lib.settings.window_layout)end;return workspace:save(lib) end,saveJournal=function() return workspace:saveJournal() end,
     request=function(request) local ok=workspace:request(request); return ok,not ok and workspace.status or nil end,
+    chooseBindingVariant=function(choice)return workspace:chooseVariant(choice)end,
+    confirmExecution=function(token,yes)return workspace:confirmExecution(token,yes)end,
     stop=function()cancelManualActions('Остановлено пользователем.');runtime:cancel('Сценарий остановлен.');workspace:cancel('Сценарий остановлен пользователем.')end,
     clearTarget=function() workspace:clearTarget('manual') end,
     openQuick=function() sceneServices.showAssist[0]=false;sceneServices.showWanted[0]=false;sceneServices.hideProcedureWindows();studio.quickWheelCategory=nil; showWindow[0],showTips[0]=false,false; showQuick[0]=true; uiTyping=false; uiInputReset=true; imgui.DisableInput=false end,
@@ -1401,6 +1433,18 @@ env.wheelNavigate=function(route,profile,target)
         return true
     end
     if route.kind=='assist'then
+        local id=route.id
+        if id=='pa-gps-clear'then studioCallbacks.fieldClear();return true end
+        if id=='pa-share-coordinates'then
+            local p,why=studioCallbacks.fieldOffer('share');if p then studio.assistConfirm={kind='field',proposal=p};imgui.DisableInput=false else studio:notify(why,'field',false)end;return true
+        end
+        if id=='pa-copilot'or id=='pa-bulletins'or id=='pa-vehicle-bulletins'or id=='pa-custody-timers'then
+            studioCallbacks.openAssist('traffic');studio.copilotPage=id=='pa-custody-timers'and'rights'or'work';return true
+        end
+        if id=='pa-patrol-busy'then studioCallbacks.openAssist('traffic');studio.copilotPage='work';studio.copilotDuty=true;return true end
+        if id=='pa-finish-stop'or id=='pa-call911'then
+            studioCallbacks.openAssist('traffic');sceneServices.copilotUi.offer(studio,studioCallbacks,id=='pa-finish-stop'and'finish'or id=='pa-call911'and'call911'or'break_report');return true
+        end
         if route.id=='assist-traffic-nearest'then
             local ok,why=studioCallbacks.nearestTrafficStop();if not ok then studio:notify(why,'vehicle',false)end
             return ok
@@ -1409,7 +1453,7 @@ env.wheelNavigate=function(route,profile,target)
         studioCallbacks.openAssist('megaphone');return true
     end
     if route.kind=='procedure'then
-        local kind=({['procedure-wanted']='wanted',['procedure-wanted_list']='wanted_list',['procedure-fine']='fine',['procedure-mark']='mark'})[route.id]
+        local kind=({['pa-fast-wanted']='wanted',['procedure-wanted']='wanted',['procedure-wanted_list']='wanted_list',['procedure-fine']='fine',['procedure-mark']='mark'})[route.id]
         local cfg=workspace.library.procedures
         if not kind or not caseFormsModule.enabled(cfg,kind)then return false end
         local selected=workspace.selectedTarget
@@ -1899,6 +1943,7 @@ local function drawMain()
             actions = function() studio:draw('binds',ui,studioData(),studioCallbacks) end,
             updates=function()require('pa26_update_ui').draw(studio,ui,sceneServices.updater,studioCallbacks,sceneServices.authorPresets)end,
             updateLabel=sceneServices.updater:label(),
+            openInstructions=studioCallbacks.openInstructions,
             openSettings=studioCallbacks.openSettings,
             settings = drawSettingsPage, settingsTabs=drawSettingsTabs,
             settingsTabHeight=function(width)return sceneServices.settingsUi.tabLayout(width,menuSmallFont or menuButtonFont or imgui.GetFont()).total end,
@@ -2294,6 +2339,27 @@ end,function()
     if not ok then sceneServices.field.pinned.note=nil;pushLog('Закреплённая памятка отключена после ошибки отрисовки.')end
 end)
 sceneServices.pinnedFrame.LockPlayer=false;sceneServices.pinnedFrame.HideCursor=true;subscriptions[#subscriptions+1]=sceneServices.pinnedFrame
+
+do
+local helpUi={push=pushScope,finish=endScope,text=text}
+sceneServices.helpFrame=imgui.OnFrame(function()
+    return not shutdown and not uiFailed and not sceneServices.help.failed and sceneServices.help:visible(
+        workspace.library.settings.help,sceneServices.helpState,sceneServices.help.editing)
+end,function()
+    local depth=#scopes
+    local ok=pcall(sceneServices.help.draw,sceneServices.help,imgui,helpUi,
+        workspace.library.settings.help,sceneServices.helpKeys(),studio,hud.bounds)
+    if not ok then
+        while #scopes>depth do endScope()end
+        sceneServices.help.failed=true
+        sceneServices.help.editing=nil
+        pushLog('Подсказки клавиш отключены после ошибки отрисовки.')
+    end
+end)
+sceneServices.helpFrame.LockPlayer=false
+sceneServices.helpFrame.HideCursor=true
+subscriptions[#subscriptions+1]=sceneServices.helpFrame
+end
 
 local function cleanup()
     if sceneServices.field then sceneServices.field:reset('PA завершил работу.')end
@@ -3220,6 +3286,10 @@ local function updateGame()
         showWindow[0] = true
         autoOpenForSession = nil
     end
+    sceneServices.help:offer(studio,ctx.session and ctx.nativeAlive and focused and not uiFailed and
+        not ctx.paused and not ctx.blocked and not uiTyping and not runtime.wheel and not keyRecorder and
+        not hud.editing and not runtime.queue and not workspace.executor.queue and not workspace.pending and not hasUiModal())
+    if studio.helpGuide then studio.helpKeys=sceneServices.helpKeys()end
     runtime:refresh() -- safety checks precede hotkeys and queue advancement
     sceneServices.aimPicker:tick(ctx,now,workspace.library.settings,ownUi()or keyRecorder or hasUiModal()or hud.failed or hud.editing or hud.drag or
         widgetCursor or runtime.wheel or runtime.queue or workspace.pending or workspace.executor.queue)
@@ -3563,6 +3633,11 @@ local function updateGame()
     workspace:tick()
     syncBindingCommands()
     workspaceFrame.HideCursor=not(ownUi()or studio.statusInfo and widgetCursor)
+    if not showWindow[0]then sceneServices.help.editing=nil end
+    ctx.window=ownUi();ctx.mainWindow=showWindow[0];ctx.modal=hasUiModal()
+    ctx.typing=uiTyping;ctx.wheel=runtime.wheel~=nil
+    ctx.busy=runtime.queue~=nil or workspace.executor.queue~=nil or workspace.pending~=nil
+    sceneServices.helpState=ctx
     imgui.DisableInput = shutdown or not focused or ctx.paused or ctx.blocked or
         ((uiFailed or (not ownUi() and runtime.wheel == nil and not(studio.statusInfo and widgetCursor))) and not hud.editing)
 end

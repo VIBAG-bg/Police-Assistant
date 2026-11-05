@@ -18,7 +18,11 @@ M.systemRows={{'sos','SOS'},{'shots','Shots fired'},{'code0','CODE 0'},{'assist-
     {'assist-traffic-nearest','Начать 10-55 с ближайшим авто'},
     {'patrol-open','Патруль · открыть'},{'patrol-pause','Патруль · пауза'},{'patrol-resume','Патруль · продолжить'},
     {'patrol-finish','Патруль · завершить'},{'procedure-wanted','Помощник розыска'},{'procedure-wanted_list','Список преступников'},
-    {'procedure-fine','Штраф'},{'procedure-mark','Пеленгация'}}
+    {'procedure-fine','Штраф'},{'procedure-mark','Пеленгация'},{'pa-fast-wanted','Быстрая выдача розыска УК/АК'}}
+for _,r in ipairs({{'pa-bulletins','Ориентировки и угон'},{'pa-finish-stop','Завершить 10-55 · Code 4'},
+ {'pa-gps-clear','Сбросить маршрут GPS PA'},{'pa-call911','Принять последний вызов 9-1-1'},{'pa-share-coordinates','Координаты OOC'},
+ {'pa-patrol-busy','Перерыв / доступность'},{'pa-copilot','Панель Copilot'},{'pa-vehicle-bulletins','Ориентировки по автомобилям'},
+ {'pa-custody-timers','Таймеры задержания'}})do M.systemRows[#M.systemRows+1]=r end
 M.copilotRows={{'stop_order','Остановить авто','service','car'},{'stop','Доклад 10-55','service','car'},
  {'pursuit','10-57 VICTOR','service','car'},{'high_risk','10-66','detention','car'},
  {'approach','Осмотр салона','documents','foot'},{'foot','10-57 FOXTROT','detention','foot'},
@@ -137,6 +141,11 @@ function M.build(lib,revision,includeAlerts,serviceState)
         local item={id=b.id,name=b.name,binding=model.copy(b),needsTarget=req.target,category=M.groupFor(b,profile)}
         out.byId[b.id]=item; local cat=out.byCategory[item.category]
         cat.items[#cat.items+1]=item
+        local placed={[item.category]=true}
+        for _,g in ipairs(b.wheel_extra_groups or{})do
+            local group=M.groupFor({wheel_group=g,category=''},profile)
+            if out.byCategory[group]and not placed[group]then local extra=model.copy(item);extra.category=group;out.byCategory[group].items[#out.byCategory[group].items+1]=extra;placed[group]=true end
+        end
     end end
     -- Operational actions have their own feature gate, independent of SOS.
     local cp=lib.vehicle and lib.vehicle.copilot
@@ -150,6 +159,17 @@ function M.build(lib,revision,includeAlerts,serviceState)
             end
         end end
         if v.pinned and v.car then place({kind='copilot',id='copilot-pursuit_mark',action=v.pinned,category='wanted',name=v.pinned=='pursuit_mark'and'Только /pt'or'Розыск + /pt',needsTarget=false})end
+    end
+    if includeAlerts then
+        for _,r in ipairs({{'pa-bulletins','Ориентировки и угон','wanted'},
+          {'pa-finish-stop','Завершить 10-55 · Code 4','citizen'}, {'pa-gps-clear','Сбросить маршрут GPS PA','wanted'},
+          {'pa-call911','Принять последний вызов 9-1-1','service'},{'pa-share-coordinates','Координаты OOC','service'},
+          {'pa-patrol-busy','Перерыв / доступность','leadership'},{'pa-copilot','Панель Copilot','leadership'},
+          {'pa-vehicle-bulletins','Ориентировки по автомобилям','leadership'},{'pa-custody-timers','Таймеры задержания','leadership'}})do
+            if lib.settings.wheel_system_groups and lib.settings.wheel_system_groups[r[1]]and lib.settings.wheel_system_groups[r[1]]~='disabled'then
+                place({kind='assist',id=r[1],name=r[2],category=r[3],needsTarget=false})
+            end
+        end
     end
     local order=require 'pa26_wheel_order';local stored=lib.settings.wheel_order or{}
     order.sort(out.categories,stored.root,function(c)return c.id end)
@@ -175,6 +195,7 @@ function M.available(catalog,route,demo,target)
         return not item.disabled,item.disabled and item.reason or nil
     end
     local item=route.kind=='binding' and catalog.byId[route.id]
+    if item and item.category~=route.category and cat then for _,candidate in ipairs(cat.items)do if candidate.id==route.id then item=candidate;break end end end
     if not item or item.category~=route.category then return false,'Действие недоступно.' end
     if not item.binding.enabled then return false,'Бинд выключен.' end
     if item.needsTarget and not demo and not target then return false,'Выберите человека для этого действия.' end

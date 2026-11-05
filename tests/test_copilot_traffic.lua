@@ -39,8 +39,8 @@ s.send('pursuit');eq(cp.phase,'Преследование');s.tick();p=assert(s.
 local fast=assert(cp:propose('fast_wanted'));local text=table.concat(fast.prepared.lines,'\n');check(text:find('/su 37 8 1',1,true));check(not text:find('/pt 37',1,true));check(not fast.prepared.lines[1]:find('маск',1,true));check(not fast.prepared.lines[1]:find('SA-142',1,true))
 check(cp:accept(fast));s.tick();local plan=s.plans[#s.plans];check(cp:validPlan(plan));s.person.generation=1;check(not cp:validPlan(plan),'Reused player ID must cancel even between lines')
 cp,v,s=setup();s.send('pursuit');s.car.distance=20;s.tick(50);s.tick(3000);check(s.has('high_risk'))
-local one;s.car.occupants=1;s.tick();one=assert(cp:propose('risk_order'));check(table.concat(one.prepared.lines,'\n'):find('три шага',1,true))
-s.car.occupants=2;s.tick();p=assert(cp:propose('risk_order'));check(table.concat(p.prepared.lines,'\n'):find('ПО ОДНОМУ',1,true));check(not cp:accept(one))
+local one;s.car.occupants=1;s.tick();one=assert(cp:propose('risk_order'));check(table.concat(one.prepared.lines,'\n'):find('По команде извлеките ключи',1,true))
+s.car.occupants=2;s.tick();p=assert(cp:propose('risk_order'));check(table.concat(p.prepared.lines,'\n'):find('выходите по одному',1,true));check(not cp:accept(one))
 cp,v,s=setup();s.send('pursuit');for i=1,5 do s.tick(5000);s.send('tire');eq(cp.tireWarnings,i)end
 check(cp:view().tireStatus:find('5/5',1,true));check(not cp:propose('tire'));s.tick(5000);s.send('finish');check(not cp.phase);eq(cp.tireWarnings,0)
 cp,v,s=setup();s.state.colleagues={ownCruiserRole='driver'};s.send('stop_order');s.tick(1500);check(not s.has('stop'))
