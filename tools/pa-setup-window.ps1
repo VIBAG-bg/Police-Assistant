@@ -26,24 +26,67 @@ function Get-PaSetupExplanation([string]$Code){
     if($Code -like '*partial*' -or $Code -like '*Incomplete library*'){return 'Найдена неполная библиотека другой версии. Восстановите её целиком из своей сборки; смешивать Lua и DLL разных версий нельзя.'}
     return $Code
 }
-function Get-PaSetupPreflight([string]$Selected){
+function Get-PaSetupCefMessage($Report){
+    if($null -eq $Report){return 'Проверяю совместимость CEF…'}
+    switch(Get-PaSetupCefStatus $Report){
+        'compatible'   {return 'CEF совместим. Установим адаптер. Проверка связи ожидает запуска игры.'}
+        'incompatible' {return 'CEF несовместим. PA установится без подключения к чату лаунчера.'}
+        'unavailable'  {return 'CEF недоступен. Файлы чата отсутствуют. Для обычного SA:MP это нормально.'}
+        'failed'       {return 'Не удалось проверить CEF. PA установится без подключения к чату лаунчера.'}
+    }
+}
+function Get-PaSetupPreflight([string]$Selected,[switch]$DeferCef){
     $ml=Resolve-PaSetupRoot $Selected
     $missing=@(Get-PaMissingDependencies $ml $paSetupDependencies)
-    $game=[IO.Path]::GetDirectoryName($ml)
-    $contract=Get-Content -LiteralPath (Join-Path $paSetupSource 'CEF_CONTRACT.json') -Raw|ConvertFrom-Json
-    $main=Join-Path $game 'cef/assets/hud/main.js'
-    Assert-PaSetupPlain $main
-    $cef='Обычный SA:MP — без замены CEF.'
-    if(Test-Path -LiteralPath $main){
-        if((Get-FileHash -LiteralPath $main -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $contract.hud_main_sha256){$cef='Лаунчер Exsellent — адаптер CEF будет сохранён.'}
-        else{$cef='Другой CEF — его файлы не заменяются.'}
-    }
+    $report=if(-not $DeferCef){Get-PaSetupCefContract $paSetupSource $ml $paSetupManifest}
     $lines=@()
     foreach($package in $paSetupDependencies.packages){
         $needs=@($missing|Where-Object id -CEQ $package.id).Count -gt 0
         $lines+=($package.title+': '+$(if($needs){'будет скачана'}else{'уже есть'}))
     }
-    return @{moonloader=$ml;missing=$missing.Count;details=($lines -join "`n")+"`n"+$cef;running=(@(Get-Process -Name gta_sa,gta-sa -ErrorAction SilentlyContinue).Count -gt 0)}
+    $libraries=$lines -join "`n"
+    return @{moonloader=$ml;missing=$missing.Count;libraries=$libraries;cef=$report;
+        details=$libraries+"`n"+(Get-PaSetupCefMessage $report)}
+}
+function Start-PaSetupCefPreview([string]$MoonLoader){
+    $start=New-Object Diagnostics.ProcessStartInfo
+    $start.FileName=Join-Path ([Environment]::SystemDirectory) 'WindowsPowerShell/v1.0/powershell.exe'
+    $installer=Join-Path $paSetupSource 'install.ps1'
+    if($installer -match '["\r\n]' -or $MoonLoader -match '["\r\n]'){throw 'Invalid CEF preview path.'}
+    $start.Arguments='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$installer+'" -PreviewCefContract -DestinationRoot "'+$MoonLoader+'"'
+    $start.WorkingDirectory=$paSetupSource
+    $start.UseShellExecute=$false;$start.CreateNoWindow=$true
+    $start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true
+    $process=[Diagnostics.Process]::Start($start)
+    try{
+        $output=$process.StandardOutput.ReadToEndAsync()
+        $null=$process.StandardError.ReadToEndAsync()
+        return @{process=$process;output=$output;time=[Diagnostics.Stopwatch]::StartNew()}
+    }catch{Stop-PaSetupCefPreview @{process=$process};throw}
+}
+function Stop-PaSetupCefPreview($Job){
+    if($null -eq $Job){return}
+    try{if(-not $Job.process.HasExited){$Job.process.Kill()}}
+    catch [InvalidOperationException]{} # The process may exit between the check and Kill.
+    finally{$Job.process.Dispose()}
+}
+function Read-PaSetupCefPreview($Job){
+    if($Job.time.Elapsed.TotalSeconds -ge 30){throw 'CEF preview timed out.'}
+    if(-not $Job.process.HasExited -or -not $Job.output.IsCompleted){return $null}
+    if($Job.process.ExitCode -ne 0){throw 'CEF preview failed.'}
+    $text=$Job.output.GetAwaiter().GetResult()
+    if($text.Length -gt 32768){throw 'Invalid CEF preview result.'}
+    $result=$text|ConvertFrom-Json
+    if($result.schema -ne 2 -or $result.runtime -cne 'NOT_RUN' -or $result.allowed -isnot [bool] -or
+        $result.reason -isnot [string] -or $result.reason.Length -gt 160 -or
+        $result.state -cnotin @('CONTRACT_COMPATIBLE','INCOMPATIBLE','UNAVAILABLE') -or
+        ($result.allowed -ne ($result.state -ceq 'CONTRACT_COMPATIBLE'))){throw 'Invalid CEF preview result.'}
+    return $result
+}
+function Update-PaSetupInstallButton($Form,$Info){
+    $running=@(Get-Process -Name gta_sa,gta-sa -ErrorAction SilentlyContinue).Count -gt 0
+    $Form.Install.Enabled=$null -ne $Info.cef -and -not $running
+    $Form.Footer.Text=if($running){'Закройте GTA, затем нажмите «Установить».'}else{'Настройки и бинды сохраняются. Перед записью создаются резервные копии.'}
 }
 function Start-PaSetupChild([string]$Selected,[string]$Job,[string]$Cache='',[int]$FailAfter=0,[bool]$IncludeBinds=$true,[bool]$IncludeSettings=$true,[bool]$Legacy=$true,[string]$Preview=''){
     $jobRoot=[IO.Path]::GetFullPath($Job)
@@ -87,6 +130,7 @@ function Get-PaLegacyReviewText($Review){
     $lines=New-Object 'Collections.Generic.List[string]'
     $lines.Add('Обновляются стандартные настройки PA, оба колеса и штатные правила ручных команд.')
     $lines.Add('Сохраняются личные записи, контакты, профиль, пол персонажа, заметки и размеры окон.')
+    $lines.Add('Перенос выполняет полный установщик. После переноса PA один раз предложит инструкции при входе в игру.')
     $lines.Add('')
     foreach($pair in @(@('added','Новые официальные записи'),@('updated','Обновлённые штатные записи'),@('personal','Личные записи в «Свои бинды»'))){
         $lines.Add($pair[1])
@@ -94,7 +138,7 @@ function Get-PaLegacyReviewText($Review){
             $lines.Add(('№ '+$row.id+' · '+$row.name))
             if($row -is [Collections.IDictionary] -and $row.ContainsKey('after')){
                 if($row.ContainsKey('before') -and $row.before -cne $row.after){$lines.Add("Было`r`n"+$row.before)}
-                $lines.Add("В наборе 0.45.2`r`n"+$row.after)
+                $lines.Add("В наборе 0.45.1`r`n"+$row.after)
             }
         }
         $lines.Add('')
@@ -120,17 +164,18 @@ function Show-PaLegacyReview($Owner,$Review){
         $panel.RowStyles.Add($row)|Out-Null
     }
     $summary=New-Object Windows.Forms.Label;$summary.Dock='Fill'
-    $summary.Text="Найдена PA 0.44.0. Набор 0.45.2 заменит штатные бинды и их RP, включая ранее отредактированные. Отдельные личные записи сохранятся.`r`n`r`n"+
+    $summary.Text="Найдена PA 0.44.0. Набор 0.45.1 заменит штатные бинды и их RP, включая ранее отредактированные. Отдельные личные записи сохранятся.`r`n`r`n"+
         ('Новые бинды · '+$Review.added.Count+'     Обновляемые · '+$Review.updated.Count+'     Личные · '+$Review.personal.Count)+"`r`n"+
         ('Конфликты с приоритетом личных записей · '+$Review.conflicts.Count)+"`r`n`r`n"+
-        'Сохранятся профиль, пол персонажа, контакты, заметки и размеры окон. Если снять галочку, установится только программа.'
+        "Сохранятся профиль, пол персонажа, контакты, заметки и размеры окон. Если снять галочку, установится только программа.`r`n`r`n"+
+        'Перенос доступен в полном установщике. При первом подходящем входе PA предложит инструкции.'
     $option=New-Object Windows.Forms.CheckBox;$option.AutoSize=$true;$option.Checked=$true
-    $option.Text='Обновить авторские бинды и стандартные настройки до 0.45.2'
+    $option.Text='Обновить авторские бинды и стандартные настройки до 0.45.1'
     $details=New-Object Windows.Forms.Button;$details.AutoSize=$true;$details.Text='Посмотреть изменения'
     $details.Tag=Get-PaLegacyReviewText $Review
     $details.Add_Click({
         $owner=$this.FindForm()
-        $view=New-Object Windows.Forms.Form;$view.Text='Предпросмотр набора PA 0.45.2';$view.StartPosition='CenterParent'
+        $view=New-Object Windows.Forms.Form;$view.Text='Предпросмотр набора PA 0.45.1';$view.StartPosition='CenterParent'
         $view.ClientSize=New-Object Drawing.Size($owner.ClientSize.Width,$owner.ClientSize.Height)
         $body=New-Object Windows.Forms.TextBox;$body.Dock='Fill';$body.Multiline=$true;$body.ReadOnly=$true
         $body.WordWrap=$true;$body.ScrollBars='Vertical';$body.Text=[string]$this.Tag
@@ -152,22 +197,22 @@ function Show-PaSetupWindow {
     $unused=New-PaProgressForm;$unused.Dispose()
     $form=New-PaSetupForm
     $form.Text='Police Assistant '+$paSetupManifest.release+' | Установка'
-    $state=@{child=$null;job='';finished=$false;last=0;preflight=$null}
+    $state=@{child=$null;job='';finished=$false;last=0;preflight=$null;cefJob=$null;confirming=$false}
     # Event scriptblocks keep this script's function scope. GetNewClosure creates
     # a dynamic module which loses these helpers when launched with -File or &.
-    $script:PaSetupUi=@{form=$form;state=$state;refresh=$null}
+    $script:PaSetupUi=@{form=$form;state=$state}
     $refresh={
         $form=$script:PaSetupUi.form;$state=$script:PaSetupUi.state
-        if($state.child){return}
+        if($state.child -or $state.confirming){return}
+        Stop-PaSetupCefPreview $state.cefJob
+        $state.cefJob=$null
         try{
-            $info=Get-PaSetupPreflight $form.PathBox.Text;$state.preflight=$info
+            $info=Get-PaSetupPreflight $form.PathBox.Text -DeferCef;$state.preflight=$info
             $form.Requirements.Text=$info.details
-            $form.Install.Enabled=-not $info.running
+            $form.Install.Enabled=$false
             $form.Install.Text=if($info.missing){'Установить и докачать библиотеки'}else{'Установить PA'}
-            $form.Footer.Text=if($info.running){'Закройте GTA, затем нажмите «Установить». Ни один файл игры пока не изменялся.'}else{'Настройки и бинды сохраняются. Перед записью создаются резервные копии.'}
         }catch{$state.preflight=$null;$form.Install.Enabled=$false;$form.Requirements.Text=Get-PaSetupExplanation $_.Exception.Message}
     }
-    $script:PaSetupUi.refresh=$refresh
     $form.PathBox.Add_TextChanged($refresh)
     $form.Browse.Add_Click({
         $form=$script:PaSetupUi.form
@@ -178,10 +223,11 @@ function Show-PaSetupWindow {
     })
     $form.Install.Add_Click({
         $form=$script:PaSetupUi.form;$state=$script:PaSetupUi.state
-        if($state.child){return}
+        if($state.child -or $state.confirming -or -not $state.preflight){return}
+        Update-PaSetupInstallButton $form $state.preflight
+        if(-not $form.Install.Enabled){return}
+        $state.confirming=$true
         try{
-            & $script:PaSetupUi.refresh
-            if(-not $state.preflight -or $state.preflight.running){return}
             $ml=$state.preflight.moonloader
             $offer=Get-PaLegacyOffer $paSetupSource $ml $paSetupManifest.release
             $legacy=$false;$token=''
@@ -205,11 +251,31 @@ function Show-PaSetupWindow {
             $state.child=Start-PaSetupChild $ml $state.job $DependencyCache $TestFailAfter $form.AuthorBinds.Checked $form.AuthorSettings.Checked $legacy $token
             $form.Current.Controls.Remove($form.AuthorPanel);$form.Current.Controls.Add($form.Footer,0,4);$form.BeginInstallation();$state.last=2
         }catch{[Windows.Forms.MessageBox]::Show($form,(Get-PaSetupExplanation $_.Exception.Message),'Установка не началась','OK','Error')|Out-Null}
+        finally{
+            $state.confirming=$false
+            if(-not $state.child){$form.Requirements.Text=$state.preflight.details}
+        }
     })
     $timer=New-Object Windows.Forms.Timer;$timer.Interval=400
     $timer.Add_Tick({
         $form=$script:PaSetupUi.form;$state=$script:PaSetupUi.state
-        if(-not $state.child){& $script:PaSetupUi.refresh;return}
+        if(-not $state.child){
+            $info=$state.preflight
+            if(-not $info -or $state.confirming){return}
+            if($null -eq $info.cef){
+                try{
+                    if($state.cefJob){$info.cef=Read-PaSetupCefPreview $state.cefJob}
+                    else{$state.cefJob=Start-PaSetupCefPreview $info.moonloader}
+                }catch{$info.cef=@{state='UNAVAILABLE';allowed=$false;reason='verification_failed'}}
+                if($null -ne $info.cef){
+                    Stop-PaSetupCefPreview $state.cefJob;$state.cefJob=$null
+                    $info.details=$info.libraries+"`n"+(Get-PaSetupCefMessage $info.cef)
+                    $form.Requirements.Text=$info.details
+                }
+            }
+            Update-PaSetupInstallButton $form $info
+            return
+        }
         if($state.finished){return}
         try{
             $row=Read-PaSetupJob $state.job
@@ -239,6 +305,12 @@ function Show-PaSetupWindow {
         }
     })
     if($InitialPath){$form.PathBox.Text=$InitialPath}else{$form.PathBox.Text=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Exsellent Launcher/game'}
-    try{$timer.Start();[Windows.Forms.Application]::Run($form)}finally{$timer.Stop();$timer.Dispose();$form.Dispose();if($state.child){$state.child.Dispose()};$script:PaSetupUi=$null}
+    try{$timer.Start();[Windows.Forms.Application]::Run($form)}finally{
+        $timer.Stop();$timer.Dispose()
+        Stop-PaSetupCefPreview $state.cefJob
+        $form.Dispose()
+        if($state.child){$state.child.Dispose()}
+        $script:PaSetupUi=$null
+    }
 }
 if(-not $Library){Show-PaSetupWindow}

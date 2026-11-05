@@ -159,7 +159,7 @@ public static class PaLegacyLua {
 
 try {
     $manifest=[IO.File]::ReadAllText((Join-Path $Source 'INSTALL_MANIFEST.json'))|ConvertFrom-Json
-    if($manifest.release -cne '0.45.2'){throw 'Неверная целевая версия переноса.'}
+    if($manifest.release -cne '0.45.1'){throw 'Неверная целевая версия переноса.'}
     $modules=New-Object 'Collections.Generic.Dictionary[string,byte[]]'
     foreach($row in $manifest.files){
         if($row.path -cmatch '^lib\\(pa26_[a-z0-9_]+)\.lua$'){

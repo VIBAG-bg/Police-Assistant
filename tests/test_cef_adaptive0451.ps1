@@ -22,21 +22,38 @@ function Case([string]$name,[string]$js,[string]$markup,[bool]$allowed){
  $script:rows+=@{name=$name;state=$r.state;reason=$r.reason;allowed=$r.allowed;elapsed_ms=$clock.Elapsed.TotalMilliseconds;sha256=$r.sha256}
  return $r
 }
-$current=Case 'current_d7526' $main $html $true
+$current=Case 'reviewed_launcher' $main $html $true
 Check (-not $current.known) 'Current SHA is supported by contract, not hardcoded as fully known'
 Check ($current.runtime -eq 'NOT_RUN') 'Static verification does not claim runtime acceptance'
+$profiles=@($registry.contract_profiles|Where-Object fingerprint -CEQ $current.fingerprint)
+Check ($profiles.Count -eq 1) 'Exactly one normalized profile matches'
+if($current.sha256 -like 'f6122*'){
+ Check ($profiles[0].reviewed_sha256 -ceq $current.sha256) 'New launcher is explicitly recorded with exact provenance'
+ $oldRegistry=$registry|ConvertTo-Json -Depth 30|ConvertFrom-Json
+ $oldRegistry.contract_profiles=@($oldRegistry.contract_profiles|Where-Object fingerprint -CNE $current.fingerprint)
+ $before=Get-PaCefContract $box $oldRegistry
+ Check (-not $before.allowed -and $before.capabilities.dom -and $before.reason -eq 'functional_profile_mismatch') 'Reproduces the 0.45.2 false rejection'
+}
 Case 'unrelated_comment' ($main+"`n// Harmless launcher maintenance release`n") $html $true|Out-Null
 Case 'unrelated_whitespace' ($main.Replace('const hudContainer=',"`nconst  hudContainer = ")) $html $true|Out-Null
-Case 'private_identifier_rename' ($main.Replace('_0x221766','_0xabcdef123')) $html $true|Out-Null
+$alias=[regex]::Match($main,'^const (_0x[0-9a-f]+)=').Groups[1].Value
+Check (-not [string]::IsNullOrEmpty($alias)) 'Find the decoder alias in both versions'
+Case 'private_identifier_rename' ([regex]::Replace($main,('\b'+$alias+'\b'),'_0xabcdef123')) $html $true|Out-Null
 Case 'unrelated_function_implementation' ([regex]::Replace($main,'function formatTime\([^)]*\)\{','$0const paCosmeticRevision=1;')) $html $true|Out-Null
 Case 'missing_send' ($main.Replace('function sendMessageToChat(','function incompatibleSender(')) $html $false|Out-Null
-Case 'wrong_send_payload' ($main.Replace('sgfUzgXLshvKu2vUze1LC3nHz2u','rgLMzMvYzw50twvZC2fNzuv2zw50')) $html $false|Out-Null
-Case 'wrong_incoming_event' ($main.Replace('y2HHDdPTzxnZywDLCW','y2HHDdP3CM9Uz3H4Ea')) $html $false|Out-Null
+$badSend=[regex]::Replace($main,'function sendMessageToChat\((_0x[0-9a-f]+)\)\{','$0$1={text:$1};')
+Check ($badSend -cne $main) 'Mutated the sender payload, leaving the event name present'
+Case 'wrong_send_payload' $badSend $html $false|Out-Null
+$badIncoming=$main.Replace('y2HHDdPTzxnZywDLCW','y2HHDdP3CM9Uz3H4Ea')
+Check ($badIncoming -cne $main) 'Mutated the encoded incoming event'
+Case 'wrong_incoming_event' $badIncoming $html $false|Out-Null
 Case 'missing_input' $main ($html.Replace('id="chatInputField"','id="changedInputField"')) $false|Out-Null
 Case 'wrong_input_type' $main ($html.Replace('<input class="chat-input-text"','<textarea class="chat-input-text"')) $false|Out-Null
 Case 'duplicate_input' $main ($html.Replace('</body>','<input id="chatInputField"></body>')) $false|Out-Null
 Case 'disabled_input' $main ($html.Replace('id="chatInputField"','disabled id="chatInputField"')) $false|Out-Null
 Case 'async_handler' $main ($html.Replace('<script src="main.js">','<script async src="main.js">')) $false|Out-Null
+Case 'unpatchable_main_tag' $main ($html.Replace('<script src="main.js">','<script src=main.js>')) $false|Out-Null
+Case 'ambiguous_pa_marker' $main ($html.Replace('</body>','<!-- PA26 CEF chat adapter --></body>')) $false|Out-Null
 Case 'extra_script' $main ($html.Replace('</body>','<script src="other.js"></script></body>')) $false|Out-Null
 Case 'names_only_not_a_contract' 'function sendMessageToChat(x){cef.emit("HandleHudSendMessage",x)}' $html $false|Out-Null
 Case 'unexecuted_launcher_payload' ($main+"`nthrow new Error('INSTALLER_MUST_NEVER_EXECUTE_ME');") $html $false|Out-Null

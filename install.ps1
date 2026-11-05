@@ -11,18 +11,19 @@ param(
     [switch]$SkipAuthorSettings,
     [switch]$SkipLegacyPresets,
     [switch]$PreviewLegacyPresets,
+    [switch]$PreviewCefContract,
     [string]$LegacyPreview = '',
     [switch]$TestInterrupt,
     [switch]$RequireCef
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-if($Interactive -and -not $VerifyOnly){
+if($Interactive -and -not $VerifyOnly -and -not $PreviewCefContract){
     & (Join-Path $PSScriptRoot 'tools/pa-start.ps1') -Mode Install
     return
 }
 $paChanged=@();$paRollbackCompleted=$false;$paRecoveryRequired=$false;$paProgressPath='';$paManifest=$null
-if($ProgressFile -and -not $VerifyOnly){
+if($ProgressFile -and -not $VerifyOnly -and -not $PreviewCefContract){
     $paProgressPath=[IO.Path]::GetFullPath($ProgressFile)
     $paUIRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'installation-backups/ui-jobs')).TrimEnd('\')
     if(-not $paProgressPath.StartsWith($paUIRoot+'\',[StringComparison]::OrdinalIgnoreCase) -or $paProgressPath.Substring($paUIRoot.Length+1) -cnotmatch '^[a-f0-9]{32}\\progress\.json$'){throw 'Invalid installation progress path.'}
@@ -72,6 +73,10 @@ $paTestRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'tests\install-sandb
 $paInput=[IO.Path]::GetFullPath($DestinationRoot).TrimEnd('\')
 $paTest=$paInput.StartsWith($paTestRoot+'\',[StringComparison]::OrdinalIgnoreCase)
 $paDestination=Resolve-PaSetupRoot $DestinationRoot $paTest
+if($PreviewCefContract){
+    Get-PaSetupCefContract $PSScriptRoot $paDestination $paManifest|ConvertTo-Json -Depth 8 -Compress
+    return
+}
 if(($TestFailAfter -ne 0 -or $TestInterrupt) -and -not $paTest){throw 'Failure injection is allowed only in the test sandbox.'}
 if($TestInterrupt -and $TestFailAfter -lt 1){throw 'Interruption requires a write count.'}
 if($LegacyPreview -and $LegacyPreview -cnotmatch '^[a-f0-9]{64}$'){throw 'Invalid legacy preview token.'}
@@ -331,38 +336,24 @@ foreach ($paRelative in $paOwned) {
         Existed=$paExists;BeforeHash=$(if ($paExists) {(Get-FileHash -LiteralPath $paTo -Algorithm SHA256).Hash} else {$null});Skip=$paSkip;Root=$paDestination;BackupRelative=$paRelative;Content=$null}
 }
 
-# Optional launcher HUD integration: the official page receives one script tag.
-# Its original bytes are backed up and restored on a failed transaction.
-function Get-PaByteHash([byte[]]$bytes) {
-    $paAlgorithm=[Security.Cryptography.SHA256]::Create()
-    try { return [BitConverter]::ToString($paAlgorithm.ComputeHash($bytes)).Replace('-','').ToLowerInvariant() }
-    finally { $paAlgorithm.Dispose() }
-}
+# Optional launcher HUD integration. The setup preview uses the same verifier.
 $paGameRoot=[IO.Path]::GetDirectoryName($paDestination)
-$paHtml=Get-PaPath $paGameRoot 'cef\assets\hud\index.html'
 $paKnownLauncher=$paDestination -ieq [IO.Path]::GetFullPath($paDefault)
-$paContract=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'CEF_CONTRACT.json') -Raw | ConvertFrom-Json
-$paMain=Get-PaPath $paGameRoot 'cef\assets\hud\main.js'
-# Execute only the PA-owned verifier embedded in a manifest-checked module.
-$paVerifierText=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'moonloader/lib/pa26_cef_contract.lua'))
-$paEngine=[regex]::Match($paVerifierText,'verifier=\[====\[([\s\S]*?)\]====\]')
-$paRegistry=[regex]::Match($paVerifierText,'registry=\[====\[([\s\S]*?)\]====\]')
-if(-not $paEngine.Success -or -not $paRegistry.Success){throw 'PA CEF verifier missing.'}
-$paRuntimeRegistry=$paRegistry.Groups[1].Value|ConvertFrom-Json
-if(($paRuntimeRegistry|ConvertTo-Json -Depth 30 -Compress) -cne ($paContract|ConvertTo-Json -Depth 30 -Compress)){throw 'PA CEF registry mismatch.'}
-$paCefCheck=@{schema=2;state='UNAVAILABLE';allowed=$false;known=$false;reason='files_unavailable';sha256=$null;fingerprint=$null;mode='native-only';runtime='NOT_RUN';capabilities=@{};protocol=2}
-if((Test-Path -LiteralPath $paHtml -PathType Leaf) -and (Test-Path -LiteralPath $paMain -PathType Leaf)){
-    try{
-        . ([scriptblock]::Create($paEngine.Groups[1].Value))
-        $paCefCheck=Get-PaCefContract ([IO.Path]::GetDirectoryName($paHtml)) $paRuntimeRegistry
-    }catch{$paCefCheck.reason='verifier_unavailable'}
+$paCefCheck=Get-PaSetupCefContract $PSScriptRoot $paDestination $paManifest
+$paCefStatus=Get-PaSetupCefStatus $paCefCheck
+$paCefReason=switch($paCefStatus){
+    'compatible'   {'contract_compatible_pending_runtime'}
+    'incompatible' {'incompatible_contract_native_only'}
+    'unavailable'  {'native_chat'}
+    'failed'       {'verification_failed_native_only'}
 }
-$paInstallCef=$paCefCheck.allowed -eq $true
+$paInstallCef=$paCefStatus -ceq 'compatible'
 if($paInstallCef){$paKnownLauncher=$true}
-$paCefReason=if($paInstallCef){'contract_compatible_pending_runtime'}elseif(Test-Path -LiteralPath $paHtml){'incompatible_contract_native_only'}else{'native_chat'}
 if($RequireCef -and -not $paInstallCef){throw ('CEF contract could not be verified: '+$paCefCheck.reason+'. Native-only installation remains available.')}
-if(-not $paInstallCef -and (Test-Path -LiteralPath $paHtml)){Write-Output ('CEF unavailable; native PA only. Reason: '+$paCefCheck.reason+'. Original chat preserved.')}
+if($paCefStatus -in @('incompatible','failed')){Write-Output ('CEF unavailable; native PA only. Reason: '+$paCefCheck.reason+'. Original chat preserved.')}
 if ($paInstallCef) {
+    $paHtml=Get-PaPath $paGameRoot 'cef\assets\hud\index.html'
+    $paMain=Get-PaPath $paGameRoot 'cef\assets\hud\main.js'
     $paCefRoot=[IO.Path]::GetDirectoryName($paHtml)
     # A launcher update between analysis and planning is never silently accepted.
     if((Get-FileHash -LiteralPath $paMain -Algorithm SHA256).Hash.ToLowerInvariant() -cne $paCefCheck.sha256){throw 'Launcher changed during CEF verification.'}
@@ -378,19 +369,14 @@ if ($paInstallCef) {
             Root=$paCefRoot;BackupRelative=('cef-hud\'+$paRelative);Content=$null}
     }
     $paOriginal=[IO.File]::ReadAllBytes($paHtml)
+    $paOriginalHash=Get-PaByteHash $paOriginal
+    if($paOriginalHash -cne $paCefCheck.html_sha256){throw 'Launcher HTML changed during CEF verification.'}
     $paUtf8=New-Object Text.UTF8Encoding($false,$true)
     $paText=$paUtf8.GetString($paOriginal)
-    $paTag='<!-- PA26 CEF chat adapter --><script src="pa26-chat.js"></script>'
-    $paMarker='<!-- PA26 CEF chat adapter -->'
-    $paClean=$paText.Replace($paTag,'')
-    if($paClean.Contains($paMarker) -or $paClean.Contains('pa26-chat.js') -or ([regex]::Matches($paText,[regex]::Escape($paTag))).Count -gt 1){throw 'Existing PA CEF tag is ambiguous.'}
-    # Match the exact relative script accepted by the verifier; no game code is patched.
-    $paMainTag=[regex]::new('<script\s+src=["'']main\.js["'']\s*>',[Text.RegularExpressions.RegexOptions]::IgnoreCase)
-    if($paMainTag.Matches($paClean).Count -ne 1){throw 'Launcher main.js initialization tag changed.'}
-    $paPatched=$paUtf8.GetBytes($paMainTag.Replace($paClean,($paTag+'$0'),1))
+    $paPatched=$paUtf8.GetBytes([PaCef0452.Contract]::InstallMarkup($paText))
     $paHash=Get-PaByteHash $paPatched
     $paPlan += [PSCustomObject]@{Relative='index.html';Source=$null;Target=$paHtml;SHA256=$paHash;Existed=$true;
-        BeforeHash=(Get-PaByteHash $paOriginal);Skip=($paHash -eq (Get-PaByteHash $paOriginal));
+        BeforeHash=$paOriginalHash;Skip=($paHash -eq $paOriginalHash);
         Root=$paCefRoot;BackupRelative='cef-hud\index.html';Content=$paPatched}
 }
 
@@ -540,7 +526,12 @@ $paResult | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $PSSc
 }
 Write-Output ('Installed and verified ' + $paChanged.Count + ' owned files. Backup: ' + $paBackup)
 
-$paCefSummary=if($paCefReason -eq 'incompatible_contract_native_only'){' Установлены нативные модули. Контракт CEF недоступен или отличается; подключение PA отключено, исходный чат сохранён.'}elseif($paInstallCef){' Контракт CEF совместим; связь с чатом подтвердится при запуске PA.'}else{''}
+$paCefSummary=switch($paCefStatus){
+    'compatible'   {' Контракт CEF совместим. Подтверждение связи ожидается при запуске игры.'}
+    'incompatible' {' Контракт CEF несовместим. Установлены нативные модули PA, исходный чат сохранён.'}
+    'failed'       {' Не удалось проверить CEF. Установлены нативные модули PA, исходный чат сохранён.'}
+    'unavailable'  {''}
+}
 $paPresetSummary=if($paLegacy){' Штатные бинды и настройки обновлены. Личные записи сохранены.'}else{''}
 Set-PaInstallProgress 'completed' 100 ('PA установлен и проверен.'+$paPresetSummary+$paCefSummary+' Можно запускать GTA. Резервная копия: '+$paBackup) $true $true
 } finally {

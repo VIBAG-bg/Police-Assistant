@@ -1,8 +1,8 @@
 {
   "format": "police-assistant.author-presets",
   "schema": 1,
-  "version": "0.45.2",
-  "minimum_pa": "0.45.2",
+  "version": "0.45.1",
+  "minimum_pa": "0.45.1",
   "files": {
     "pa-binds.json": {
       "sha256": "00ae28a076b88af6279d43930e28bf79508f75f7c294124c8d87373f4d227fb3",
@@ -17,6 +17,6 @@
       "size": 75967
     }
   },
-  "settings_revision": "2026-11-05-help-0452",
+  "settings_revision": "2026-11-05-help-0451",
   "binds_revision": "2026-11-05-author-83-rp-0451"
 }

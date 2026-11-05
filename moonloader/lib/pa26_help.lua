@@ -69,7 +69,12 @@ end
 
 function Overlay:offer(studio, ready)
     if not self.firstPending or not ready or studio:hasModal() or studio.modalVisible then return end
-    self.firstPending = false
+    local pending = studio.autosaves and studio.autosaves.help
+    local settings = pending and pending.value or studio.lib.settings.help
+    if not settings.welcome then
+        self.firstPending = false
+        return
+    end
     studio.helpGuide = {automatic=true}
 end
 

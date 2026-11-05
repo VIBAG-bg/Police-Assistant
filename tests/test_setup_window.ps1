@@ -32,6 +32,21 @@ $pre=Get-PaSetupPreflight $game
 Check ($pre.missing -eq 3 -and $pre.moonloader -ieq $ml) 'preflight resolves unicode GTA root and three missing libraries'
 Check (-not (Test-Path -LiteralPath (Join-Path $ml 'lib'))) 'preflight does not download or write game libraries'
 Check ($pre.details.Contains('SA:MP')) 'native client identified'
+Check ((Get-PaSetupCefStatus $pre.cef) -ceq 'unavailable') 'missing CEF is distinct from a failed analysis'
+$hud=Join-Path $game 'cef/assets/hud'
+[IO.Directory]::CreateDirectory($hud)|Out-Null
+$main=Join-Path $hud 'main.js';$html=Join-Path $hud 'index.html'
+[IO.File]::WriteAllText($main,'function unrelated(){}')
+[IO.File]::WriteAllText($html,'<form id="chatInput"><input id="chatInputField"></form><div id="chatMsgList"></div><div id="Dialog"></div><svg id="SendMsgButton"></svg><script src="main.js"></script>')
+$incompatible=Get-PaSetupPreflight $game
+Check ($incompatible.details.Contains('CEF несовместим') -and $incompatible.cef.reason -ceq 'missing_function:showCursor') 'malformed contract is incompatible, with a specific reason'
+$locked=[IO.File]::Open($main,'Open','Read','None')
+try{
+ $failed=Get-PaSetupPreflight $game
+ Check ($failed.details.Contains('Не удалось проверить CEF') -and -not $failed.cef.allowed) 'read errors are inconclusive, not incompatible'
+}finally{$locked.Dispose()}
+[IO.File]::Delete($main);[IO.File]::Delete($html)
+Reject {Read-PaSetupCefPreview @{time=@{Elapsed=@{TotalSeconds=30}}}} 'preflight worker timeout is bounded'
 Reject {Get-PaSetupPreflight (Join-Path $root 'missing-game')} 'invalid folder refused'
 Reject {Start-PaSetupChild $ml (Join-Path $root 'escape')} 'child job must be in bounded installation folder'
 $progressEscape=Join-Path $root 'outside.json'
@@ -71,9 +86,8 @@ if($Render){
  # Exercise the real selector, click and polling loop against the bounded fixture.
  $script:AutoSetupForm=New-PaSetupForm;$original=(Get-Command New-PaSetupForm).ScriptBlock
  function New-PaSetupForm {return $script:AutoSetupForm}
- $InitialPath=$game;$watch=New-Object Windows.Forms.Timer;$watch.Interval=300;$script:ticks=0;$script:uiStarted=$false;$script:uiSuccess=$false;$script:uiInvalidExplained=$false
+ $InitialPath=$game;$watch=New-Object Windows.Forms.Timer;$watch.Interval=300;$script:uiDeadline=[Diagnostics.Stopwatch]::StartNew();$script:uiStarted=$false;$script:uiSuccess=$false;$script:uiInvalidExplained=$false
  $watch.Add_Tick({
-  $script:ticks++
   if(-not $script:uiInvalidExplained){
    $script:AutoSetupForm.PathBox.Text=$root
    Check (-not $script:AutoSetupForm.Install.Enabled -and $script:AutoSetupForm.Requirements.Text.Contains('gta_sa.exe')) 'real TextChanged handler resolves error explanation in script scope'
@@ -81,7 +95,7 @@ if($Render){
   }
   if(-not $script:uiStarted -and $script:AutoSetupForm.Install.Enabled){$script:uiStarted=$true;$script:AutoSetupForm.Install.PerformClick()}
   if($script:AutoSetupForm.LastStage -ceq 'SUCCESS'){$script:uiSuccess=$true}
-  if($script:uiSuccess -or $script:ticks -ge 120){$script:AutoSetupForm.Terminal=$true;$script:AutoSetupForm.Close();$watch.Stop()}
+  if($script:uiSuccess -or $script:uiDeadline.Elapsed.TotalSeconds -ge 120){$script:AutoSetupForm.Terminal=$true;$script:AutoSetupForm.Close();$watch.Stop()}
  })
  try{$watch.Start();Show-PaSetupWindow;Check $script:uiInvalidExplained 'invalid path explained without callback scope errors';Check $script:uiStarted 'real installer button starts child';Check $script:uiSuccess 'real timer reaches verified success'}finally{$watch.Stop();$watch.Dispose();Set-Item Function:New-PaSetupForm $original}
 }

@@ -1,12 +1,10 @@
 {
   "version": "0.45.2",
-  "baseline_source_zip_sha256": "09935d3a4f29aa76bde478faf9ca2ac29c12b9503e566a97c919ab4b438d08ca",
+  "baseline_source_zip_sha256": "2638c54df79cf92d539a34c7692a742a6fe1add07bff585074827a75fe2903ff",
   "lua_regression": "PASS",
   "lua_groups": 217,
-  "lua_checks": 13871200,
-  "lua_syntax_files": 412,
+  "lua_checks": 13868258,
   "installer_updater_fixtures": "PASS",
-  "platform_fixture_groups": 7,
   "installer_rollback_points": [
     1,
     37,
@@ -21,6 +19,29 @@
     103,
     171
   ],
+  "cef_current_contract": {
+    "schema": 2,
+    "fingerprint": "exsellent-chat-v1:d7d0336142561922afcec76b14b0c723efae27ebcaf87261ec606cd729867d0d",
+    "known": false,
+    "protocol": 2,
+    "capabilities": {
+      "dom": true,
+      "focus": true,
+      "payloads": true,
+      "lifecycle": true,
+      "incoming": true,
+      "adapter_order": true,
+      "outgoing": true,
+      "ipc": true
+    },
+    "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+    "reason": "normalized_contract_and_dom",
+    "mode": "cef-provisional",
+    "allowed": true,
+    "state": "CONTRACT_COMPATIBLE",
+    "runtime": "NOT_RUN",
+    "html_sha256": "53512e72c48b879d8512bbec52678538f5a6fecf0e67bc8601239280940ec2b1"
+  },
   "legacy_migration": {
     "legacy_archive": "96f33ca6a710055f20a29d5a0374b6cb2e6119b09f2e631638153218a168d09f",
     "scenarios": [
@@ -39,34 +60,39 @@
       "automatic 0.44.0 never migrates, old worker safely refuses",
       "simulated 0.45.3 update preserves personal configuration and receipt"
     ],
-    "checks": 291,
+    "checks": 294,
     "live_game_written": false,
     "status": "passed",
     "game_started": false
   },
-  "native_ui_frames": 1316,
-  "cef_native_ipc": "PASS",
-  "cef_current_contract": {
-    "mode": "native-only",
-    "runtime": "NOT_RUN",
-    "capabilities": {
-      "dom": true
-    },
-    "fingerprint": null,
-    "state": "INCOMPATIBLE",
-    "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
-    "allowed": false,
-    "schema": 2,
-    "reason": "functional_profile_mismatch",
-    "known": false,
-    "protocol": 2
+  "acceptance": {
+    "fresh_install_f6122": "PASS",
+    "fresh_install_d7526": "PASS",
+    "c4586_js_with_fixture_html": "PASS",
+    "incompatible_hud_fallback": "PASS",
+    "missing_cef_fallback": "PASS",
+    "preflight_error_and_destination_change": "PASS",
+    "reinstallation": "PASS",
+    "manual_migration_0440_to_0452": "PASS",
+    "personal_data_preserved": "PASS",
+    "welcome_after_migration_once": "PASS",
+    "runtime_handshake_success_x86": "PASS",
+    "runtime_handshake_failure_and_recovery_synthetic": "PASS",
+    "cef_input_performance_synthetic": "PASS",
+    "installer_rollback_and_file_integrity": "PASS",
+    "original_c4586_full_launcher": "NOT RUN",
+    "real_gta_input_latency": "NOT RUN",
+    "actual_server_and_tester_pc": "NOT RUN",
+    "actual_windows7": "NOT RUN"
   },
   "protected_sha256": {
-    "CEF_CONTRACT.json": "2343387e0f56fe3ef2447ede8b97f6c9d438e460e0595551caa2d8e10454db75",
     "DEPENDENCIES.json": "0f6be260e3da5fed646ce1330bbfa972f4db09649ac3e968a7d6212dba385f35",
     "UPDATE_CEF_BASELINE.json": "0f4d93878824233183d6158bc6550064e166870d2f7be92ef6693a305236fbf8",
     "cef/assets/hud/pa26-chat-endpoint.js": "dafae2adea0cd37d9aae06d45012279c0d4371af956e0b67d90468bb5647cfc8",
     "cef/assets/hud/pa26-chat.js": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b",
+    "moonloader/lib/pa26_cef_assets.lua": "9340cfd01e1f5f5df83523a26b122fcf936c5138bacdd2b0200fb57540ffdc71",
+    "moonloader/lib/pa26_cef_compat.lua": "3bf7280c6b478d8c141b00ad37ba0f77f90eed397a83ef0e2b86e075d93f8e4b",
+    "moonloader/lib/pa26_cef_job.lua": "444e3e5c9cda979db2610b3cf70bcc7fd2996b43c953f6a29797a3969b562dea",
     "moonloader/lib/pa26_chat_bridge.lua": "e6f31c6f227a4222a7fd8df4ba4836ea9ce3c25db90018f2c430d30ec971af3c",
     "moonloader/lib/pa26_chat_text.lua": "46fe144a532027ebc0c5dbed70e5ed830f252b8cc00a7bf9c675a6b70da6fafa",
     "moonloader/lib/pa26_command_policy.lua": "1f5e997730581f18929fe37327959306ded54947a4eb76d2d5bda2920a0f4872",
@@ -77,14 +103,14 @@
     "moonloader/lib/pa26_navigation_roads.lua": "cf30a665f9056b5c89621b82d21c5ae02fcd3009e53d0dfe68fb9435f0ffb623",
     "moonloader/lib/pa26_update_platform.lua": "995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f",
     "moonloader/lib/pa26_vehicle_types.lua": "694414a5dedb9d0719afb962cb4941abd9715734829340c5f2f828f6ec7d24d2",
+    "moonloader/police_assistant_2026.lua": "8300d6172e1c646e2a23def5810cd2476bdde3d52a8125f04e196b5521edc866",
     "moonloader/resource/pa26/roads.bin": "c1d347286ccb0349940800570078c6872bef31c12ac6d6f77a4b1cf8b857d7db",
-    "moonloader/resource/pa26/updater/pa26-update.ps1": "9b071ffef4dd3be5032c79361f943b65eee1b73f848d63bc961818f0a798b20f"
+    "moonloader/resource/pa26/updater/pa26-update.ps1": "9b071ffef4dd3be5032c79361f943b65eee1b73f848d63bc961818f0a798b20f",
+    "presets/manifest.json": "d4097dadb34df03f13aaf4c0bcbd7b1d2a759c05bcdb8fa6851b7f7270435584",
+    "presets/pa-binds.json": "00ae28a076b88af6279d43930e28bf79508f75f7c294124c8d87373f4d227fb3",
+    "presets/pa-settings.json": "25c04d8937a1e079f879537fdf37ed3ea617b85a3a1e635acb054af6d7bc52ed",
+    "tools/pa-legacy-migration.ps1": "8643b4e44adf46fd94dee386b9bf7d10ac60eb151a2e9d44fb6fc9beed02436b"
   },
-  "window_hook_unchanged": true,
-  "author_binds_unchanged": true,
-  "actual_gta": "NOT RUN",
-  "actual_cef_input_latency": "NOT RUN",
-  "actual_windows7": "NOT RUN",
   "published": false,
   "installed": false,
   "live_game_written": false

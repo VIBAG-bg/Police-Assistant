@@ -59,7 +59,7 @@ for p in [ROOT/'README.md', *(ROOT/'docs').rglob('*.md')]:
         assert (p.parent/target).exists(), f'Broken link in {p.relative_to(ROOT)}: {target}'
         links+=1
 setup_files={'tools/pa-setup.ps1','tools/pa-setup-window.ps1','tools/pa-start.ps1','tools/pa-seed-presets.ps1','DEPENDENCIES.json'}
-if manifest['release']=='0.45.2':
+if manifest['release']=='0.45.1':
     setup_files.update({'tools/pa-legacy-0440.json','tools/pa-legacy-migration.ps1','tools/pa-legacy-lua.ps1','tools/pa-legacy-presets.lua'})
 assert len(manifest['setup_files'])==len(setup_files)
 assert {row['path'] for row in manifest['setup_files']}==setup_files

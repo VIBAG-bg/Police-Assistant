@@ -154,6 +154,8 @@ return function(input)
     local rawLeadership = oldSettings and oldSettings.field and oldSettings.field.leadership
     legacy.saved_briefings = rawLeadership and rawLeadership.briefings
     keepPersonalSettings(out,prior,legacy,review)
+    -- This plan is committed only by the one-time manual migration.
+    out.settings.help.welcome = true
     cfg.main.demo_mode = priorCfg.main.demo_mode
     if input.ini then cfg.widget = model.copy(priorCfg.widget) end
 

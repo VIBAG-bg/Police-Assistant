@@ -1,4 +1,6 @@
-﻿# The setup-only migration uses the installed-version fingerprints from v0.44.0.
+﻿# Keep the migration identity and directory from the withdrawn 0.45.2 so an
+# existing receipt stays valid after renumbering the replacement to 0.45.1.
+$script:PaLegacyTargetRelease='0.45.1'
 $script:PaLegacyMigrationId='manual_0440_to_0452_author_presets_v1'
 $script:PaLegacyRuntimeHash='ff976f6e965e3793e278fa9bf5e80b9b226a0b3932b9da764bffc8e41e6cdb60'
 
@@ -9,7 +11,7 @@ function Get-PaLegacyStateRoot([string]$MoonLoader){
 function Get-PaLegacyOffer([string]$Source,[string]$MoonLoader,[string]$Release){
     $state=Get-PaLegacyStateRoot $MoonLoader
     if([IO.File]::Exists((Join-Path $state 'pending.json'))){return 'recover'}
-    if($Release -cne '0.45.2' -or (Test-Path -LiteralPath (Join-Path $state 'completed.json'))){return 'none'}
+    if($Release -cne $script:PaLegacyTargetRelease -or (Test-Path -LiteralPath (Join-Path $state 'completed.json'))){return 'none'}
     $legacy=Read-PaPresetJson ([IO.File]::ReadAllText((Join-Path $Source 'tools/pa-legacy-0440.json')))
     if($legacy.release -cne '0.44.0' -or $legacy.files.Count -ne 2){throw 'Повреждён каталог версии 0.44.0.'}
     foreach($name in @('police_assistant_2026.lua','lib/pa26_core.lua')){
@@ -219,7 +221,7 @@ function Start-PaLegacyTransaction([string]$MoonLoader,[string]$Job,$Plan){
             before=([string]$row.BeforeHash).ToLowerInvariant(); after=$row.SHA256.ToLowerInvariant()
         }
     })
-    Write-PaJson $pending @{schema=1;migration=$script:PaLegacyMigrationId;job=$Job;source='0.44.0';destination='0.45.2';rows=$rows}
+    Write-PaJson $pending @{schema=1;migration=$script:PaLegacyMigrationId;job=$Job;source='0.44.0';destination=$script:PaLegacyTargetRelease;rows=$rows}
     # The manual prefix keeps the old automatic worker from trying to open
     # this setup-only journal. The bootstrap still pauses PA while it exists.
     Write-PaBytes $marker ([Text.Encoding]::ASCII.GetBytes($Job))
@@ -232,7 +234,7 @@ function Get-PaLegacyJournal([string]$MoonLoader,$Manifest,$Dependencies){
     $journal=Read-PaJson $pending 262144
     $rows=@($journal.rows)
     if($journal.schema -ne 1 -or $journal.migration -cne $script:PaLegacyMigrationId -or
-        $journal.source -cne '0.44.0' -or $journal.destination -cne '0.45.2' -or
+        $journal.source -cne '0.44.0' -or $journal.destination -cnotin @($script:PaLegacyTargetRelease,'0.45.2') -or
         $journal.job -cnotmatch '^manual-0452-[0-9a-f]{32}$' -or $rows.Count -lt 1 -or $rows.Count -gt 512){
         throw 'Журнал переноса PA повреждён.'
     }
@@ -245,14 +247,26 @@ function Get-PaLegacyJournal([string]$MoonLoader,$Manifest,$Dependencies){
     }
     $backup=Get-PaSetupPath $state ('backup-'+$journal.job.Substring('manual-0452-'.Length))
     $allow=Get-PaLegacyAllowedRows $Manifest $Dependencies
+    $previous=@{}
+    if($journal.destination -ceq '0.45.2'){
+        # Only the reviewed old destination bytes may be restored from an
+        # interrupted install. Unchanged paths still use the current manifest.
+        $previous=@{
+            'moonloader/police_assistant_2026.lua'=@('8300d6172e1c646e2a23def5810cd2476bdde3d52a8125f04e196b5521edc866')
+            'moonloader/lib/pa26_core.lua'=@('bbc37eda15c32f0ea59bed1895f7a64ba1cad2c6a7deaff1d9598478eafeeb65')
+            'moonloader/lib/pa26_cef_contract.lua'=@('76a96be5bc45120eda4e20d299e1e89a78674e6fea3ab33b9b447207b10df01a','a5972c3fbe90d3e6559d412fcac49fa66fa7fa9b94a30f039ab90c765d36565f')
+            'moonloader/lib/pa26_help.lua'=@('0085208881fb4e45f973a9f27a32df9257c79fa6f521568815c49a09b8ad54f0','5710b591a7f039837d52523956e1ad07572a5dc7eabfacf9c21c2c43c6415870')
+        }
+    }
     $game=[IO.Path]::GetDirectoryName($MoonLoader)
     $seen=@{};$saved=@{}
     $restore=@(foreach($row in $rows){
         $relative=([string]$row.path).ToLowerInvariant()
+        $expected=if($previous.ContainsKey($relative)){$previous[$relative]}else{$allow[$relative]}
         if($relative -cnotmatch '^[a-z0-9_./-]+$' -or -not $allow.ContainsKey($relative) -or
             $seen.ContainsKey($relative) -or $row.backup -cnotmatch '^runtime/[0-9]{4}\.bin$' -or $saved.ContainsKey($row.backup) -or
             $row.before -cnotmatch '^([a-f0-9]{64})?$' -or $row.after -cnotmatch '^[a-f0-9]{64}$' -or
-            ($allow[$relative] -and $allow[$relative] -cne $row.after)){
+            ($expected -and $row.after -cnotin @($expected))){
             throw 'Журнал содержит неподтверждённый файл.'
         }
         $seen[$relative]=$true;$saved[$row.backup]=$true

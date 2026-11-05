@@ -31,8 +31,20 @@ lib.assist.open_shortcut={key=0x73,alt=true,ctrl=false,shift=false}
 local s=fixture({productionWindows=true,library=lib,helpKeys={0x77,0x56}})
 local frame=s.frames[#s.frames]
 local studio=s.workspace.studio
+s.spawned=false;s.step()
+eq(studio.helpGuide,nil)
+s.spawned=true;s.chat=true;s.step()
+eq(studio.helpGuide,nil);check(not frame.condition())
+s.chat=false
 s.dialog=true;s.step()
 eq(studio.helpGuide,nil);check(not frame.condition())
+s.renderEnabled=false
+s.dialog=false;s.step()
+check(studio.helpGuide and studio.helpGuide.automatic)
+s.dialog=true;s.step()
+eq(studio.helpGuide,nil) -- Dialog opened after the offer but before the guide rendered.
+eq(s.workspace.library.settings.help.welcome,true)
+s.renderEnabled=true
 s.dialog=false;s.step()
 check(studio.helpGuide and studio.helpGuide.automatic)
 local intent=studio:modalIntent({})
@@ -41,6 +53,7 @@ s.click='Начать работу##pa26-help-start';s.render()
 eq(s.click,nil);eq(studio.helpGuide,nil)
 for _=1,4 do s.step(200)end
 eq(s.workspace.library.settings.help.welcome,false)
+eq(studio.helpGuide,nil)
 local saved=model.copy(s.workspace.library)
 if not s.frames[1].condition() then s.commands.pa26();s.step()end
 s.click='Инструкции##pa26-instructions';s.render();eq(s.click,nil)

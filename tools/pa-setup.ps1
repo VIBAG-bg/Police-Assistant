@@ -25,6 +25,44 @@ function Resolve-PaSetupRoot([string]$Selected,[bool]$Test=$false) {
     }
     return $full
 }
+function Get-PaByteHash([byte[]]$Bytes) {
+    $algorithm=[Security.Cryptography.SHA256]::Create()
+    try { return [BitConverter]::ToString($algorithm.ComputeHash($Bytes)).Replace('-','').ToLowerInvariant() }
+    finally { $algorithm.Dispose() }
+}
+function Get-PaSetupCefContract([string]$Source,[string]$MoonLoader,$Manifest) {
+    $report=@{schema=2;state='UNAVAILABLE';allowed=$false;known=$false;reason='files_unavailable';
+        sha256=$null;html_sha256=$null;fingerprint=$null;mode='native-only';runtime='NOT_RUN';capabilities=@{};protocol=2}
+    $hud=Join-Path ([IO.Path]::GetDirectoryName($MoonLoader)) 'cef/assets/hud'
+    foreach($name in @('main.js','index.html')){
+        try{$file=Get-Item -LiteralPath (Join-Path $hud $name) -Force -ErrorAction Stop}
+        catch [System.Management.Automation.ItemNotFoundException]{return $report}
+        catch{$report.reason='files_or_analysis_unavailable';return $report}
+        if($file.PSIsContainer){return $report}
+    }
+    # Read and hash the same buffer before extracting executable PA-owned code.
+    $module=Get-PaSetupPath $Source 'moonloader/lib/pa26_cef_contract.lua'
+    $entry=@($Manifest.files|Where-Object path -CEQ 'lib\pa26_cef_contract.lua')
+    $bytes=[IO.File]::ReadAllBytes($module)
+    if($entry.Count -ne 1 -or (Get-PaByteHash $bytes) -cne $entry[0].sha256){throw 'PA CEF verifier integrity failed.'}
+    $bundle=[Text.Encoding]::UTF8.GetString($bytes)
+    $engine=[regex]::Match($bundle,'verifier=\[====\[([\s\S]*?)\]====\]')
+    $embedded=[regex]::Match($bundle,'registry=\[====\[([\s\S]*?)\]====\]')
+    if(-not $engine.Success -or -not $embedded.Success){throw 'PA CEF verifier missing.'}
+    $registry=$embedded.Groups[1].Value|ConvertFrom-Json
+    $package=[IO.File]::ReadAllText((Get-PaSetupPath $Source 'CEF_CONTRACT.json'),[Text.Encoding]::UTF8)|ConvertFrom-Json
+    if(($registry|ConvertTo-Json -Depth 30 -Compress) -cne ($package|ConvertTo-Json -Depth 30 -Compress)){throw 'PA CEF registry mismatch.'}
+    try{
+        . ([scriptblock]::Create($engine.Groups[1].Value))
+        return Get-PaCefContract $hud $registry
+    }catch{$report.reason='verifier_unavailable';return $report}
+}
+function Get-PaSetupCefStatus($Report) {
+    if($Report.allowed -eq $true -and $Report.state -ceq 'CONTRACT_COMPATIBLE'){return 'compatible'}
+    if($Report.state -ceq 'INCOMPATIBLE'){return 'incompatible'}
+    if($Report.reason -ceq 'files_unavailable'){return 'unavailable'}
+    return 'failed'
+}
 function Read-PaDependencyManifest([string]$Path) {
     if((Get-Item -LiteralPath $Path).Length -gt 131072){throw 'setup_manifest_size'}
     $m=[IO.File]::ReadAllText($Path,[Text.Encoding]::UTF8)|ConvertFrom-Json

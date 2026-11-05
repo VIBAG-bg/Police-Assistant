@@ -1,7 +1,7 @@
 # PA-owned read-only contract verifier. Never evaluates launcher JavaScript.
 # This file is embedded in pa26_cef_contract.lua for the SAME installer/runtime
 # decision, without extending the frozen updater's file ownership policy.
-if (-not ('PaCef0450.Contract' -as [type])) {
+if (-not ('PaCef0452.Contract' -as [type])) {
 Add-Type -Language CSharp -TypeDefinition @'
 using System;
 using System.IO;
@@ -10,9 +10,18 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using System.Diagnostics;
-namespace PaCef0450 {
+namespace PaCef0452 {
  public sealed class Tok { public string v,k; public int a,b; public Tok(string v,string k,int a,int b){this.v=v;this.k=k;this.a=a;this.b=b;} }
  public sealed class Contract {
+  const string PaMarker="<!-- PA26 CEF chat adapter -->";
+  const string PaTag=PaMarker+"<script src=\"pa26-chat.js\"></script>";
+  static readonly Regex MainTag=new Regex("<script\\s+src=(['\"])main\\.js\\1\\s*>");
+  public static string InstallMarkup(string html){
+   string clean=html.Replace(PaTag,"");
+   if(html.Length-clean.Length>PaTag.Length||clean.Contains(PaMarker)||clean.Contains("pa26-chat.js"))throw new Exception("html_adapter_tag");
+   if(MainTag.Matches(clean).Count!=1)throw new Exception("html_main_tag");
+   return MainTag.Replace(clean,PaTag+"$0",1);
+  }
   public static string Hash(byte[] bytes){using(var h=SHA256.Create())return BitConverter.ToString(h.ComputeHash(bytes)).Replace("-","").ToLowerInvariant();}
   public static byte[] ReadLimited(string path,int limit){using(var f=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete)){
    long size=f.Length;if(size<1||size>limit)throw new Exception("file_size");byte[] b=new byte[(int)size];int n=0;while(n<b.Length){int got=f.Read(b,n,b.Length-n);if(got==0)throw new Exception("file_changed");n+=got;}if(f.ReadByte()!=-1)throw new Exception("file_changed");return b;}}
@@ -112,7 +121,7 @@ namespace PaCef0450 {
     if(n=="script"){
      if(Regex.IsMatch(tag,"\\s(?:async|defer)(?:\\s|=|>)",RegexOptions.IgnoreCase)||attrs.ContainsKey("type"))return "html_async_script";
      string src;if(!attrs.TryGetValue("src",out src))return "html_inline_script";
-     if(src=="main.js")main++;else if(src=="pa26-chat.js")adapter++;else return "html_extra_script";
+     if(src=="main.js"){if(!MainTag.IsMatch(tag))return "html_main_tag";main++;}else if(src=="pa26-chat.js")adapter++;else return "html_extra_script";
     }
    }
    foreach(string id in new[]{"chatInput","chatInputField","chatMsgList","Dialog","SendMsgButton"})if(!ids.ContainsKey(id))return "missing_dom:"+id;
@@ -125,7 +134,7 @@ namespace PaCef0450 {
 }
 function Get-PaCefContract([string]$HudRoot, $Registry, [switch]$Inventory) {
  $result=@{schema=2;state='UNAVAILABLE';allowed=$false;known=$false;reason='files_unavailable';sha256=$null;fingerprint=$null;
-  mode='native-only';capabilities=@{};runtime='NOT_RUN';protocol=2}
+  html_sha256=$null;mode='native-only';capabilities=@{};runtime='NOT_RUN';protocol=2}
  try {
   $main=Join-Path $HudRoot 'main.js';$html=Join-Path $HudRoot 'index.html'
   foreach($path in @($main,$html)){
@@ -135,16 +144,20 @@ function Get-PaCefContract([string]$HudRoot, $Registry, [switch]$Inventory) {
    if($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'unsafe_path'}
    if($file.Length -gt $(if($path -eq $main){4194304}else{1048576}) -or $file.Length -lt 1){throw 'file_size'}
   }
-  $bytes=[PaCef0450.Contract]::ReadLimited($main,4194304);$result.sha256=[PaCef0450.Contract]::Hash($bytes)
-  $markup=[PaCef0450.Contract]::Markup([Text.Encoding]::UTF8.GetString([PaCef0450.Contract]::ReadLimited($html,1048576)))
+  $bytes=[PaCef0452.Contract]::ReadLimited($main,4194304);$result.sha256=[PaCef0452.Contract]::Hash($bytes)
+  $htmlBytes=[PaCef0452.Contract]::ReadLimited($html,1048576)
+  $result.html_sha256=[PaCef0452.Contract]::Hash($htmlBytes)
+  $htmlText=(New-Object Text.UTF8Encoding($false,$true)).GetString($htmlBytes)
+  $markup=[PaCef0452.Contract]::Markup($htmlText)
   if($markup -ne 'verified'){$result.state='INCOMPATIBLE';$result.reason=$markup;return $result}
+  [PaCef0452.Contract]::InstallMarkup($htmlText)|Out-Null
   $result.capabilities.dom=$true
   $known=@($Registry.known_versions|Where-Object sha256 -CEQ $result.sha256)
   if($known.Count -eq 1 -and -not $Inventory){
    $result.known=$true;$result.fingerprint=$known[0].fingerprint;$result.reason='reviewed_identity_and_dom'
   }else{
    $text=[Text.Encoding]::UTF8.GetString($bytes)
-   $map=[PaCef0450.Contract]::Inventory($text,[string[]]$Registry.required_functions)
+   $map=[PaCef0452.Contract]::Inventory($text,[string[]]$Registry.required_functions)
    if($Inventory){$result.inventory=$map}
    foreach($profile in $Registry.contract_profiles){
     $match=$true
@@ -157,6 +170,17 @@ function Get-PaCefContract([string]$HudRoot, $Registry, [switch]$Inventory) {
   }
   $result.capabilities=@{dom=$true;outgoing=$true;incoming=$true;payloads=$true;lifecycle=$true;focus=$true;ipc=$true;adapter_order=$true}
   $result.state='CONTRACT_COMPATIBLE';$result.allowed=$true;$result.mode='cef-provisional'
- }catch{$result.reason=if($_.Exception.Message -match '^(js_|decoder_|missing_function|analysis_limit|unsafe_path|file_size)'){$_.Exception.Message}else{'files_or_analysis_unavailable'};if($result.sha256){$result.state='INCOMPATIBLE'}}
+ }catch{
+  $cause=$_.Exception.GetBaseException()
+  if($cause -is [System.Management.Automation.ItemNotFoundException] -or $cause -is [IO.FileNotFoundException] -or $cause -is [IO.DirectoryNotFoundException]){
+   $result.reason='files_unavailable'
+  }elseif($cause -is [Text.DecoderFallbackException]){
+   $result.state='INCOMPATIBLE';$result.reason='html_encoding'
+  }elseif($cause.Message -match '^(js_|decoder_|missing_function:|html_|unsafe_path$|file_size$)'){
+   $result.state='INCOMPATIBLE';$result.reason=$cause.Message
+  }elseif($cause.Message -cin @('analysis_limit','file_changed')){
+   $result.reason=$cause.Message
+  }else{$result.reason='files_or_analysis_unavailable'}
+ }
  return $result
 }

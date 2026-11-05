@@ -1,4 +1,24 @@
 {
+  "acceptance": {
+    "fresh_install_f6122": "PASS",
+    "fresh_install_d7526": "PASS",
+    "c4586_js_with_fixture_html": "PASS",
+    "incompatible_hud_fallback": "PASS",
+    "missing_cef_fallback": "PASS",
+    "preflight_error_and_destination_change": "PASS",
+    "reinstallation": "PASS",
+    "manual_migration_0440_to_0452": "PASS",
+    "personal_data_preserved": "PASS",
+    "welcome_after_migration_once": "PASS",
+    "runtime_handshake_success_x86": "PASS",
+    "runtime_handshake_failure_and_recovery_synthetic": "PASS",
+    "cef_input_performance_synthetic": "PASS",
+    "installer_rollback_and_file_integrity": "PASS",
+    "original_c4586_full_launcher": "NOT RUN",
+    "real_gta_input_latency": "NOT RUN",
+    "actual_server_and_tester_pc": "NOT RUN",
+    "actual_windows7": "NOT RUN"
+  },
   "lua": {
     "resource_sha256": {
       "moonloader/resource/pa26/knowledge-base.json": "e0c05b15af8eec391f1a3ec415ad4aee9c4494fcc30b52c995831fcc3411373f",
@@ -26,7 +46,7 @@
       "moonloader/lib/pa26_case_ui.lua": "899548fea71265bd9db01c3a5f41c333d113db2384ef0b6b7ecd3f5bf71914e8",
       "moonloader/lib/pa26_cef_assets.lua": "9340cfd01e1f5f5df83523a26b122fcf936c5138bacdd2b0200fb57540ffdc71",
       "moonloader/lib/pa26_cef_compat.lua": "3bf7280c6b478d8c141b00ad37ba0f77f90eed397a83ef0e2b86e075d93f8e4b",
-      "moonloader/lib/pa26_cef_contract.lua": "76a96be5bc45120eda4e20d299e1e89a78674e6fea3ab33b9b447207b10df01a",
+      "moonloader/lib/pa26_cef_contract.lua": "a5972c3fbe90d3e6559d412fcac49fa66fa7fa9b94a30f039ab90c765d36565f",
       "moonloader/lib/pa26_cef_job.lua": "444e3e5c9cda979db2610b3cf70bcc7fd2996b43c953f6a29797a3969b562dea",
       "moonloader/lib/pa26_chat_bridge.lua": "e6f31c6f227a4222a7fd8df4ba4836ea9ce3c25db90018f2c430d30ec971af3c",
       "moonloader/lib/pa26_chat_perf.lua": "9e42c9e611bc7a6f696aeb45d10fd7546f3fea38d1afe6aa91f852a45ca00539",
@@ -64,7 +84,7 @@
       "moonloader/lib/pa26_geometry.lua": "084c5c5242a60afc8a735839ab91c5cf8614f4a945836b9d1ccc0aea360669fb",
       "moonloader/lib/pa26_ground_speech.lua": "f5f6b995c6723669e4295ec704a22d808ffc272bb791176d4ea34e2119517b70",
       "moonloader/lib/pa26_ground_window.lua": "3fbaac431d52a944260e70875b00b60dd8d56a3b55cf2faf11bec9d0804b1fce",
-      "moonloader/lib/pa26_help.lua": "0085208881fb4e45f973a9f27a32df9257c79fa6f521568815c49a09b8ad54f0",
+      "moonloader/lib/pa26_help.lua": "5710b591a7f039837d52523956e1ad07572a5dc7eabfacf9c21c2c43c6415870",
       "moonloader/lib/pa26_hud.lua": "5cdf33cb5fd308592492677ef367052514bac5cd4ef9a493a4bcfaffe909db3e",
       "moonloader/lib/pa26_icon_font.lua": "37dd10fd5ec58fc272219dca5d7ec97c5f9871f37a27da8d1f263eb56dfc08f4",
       "moonloader/lib/pa26_icon_glyphs.lua": "93fcd9fe508ec13c82f5991f538ad5019d426de0ea475e1c415d37050b1e50ed",
@@ -254,7 +274,7 @@
       "tests/test_ground0422.lua": "1e003bf5a95e8308df4250c5986d9cb23de1e4704033db46559433922ea260b2",
       "tests/test_ground_drafts0433.lua": "502d6343759b063e0a197ce47a936aa2d4376fb130e5758e695689ae718d12f5",
       "tests/test_gui_key_capture.lua": "33df97433db963b782c0f49ae4ee1bc47bf06bba050a39e3d8c5d307fed4f06e",
-      "tests/test_help0452.lua": "accd5785e3f5bede7da49ccf32bae295832c9cd024ab529eafe7aa309b509800",
+      "tests/test_help0452.lua": "f761bee23bb19de00466e27c5df59aa6219e70ceb794a66078a5bc0edbc992d6",
       "tests/test_helpers_shortcut.lua": "f4c4f4b9844846272303db22ece73c144d7e78b7771f89425863e567285f06c6",
       "tests/test_hotfix0404.lua": "6d3673b0a2752b1bce49120b130094c30d7eb015f32a737634bd27a5f70c8769",
       "tests/test_hotfix0404_native32.lua": "de52035ec16be16be5ba046d6fde1925ba2796d5e1de223aa2f84afac243d6ba",
@@ -424,7 +444,7 @@
       "tests/test_window_persistence.lua": "de258e273e2186782197a1ce6c2bd2f39898bdd2d252adac9d3822f4beee3e56",
       "tests/test_windows_native32.lua": "1fe0df8e7e6cb91f5e2e83b09b64e8c2b013a1b13c000e89954b6031a8541352"
     },
-    "total_checks": 13871200,
+    "total_checks": 13868258,
     "results": [
       {
         "test": "test_core.lua",
@@ -1508,7 +1528,7 @@
       },
       {
         "test": "test_help0452.lua",
-        "checks": 38530,
+        "checks": 35588,
         "status": "passed"
       }
     ],
@@ -1516,7 +1536,7 @@
   },
   "platform": {
     "version": "0.45.2",
-    "at_utc": "2026-11-05T14:59:27.403222+00:00",
+    "at_utc": "2026-11-05T21:00:01.721245+00:00",
     "environment": "Windows PowerShell 5.1; workspace fixtures only; no GUI launch",
     "game_started": false,
     "live_game_written": false,
@@ -1525,49 +1545,49 @@
         "test": "test_author_install.ps1",
         "status": "passed",
         "exit_code": 0,
-        "elapsed_seconds": 101.61,
+        "elapsed_seconds": 102.45,
         "log": "tests/QA0452-test_author_install.log"
       },
       {
         "test": "test_cef_installer0440.ps1",
         "status": "passed",
         "exit_code": 0,
-        "elapsed_seconds": 47.25,
+        "elapsed_seconds": 48.98,
         "log": "tests/QA0452-test_cef_installer0440.log"
       },
       {
         "test": "test_setup.ps1",
         "status": "passed",
         "exit_code": 0,
-        "elapsed_seconds": 13.41,
+        "elapsed_seconds": 12.81,
         "log": "tests/QA0452-test_setup.log"
       },
       {
         "test": "test_setup_window.ps1",
         "status": "passed",
         "exit_code": 0,
-        "elapsed_seconds": 50.64,
+        "elapsed_seconds": 53.05,
         "log": "tests/QA0452-test_setup_window.log"
       },
       {
         "test": "test_update_legacy_paths.ps1",
         "status": "passed",
         "exit_code": 0,
-        "elapsed_seconds": 22.06,
+        "elapsed_seconds": 20.55,
         "log": "tests/QA0452-test_update_legacy_paths.log"
       },
       {
         "test": "test_update_progress.ps1",
         "status": "passed",
         "exit_code": 0,
-        "elapsed_seconds": 8.95,
+        "elapsed_seconds": 7.44,
         "log": "tests/QA0452-test_update_progress.log"
       },
       {
         "test": "test_updater.ps1",
         "status": "passed",
         "exit_code": 0,
-        "elapsed_seconds": 72.41,
+        "elapsed_seconds": 65.5,
         "log": "tests/QA0452-test_updater.log"
       }
     ]
@@ -1595,10 +1615,10 @@
       103,
       171
     ],
-    "manifest_sha256": "FCB98E3C0A3DC98594AF023F43B4EC18751A3341C810CA63E0CBF244B27A9417",
-    "installer_sha256": "74F66BD0FE50BDE378220AD56BAC6B27B151D94633916CF48EA887D2E9C9FC84",
+    "manifest_sha256": "24994C81CA2C52EB238BD629F650E20FBA26BE4A06DC435BF76CE0CB0CB83F4D",
+    "installer_sha256": "FBDB8E0BD854326B670322D3DDEF43EFB209C9444CF26F1D1F872DA3884534E4",
     "cef_transaction_fixture": "synthetic_reviewed_registry_in_sandbox_copy",
-    "transaction_manifest_sha256": "DE0A9C8401A29FBE077E036FC04BB273A1618212736ADE872455C32B4F8ECA6D",
+    "transaction_manifest_sha256": "6E052DB52CAF4B87C02D8E6E7DFCD2F30BE1E202B542C7077026E2ED98081087",
     "production_registry_changed": false,
     "real_game_written": false,
     "independent_process_shards": 3
@@ -1621,73 +1641,850 @@
       "automatic 0.44.0 never migrates, old worker safely refuses",
       "simulated 0.45.3 update preserves personal configuration and receipt"
     ],
-    "checks": 291,
+    "checks": 294,
     "live_game_written": false,
     "status": "passed",
     "game_started": false
   },
-  "cef_current": {
-    "mode": "native-only",
-    "runtime": "NOT_RUN",
-    "capabilities": {
-      "dom": true
-    },
-    "fingerprint": null,
-    "state": "INCOMPATIBLE",
-    "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
-    "allowed": false,
-    "schema": 2,
-    "reason": "functional_profile_mismatch",
-    "known": false,
-    "protocol": 2
-  },
-  "native_ui": {
-    "screen_sizes": 7,
-    "game_started": false,
-    "views": 22,
-    "frames": 1232,
-    "icon_states": 2,
-    "game_written": false,
-    "font_scales": 2,
-    "checks": 2632,
+  "setup": {
+    "compatibility_matrix": [
+      "Windows 7 SP1 prerequisites",
+      "Windows 10",
+      "Windows 11"
+    ],
+    "checks": 32,
+    "real_game_written": false,
+    "windows7_vm_tested": false,
+    "rendered": false,
     "status": "passed"
   },
-  "native_rp": {
-    "screen_sizes": 7,
-    "game_written": false,
-    "game_started": false,
-    "font_scales": 2,
-    "status": "passed",
-    "views": 3,
-    "checks": 168,
-    "frames": 84
+  "launch": {
+    "compatible_hud": true,
+    "checks": 11,
+    "real_game_written": false,
+    "windows7_vm_tested": false,
+    "normal_script_entry": true,
+    "status": "passed"
   },
-  "native_gps": {
-    "win7_guest_tested": false,
-    "results": [
-      {
-        "source": "bundled",
-        "nodes": 462
+  "onboarding": {
+    "test": "test_help0452.lua",
+    "checks": 35588,
+    "status": "passed"
+  },
+  "cef_huds": {
+    "F6122": {
+      "evidence": "original launcher JavaScript and HTML",
+      "install": {
+        "game_started": false,
+        "scenarios": [
+          "fresh current launcher",
+          "reinstall",
+          "late-tag upgrade",
+          "private preservation",
+          "incompatible native fallback",
+          "strict rejection",
+          "published 0.45.2 native-only to corrected local package with adapter",
+          "missing HUD file falls back without modifying launcher files",
+          "injected CEF install failure and rollback"
+        ],
+        "installer_sha256": "fbdb8e0bd854326b670322d3ddef43efb209c9444cf26f1d1f872da3884534e4",
+        "manifest_sha256": "24994c81ca2c52eb238bd629f650e20fba26be4a06dc435bf76ce0cb0cb83f4d",
+        "status": "passed",
+        "live_game_written": false,
+        "hud_main_sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+        "checks": 49
       },
-      {
-        "source": "launcher",
-        "nodes": 462
+      "runtime": {
+        "status": "passed",
+        "checks": 147,
+        "real_x86_luajit": true,
+        "real_installed_luasocket": true,
+        "real_loopback_http": true,
+        "runtime_verifier": {
+          "initialization_ms": 5122.7226257324,
+          "report": {
+            "schema": 2,
+            "fingerprint": "exsellent-chat-v1:d7d0336142561922afcec76b14b0c723efae27ebcaf87261ec606cd729867d0d",
+            "known": false,
+            "protocol": 2,
+            "capabilities": {
+              "dom": true,
+              "focus": true,
+              "payloads": true,
+              "lifecycle": true,
+              "incoming": true,
+              "adapter_order": true,
+              "outgoing": true,
+              "ipc": true
+            },
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "reason": "normalized_contract_and_dom",
+            "mode": "cef-provisional",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE",
+            "runtime": "NOT_RUN",
+            "html_sha256": "53512e72c48b879d8512bbec52678538f5a6fecf0e67bc8601239280940ec2b1"
+          }
+        },
+        "runtime_handshake": "RUNTIME_VERIFIED",
+        "real_hud_send_function_in_isolated_v8": true,
+        "real_hud_incoming_registration": true,
+        "real_hud_focus_functions": true,
+        "chat_field_is_test_double": true,
+        "layout_packet_values_are_test_doubles": true,
+        "gta_launched": false,
+        "actual_game_server_contacted": false,
+        "manual_multiline_native_ipc": true,
+        "manual_sha256": "1a38d09e8c9c36e217e88b83717bf3fb69e098ec2fbbca409ba6c8c5befbb2a2",
+        "rp_sha256": "cd6023006df794bf870e0c62f0fb47c2d8b0034fc25f62fbac6a34883ffce92f",
+        "adapter_sha256": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b",
+        "bridge_sha256": "e6f31c6f227a4222a7fd8df4ba4836ea9ce3c25db90018f2c430d30ec971af3c",
+        "chat_text_sha256": "46fe144a532027ebc0c5dbed70e5ed830f252b8cc00a7bf9c675a6b70da6fafa",
+        "test_sha256": "35979b2269dc32cabd0f4cb9c3f8d54571c5bc2f99a305a82b42ae1f4b93b351",
+        "assets_sha256": "9340cfd01e1f5f5df83523a26b122fcf936c5138bacdd2b0200fb57540ffdc71",
+        "real_large_hud_bytes": 86735,
+        "real_atomic_replace": true,
+        "hud_main_sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+        "cef_client_sha256": "1c5053dc19369ee4c672ef1631e9d84bfc3cde9aecfbb415a064098508392994",
+        "host_sha256": "33ea893247dbbb62086757ae3195a1541a7b5a0e83458d9420b5b4c47895a057",
+        "lua51_sha256": "ff976f6e965e3793e278fa9bf5e80b9b226a0b3932b9da764bffc8e41e6cdb60",
+        "socket_core_sha256": "c7e65c06df09addf05fd807e964e87f4ea56476e15e19ea5e47a321419ace50e"
       },
-      {
-        "source": "legacy",
-        "nodes": 462
-      },
-      {
-        "source": "custom",
-        "nodes": 462
+      "static": {
+        "old_reviewed_launcher": "BLOCKED_SOURCE_NOT_AVAILABLE",
+        "cases": [
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "reviewed_launcher",
+            "elapsed_ms": 626.0848000000001,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "1cb204d24100b7a35525995c284fc4c20ae80bcffe34c7f5793bf515e4b8c79d",
+            "name": "unrelated_comment",
+            "elapsed_ms": 394.29380000000003,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "3e3fddc2ce06ca4655cc420400917aa59b0f6213c60e0c4655e57b677035a4a2",
+            "name": "unrelated_whitespace",
+            "elapsed_ms": 381.9425,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "d8fa8da77f267d6c317dff10a431b793d8b502cb63a9e0b26e8e4ecd40482ad1",
+            "name": "private_identifier_rename",
+            "elapsed_ms": 441.4979,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "2c46416f063961277ee6dea5eb701391cf479f52467926ec9e152b146454e9b1",
+            "name": "unrelated_function_implementation",
+            "elapsed_ms": 381.0812,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "2d4d96d306034d6d279d8b2735c51232c5edc23c2043d90bd8984db6c484be61",
+            "name": "missing_send",
+            "elapsed_ms": 288.7174,
+            "reason": "missing_function:sendMessageToChat",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "0a22c2c3231c5424e6584001c6e26d6a9fe9d950b47a309c185df2273ef62ae6",
+            "name": "wrong_send_payload",
+            "elapsed_ms": 1489.8754000000001,
+            "reason": "functional_profile_mismatch",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "852d91ae5f73798ccde71421eebe3ef930323058d2c266fece118e57ce8a6e3e",
+            "name": "wrong_incoming_event",
+            "elapsed_ms": 1126.5255,
+            "reason": "functional_profile_mismatch",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "missing_input",
+            "elapsed_ms": 121.4919,
+            "reason": "missing_dom:chatInputField",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "wrong_input_type",
+            "elapsed_ms": 108.3831,
+            "reason": "html_structure",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "duplicate_input",
+            "elapsed_ms": 158.47830000000002,
+            "reason": "html_duplicate_id",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "disabled_input",
+            "elapsed_ms": 77.5624,
+            "reason": "html_input_disabled",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "async_handler",
+            "elapsed_ms": 61.414100000000005,
+            "reason": "html_async_script",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "unpatchable_main_tag",
+            "elapsed_ms": 94.9873,
+            "reason": "html_main_tag",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "ambiguous_pa_marker",
+            "elapsed_ms": 59.8356,
+            "reason": "html_adapter_tag",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "extra_script",
+            "elapsed_ms": 62.3952,
+            "reason": "html_extra_script",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "fec0398a0889f7d7f79d4670e8c718132419665e55d4062261a3a330fba5d00a",
+            "name": "names_only_not_a_contract",
+            "elapsed_ms": 67.9832,
+            "reason": "missing_function:showCursor",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "2d69c405c97dbbb58f8bdef102ea92f8ea003386035c44277fd4c385b909e446",
+            "name": "unexecuted_launcher_payload",
+            "elapsed_ms": 466.7418,
+            "reason": "functional_profile_mismatch",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+            "name": "known_registry_path_fixture",
+            "elapsed_ms": 50.7943,
+            "reason": "reviewed_identity_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          }
+        ],
+        "checks": 49,
+        "live_game_written": false,
+        "environment": "Windows PowerShell 5.1 / .NET CSharp verifier; local files read-only",
+        "status": "passed",
+        "game_started": false
       }
-    ],
-    "live_game_written": false,
-    "game_started": false,
-    "status": "passed",
-    "cases": 5,
-    "environment": "Windows x86 LuaJIT and Unicode reader; fixture files only",
-    "checks": 31
+    },
+    "D7526": {
+      "evidence": "archived launcher JavaScript and HTML",
+      "install": {
+        "game_started": false,
+        "scenarios": [
+          "fresh current launcher",
+          "reinstall",
+          "late-tag upgrade",
+          "private preservation",
+          "incompatible native fallback",
+          "strict rejection"
+        ],
+        "installer_sha256": "fbdb8e0bd854326b670322d3ddef43efb209c9444cf26f1d1f872da3884534e4",
+        "manifest_sha256": "24994c81ca2c52eb238bd629f650e20fba26be4a06dc435bf76ce0cb0cb83f4d",
+        "status": "passed",
+        "live_game_written": false,
+        "hud_main_sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "checks": 27
+      },
+      "runtime": {
+        "status": "passed",
+        "checks": 145,
+        "real_x86_luajit": true,
+        "real_installed_luasocket": true,
+        "real_loopback_http": true,
+        "runtime_verifier": {
+          "initialization_ms": 4677.7057647705,
+          "report": {
+            "schema": 2,
+            "fingerprint": "exsellent-chat-v1:57c75fe6c2d126d65400533b3d112d657b77834be588558716d0c6c92778e95f",
+            "known": false,
+            "protocol": 2,
+            "capabilities": {
+              "dom": true,
+              "focus": true,
+              "payloads": true,
+              "lifecycle": true,
+              "incoming": true,
+              "adapter_order": true,
+              "outgoing": true,
+              "ipc": true
+            },
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "reason": "normalized_contract_and_dom",
+            "mode": "cef-provisional",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE",
+            "runtime": "NOT_RUN",
+            "html_sha256": "de212b9759fe63cc34f598282f0537ba91871425ee14fa574bcc38a30a65eb66"
+          }
+        },
+        "runtime_handshake": "RUNTIME_VERIFIED",
+        "real_hud_send_function_in_isolated_v8": true,
+        "real_hud_incoming_registration": true,
+        "real_hud_focus_functions": true,
+        "chat_field_is_test_double": true,
+        "layout_packet_values_are_test_doubles": true,
+        "gta_launched": false,
+        "actual_game_server_contacted": false,
+        "manual_multiline_native_ipc": true,
+        "manual_sha256": "1a38d09e8c9c36e217e88b83717bf3fb69e098ec2fbbca409ba6c8c5befbb2a2",
+        "rp_sha256": "cd6023006df794bf870e0c62f0fb47c2d8b0034fc25f62fbac6a34883ffce92f",
+        "adapter_sha256": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b",
+        "bridge_sha256": "e6f31c6f227a4222a7fd8df4ba4836ea9ce3c25db90018f2c430d30ec971af3c",
+        "chat_text_sha256": "46fe144a532027ebc0c5dbed70e5ed830f252b8cc00a7bf9c675a6b70da6fafa",
+        "test_sha256": "35979b2269dc32cabd0f4cb9c3f8d54571c5bc2f99a305a82b42ae1f4b93b351",
+        "assets_sha256": "9340cfd01e1f5f5df83523a26b122fcf936c5138bacdd2b0200fb57540ffdc71",
+        "real_large_hud_bytes": 86735,
+        "real_atomic_replace": true,
+        "hud_main_sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+        "cef_client_sha256": "1c5053dc19369ee4c672ef1631e9d84bfc3cde9aecfbb415a064098508392994",
+        "host_sha256": "33ea893247dbbb62086757ae3195a1541a7b5a0e83458d9420b5b4c47895a057",
+        "lua51_sha256": "ff976f6e965e3793e278fa9bf5e80b9b226a0b3932b9da764bffc8e41e6cdb60",
+        "socket_core_sha256": "c7e65c06df09addf05fd807e964e87f4ea56476e15e19ea5e47a321419ace50e"
+      },
+      "static": {
+        "old_reviewed_launcher": "BLOCKED_SOURCE_NOT_AVAILABLE",
+        "cases": [
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "reviewed_launcher",
+            "elapsed_ms": 656.2356,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "8eb877ca08fa9253ee0b11b6ef343bd5360351777db88d93fe46ddc630f78509",
+            "name": "unrelated_comment",
+            "elapsed_ms": 340.9347,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "6f6341b982df992ea16e82a999593b72def7df75084d0e30684129d7d82cf300",
+            "name": "unrelated_whitespace",
+            "elapsed_ms": 313.6078,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "4fb1e7992a458661246f1daed90dad7832f847446382e9f20b6bca37c3de6eae",
+            "name": "private_identifier_rename",
+            "elapsed_ms": 352.80830000000003,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "bac23162babf197471254cbd12716973a17252f9a92ae92d384c26308d27af6c",
+            "name": "unrelated_function_implementation",
+            "elapsed_ms": 308.8288,
+            "reason": "normalized_contract_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          },
+          {
+            "sha256": "766c949f28259c0dcb655ffb41ad99d83e07fc3bed15e5a16e48a3f1c57bbe84",
+            "name": "missing_send",
+            "elapsed_ms": 414.72450000000003,
+            "reason": "missing_function:sendMessageToChat",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d31f57ad5981cafee89d4f8ed558125dfebe407ef5754bb439e295fce4d9a722",
+            "name": "wrong_send_payload",
+            "elapsed_ms": 499.30580000000003,
+            "reason": "functional_profile_mismatch",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "a7d115a65c0873d89b07055255b6d5ae5eaf7e8c7c507e479c7dc8dee25f2ec2",
+            "name": "wrong_incoming_event",
+            "elapsed_ms": 324.1755,
+            "reason": "functional_profile_mismatch",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "missing_input",
+            "elapsed_ms": 100.54400000000001,
+            "reason": "missing_dom:chatInputField",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "wrong_input_type",
+            "elapsed_ms": 68.194,
+            "reason": "html_structure",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "duplicate_input",
+            "elapsed_ms": 125.45020000000001,
+            "reason": "html_duplicate_id",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "disabled_input",
+            "elapsed_ms": 54.7447,
+            "reason": "html_input_disabled",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "async_handler",
+            "elapsed_ms": 63.0981,
+            "reason": "html_async_script",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "unpatchable_main_tag",
+            "elapsed_ms": 66.7792,
+            "reason": "html_main_tag",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "ambiguous_pa_marker",
+            "elapsed_ms": 55.326,
+            "reason": "html_adapter_tag",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "extra_script",
+            "elapsed_ms": 50.1839,
+            "reason": "html_extra_script",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "fec0398a0889f7d7f79d4670e8c718132419665e55d4062261a3a330fba5d00a",
+            "name": "names_only_not_a_contract",
+            "elapsed_ms": 156.416,
+            "reason": "missing_function:showCursor",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "1b1296e9187f2c1ff0be774ecebf6e0d559628320d09bb9764d8e97bd4c9ac9c",
+            "name": "unexecuted_launcher_payload",
+            "elapsed_ms": 301.1157,
+            "reason": "functional_profile_mismatch",
+            "allowed": false,
+            "state": "INCOMPATIBLE"
+          },
+          {
+            "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+            "name": "known_registry_path_fixture",
+            "elapsed_ms": 58.1374,
+            "reason": "reviewed_identity_and_dom",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE"
+          }
+        ],
+        "checks": 47,
+        "live_game_written": false,
+        "environment": "Windows PowerShell 5.1 / .NET CSharp verifier; local files read-only",
+        "status": "passed",
+        "game_started": false
+      }
+    },
+    "C4586": {
+      "evidence": "archived JavaScript with D7526 HTML as a fixture",
+      "install": {
+        "game_started": false,
+        "scenarios": [
+          "fresh current launcher",
+          "reinstall",
+          "late-tag upgrade",
+          "private preservation",
+          "incompatible native fallback",
+          "strict rejection"
+        ],
+        "installer_sha256": "fbdb8e0bd854326b670322d3ddef43efb209c9444cf26f1d1f872da3884534e4",
+        "manifest_sha256": "24994c81ca2c52eb238bd629f650e20fba26be4a06dc435bf76ce0cb0cb83f4d",
+        "status": "passed",
+        "live_game_written": false,
+        "hud_main_sha256": "c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410",
+        "checks": 27
+      },
+      "runtime": {
+        "status": "passed",
+        "checks": 145,
+        "real_x86_luajit": true,
+        "real_installed_luasocket": true,
+        "real_loopback_http": true,
+        "runtime_verifier": {
+          "initialization_ms": 4730.0186157227,
+          "report": {
+            "schema": 2,
+            "fingerprint": "exsellent-reviewed-2026-10-24",
+            "known": true,
+            "protocol": 2,
+            "capabilities": {
+              "dom": true,
+              "focus": true,
+              "payloads": true,
+              "lifecycle": true,
+              "incoming": true,
+              "adapter_order": true,
+              "outgoing": true,
+              "ipc": true
+            },
+            "sha256": "c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410",
+            "reason": "reviewed_identity_and_dom",
+            "mode": "cef-provisional",
+            "allowed": true,
+            "state": "CONTRACT_COMPATIBLE",
+            "runtime": "NOT_RUN",
+            "html_sha256": "de212b9759fe63cc34f598282f0537ba91871425ee14fa574bcc38a30a65eb66"
+          }
+        },
+        "runtime_handshake": "KNOWN_VERIFIED",
+        "real_hud_send_function_in_isolated_v8": true,
+        "real_hud_incoming_registration": true,
+        "real_hud_focus_functions": true,
+        "chat_field_is_test_double": true,
+        "layout_packet_values_are_test_doubles": true,
+        "gta_launched": false,
+        "actual_game_server_contacted": false,
+        "manual_multiline_native_ipc": true,
+        "manual_sha256": "1a38d09e8c9c36e217e88b83717bf3fb69e098ec2fbbca409ba6c8c5befbb2a2",
+        "rp_sha256": "cd6023006df794bf870e0c62f0fb47c2d8b0034fc25f62fbac6a34883ffce92f",
+        "adapter_sha256": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b",
+        "bridge_sha256": "e6f31c6f227a4222a7fd8df4ba4836ea9ce3c25db90018f2c430d30ec971af3c",
+        "chat_text_sha256": "46fe144a532027ebc0c5dbed70e5ed830f252b8cc00a7bf9c675a6b70da6fafa",
+        "test_sha256": "35979b2269dc32cabd0f4cb9c3f8d54571c5bc2f99a305a82b42ae1f4b93b351",
+        "assets_sha256": "9340cfd01e1f5f5df83523a26b122fcf936c5138bacdd2b0200fb57540ffdc71",
+        "real_large_hud_bytes": 86735,
+        "real_atomic_replace": true,
+        "hud_main_sha256": "c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410",
+        "cef_client_sha256": "1c5053dc19369ee4c672ef1631e9d84bfc3cde9aecfbb415a064098508392994",
+        "host_sha256": "33ea893247dbbb62086757ae3195a1541a7b5a0e83458d9420b5b4c47895a057",
+        "lua51_sha256": "ff976f6e965e3793e278fa9bf5e80b9b226a0b3932b9da764bffc8e41e6cdb60",
+        "socket_core_sha256": "c7e65c06df09addf05fd807e964e87f4ea56476e15e19ea5e47a321419ace50e"
+      },
+      "static": null
+    }
+  },
+  "contract_inventory": {
+    "f6122": {
+      "sha256": "f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0",
+      "html_sha256": "53512e72c48b879d8512bbec52678538f5a6fecf0e67bc8601239280940ec2b1",
+      "components": {
+        "showCursor": "1a23e28feb53f7c298031cc9dbff2ce7df9a6882748dddfba26974210ec5932d",
+        "hideCursor": "85eefd54be4511ef7bdade0837f8dc71b9c3a47b08989054a91fedf561054744",
+        "getInputLanguage": "869f3a96c18f45f6afe65e61505091802812b47fed03b8ad76629a2aa50c79f8",
+        "showChat": "b205adb5d368b058aa9b0d28da9adb7af32f62f08337c1bc15a765519dd25624",
+        "hideChat": "d4904fa61be21c9a208d6e7f192d248ee0c413a9e5918a369693ef1561d669a6",
+        "showChatInput": "5e1e3e9f29b7e9cd8b9654f89d11fd0af056d846c4d3682ffab79da7ebe13d0d",
+        "hideChatInput": "4821c673f3c90a0ec6f5d99a1e9e7dab9eea481418cf41c1702f4fd7cfc71264",
+        "isChatHidden": "74231b26abe8a2c4f27955c2353de48eeb88cdd6137dbe543a2a78de9719145d",
+        "isChatInputActive": "9655daae3e47787eccf9577ee435d202050be1037618668ea3d76b632837d31c",
+        "moveCursorToEnd": "3892e9e7a2b743bc75cbad27c98322c082805fa2ae4b4737d699e2be4c71d21b",
+        "sendMessageToChat": "d5b48c800aa1d787360cdb6bee07b617636cb6a6242b88af3b3db753e5741134",
+        "addChatMessage": "e4047d4c90884a825f16a32c841de9a72df5a92ffb3b9df02790f47aebb73044",
+        "renderChatMessage": "5862066aca95769e57e8ee3a3bf6c251fa4a1f6b37d7d3aab537df1ccf4cb652",
+        "resetChatFadeTimer": "90c55612a73409e77af7b56a571aed14ea1a7161c06c40dd0df8c1f2b6845c9d",
+        "saveMessageToStorage": "c0116465bcc725fb3a97d61064657dbe52c5d63e9b5ea10061059582d086dd8d",
+        "loadMessagesFromStorage": "e7ec9939cb7f6aeeab7a7dd389852751e8d4dad3e542e7d2150adf731ce7f877",
+        "saveInputMessageToStorage": "354393294108a2234cf18770daea9c4b2dfba544dfc79252c4c5f9d253e19c80",
+        "loadInputMessagesFromStorage": "62cdcbe0229aade887fd162319b665046fa0b45be45bcc06d84df053e2ed0f38",
+        "isDialogActive": "83f34bdd4b2f13ba92aa7119e629ee56c09afd57bb4068e91508849122407d37",
+        "isCarDealershipActive": "8729bbc07d73037c5dcf0f84b32e7b12c604f0fb0114a0e88cc5c169e9d0ece7",
+        "isBlackjackGameActive": "a872c6aa7a14f712dfbdd452c4d5b75e5bcf307859dea6ce98bd0e48a01dd577",
+        "isDialogDailyTasksInterfaceActive": "bb685351c8999c4f6e089f7ad4592ac25450b3b97500459a60df5acd2881f717",
+        "isDiceGameActive": "cc9ab4cc722f5bd47b1d09b6331180e8e0ba43bdae1b77eaad1c289780d56adc",
+        "isGasStationInterfaceActive": "4c65f5dfe2c865dae814a834f7d980463f4c9bb7c3edbb0e62bb5a813a4a2ec4",
+        "isPerformanceInterfaceActive": "70305a18cf18cc4e2ffffaf7226ead0066fcb5d32636fa73e4e95edd6d64f6a4",
+        "isSlotMachineActive": "22869c4cb2b924a8bf219dcdc19249ec3cdd357fa46f70d9129a7a2b39305ee2",
+        "isPromocodeActive": "456402ca8e4a3ca6c8ff0389fbee42269ca8b2953e75a0f77a2ccaafbc15552a",
+        "isDeathScreen": "5287d8849a281ba6558b1ebca9166126a9fa60371ee03c76e21f7bfe4b88eef5",
+        "isShowActive": "3d8d3e5294522a7c9428173c4b09b2b267804070ef5e24ea07e765bfe137f53a",
+        "isFactionRating": "1672602e7fa8c1910f175827638aa05e478225b0d23322052316c2d4b5caf1ed",
+        "isAuthActive": "753c71f67732b853d6e9faf14ca75ba36fc1e1c76db0ff7e5f271f19bad2a9e3",
+        "isAdminToolsActive": "40f69981ed6265e97f4a9c8834f57682bad85679ab7b6423807b6b479efab2c8",
+        "isTuningActive": "df9af84d20f1d847edee088c47a71314d4e56592f1f44d88f5877118b4080dee",
+        "isHouseSpawnSelectorActive": "ede4cdcbf78f432bc7382753aa268ab3e923caea43105425dfdf64b99c3571db",
+        "parseHexColor": "a627fd23e44f7db2b80fff6f8ac677824b645d239b8c2a675fa2d89af9500e6b",
+        "_0x3e78": "e38cdbb68513ad7ba03faf061b405ccbf6b769345523b56fe041e7751ece05d9",
+        "showCopyToast": "7a67b51ead26cd578bc987b44cb4564d94ad715943f7caee469b477508ea2dad",
+        "isRegistrationActive": "d85f677d6b119901a72871122e6fc7fbf51eb01c1b2cf3c27a744ee0dfa1c1eb",
+        "_0x5374": "21daaf720e453392d5eaf181613d5e9e94289a02f8c438c995ffe89822faf036",
+        "isRegSkinSelectionActive": "b78944db3f9a9e25cbedbf24dd77f277954cf2f2a5daaddf39d537e8fef35c5e",
+        "$decoder": "e38cdbb68513ad7ba03faf061b405ccbf6b769345523b56fe041e7751ece05d9",
+        "$table": "21daaf720e453392d5eaf181613d5e9e94289a02f8c438c995ffe89822faf036",
+        "$initialization_and_events": "c3f4ab432182c99ca39d01326097beb50c5c20b6b694a68fbac8957b50736e99",
+        "$protected_references": "511bacbce11d3b4270ec9b1db708765588338ce46fbe47cc550a71f900ed8811"
+      }
+    },
+    "d7526": {
+      "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
+      "html_sha256": "de212b9759fe63cc34f598282f0537ba91871425ee14fa574bcc38a30a65eb66",
+      "components": {
+        "showCursor": "a96757ef58a12402cce1c099c19cf0f172f55e51d41a10a05f5c8b0275ae494d",
+        "hideCursor": "3831d24aa648ce9db18cd3c714f35ba5829e8f9ca19a66844ef5d471a8596ee9",
+        "getInputLanguage": "9b24f4dd9ce16b9e0ec3a345e28516270720a4c00c26558032f6bf324197afee",
+        "showChat": "3544fde9ab809430a579d9030bf848822acf8ee0fa8e62aa4c8feedc3614bfe7",
+        "hideChat": "9dcd7ba389fc2c5c636b88995e38ac75743aa1b037326af9fbaa1bd17e974542",
+        "showChatInput": "109a44d46251367a019597abc293f6b71df9f6438fe093fddecec53fbbc81e73",
+        "hideChatInput": "b18182e67dae288c0754db36a64e58db5d86f0b841d99c8f540d686ed007dc11",
+        "isChatHidden": "e2e817ac35c1722538ffecf48bf6c236d0e507bd3ba248bb1986e43603762ea8",
+        "isChatInputActive": "79c33f0c830baf714c231799c9a0a74c93af313ca8a34338e06fccb9a0fcdebd",
+        "moveCursorToEnd": "0b1aa54ad09176a41a18cf0e0e17e92dc95de262367d4b4196f643aa398acdba",
+        "sendMessageToChat": "2bdbb7da6103bd6c68ca2fa2b3750c3044015592307fe1b56b43a797c8ddf9da",
+        "addChatMessage": "2e33ef0e47d48bba4f57587cc64855bcdfc40b0792194df364119efa4d697be1",
+        "renderChatMessage": "ba1f92974b058cdb513a24e7419e4b243c5deaa1081af2da495de5510440ee69",
+        "resetChatFadeTimer": "d2379cc8867977075d83c6af763d2a25f6732d00dbc0f27bf831cade794110e5",
+        "saveMessageToStorage": "f7f07a37a75a0dbd6afa50008e1b2ddde28a529944c6ad478f7cea7d3c51573a",
+        "loadMessagesFromStorage": "ece2eb746a6d2d2189243ad68b06563b14db72ca2e587794208b8b92d4682ae4",
+        "saveInputMessageToStorage": "da62eaf2aa50fbba6aabcea736fc1db4248b8a8610c91afcb48db869ab8496c1",
+        "loadInputMessagesFromStorage": "da65e23a2af0a46dd4ea16ca4c4df4936a8354e4123fec40c6e1ea5236a937b7",
+        "isDialogActive": "1429aefda459e6c061122cb0eac1e5a13c79ce353547a53b48a7f9a4634f06e8",
+        "isCarDealershipActive": "eb752a26d0963826a9e59bd64095b70659a318c7db7c37d442b59c61fa9a93ab",
+        "isBlackjackGameActive": "f97d1dec9f16c22d408433706253c7090b6492179612bcd7fe63d7cef8a542f3",
+        "isDialogDailyTasksInterfaceActive": "d68929026c9bf9581484fb4aae0721fa442ba5f4b020ef036ff33448c3fa77c3",
+        "isDiceGameActive": "f25c93ff9b246b6e3827296f7efdf81e42c7d9b6fef7875f006c00991e08c4b2",
+        "isGasStationInterfaceActive": "490cfc9f38a72a28cbb7b937187970a6706e8dccb4ff5c8dca86018465a36689",
+        "isPerformanceInterfaceActive": "d8a270d98b4553f4be9bb9e17bf7cffb9957cc228cf9f111020b7d91d13174c4",
+        "isSlotMachineActive": "0faed226f25c2adfc3cc1a73c1534c75ff49f2f0219d0e48ef0bf6fb51fd9a72",
+        "isPromocodeActive": "04137db4bebfb691b3b9bad5ccacf9e54c13f9014c557900c7b1bc43ccb5a7e1",
+        "isDeathScreen": "b76789ccb0f35bc78058ebd2289ba2424a3f5002222b50c27b83b9279e684216",
+        "isShowActive": "f54602b86154df351e430d4c99c0b61179cd1d9f83c52e721eac8ccf648a9071",
+        "isFactionRating": "75ab1e275d1cc96c3662e937e26bd93d42c7a230d8959dc2f1553b86efc29875",
+        "isAuthActive": "36ccccef492859b34fd2fbf4329369ef6acaab3667588e8a5ad437425b282d83",
+        "isAdminToolsActive": "b68f7e1c0d5ec79fa91f0be885a82998021355450038265801f7be61626ae9f8",
+        "isTuningActive": "aecb0cc7c0f99b640ddb3d627118b9b3b56652f7972511c60f45c2504c0491a5",
+        "isHouseSpawnSelectorActive": "27f74281a0394845f07ec0072fd2ee56cbd3d9cdb83ebe13d7b6346c186041a8",
+        "parseHexColor": "e1bab6a8b2c88e5346d816b6db50892cc6563cf4102a1bb4d716774921ee2bdd",
+        "showCopyToast": "f698aa53656951ee89e9cb65040042c4f693562d323fed9d3a275aa84637ab3c",
+        "isRegistrationActive": "fd9bf9f39eaec953e51085ffb774b0eae6b60a0b6e8ce864103a2494235823af",
+        "isRegSkinSelectionActive": "173431ded152e9c0922e304ec396b91199f0bae536ef98fa7f8b4ce7d584fbbc",
+        "$decoder": "4f32f162e602ca07d594f1643be6fa46b6094de22ea456fad6dc97699d3663fa",
+        "$table": "0a2ab3ef82d12722cd3e4ef4fc3bcda73a903422e51fffccbe8ee23c7a930884",
+        "$initialization_and_events": "22c3de22c946c4319122f91cfe2c03ef6931989c87022664a157fd54a9ba055a",
+        "$protected_references": "4b4feaf2d238a05e7e9d92ec1ee09c6672fdf1a1a6d5bd8598b72130b6c6fe49"
+      }
+    },
+    "c4586": {
+      "sha256": "c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410",
+      "html_sha256": "de212b9759fe63cc34f598282f0537ba91871425ee14fa574bcc38a30a65eb66",
+      "components": {
+        "showCursor": "dfda7eaa02f24defa946419c223671e704b1a760ef1ded4d626063e55bd5aa95",
+        "hideCursor": "23ccde9886277c5d6eb145ead02c2e4b4823b31085a44c95771c8d6095863008",
+        "getInputLanguage": "9e492d708acdb759c9aca5b11b55fee6f71c0e48cecf6c93972f6c8e6c90c9d1",
+        "showChat": "b63ff3b281bce20199e66d4603cac85c3a4ed5ce8a358d0eb9ee0a28ffbbb2c5",
+        "hideChat": "a05983e3f77a754a9dc39d2926806deeae4db679325eab3d7aecb87e447f3f19",
+        "showChatInput": "f5d9ab4fd71f70cf168d4623758faad9f217009fa0ee59661baee06b537633b1",
+        "hideChatInput": "f3544ae88d7dfa07fc51ebabd591fa59d2a8b3d07b4fbbbd6a6f74ca832f9d6f",
+        "isChatHidden": "28b54c681d1631f15d550911e2ab99c32b9e8f39e929462ecaf2afd4ba739d0a",
+        "isChatInputActive": "a0a786ac373969e6ce9b6dd478824ed8c0f5a3a522260a80f946c363c86217ed",
+        "moveCursorToEnd": "c24716fcccd7238dae9056d8f2ad124ff584d53456723822711745323088af36",
+        "sendMessageToChat": "8b4b20063d97406737c3c1cdce7b04e3e844d2924b276c8fa49b230aa7a63dfc",
+        "addChatMessage": "f1e2736b6dd1e7bddd8b53927c1bcb1b1570e3bbb3a26a708b98668606db2b55",
+        "renderChatMessage": "44bd3354675aef6f037a397544e4e628ccace647cfd2122a9200199aff2c10c8",
+        "resetChatFadeTimer": "ecbddd08f15c479a060c7629bc685a6e3c649fef2b094307da1ab87ff6ecd2e8",
+        "saveMessageToStorage": "85910b3021ec8c867c3ca4427f9a160672b0b2d996f057bbd107cc4cda26afc9",
+        "loadMessagesFromStorage": "97f34a12894e75edb2d2ab6d61089797724afc672a56a27cc25330e19274cfe0",
+        "saveInputMessageToStorage": "da18a2971e44ff4e6c95cde9aa6ab00926a3cf931883d2205fbe1497d72702c4",
+        "loadInputMessagesFromStorage": "cafbed41ffaecca1d2358cd522975cc8449201bcee0f909636c3adb8870504eb",
+        "isDialogActive": "f7ee4c495b9a3e575119d5fdd3949de256ac7f7197d9fdb7cdd400dbcd25eea3",
+        "isCarDealershipActive": "8f734a1626d93156b97e31b28677e34698a90a023deef2715c1bce8810310578",
+        "isBlackjackGameActive": "ace533cf395cf221937e40dbff70e1168d4310144389114eab95a73337585b04",
+        "isDialogDailyTasksInterfaceActive": "c77a546e3679bd8ef1040640ec0afa10a9bf07bd5d7815d66f30839f3e955823",
+        "isDiceGameActive": "e89ea11d8ce178fdaa032606e336bf94827711e2075ccfc5e85af4e24f2cf408",
+        "isGasStationInterfaceActive": "2883f814ee2431cbf411f0cecee38971520da015fd1f10149cfb66c28dc98d10",
+        "isPerformanceInterfaceActive": "365d350db4b754d1a9a40599a32613e45c5159ccf40edad2e3588fe0ccace21e",
+        "isSlotMachineActive": "df88dac51d4012547a411c0243e42a4b10d655e0072d0e1bbdc7e332e2a9e360",
+        "isPromocodeActive": "f6c945753be27af7c167ec4647f2a805f4c64ec5d6a8726adeb444694235d1c7",
+        "isDeathScreen": "d70b7f586a7b4ff10786034959eaa0f5b6f3872445bd149e5785237ea7fccce9",
+        "isShowActive": "439df2a52482af5297394474b2bb83ec40f3fc0ea668ec17a07cc4ffa7c5ca37",
+        "isFactionRating": "04b438a742eb6e9e8f540b194ed684b81db5c4bc6189c854edf5cd207cc33068",
+        "isAuthActive": "c2c34faec62393efdec521111411f011dd0a49477bcfa505e10d7c052258f385",
+        "isAdminToolsActive": "fa7ab10ffffb770759c959da46a34e67fb7e3d6040b8fbf1005f69a580177a62",
+        "isTuningActive": "ad8199cb8c63e10f85fa624ba0ce522497a7bcad1526347657511c9774762d48",
+        "isHouseSpawnSelectorActive": "428481bb44e7915e436988d405642df14011ebc45a1f8b977da6383df810e29b",
+        "_0x2db2": "b56788d1c8bf27555bfc47f5cbd849403d80f3027bd7550b72f3c7d3499928e4",
+        "parseHexColor": "f4a8c1a86b8653435bbb58dbfebdc7d3d51b16b379dc68320ecc072a61a94360",
+        "showCopyToast": "438d84c011c5f38e6a814cb335055c69afe3619b9ec13b73720e1bcc1c5070fb",
+        "isRegistrationActive": "e40747217c8b0c9a599de1cd861550db4d577a7101d12306908c8355212898e4",
+        "_0x52d0": "5aefc49a2ebbd03a6b3921360299df1a291eec9ebf8f80371898fbf4b19c8e1b",
+        "isRegSkinSelectionActive": "de42930f9f3b35bfb94047187726a277a20c04da69bc4cb611e334d4afde7813",
+        "$decoder": "b56788d1c8bf27555bfc47f5cbd849403d80f3027bd7550b72f3c7d3499928e4",
+        "$table": "5aefc49a2ebbd03a6b3921360299df1a291eec9ebf8f80371898fbf4b19c8e1b",
+        "$initialization_and_events": "3d2d4079185a817eb4b194ff929ad0967a8bff93bf7d4cbb13761f7224dc174e",
+        "$protected_references": "0ba8be9a20527477207b051f1866391b1d7e9cd828c0ddc9b509620a369feb85"
+      }
+    }
+  },
+  "f6122_component_diff": {
+    "d7526": {
+      "changed": [
+        "$decoder",
+        "$initialization_and_events",
+        "$protected_references",
+        "$table",
+        "addChatMessage",
+        "getInputLanguage",
+        "hideChat",
+        "hideChatInput",
+        "hideCursor",
+        "isAdminToolsActive",
+        "isAuthActive",
+        "isBlackjackGameActive",
+        "isCarDealershipActive",
+        "isChatHidden",
+        "isChatInputActive",
+        "isDeathScreen",
+        "isDialogActive",
+        "isDialogDailyTasksInterfaceActive",
+        "isDiceGameActive",
+        "isFactionRating",
+        "isGasStationInterfaceActive",
+        "isHouseSpawnSelectorActive",
+        "isPerformanceInterfaceActive",
+        "isPromocodeActive",
+        "isRegSkinSelectionActive",
+        "isRegistrationActive",
+        "isShowActive",
+        "isSlotMachineActive",
+        "isTuningActive",
+        "loadInputMessagesFromStorage",
+        "loadMessagesFromStorage",
+        "moveCursorToEnd",
+        "parseHexColor",
+        "renderChatMessage",
+        "resetChatFadeTimer",
+        "saveInputMessageToStorage",
+        "saveMessageToStorage",
+        "sendMessageToChat",
+        "showChat",
+        "showChatInput",
+        "showCopyToast",
+        "showCursor"
+      ],
+      "added": [
+        "_0x3e78",
+        "_0x5374"
+      ],
+      "removed": []
+    },
+    "c4586": {
+      "changed": [
+        "$decoder",
+        "$initialization_and_events",
+        "$protected_references",
+        "$table",
+        "addChatMessage",
+        "getInputLanguage",
+        "hideChat",
+        "hideChatInput",
+        "hideCursor",
+        "isAdminToolsActive",
+        "isAuthActive",
+        "isBlackjackGameActive",
+        "isCarDealershipActive",
+        "isChatHidden",
+        "isChatInputActive",
+        "isDeathScreen",
+        "isDialogActive",
+        "isDialogDailyTasksInterfaceActive",
+        "isDiceGameActive",
+        "isFactionRating",
+        "isGasStationInterfaceActive",
+        "isHouseSpawnSelectorActive",
+        "isPerformanceInterfaceActive",
+        "isPromocodeActive",
+        "isRegSkinSelectionActive",
+        "isRegistrationActive",
+        "isShowActive",
+        "isSlotMachineActive",
+        "isTuningActive",
+        "loadInputMessagesFromStorage",
+        "loadMessagesFromStorage",
+        "moveCursorToEnd",
+        "parseHexColor",
+        "renderChatMessage",
+        "resetChatFadeTimer",
+        "saveInputMessageToStorage",
+        "saveMessageToStorage",
+        "sendMessageToChat",
+        "showChat",
+        "showChatInput",
+        "showCopyToast",
+        "showCursor"
+      ],
+      "added": [
+        "_0x3e78",
+        "_0x5374"
+      ],
+      "removed": [
+        "_0x2db2",
+        "_0x52d0"
+      ]
+    }
   },
   "cef_browser": {
     "status": "passed",
@@ -1726,193 +2523,1472 @@
     "game_started": false,
     "actual_game_latency": "NOT RUN"
   },
-  "cef_static": {
-    "old_reviewed_launcher": "BLOCKED_SOURCE_NOT_AVAILABLE",
-    "cases": [
-      {
-        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
-        "name": "current_d7526",
-        "elapsed_ms": 345.8473,
-        "reason": "normalized_contract_and_dom",
-        "allowed": true,
-        "state": "CONTRACT_COMPATIBLE"
-      },
-      {
-        "sha256": "8eb877ca08fa9253ee0b11b6ef343bd5360351777db88d93fe46ddc630f78509",
-        "name": "unrelated_comment",
-        "elapsed_ms": 255.6533,
-        "reason": "normalized_contract_and_dom",
-        "allowed": true,
-        "state": "CONTRACT_COMPATIBLE"
-      },
-      {
-        "sha256": "6f6341b982df992ea16e82a999593b72def7df75084d0e30684129d7d82cf300",
-        "name": "unrelated_whitespace",
-        "elapsed_ms": 242.40720000000002,
-        "reason": "normalized_contract_and_dom",
-        "allowed": true,
-        "state": "CONTRACT_COMPATIBLE"
-      },
-      {
-        "sha256": "4fb1e7992a458661246f1daed90dad7832f847446382e9f20b6bca37c3de6eae",
-        "name": "private_identifier_rename",
-        "elapsed_ms": 283.53360000000004,
-        "reason": "normalized_contract_and_dom",
-        "allowed": true,
-        "state": "CONTRACT_COMPATIBLE"
-      },
-      {
-        "sha256": "bac23162babf197471254cbd12716973a17252f9a92ae92d384c26308d27af6c",
-        "name": "unrelated_function_implementation",
-        "elapsed_ms": 253.00910000000002,
-        "reason": "normalized_contract_and_dom",
-        "allowed": true,
-        "state": "CONTRACT_COMPATIBLE"
-      },
-      {
-        "sha256": "766c949f28259c0dcb655ffb41ad99d83e07fc3bed15e5a16e48a3f1c57bbe84",
-        "name": "missing_send",
-        "elapsed_ms": 188.43,
-        "reason": "files_or_analysis_unavailable",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "cbe04157a3b45f5bbce681e8449aaaa38208969aa61a921150fc969ff00f23b1",
-        "name": "wrong_send_payload",
-        "elapsed_ms": 211.51670000000001,
-        "reason": "functional_profile_mismatch",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "a7d115a65c0873d89b07055255b6d5ae5eaf7e8c7c507e479c7dc8dee25f2ec2",
-        "name": "wrong_incoming_event",
-        "elapsed_ms": 207.233,
-        "reason": "functional_profile_mismatch",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
-        "name": "missing_input",
-        "elapsed_ms": 118.924,
-        "reason": "missing_dom:chatInputField",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
-        "name": "wrong_input_type",
-        "elapsed_ms": 56.5412,
-        "reason": "html_structure",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
-        "name": "duplicate_input",
-        "elapsed_ms": 51.481,
-        "reason": "html_duplicate_id",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
-        "name": "disabled_input",
-        "elapsed_ms": 49.4345,
-        "reason": "html_input_disabled",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
-        "name": "async_handler",
-        "elapsed_ms": 75.97970000000001,
-        "reason": "html_async_script",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
-        "name": "extra_script",
-        "elapsed_ms": 66.592,
-        "reason": "html_extra_script",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "fec0398a0889f7d7f79d4670e8c718132419665e55d4062261a3a330fba5d00a",
-        "name": "names_only_not_a_contract",
-        "elapsed_ms": 54.5259,
-        "reason": "files_or_analysis_unavailable",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "1b1296e9187f2c1ff0be774ecebf6e0d559628320d09bb9764d8e97bd4c9ac9c",
-        "name": "unexecuted_launcher_payload",
-        "elapsed_ms": 244.883,
-        "reason": "functional_profile_mismatch",
-        "allowed": false,
-        "state": "INCOMPATIBLE"
-      },
-      {
-        "sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
-        "name": "known_registry_path_fixture",
-        "elapsed_ms": 81.6797,
-        "reason": "reviewed_identity_and_dom",
-        "allowed": true,
-        "state": "CONTRACT_COMPATIBLE"
-      }
-    ],
-    "checks": 39,
-    "live_game_written": false,
-    "environment": "Windows PowerShell 5.1 / .NET CSharp verifier; local files read-only",
+  "cef_performance": {
     "status": "passed",
-    "game_started": false
-  },
-  "cef_install": {
-    "scenarios": [
-      "fresh current launcher",
-      "reinstall",
-      "late-tag upgrade",
-      "private preservation",
-      "incompatible native fallback",
-      "strict rejection"
-    ],
-    "checks": 21,
-    "live_game_written": false,
-    "manifest_sha256": "fcb98e3c0a3dc98594af023f43b4ec18751a3341c810ca63e0cbf244b27a9417",
-    "installer_sha256": "74f66bd0fe50bde378220ad56bac6b27b151d94633916cf48ea887d2e9c9fc84",
-    "status": "passed",
-    "game_started": false
-  },
-  "cef_native": {
-    "status": "passed",
-    "checks": 113,
-    "real_x86_luajit": true,
-    "real_installed_luasocket": true,
-    "real_loopback_http": true,
-    "real_hud_send_function_in_isolated_v8": true,
-    "chat_field_is_test_double": true,
-    "layout_packet_values_are_test_doubles": true,
-    "gta_launched": false,
-    "actual_game_server_contacted": false,
-    "manual_multiline_native_ipc": true,
-    "manual_sha256": "1a38d09e8c9c36e217e88b83717bf3fb69e098ec2fbbca409ba6c8c5befbb2a2",
-    "rp_sha256": "cd6023006df794bf870e0c62f0fb47c2d8b0034fc25f62fbac6a34883ffce92f",
+    "environment": "Node V8, mock DOM, production callbacks and protocol-2 fixture",
     "adapter_sha256": "af6c266992dba0bfbd51b3603a615b14fb293becaa7f3a3c697eedfccdfcbf4b",
-    "bridge_sha256": "e6f31c6f227a4222a7fd8df4ba4836ea9ce3c25db90018f2c430d30ec971af3c",
-    "chat_text_sha256": "46fe144a532027ebc0c5dbed70e5ed830f252b8cc00a7bf9c675a6b70da6fafa",
-    "test_sha256": "895cbaacf80876ea5028dcaa142ae59180119f6abfba06dd5d000ca1fa60a65c",
-    "assets_sha256": "9340cfd01e1f5f5df83523a26b122fcf936c5138bacdd2b0200fb57540ffdc71",
-    "real_large_hud_bytes": 86735,
-    "real_atomic_replace": true,
-    "hud_main_sha256": "d7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2",
-    "cef_client_sha256": "1c5053dc19369ee4c672ef1631e9d84bfc3cde9aecfbb415a064098508392994",
-    "host_sha256": "33ea893247dbbb62086757ae3195a1541a7b5a0e83458d9420b5b4c47895a057",
-    "lua51_sha256": "ff976f6e965e3793e278fa9bf5e80b9b226a0b3932b9da764bffc8e41e6cdb60",
-    "socket_core_sha256": "c7e65c06df09addf05fd807e964e87f4ea56476e15e19ea5e47a321419ace50e"
+    "same_adapter_bytes": true,
+    "live_input_latency": "NOT RUN",
+    "comparisons": {
+      "0.45.1": [
+        {
+          "baseline": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0013000000000147338,
+                "p95_ms": 0.0019000000000346517,
+                "worst_handler_ms": 1.2697999999999752
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.3157999999999674
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0017000000000280124,
+                "p95_ms": 0.0026000000000294676,
+                "worst_handler_ms": 3.0942000000000007
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0013000000000147338,
+                "p95_ms": 0.0018999999999778083,
+                "worst_handler_ms": 2.3238000000000056
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0005999999999630745,
+                "p95_ms": 0.002999999999985903,
+                "worst_handler_ms": 2.1287999999999556
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.1186999999999898
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0019000000000346517,
+                "p95_ms": 0.0027000000000043656,
+                "worst_handler_ms": 1.2398000000000025
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0007999999999697138,
+                "worst_handler_ms": 2.3449000000000524
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006999999999948159,
+                "worst_handler_ms": 2.3304999999999723
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.37189999999998236
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0001999999999497959,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.11429999999995744
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "candidate": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0013000000000147338,
+                "p95_ms": 0.002100000000041291,
+                "worst_handler_ms": 0.2017999999999347
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 1.869199999999978
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.001199999999926149,
+                "p95_ms": 0.002200000000016189,
+                "worst_handler_ms": 2.895999999999958
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.00020000000006348273,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 2.0538999999999987
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0005999999999630745,
+                "worst_handler_ms": 0.9429000000000087
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.38020000000005894
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0006999999999379725,
+                "p95_ms": 0.0009999999999763531,
+                "worst_handler_ms": 2.612799999999993
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0007000000000516593,
+                "worst_handler_ms": 2.2749999999999773
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0005000000001018634,
+                "p95_ms": 0.0007999999999128704,
+                "worst_handler_ms": 0.26109999999994216
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.5507000000000062
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.1594000000000051
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "pa_off": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0006999999999948159,
+                "p95_ms": 0.00190000000000623,
+                "worst_handler_ms": 0.9933999999999941
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.00030000000000995897,
+                "worst_handler_ms": 0.7848000000000184
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0012000000000114142,
+                "p95_ms": 0.002299999999991087,
+                "worst_handler_ms": 1.2918999999999983
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.00030000000000995897,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.7033999999999878
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.0006000000000199179,
+                "worst_handler_ms": 0.4484999999999957
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.524799999999999
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.001299999999986312,
+                "p95_ms": 0.0023999999999944066,
+                "worst_handler_ms": 1.9586999999999932
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.00030000000000995897,
+                "p95_ms": 0.0005999999999914962,
+                "worst_handler_ms": 0.550200000000018
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 0.40639999999996235
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.5982999999999947
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0001999999999497959,
+                "p95_ms": 0.0003000000000383807,
+                "worst_handler_ms": 0.8314000000000306
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          }
+        },
+        {
+          "baseline": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0011999999999829924,
+                "p95_ms": 0.0018000000000029104,
+                "worst_handler_ms": 1.4641000000000304
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.9168999999999983
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0020999999999844476,
+                "p95_ms": 0.003199999999992542,
+                "worst_handler_ms": 2.0547000000000253
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0014000000000464752,
+                "p95_ms": 0.002200000000016189,
+                "worst_handler_ms": 3.151100000000042
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0006000000000199179,
+                "p95_ms": 0.0034999999999740794,
+                "worst_handler_ms": 2.346900000000005
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 1.2527999999999793
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0019000000000346517,
+                "p95_ms": 0.002999999999985903,
+                "worst_handler_ms": 2.560699999999997
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.0006000000000767614,
+                "worst_handler_ms": 1.9469000000000278
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0007000000000516593,
+                "worst_handler_ms": 2.667100000000005
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.2917999999999665
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.00029999999992469384,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.6123000000000047
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "candidate": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0014999999999645297,
+                "p95_ms": 0.0025000000000545697,
+                "worst_handler_ms": 0.676499999999919
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 4.408999999999992
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0018000000000029104,
+                "p95_ms": 0.003300000000081127,
+                "worst_handler_ms": 3.8654000000000224
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.7998000000000047
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0008000000000265572,
+                "worst_handler_ms": 1.7922000000000935
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.48659999999995307
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0006999999999379725,
+                "p95_ms": 0.0012000000000398359,
+                "worst_handler_ms": 3.29320000000007
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006999999999379725,
+                "worst_handler_ms": 2.1399999999999864
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0007999999999128704,
+                "worst_handler_ms": 0.46260000000006585
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.5206000000000586
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.6947999999999865
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "pa_off": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.001999999999995339,
+                "worst_handler_ms": 1.6875
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.00030000000000995897,
+                "worst_handler_ms": 0.4047999999999945
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0010999999999796728,
+                "p95_ms": 0.00190000000000623,
+                "worst_handler_ms": 3.0919000000000096
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0003999999999848569,
+                "worst_handler_ms": 0.6581000000000188
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.0007999999999981355,
+                "worst_handler_ms": 0.3721999999999923
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.4268000000000143
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.00190000000000623,
+                "worst_handler_ms": 6.026399999999995
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0009000000000014552,
+                "worst_handler_ms": 0.7110000000000127
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.00050000000004502,
+                "worst_handler_ms": 0.48689999999999145
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 0.4089999999999918
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0001999999999497959,
+                "p95_ms": 0.0003000000000383807,
+                "worst_handler_ms": 0.09089999999997644
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          }
+        },
+        {
+          "baseline": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0012000000000398359,
+                "p95_ms": 0.0017000000000280124,
+                "worst_handler_ms": 1.9127999999999474
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.8082999999999743
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0009000000000014552,
+                "p95_ms": 0.002299999999991087,
+                "worst_handler_ms": 12.759299999999996
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0013999999999896318,
+                "p95_ms": 0.0027000000000043656,
+                "worst_handler_ms": 0.15059999999999718
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0013999999999896318,
+                "worst_handler_ms": 2.74309999999997
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 0.10480000000001155
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0006999999999379725,
+                "p95_ms": 0.0009999999999763531,
+                "worst_handler_ms": 0.663599999999974
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006000000000767614,
+                "worst_handler_ms": 0.5955999999999904
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006000000000767614,
+                "worst_handler_ms": 0.5207000000000335
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.09360000000003765
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.00020000000006348273,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.3102000000000089
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "candidate": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0015000000000782165,
+                "p95_ms": 0.002399999999965985,
+                "worst_handler_ms": 0.9021000000000186
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.3445999999999003
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0018000000000029104,
+                "p95_ms": 0.002599999999915781,
+                "worst_handler_ms": 2.8757000000000517
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 8.100000000000023
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0008000000000265572,
+                "worst_handler_ms": 13.284099999999967
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0006000000000767614,
+                "worst_handler_ms": 2.252499999999941
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0007000000000516593,
+                "p95_ms": 0.001100000000064938,
+                "worst_handler_ms": 0.6376000000000204
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0008000000000265572,
+                "worst_handler_ms": 5.620899999999892
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006999999999379725,
+                "worst_handler_ms": 3.066500000000019
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.6197000000000799
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0003000000000383807,
+                "worst_handler_ms": 1.2062000000000808
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "pa_off": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.002299999999991087,
+                "worst_handler_ms": 2.8614000000000033
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.00029999999998153726,
+                "worst_handler_ms": 0.5932999999999993
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0013999999999896318,
+                "p95_ms": 0.0020999999999844476,
+                "worst_handler_ms": 1.6581000000000188
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.00030000000000995897,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.2557999999999936
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.0007000000000232376,
+                "worst_handler_ms": 0.48050000000000637
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.00030000000000995897,
+                "p95_ms": 0.0006999999999948159,
+                "worst_handler_ms": 0.4647000000000219
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0012999999999578904,
+                "p95_ms": 0.0020999999999844476,
+                "worst_handler_ms": 2.3840000000000146
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 2.455600000000004
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 0.705600000000004
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 0.5029999999999859
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.00010000000003174137,
+                "p95_ms": 0.0003000000000383807,
+                "worst_handler_ms": 0.1269999999999527
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          }
+        }
+      ],
+      "0.45.2": [
+        {
+          "baseline": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0013000000000147338,
+                "p95_ms": 0.0018000000000029104,
+                "worst_handler_ms": 3.6662999999999784
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 1.561399999999992
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0018999999999778083,
+                "p95_ms": 0.0030000000000427463,
+                "worst_handler_ms": 0.8296000000000276
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0008000000000265572,
+                "p95_ms": 0.0018999999999778083,
+                "worst_handler_ms": 0.1239999999999668
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0009000000000014552,
+                "worst_handler_ms": 2.8759000000000015
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.5625
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0018999999999778083,
+                "p95_ms": 0.0027000000000043656,
+                "worst_handler_ms": 2.0149000000000115
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.0006000000000199179,
+                "worst_handler_ms": 5.601099999999974
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006000000000199179,
+                "worst_handler_ms": 0.2706999999999766
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.10679999999996426
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.0906999999999698
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "candidate": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0014999999999645297,
+                "p95_ms": 0.0018999999999778083,
+                "worst_handler_ms": 0.7259000000000242
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.695699999999988
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.002000000000066393,
+                "p95_ms": 0.0027000000000043656,
+                "worst_handler_ms": 4.107300000000009
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 2.0493000000000166
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0007000000000516593,
+                "worst_handler_ms": 0.13420000000007803
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.36170000000004165
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0007000000000516593,
+                "p95_ms": 0.00100000000009004,
+                "worst_handler_ms": 2.2099000000000615
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0007000000000516593,
+                "worst_handler_ms": 2.2538999999999305
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0007000000000516593,
+                "worst_handler_ms": 0.08550000000002456
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.06479999999999109
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.11730000000000018
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "pa_off": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.0016999999999995907,
+                "worst_handler_ms": 0.8840000000000146
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.00010000000000331966,
+                "p95_ms": 0.0002000000000066393,
+                "worst_handler_ms": 0.4718000000000018
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0012000000000114142,
+                "p95_ms": 0.0018000000000029104,
+                "worst_handler_ms": 1.2775999999999783
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.48619999999999663
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0003999999999848569,
+                "p95_ms": 0.0006999999999948159,
+                "worst_handler_ms": 0.9478000000000009
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.00030000000000995897,
+                "worst_handler_ms": 0.308400000000006
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0006999999999948159,
+                "p95_ms": 0.001599999999996271,
+                "worst_handler_ms": 2.0790000000000077
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.0007000000000232376,
+                "worst_handler_ms": 0.7205000000000155
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 0.446899999999971
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 0.4411999999999807
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.00010000000003174137,
+                "p95_ms": 0.0003000000000383807,
+                "worst_handler_ms": 0.7719000000000165
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          }
+        },
+        {
+          "baseline": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0012999999999578904,
+                "p95_ms": 0.0020000000000095497,
+                "worst_handler_ms": 1.5380999999999858
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 6.546899999999994
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0009000000000014552,
+                "p95_ms": 0.0028999999999541615,
+                "worst_handler_ms": 5.192799999999977
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0013000000000147338,
+                "p95_ms": 0.0020000000000095497,
+                "worst_handler_ms": 0.08659999999997581
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0024999999999977263,
+                "worst_handler_ms": 1.7498000000000502
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.5461999999999989
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0006999999999379725,
+                "p95_ms": 0.00100000000009004,
+                "worst_handler_ms": 0.7484999999999218
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.0006000000000767614,
+                "worst_handler_ms": 0.5095999999999776
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.0006000000000767614,
+                "worst_handler_ms": 1.7812000000000126
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.64650000000006
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.00020000000006348273,
+                "p95_ms": 0.0003000000000383807,
+                "worst_handler_ms": 0.24450000000001637
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "candidate": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0013999999999896318,
+                "p95_ms": 0.0018999999999778083,
+                "worst_handler_ms": 0.5177999999999656
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.5003000000000384
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0019999999999527063,
+                "p95_ms": 0.0038000000000693035,
+                "worst_handler_ms": 0.2781999999999698
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 2.4587000000000216
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006000000000767614,
+                "worst_handler_ms": 1.441000000000031
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.47109999999997854
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0007000000000516593,
+                "p95_ms": 0.0009999999999763531,
+                "worst_handler_ms": 0.5363999999999578
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006000000000767614,
+                "worst_handler_ms": 0.5509999999999309
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006000000000767614,
+                "worst_handler_ms": 0.5137999999999465
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0003000000000383807,
+                "worst_handler_ms": 0.016600000000039472
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.42210000000000036
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "pa_off": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.00190000000000623,
+                "worst_handler_ms": 1.109899999999982
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.0002000000000066393,
+                "worst_handler_ms": 0.8050000000000068
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.00030000000000995897,
+                "p95_ms": 0.0016999999999995907,
+                "worst_handler_ms": 1.8882000000000119
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.5557000000000016
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.0006999999999948159,
+                "worst_handler_ms": 1.054300000000012
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.00030000000000995897,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.7755999999999972
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0011999999999829924,
+                "p95_ms": 0.002600000000001046,
+                "worst_handler_ms": 5.626400000000018
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0009000000000014552,
+                "worst_handler_ms": 0.9453000000000316
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 2.1111999999999966
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.5323999999999955
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.0003000000000383807,
+                "worst_handler_ms": 0.09320000000002437
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          }
+        },
+        {
+          "baseline": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0013000000000147338,
+                "p95_ms": 0.0018000000000029104,
+                "worst_handler_ms": 1.5629000000000133
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.8740000000000236
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.002100000000041291,
+                "p95_ms": 0.0036999999999807187,
+                "worst_handler_ms": 1.8161000000000058
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0014000000000464752,
+                "p95_ms": 0.0018000000000029104,
+                "worst_handler_ms": 2.643100000000004
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0005999999999630745,
+                "p95_ms": 0.002900000000011005,
+                "worst_handler_ms": 1.8337000000000216
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.0701999999999998
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0018000000000029104,
+                "p95_ms": 0.0030999999999608008,
+                "worst_handler_ms": 0.5742000000000189
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006000000000199179,
+                "worst_handler_ms": 1.872600000000034
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0005999999999630745,
+                "worst_handler_ms": 1.6118000000000166
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.4154000000000906
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0001999999999497959,
+                "p95_ms": 0.00029999999992469384,
+                "worst_handler_ms": 0.04179999999996653
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "candidate": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0014999999999645297,
+                "p95_ms": 0.0019999999999527063,
+                "worst_handler_ms": 0.17439999999999145
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.00020000000006348273,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 1.7690999999999804
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0012000000000398359,
+                "p95_ms": 0.0026000000000294676,
+                "worst_handler_ms": 3.053800000000024
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 2.0167000000000144
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0006999999999379725,
+                "worst_handler_ms": 1.7729999999999109
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.5920999999999594
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0008000000000265572,
+                "p95_ms": 0.0012000000000398359,
+                "worst_handler_ms": 2.5972000000000435
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0007000000000516593,
+                "worst_handler_ms": 2.705500000000029
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.0007000000000516593,
+                "worst_handler_ms": 0.12239999999997053
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0004999999999881766,
+                "worst_handler_ms": 0.31159999999999854
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0003999999998995918,
+                "worst_handler_ms": 0.8759000000000015
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          },
+          "pa_off": {
+            "handlers": {
+              "russian": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.002600000000001046,
+                "worst_handler_ms": 1.0812999999999988
+              },
+              "english": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.00029999999998153726,
+                "worst_handler_ms": 0.3155999999999892
+              },
+              "backspace": {
+                "samples": 12000,
+                "median_ms": 0.0004999999999881766,
+                "p95_ms": 0.001999999999981128,
+                "worst_handler_ms": 1.9215000000000089
+              },
+              "word_selection": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.36940000000001305
+              },
+              "drag_selection": {
+                "samples": 12000,
+                "median_ms": 0.0004000000000132786,
+                "p95_ms": 0.0007999999999981355,
+                "worst_handler_ms": 0.755800000000022
+              },
+              "double_click": {
+                "samples": 12000,
+                "median_ms": 0.00030000000000995897,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.4224000000000103
+              },
+              "ctrl_a": {
+                "samples": 12000,
+                "median_ms": 0.0012000000000114142,
+                "p95_ms": 0.0023000000000195087,
+                "worst_handler_ms": 1.959699999999998
+              },
+              "ctrl_c": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.0006999999999948159,
+                "worst_handler_ms": 0.7198999999999955
+              },
+              "ctrl_v": {
+                "samples": 12000,
+                "median_ms": 0.0003000000000383807,
+                "p95_ms": 0.00050000000004502,
+                "worst_handler_ms": 13.972399999999993
+              },
+              "long_message": {
+                "samples": 12000,
+                "median_ms": 0.00029999999998153726,
+                "p95_ms": 0.0004000000000132786,
+                "worst_handler_ms": 0.4023000000000252
+              },
+              "unrelated_cef": {
+                "samples": 12000,
+                "median_ms": 0.0002000000000066393,
+                "p95_ms": 0.0003000000000383807,
+                "worst_handler_ms": 0.27899999999999636
+              }
+            },
+            "editing_dom_work": {
+              "textReads": 0,
+              "textWrites": 0,
+              "styleReads": 0,
+              "rectReads": 0,
+              "endpointLoads": 0
+            },
+            "editing_ipc": 0,
+            "history_lines": 550
+          }
+        }
+      ]
+    }
+  },
+  "native_ui": {
+    "screen_sizes": 7,
+    "game_started": false,
+    "views": 22,
+    "frames": 1232,
+    "icon_states": 2,
+    "game_written": false,
+    "font_scales": 2,
+    "checks": 2632,
+    "status": "passed"
+  },
+  "native_rp_ui": {
+    "screen_sizes": 7,
+    "game_written": false,
+    "game_started": false,
+    "font_scales": 2,
+    "status": "passed",
+    "views": 3,
+    "checks": 168,
+    "frames": 84
   }
 }

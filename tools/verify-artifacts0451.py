@@ -24,7 +24,8 @@ for name in archives:
             assert all(p not in {'.','..'} for p in parts)
             assert not any(p in {'installation-backups','install-sandbox','update-sandbox','cef-contract-sandbox','.git','.env','node_modules','__pycache__'} or p.startswith('.pa26-') for p in parts)
             assert not entry.endswith(('.log','.bak','.rollback','.pending','.pa26-previous','.pa26-next'))
-            assert not entry.lower().endswith('exsellentgps.asi')
+            assert not entry.lower().endswith(('.asi','.dll','.exe'))
+            assert entry not in {'cef/assets/hud/main.js','cef/assets/hud/index.html'}
         graphs=[n for n in names if PurePosixPath(n).name.lower()=='roads.bin']
         expected='MoonLoader/resource/pa26/roads.bin'if name=='pa26-update.zip'else'moonloader/resource/pa26/roads.bin'
         assert graphs==[expected], 'Exactly one bundled runtime graph is required'
