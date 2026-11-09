@@ -17,7 +17,10 @@ for _,sz in ipairs(sizes)do for key in pairs(geo.windows)do
  end
 end end
 local main=geo.rect(2560,1440,'main');eq(main.width,2251);eq(main.height,1339);eq(main.x,16);eq(main.y,31)
-check(geo.rect(1920,1080,'assist').width>=1000);check(geo.rect(1366,768,'assist').width>=1000)
+check(geo.rect(1920,1080,'assist').width==828);check(geo.rect(1366,768,'assist').width==720)
+eq(geo.rect(2560,1440,'assist').height,830)
+local savedF4={width=680,height=650,x=50,y=90,displayW=1366,displayH=768}
+eq(geo.rect(1366,768,'assist',savedF4).width,680);eq(geo.rect(1366,768,'assist',savedF4).height,650)
 eq(geo.rect(1920,1080,'main',nil,70,'percent').width,1344)
 local custom={width=680,height=839,x=792,y=285,displayW=2560,displayH=1440}
 local kept=geo.rect(2560,1440,'assist',custom);eq(kept.width,680);eq(kept.height,839);eq(kept.x,792)

@@ -12,7 +12,7 @@ local function setup(kind)
 end
 for _,kind in ipairs({596,522})do
  local s,c=setup(kind);local stop=assert(c:propose('stop_order'))
- local stopText=table.concat(stop.prepared.lines,'\n');check(stopText:find(kind==522 and'Водитель мотоцикла'or'к правой обочине',1,true))
+ local stopText=table.concat(stop.prepared.lines,'\n');check(stopText:find('Говорит EPD Officer',1,true));check(stopText:find('примите вправо',1,true))
  local p=assert(c:propose('risk_order'));local checkpoints,waits=0,0
  for _,step in ipairs(p.prepared.steps)do
   if step.kind=='confirm'then checkpoints=checkpoints+1;check(#step.preview>0);eq(step.timeout_ms,90000)end
@@ -26,8 +26,9 @@ for _,kind in ipairs({596,522})do
 end
 for _,kind in ipairs({481,471})do
  local s,c=setup(kind);check(not c:prepare('stop_order'))
+ s.cfg.copilot.templates.stop_order_bike='Водитель мотоцикла, остановитесь.'
  local choice=assert(c:propose('stop_order'));check(choice.rpVariants);check(choice.variants.car);check(choice.variants.bike)
- check(c:valid(choice.variants.bike));check(table.concat(choice.variants.bike.prepared.lines,'\n'):find('мотоцикла',1,true))
+ check(c:valid(choice.variants.bike));check(table.concat(choice.variants.bike.prepared.lines,'\n'):find('Водитель мотоцикла, остановитесь.',1,true))
  s.car.model_id=596;s.tick(1000);check(not c:accept(choice.variants.car),'Changing the vehicle invalidates both previews')
 end
 local s,c=setup(596);local p=assert(c:propose('busy_report'));check(table.concat(p.prepared.lines,'\n'):find('10-8',1,true))

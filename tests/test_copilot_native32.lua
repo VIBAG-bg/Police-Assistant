@@ -1,6 +1,6 @@
 -- Actual installed x86 ImGui, CPU-only. No GTA, input injection or sends.
 local source=debug.getinfo(1,'S').source:sub(2):gsub('\\','/');local root=assert(source:match('^(.*)/tests/'))
-local game=os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game/'
+local game=(os.getenv('PA_NATIVE_GAME')or os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game')..'/'
 package.path=root..'/moonloader/lib/?.lua;'..game..'MoonLoader/lib/?.lua;'..package.path
 package.cpath=game..'MoonLoader/lib/?.dll;'..package.cpath
 getWorkingDirectory=function()return game..'MoonLoader'end
@@ -13,7 +13,7 @@ local pixels,w,h=ffi.new('unsigned char*[1]'),ffi.new('int[1]'),ffi.new('int[1]'
 local model=require 'pa26_bindings';local core=require 'pa26_core';local Studio=require 'pa26_studio';local uiModule=require 'pa26_copilot_ui';local menu=require 'pa26_menu'
 local s=Studio.new(im,ffi,model.defaults(core.defaults()),function()return 1000 end)
 local stack={};local ui={push=function(f)stack[#stack+1]=f end,finish=function()assert(table.remove(stack))()end,text=function(t)im.PushTextWrapPos(0);im.TextUnformatted(t);im.PopTextWrapPos()end}
-local data={copilot={phase='Преследование',car={id=142,occupants=2,distance=15,armed=true},driver={id=37},values={model='Sultan',vehicle_color='Чёрный',vehicle_plate='не установлен',occupants_text='внутри двое',unit='2-A-1'},colleagues={nearbyOfficers={},nearbyCruisers=2,ownCruiserRole='navigator'},pinned='fast_wanted',tireStatus='Предупреждений: 1/5. Проверьте условия применения силы.'}}
+local data={copilot={phase='Преследование',stopWarnings=1,stopWarningLimit=5,stopWarningStatus='Требования остановиться: 1/5',car={id=142,occupants=2,distance=15,armed=true},driver={id=37},values={model='Sultan',vehicle_color='Чёрный',vehicle_plate='не установлен',occupants_text='внутри двое',unit='2-A-1'},colleagues={nearbyOfficers={},nearbyCruisers=2,ownCruiserRole='navigator'},pinned='fast_wanted',tireStatus='Предупреждений: 1/5. Проверьте условия применения силы.'}}
 local cb={copilotPreview=function()return'Предпросмотр с сохранёнными значениями.'end,custodyReport=function()return true end}
 s.currentUi=ui;s.preferenceContext=true
 local checks,frames=0,0

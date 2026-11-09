@@ -149,7 +149,10 @@ function M.draw(studio,ui,data,callbacks,host)
         if studio:button('Убрать удалённый контакт##session-orphan-'..row.contact_id,ui)then table.remove(draft.crew,i)end
     end end
 
- im.Separator();require('pa26_copilot_ui').quick(studio,ui,callbacks)
+ if host~='assist'then
+  im.Separator();require('pa26_copilot_ui').quick(studio,ui,callbacks)
+  if studio:button('Спецвызовы в F4##patrol-dispatch',ui)then callbacks.openAssist('dispatch')end
+ end
  save(studio,ui,draft)
  if type(view.history)=='table'and #view.history>0 then
   studio:settingsHeading(ui,'Последние патрули')

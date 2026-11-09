@@ -34,8 +34,8 @@ cp,v,s=setup();s.send('stop_order');s.state.inVehicle=false;s.car.distance=5;s.t
 p=assert(cp:propose('approach'));local lines=table.concat(p.prepared.lines,'\n');check(lines:find('фары',1,true));check(lines:find('/do ',1,true));check(lines:find('/n ',1,true));check(not lines:find('фонарик',1,true))
 s.state.gameHour=22;s.tick();p=assert(cp:propose('approach'));check(table.concat(p.prepared.lines,'\n'):find('фонарик',1,true))
 s.cfg.copilot.window_ooc_hint=false;s.tick();p=assert(cp:propose('approach'));check(not table.concat(p.prepared.lines,'\n'):find('/n ',1,true))
-cp,v,s=setup();s.send('stop_order');for i=1,3 do s.car.distance=10+i*10;s.car.x=i*10;s.tick()end;check(s.has('pursuit'))
-s.send('pursuit');eq(cp.phase,'Преследование');s.tick();p=assert(s.has('fast_wanted'));cp:shown(p.token);check(cp:decide(p.token,false));eq(cp.pinned,'fast_wanted')
+cp,v,s=setup();s.send('stop_order');for i=1,3 do s.car.distance=10+i*10;s.car.x=i*10;s.tick()end;check(not s.has('pursuit'))
+s.send('pursuit');eq(cp.phase,'Преследование');s.tick();check(not s.has('fast_wanted'));p=assert(s.has('pursuit_mark'));cp:shown(p.token);check(cp:decide(p.token,false));eq(cp.pinned,'pursuit_mark')
 local fast=assert(cp:propose('fast_wanted'));local text=table.concat(fast.prepared.lines,'\n');check(text:find('/su 37 8 1',1,true));check(not text:find('/pt 37',1,true));check(not fast.prepared.lines[1]:find('маск',1,true));check(not fast.prepared.lines[1]:find('SA-142',1,true))
 check(cp:accept(fast));s.tick();local plan=s.plans[#s.plans];check(cp:validPlan(plan));s.person.generation=1;check(not cp:validPlan(plan),'Reused player ID must cancel even between lines')
 cp,v,s=setup();s.send('pursuit');s.car.distance=20;s.tick(50);s.tick(3000);check(s.has('high_risk'))
@@ -57,8 +57,10 @@ eq(cp.pinned,'pursuit_mark');p=assert(cp:propose('pursuit_mark'));eq(#p.prepared
 -- Unknown driver readings are not proof of an exit.
 cp,v,s=setup();s.send('stop_order');s.car.driver_known=false;s.car.driver_id=nil;s.car.driver_ped=nil;s.car.occupants=0;s.person.distance=50;s.person.y=50;s.tick()
 check(not s.has('return_car'));check(not s.has('foot'))
--- Existing patrol and megaphone access switches remain authoritative.
-cp,v,s=setup();s.cfg.require_patrol=true;s.tick();check(not cp:propose('pursuit'));s.cfg.require_patrol=false;s.cfg.megaphone_enabled=false;s.tick();check(not cp:propose('stop_order'))
+-- Legacy patrol-only flags cannot prevent incident work, and the megaphone can still be disabled.
+cp,v,s=setup();s.cfg.require_patrol=true;s.cfg.megaphone_require_patrol=true;s.tick()
+check(cp:propose('pursuit'));check(cp:propose('stop_order'));check(not cp:propose('megaphone_order'))
+s.cfg.megaphone_enabled=false;s.tick();check(not cp:propose('stop_order'))
 -- The warning after a foot pursuit is separate and disappears when armed.
 cp,v,s=setup();s.send('foot');s.send('fast_wanted');s.tick();check(s.has('taser_warning'));s.person.armed=true;s.tick();check(not s.has('taser_warning'))
 -- Saved /todo RP uses the same action-preserving splitter as manual chat.

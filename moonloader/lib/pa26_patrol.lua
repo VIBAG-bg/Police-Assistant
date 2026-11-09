@@ -90,7 +90,7 @@ end
 function Patrol:view()
     local cfg=self.env.settings()
     if not cfg.hud or not self.active then return {visible=false} end
-    local label=cfg.mode=='police' and 'Патруль' or 'Охрана тюрьмы'
+    local label=cfg.label or(cfg.mode=='police'and'Патруль'or'Охрана тюрьмы')
     local phase=self.phase
     local warning=self.currentKey and self.env.view and self.env.view(self.currentKey)
     local remaining=warning and math.max(self.remaining,warning.lead)or self.remaining

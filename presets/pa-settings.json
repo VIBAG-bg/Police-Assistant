@@ -1490,7 +1490,7 @@
           "default_style": "author"
         },
         "tips_key": 123,
-        "wheel_child_limit": 8,
+        "wheel_child_limit": 15,
         "wheel_car_order": {
           "root": [
             "citizen",
@@ -1549,7 +1549,7 @@
             "s:sos"
           ]
         },
-        "wheel_car_child_limit": 6,
+        "wheel_car_child_limit": 15,
         "cef_chat_grace_ms": 350,
         "wheel_system_groups": {
           "procedure-fine": "wanted",

@@ -32,6 +32,7 @@ function M.prepare(kind,payload,lib,cfg)
   nextLib.profile=model.copy(lib.profile);nextLib.partners=model.copy(lib.partners);nextLib.next_partner_id=lib.next_partner_id
   nextLib.assist.history=model.copy(lib.assist.history);nextLib.settings.updates=model.copy(lib.settings.updates);nextLib.settings.wheel_car_classic=model.copy(lib.settings.wheel_car_classic)
   for _,key in ipairs({'wheel_order','wheel_car_order'})do nextLib.settings[key]=require('pa26_author_merge').rebaseOrder(nextLib.settings[key],lib)end
+  nextLib.settings.applied_author_defaults_0460=lib.settings.applied_author_defaults_0460
   nextCfg=model.copy(p.config);nextCfg.main.demo_mode=cfg.main.demo_mode
  else return nil,'Неверный вид набора.'end
  local clean,why=model.validate(nextLib,nextCfg);if not clean then return nil,why end

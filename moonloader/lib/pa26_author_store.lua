@@ -1,4 +1,4 @@
--- Small independent transaction for explicit author-preset imports. Never touches notes.
+-- Existing preset transaction also supports the one-time combined 0.46.0 update. Notes stay separate.
 local model=require 'pa26_author_presets';local config=require 'pa26_config';local jsonStore=require 'pa26_library'
 local M={};local keys={binds=true,settings=true,config=true}
 local function target(base,k)return base..(k=='config'and'.ini'or'_'..k..'.json')end
@@ -9,7 +9,7 @@ local function valid(j)
  local n=0;for k,v in pairs(j.files)do
   if not keys[k]or type(v)~='table'or type(v.had)~='boolean'or type(v.after)~='string'or #v.after~=64 or not v.after:match('^[a-f0-9]+$')or(v.had and(type(v.before)~='string'or #v.before~=64 or not v.before:match('^[a-f0-9]+$')))then return nil end;n=n+1
  end
- if n<1 or n>2 or(j.files.binds and n~=1)then return nil end;return j
+ if n<1 or (j.files.binds and n~=1 and n~=3)then return nil end;return j
 end
 local function decide(base,json,fs)
  for _,suffix in ipairs({'','.rollback','.bak'})do
@@ -53,7 +53,8 @@ function M.recover(base,json,fs,hash,lock)
  local ok,a,b=pcall(recoverLocked,base,json,fs,hash);release();if not ok then return nil,tostring(a)end;return a,b
 end
 function M.snapshot(base,kind,fs)
- local out={};for _,k in ipairs(kind=='binds'and{'binds'}or{'settings','config'})do local path=target(base,k);local text=call(fs,'read',path);if call(fs,'exists',path)and type(text)~='string'then error('Не удалось прочитать '..k)end;out[k]=text or false end;return out
+ local selected=kind=='upgrade0460'and{'binds','settings','config'}or kind=='binds'and{'binds'}or{'settings','config'}
+ local out={};for _,k in ipairs(selected)do local path=target(base,k);local text=call(fs,'read',path);if call(fs,'exists',path)and type(text)~='string'then error('Не удалось прочитать '..k)end;out[k]=text or false end;return out
 end
 function M.apply(base,prepared,before,json,fs,hash,lock,id)
  local release=lock(base..'_preset.lock');if not release then return nil,'Другой процесс уже применяет набор.'end
@@ -61,8 +62,10 @@ function M.apply(base,prepared,before,json,fs,hash,lock,id)
   if pending(base,fs)then return nil,'Сначала завершите восстановление предыдущего набора.'end
   if not model.equal(before,M.snapshot(base,prepared.kind,fs))then return nil,'Файлы изменились после предпросмотра. Загрузите набор заново.'end
   local rows={};local parts=require('pa26_user_files').partition(prepared.library)
-  if prepared.kind=='binds'then rows.binds=json.encode(parts.binds)
-  else rows.settings=json.encode(parts.settings);local text,err=config.serialize(prepared.config);if not text then return nil,err end;rows.config=text end
+  if prepared.kind=='binds'or prepared.kind=='upgrade0460'then rows.binds=json.encode(parts.binds)end
+  if prepared.kind=='settings'or prepared.kind=='upgrade0460'then
+   rows.settings=json.encode(parts.settings);local text,err=config.serialize(prepared.config);if not text then return nil,err end;rows.config=text
+  end
   local j={format='pa-author-transaction',schema=1,phase='prepared',id=id,files={}}
   if not valid({format=j.format,schema=1,phase='prepared',id=id,files={binds={had=false,after=string.rep('a',64)}}})then return nil,'Неверный номер копии.'end
   for k,text in pairs(rows)do

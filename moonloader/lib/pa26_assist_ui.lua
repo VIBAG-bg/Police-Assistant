@@ -41,8 +41,7 @@ function M.megaphone(s,ui,data,callbacks)
         if s:button(p.name:gsub('##','# #')..'##assist-say-'..i,ui)then
             s.vehicleDraft=d;s:autoSettings('vehicle',{'vehicle'},d,'vehicleDraft')
             if saved(s,callbacks,'vehicle')then
-                local proposal,err=callbacks.vehicleOffer('megaphone_'..i,false)
-                if proposal then s.vehicleConfirm=proposal else note(s,err)end
+                require('pa26_vehicle_ui').offer(s,callbacks,'megaphone_'..i)
             end
         end
     end
@@ -63,10 +62,17 @@ function M.megaphone(s,ui,data,callbacks)
                 local ok,err=callbacks.vehicleSelect(c.id);if not ok then note(s,err)end
             end
         end
-        for i,p in ipairs(d.phrases)do if p.enabled and p.target~='none'then phrase(i,p)end end
+        local traffic=data.copilot or{}
+        local capped=traffic.phase=='10-55'and traffic.stopWarnings>=traffic.stopWarningLimit
+        for i,p in ipairs(d.phrases)do
+            if p.enabled and p.target~='none'and not(capped and i==1 and vehicles.stockStopPhrase(p))then phrase(i,p)end
+        end
     else
+        if s:button('Настроить текст приказа 10-55##assist-order-settings',ui)then
+            s.assistPage='traffic';s.copilotPage='settings';s.copilotTemplate='stop_order'
+        end
         s:settingsHeading(ui,'Когда доступен мегафон')
-        for _,row in ipairs({{'megaphone_require_patrol','Только во время активного патруля'},
+        for _,row in ipairs({{'megaphone_require_patrol','Отдельные реплики вне 10-55 только в активном патруле'},
             {'megaphone_require_duty','Только в служебном режиме'},{'megaphone_require_radio','Требовать включённую рацию'},
             {'megaphone_wheel','Показывать мегафон в радиальном меню'}})do
             d[row[1]]=s:check(row[2]..'##megaphone-'..row[1],d[row[1]])
@@ -231,25 +237,53 @@ function M.notices(s,ui,data,callbacks)
     ui.text(expand(d.ended_title));ui.text('Player_Name [37]');ui.text(expand(d.disconnected));ui.text('Срок: '..(d.disconnected_ms/1000)..' с')
     s.interactionDraft=d;s:autoSettings('interaction',{'assist','interaction'},d,'interactionDraft');s:autosaveHint(ui,'interaction');s:drawNotice(ui)
 end
-function M.draw(s,ui,data,callbacks)
-    s.currentUi=ui;s.preferenceContext=true;s.settingTextChanged=false;s.currentNoticeScope='assist'
-    local tab=s.assistPage or'traffic'
-    if tab~='roleplay'and tab~='commands'then
-        tab=menu.choiceControl(s.imgui,ui,'##assist-tabs','',tab,{{'traffic','Трафик и погоня'},{'navigation','Навигация'},{'patrol','Патруль'},{'megaphone','Мегафон'},{'evidence','Фиксация'},{'training','Обучение'},{'notices','Уведомления'}},s,{buttons=true,font=s.buttonFont})
-        s.assistPage=tab
-    end
-    if tab~='traffic'or s.copilotPage=='settings'then
-        if s:button('Настройки чата, переноса RP и команд##assist-chat-settings',ui)and callbacks.openSettings then callbacks.openSettings('chat')end
-    end
-    if tab=='traffic'then require('pa26_copilot_ui').draw(s,ui,data,callbacks)
-    elseif tab=='navigation'then require('pa26_field_ui').quick(s,ui,data,callbacks)
-    elseif tab=='patrol'then require('pa26_patrol_ui').draw(s,ui,data,callbacks,'assist')
-    elseif tab=='megaphone'then M.megaphone(s,ui,data,callbacks)
+local tabs={{'traffic','Трафик / погоня'},{'dispatch','Спецвызовы'},{'patrol','Патруль'},{'megaphone','Мегафон'},{'more','Дополнительно'}}
+local moreTabs={{'people','Люди рядом'},{'evidence','Фиксация'},{'training','Обучение'},{'notices','Уведомления'}}
+local secondary={people=true,evidence=true,training=true,notices=true}
+local patrolTabs={{'session','Сеанс и экипаж'},{'reports','Доклады'}}
+local function drawBody(s,ui,data,callbacks,tab)
+    local copilot=require 'pa26_copilot_ui'
+    if copilot.editReport(s,ui,callbacks)then return end
+    if tab=='traffic'then copilot.draw(s,ui,data,callbacks)
+    elseif tab=='dispatch'then copilot.dispatch(s,ui,callbacks)
+    elseif tab=='patrol'then
+        s.assistPatrolPage=menu.choiceControl(s.imgui,ui,'##assist-patrol-pages','',s.assistPatrolPage or'session',patrolTabs,s,{buttons=true,font=s.buttonFont})
+        if s.assistPatrolPage=='reports'then copilot.quick(s,ui,callbacks)
+        else require('pa26_patrol_ui').draw(s,ui,data,callbacks,'assist')end
+    elseif tab=='megaphone'then
+        local v=data.copilot or{}
+        if v.phase~='10-55'or v.stopWarnings<v.stopWarningLimit then
+            if s:button('Мегафон: приказ##assist-megaphone-order',ui)then
+                local ok,err=callbacks.requestVehicleAction('megaphone_order');if not ok then note(s,err)end
+            end
+        end
+        if v.phase=='10-55'then ui.text(v.stopWarningStatus)end
+        M.megaphone(s,ui,data,callbacks)
+    elseif tab=='people'then require('pa26_nearby').compact(s,ui,data,callbacks)
     elseif tab=='evidence'then M.evidence(s,ui,data,callbacks)
     elseif tab=='notices'then M.notices(s,ui,data,callbacks)
     elseif tab=='roleplay'then require('pa26_rp_ui').draw(s,ui,data,callbacks)
     elseif tab=='commands'then require('pa26_server_commands').draw(s,ui,data,callbacks)
     else M.study(s,ui,data,callbacks)end
+end
+function M.draw(s,ui,data,callbacks)
+    s.currentUi=ui;s.preferenceContext=true;s.settingTextChanged=false;s.currentNoticeScope='assist'
+    local tab=s.assistPage or'traffic'
+    if tab=='navigation'then tab='traffic' end
+    if tab~='roleplay'and tab~='commands'then
+        local main=menu.choiceControl(s.imgui,ui,'##assist-tabs','',secondary[tab]and'more'or tab,tabs,s,{buttons=true,font=s.buttonFont})
+        if main=='more'then
+            tab=menu.choiceControl(s.imgui,ui,'##assist-more','',secondary[tab]and tab or'people',moreTabs,s,{buttons=true,font=s.buttonFont})
+        else tab=main end
+        s.assistPage=tab
+    end
+    menu.scrollBody(s.imgui,ui,'assist-content##'..tab,function()
+        if secondary[tab]then
+            if s:button('Инструменты службы в главном меню##assist-open-field',ui)then callbacks.openField()end
+            if s:button('Настройки чата и команд##assist-chat-settings',ui)then callbacks.openSettings('chat')end
+        end
+        drawBody(s,ui,data,callbacks,tab)
+    end,0)
     s.preferenceContext=nil
 end
 function M.waiting(s,ui,view,now)

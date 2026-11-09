@@ -38,13 +38,19 @@ function M.grammarDefaults()
   finish_solo='заканчиваю патруль',finish_team='заканчиваем патруль'}
 end
 function M.crewCount(state,crew)
- local c=state and state.colleagues or{}
- if state and state.inVehicle then
-  local n=c.patrolOccupants
-  if M.integer(n,1,21)then return n end
-  return 1 -- Unknown passengers are not automatically declared police partners.
+ local inVehicle=state and state.inVehicle
+ local rows=inVehicle and (state.colleagues or{}).patrolCrew or not inVehicle and crew
+ local count=1
+ local seen={}
+ for _,row in ipairs(rows or{})do
+  local id=inVehicle and row.id or row.player_id
+  local verified=inVehicle and row.verifiedPolice==true or not inVehicle and row.available==true
+  if verified and core.validId(id)and not seen[id]then
+   seen[id]=true
+   count=count+1
+  end
  end
- local n=1;for _,r in ipairs(crew or{})do if r.available~=false then n=n+1 end end;return n
+ return math.min(21,count),seen
 end
 function M.autoUnit(profile,state,count,number)
  local p=M.copy(profile or{});p.callsign=''
@@ -105,6 +111,12 @@ function M.validate(raw)
         end
     end
     local stock=M.defaults()
+    -- The shared 0.45.x preset used literal plural forms. Upgrade only those exact strings.
+    local authorStart='{local_tag}{unit}, начинаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}, квадрат {map_square}. Далее доступны.'
+    local authorResume='{local_tag}{unit}, продолжаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}, квадрат {map_square}.. Направление: {direction}.'
+    if raw.start_template==authorStart then out.start_template=stock.start_template end
+    if raw.resume_template==authorResume then out.resume_template=stock.resume_template end
+    if raw.periodic_template==authorResume then out.periodic_template=stock.periodic_template end
     local old={start_template='{local_tag}{rank} {officer}, выхожу на смену как {unit}, начинаю патрулирование в {city}, район {area} ({map_square}), двигаюсь на {direction}, Код 4, доступен.',resume_template='{local_tag}{unit}, продолжаю патрулирование в {city}, район {area} ({map_square}), двигаюсь на {direction}. Экипаж: {crew}, Код 4, доступен.',periodic_template='{local_tag}{unit}, продолжаю патрулирование в {city}, район {area} ({map_square}), двигаюсь на {direction}. Экипаж: {crew}, Код 4, доступен.',finish_template='{local_tag}{unit}, заканчиваю патрулирование в {city}, район {area} ({map_square}). Время на смене: {duration}, Код 4.'}
     for key,value in pairs(old)do if raw[key]==value then out[key]=stock[key]end end
     if raw.radio_templates_version~=nil and raw.radio_templates_version~=1 and raw.radio_templates_version~=2 then return nil,'Неизвестная версия реплик рации.'end

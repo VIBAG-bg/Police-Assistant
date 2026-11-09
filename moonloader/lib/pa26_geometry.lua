@@ -3,8 +3,8 @@
 local M={referenceW=2560,referenceH=1440}
 M.windows={
  main={width=2251,height=1339,x=16,y=31},
- -- Keep the author's centre, but give the operational view two readable columns.
- assist={width=1440,height=1180,x=412,y=114.5},
+ -- Keep the author layout centre with a compact operational console.
+ assist={width=1104,height=830,x=580,y=289.5},
  wanted={width=1792,height=900,x=444,y=335.5},
  tips={width=960,height=760,x=800,y=340},
  quick={width=780,height=700,x=890,y=370},
@@ -13,7 +13,7 @@ M.windows={
  mark={width=1040,height=1000,x=760,y=220},
 }
 M.widget={x=2278,y=409,scale=1,reference_width=2560,reference_height=1440,responsive=true}
-local limits={main={760,480,1080,640},assist={420,380,1000,740},wanted={420,400,860,640},
+local limits={main={760,480,1080,640},assist={420,380,720,540},wanted={420,400,860,640},
  fine={420,360,760,640},mark={420,360,740,620},ground={420,360,740,680},quick={360,320,700,620},tips={420,360,820,640}}
 local function finite(n)return type(n)=='number'and n==n and n~=math.huge and n~=-math.huge end
 local function clamp(n,a,b)return math.max(a,math.min(b,n))end

@@ -26,9 +26,31 @@ function M.compass(dx,dy,names)
 end
 function M.colors(c,cfg)
     local palette=require 'pa26_vehicle_palette'
-    local function color(id)return cfg.color_aliases[tostring(id)]or palette[tostring(id)]or cfg.unknown_color end
+    local function color(id)return cfg.color_aliases[tostring(id)]or palette[tostring(id)]or''end
     local a,b=color(c.color1),color(c.color2)
-    return a==b and a or a..cfg.color_separator..b,a,b
+    local combined=a==''and b or(b==''or a==b)and a or a..cfg.color_separator..b
+    return combined,a,b
+end
+local colorFields={'vehicle_color','color_one','color_two'}
+function M.colorTemplate(text,values)
+    if not text:find('{',1,true)then return text end
+    for _,key in ipairs(colorFields)do
+        local token='{'..key..'}'
+        if values[key]==''and text:find(token,1,true)then
+            for _,label in ipairs({'цвет','Цвет'})do
+                local field=label..'%s*:%s*'..token
+                text=text:gsub('%s*%(%s*'..field..'%s*%)','')
+                    :gsub('([.!?])%s*'..field..'%s*[.!?]','%1')
+                    :gsub('^%s*'..field..'%s*[.!?]%s*','')
+                    :gsub('[ ,;]*'..field,'')
+            end
+            text=text:gsub('%s*%(%s*'..token..'%s*%)','')
+                :gsub(token..'%s*/%s*',''):gsub('%s*/%s*'..token,''):gsub(token,'')
+                :gsub(' +([,%.!%?;])','%1'):gsub(' +',' ')
+                :gsub(',%s*,',','):gsub('^[ ,]+',''):gsub(' +$','')
+        end
+    end
+    return text
 end
 -- A user-selected RP convention, not a server registration lookup.
 function M.plate(c,cfg)
@@ -52,9 +74,10 @@ function M.describe(c,cfg,gender)
     values.vehicle_plate=M.plate(c,cp)
     values.tac=cp.tac_channel or'TAC 1';values.stop_outcome=cp.stop_outcome or'проведена беседа';values.armed_text=(c.armed or cp.pursuit_armed)and' Подозреваемые вооружены!'or''
     local missing
-    local description=core.expandGender(cfg.description_template,gender):gsub('{([a-z_]+)}',function(k)if not values[k]then missing=k;return ''end;return values[k]end)
+    local description=core.expandGender(cfg.description_template,gender)
+    description=M.colorTemplate(description,values):gsub('{([a-z_]+)}',function(k)if not values[k]then missing=k;return ''end;return values[k]end)
     if missing then return nil,'Описание машины: используйте {vehicle_type}, {vehicle_type_gen}, {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}.'end
-    values.vehicle_description=description;return values
+    values.vehicle_description=color==''and name or description;return values
 end
 function M.new(env)return setmetatable({env=env,life=1,targetLife=1,serial=0,candidates={},generations={}},Vehicle)end
 function Vehicle:cancel(reason)
@@ -132,21 +155,38 @@ function Vehicle:values(state,c)
     if not out.directionKnown then out.direction='неизвестно'end
     local report=require('pa26_report_context').values(out,self.env.profile and self.env.profile(),self.env.reportConfig and self.env.reportConfig())
     for key,value in pairs(report)do if key=='unit'or key=='crew'or key:match('^patrol_')or key=='unit_crew_count'or not out[key]or out[key]==''then out[key]=value end end
+    out.patrol_return=out.patrolStatus=='active'and ', '..report.patrol_resume or''
     local profile=self.env.profile and self.env.profile()or{};local nearby=out.colleagues or{}
     if not out.unit or out.unit==''then out.unit=nearby.unitAuto or(profile.callsign~=''and profile.callsign)or nearby.autoCallsign or'1-L-1'end
     if not out.station or out.station==''then out.station=nearby.station or'LSPS'end
     if not out.crew or out.crew==''then out.crew=profile.name~=''and profile.name or out.my_name or'Офицер'end
+    local officer=self.officer
+    if not officer or officer.name~=profile.name or officer.rank~=profile.rank or officer.department~=profile.department then
+        local name=(profile.name or''):gsub('_',' '):match('^%s*(.-)%s*$')
+        local last=name:match('%S%s+(%S+)$')or''
+        local title=((profile.rank or'')..' '..(profile.department or'')..' '..last):match('^%s*(.-)%s*$'):gsub(' +',' ')
+        officer={name=profile.name,rank=profile.rank,department=profile.department,last=last,title=title~=''and title or'полиция'}
+        self.officer=officer
+    end
+    out.rank=officer.rank or out.rank or''
+    out.department=officer.department or''
+    out.my_lastname=officer.last
+    out.officer_intro=officer.title
     if not out.city or out.city==''then out.city=profile.city and profile.city~=''and profile.city or'не определён'end
     if c then local values,err=M.describe(c,cfg,out.gender);if not values then return nil,err end;for k,v in pairs(values)do out[k]=v end end
     return out
 end
-function Vehicle:periodic(base)
+function Vehicle:periodic(base,withoutPatrol)
     local cfg=self.env.settings();if not cfg.enabled or not self.phase then return base end
     local out=model.copy(base)
-    out.session_key=(base.session_key or '')..':vehicle:'..self.phase..':'..tostring(self.selected and self.selected.id or '')
+    local target=self.selected
+    local targetKey=target and(target.id..':'..tostring(target.generation))or''
+    out.session_key=(base.session_key or '')..':vehicle:'..self.phase..':'..targetKey
     if self.phase=='10-55'then if cfg.pause_patrol_reports then out.enabled=false end;return out end
     if self.phase=='Преследование'then
-        out.enabled=base.enabled and cfg.pursuit_periodic and self.selected~=nil
+        out.enabled=(base.enabled or withoutPatrol==true)and cfg.pursuit_periodic and self.selected~=nil
+        out.label='Погоня 10-57'
+        out.pursuitKey=target and out.session_key
         out.confirmation=cfg.pursuit_confirmation
         for _,kind in ipairs({'police','prison'})do
             out[kind..'_template']=cfg.pursuit_periodic_template;out[kind..'_channel']=cfg.channel;out[kind..'_interval_ms']=cfg.pursuit_interval_ms
@@ -171,9 +211,11 @@ function M.preview(action,cfg,values,codec,split)
     if not body then return nil,directionError end
     values,directionError=mapGrid.reportValues(values,body,not megaphone(action)and action~='approach'and action~='window')
     if not values then return nil,directionError end
+    body=M.colorTemplate(body,values)
     local missing;body=core.expandGender(body,values.gender):gsub('{([a-z_]+)}',function(k)
         local v=values[k];local tag=k=='local_tag'or k=='global_tag'or k=='prison_tag'or k=='armed_text'
-        if v==nil and not tag or v==''and not tag then missing=k;return ''end
+        local optional=k=='rank'or k=='department'or k=='my_lastname'or k=='patrol_return'
+        if (v==nil or v=='')and not(tag or optional) then missing=k;return ''end
         return tag and k~='armed_text'and v and v~=''and tostring(v)..' 'or tostring(v or '')
     end)
     if missing then return nil,'Заполните поле: '..missing end
@@ -234,10 +276,10 @@ function Vehicle:refreshCandidates(cfg)
         if a.distance==b.distance then return a.id<b.id end;return a.distance<b.distance
     end)
 end
-function Vehicle:requestSelection(id)
+function Vehicle:requestSelection(id,driverRequired)
     local cfg=self.env.settings()
     if not(cfg.enabled or cfg.megaphone_enabled)or not sceneSafe(self.state)then return nil,'Включите транспорт или мегафон; игра должна быть доступна.'end
-    self.selectionRequest={id=id,life=self.life,session=self.state.session,at=self.now};return true
+    self.selectionRequest={id=id,driverRequired=driverRequired,life=self.life,session=self.state.session,at=self.now};return true
 end
 function Vehicle:syncDriverTarget(cfg)
     if not cfg.sync_driver_target or not self.env.driver or not self.env.currentTarget or not self.env.selectTarget then
@@ -268,11 +310,13 @@ function Vehicle:syncDriverTarget(cfg)
         local _,fresh=self.env.currentTarget();self.syncedRevision=fresh
     end
 end
-function Vehicle:selectNearest(fresh)
+function Vehicle:selectNearest(fresh,driverRequired)
     if fresh and #self.candidates==0 then self:refreshCandidates(self.env.settings())end
     local cfg=self.env.settings();local c
-    for _,row in ipairs(self.candidates)do if M.selectable(row,cfg)then c=row;break end end
-    if not c then return nil,cfg.occupied_only and'Рядом нет видимой машины с игроком за рулём. Повернитесь к ней или измените дальность.'or'Рядом нет видимой машины. Повернитесь к нужному автомобилю или измените дальность выбора.'end
+    for _,row in ipairs(self.candidates)do
+        if M.selectable(row,cfg)and(not driverRequired or core.validId(row.driver_id)and core.finite(row.driver_ped))then c=row;break end
+    end
+    if not c then return nil,(cfg.occupied_only or driverRequired)and'Рядом нет видимой машины с игроком за рулём. Повернитесь к ней или измените дальность.'or'Рядом нет видимой машины. Повернитесь к нужному автомобилю или измените дальность выбора.'end
     if not same(self.selected,c)then self:clearTarget('Выбрана другая машина.')end
     self.selected=model.copy(c);self.selectionRevision=(self.selectionRevision or 0)+1;return true
 end
@@ -358,7 +402,7 @@ function Vehicle:tick(state,now)
     local selection=self.selectionRequest;self.selectionRequest=nil
     if selection and selection.life==self.life and selection.session==state.session and(core.elapsed(now,selection.at)or math.huge)<2000 then
         local ok,err
-        if selection.id then ok,err=self:selectCandidate(selection.id)else ok,err=self:selectNearest(true)end
+        if selection.id then ok,err=self:selectCandidate(selection.id)else ok,err=self:selectNearest(true,selection.driverRequired)end
         if not ok then self.message=err;if self.env.notice then self.env.notice(err)end end
     end
     self:syncDriverTarget(cfg)

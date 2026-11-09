@@ -31,8 +31,13 @@ function M.values(state,profile,cfg)
     local name=profile.name~=''and profile.name or state.officer
     if not name or name==''then name='Не задано'end
     local names={(name:gsub('_',' '))};local seen={[name:lower()]=true}
-    for _,p in ipairs((state.colleagues or{}).patrolCrew or{})do
-        if p.ic_name and p.ic_name~=''and #names<count and not seen[p.ic_name:lower()]then names[#names+1]=p.ic_name;seen[p.ic_name:lower()]=true end
+    local roster=state.inVehicle and(state.colleagues or{}).patrolCrew or not state.inVehicle and state.verifiedCrew
+    for _,p in ipairs(roster or{})do
+        local verified=state.inVehicle and p.verifiedPolice==true or not state.inVehicle and p.available==true
+        if verified and p.ic_name and p.ic_name~=''and #names<count and not seen[p.ic_name:lower()]then
+            names[#names+1]=p.ic_name
+            seen[p.ic_name:lower()]=true
+        end
     end
     out.unit=cfg.unit and cfg.unit~=''and cfg.unit or profile.callsign and profile.callsign~=''and profile.callsign or
         patrol.autoUnit(profile,state,count,cfg.unit_number)
@@ -71,6 +76,7 @@ function M.directionTemplate(text,values,isStock)
     text=replace(text,'{patrol_moving} на {direction}','{patrol_moving}')
     text=replace(text,'направляюсь на {direction} в','направляюсь в')
     text=replace(text,'Двигаюсь на {direction}, ','')
+    text=replace(text,' Направление: {direction}.','')
     if text:find('{direction}',1,true)then return nil,'Для этого доклада нужен наблюдавшийся курс. Уточните данные перед отправкой.'end
     return text
 end

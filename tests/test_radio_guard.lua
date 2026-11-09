@@ -18,6 +18,11 @@ local function setup(custom)
 end
 local spec={name='Полиция',template='{local_tag}Патруль. {area}.',channel='/r',interval_ms=60000,confirmation=false}
 local c,s=setup();local phase,err,t=c:track('one',spec,30000);eq(phase,'pending');eq(#s.plans,0)
+local description=model.copy(spec);description.template='Транспорт {model}. Цвет: {vehicle_color}. Район {area}.'
+local values=model.copy(s.state);values.model='Premier';values.vehicle_color=''
+local without=assert(module.prepare(description,values,codec,s.now,1));eq(without.lines[1],'/r Транспорт Premier. Район Ganton.')
+values.vehicle_color='Чёрный'
+local with=assert(module.prepare(description,values,codec,s.now,1));check(with.lines[1]:find('Цвет: Чёрный',1,true))
 s.advance(30000,false);c:track('one',spec,0);check(not c:ready('one'),'unpainted popup must not authorize auto send')
 c:shown(t.token);s.advance(29000);check(not c:ready('one'));s.tick();check(c:ready('one'))
 check(c:dispatch('one'));eq(#s.plans,1);check(c:validPlan(s.plans[1]));check(c:cancel(t.token));check(not c:validPlan(s.plans[1]));eq(#s.cancelled,1)

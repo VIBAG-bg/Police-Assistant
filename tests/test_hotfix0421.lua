@@ -25,7 +25,7 @@ for _,r in ipairs({{437,'bus'},{481,'bicycle'},{509,'bicycle'},{510,'bicycle'},{
  {522,'bike'},{413,'van'},{403,'truck'},{487,'heli'},{593,'plane'},{454,'boat'},
  {537,'train'},{435,'trailer'},{7000,'unknown'},{0/0,'unknown'}})do eq(types.class(r[1]),r[2])end
 local typed=types.defaults();typed.bus.name='мой автобус';typed.bus.genitive='моего автобуса'
-local cfg=vsettings.defaults();cfg.type_names=typed;check(vsettings.validate(cfg))
+local cfg=vsettings.defaults();cfg.type_names=typed;cfg.description_template='{vehicle_type} {model}';check(vsettings.validate(cfg))
 local description=assert(V.describe({id=7,model_id=437,model_name='Coach',color1=1,color2=0},cfg,'male'))
 eq(description.vehicle_type,'мой автобус');eq(description.vehicle_type_gen,'моего автобуса')
 check(description.vehicle_description:find('мой автобус',1,true))

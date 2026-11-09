@@ -76,7 +76,7 @@ function Menu:nativeEdges(imgui)
     return io.ConfigWindowsResizeFromEdges==true and bit.band(tonumber(io.BackendFlags),2)~=0
 end
 function Menu:resizeWindow(imgui,ui,key)
-    local io=imgui.GetIO(); local bounds=M.windowBounds(io.DisplaySize.x,io.DisplaySize.y,key)
+    local io=imgui.GetIO(); local bounds=M.windowBounds(io.DisplaySize.x,io.DisplaySize.y,key,nil,nil,io.FontGlobalScale)
     if not bounds then return end
     local size,pos=imgui.GetWindowSize(),imgui.GetWindowPos()
     local width,height=clamp(size.x,bounds.minW,bounds.maxW),clamp(size.y,bounds.minH,bounds.maxH)
@@ -87,6 +87,11 @@ function Menu:resizeWindow(imgui,ui,key)
     -- SetWindowPos/Size after Begin leaves stale clip rectangles during dragging.
     do
         local cursor=imgui.GetCursorScreenPos(); local e=7
+        local fullEdge=key=='assist'and imgui.PushClipRect and imgui.PopClipRect
+        if fullEdge then
+            imgui.PushClipRect(imgui.ImVec2(x,y),imgui.ImVec2(x+width,y+height),false)
+            ui.push(function()imgui.PopClipRect()end)
+        end
         local handles={{'left',0,e,e,height-2*e,-1,0},{'right',width-e,e,e,height-2*e,1,0},
             {'top',e,0,width-2*e,e,0,-1},{'bottom',e,height-e,width-2*e,e,0,1},
             {'tl',0,0,e,e,-1,-1},{'tr',width-e,0,e,e,1,-1},
@@ -112,6 +117,7 @@ function Menu:resizeWindow(imgui,ui,key)
             end
         end
         imgui.SetCursorScreenPos(cursor)
+        if fullEdge then ui.finish()end
     end
     x=clamp(x,16,io.DisplaySize.x-width-16); y=clamp(y,16,io.DisplaySize.y-height-16)
     if width~=size.x or height~=size.y or x~=pos.x or y~=pos.y then
@@ -119,7 +125,10 @@ function Menu:resizeWindow(imgui,ui,key)
         self.pendingWindows[key]={width=width,height=height,x=x,y=y}
     end
     if self.geometryChanged and not(io.MouseDown and(io.MouseDown[0]or io.MouseDown[1]))and not self.pendingWindows[key]then self.geometryChanged(key,self.windows[key])end
-    if key~='main'then self:dragWindow(imgui,ui,key,8,1,math.max(1,width-48),26)end
+    if key~='main'then
+        local assist=key=='assist'
+        self:dragWindow(imgui,ui,key,8,assist and 8 or 1,math.max(1,width-48),assist and 19 or 26)
+    end
     local moved=M.rightDragRect(imgui,self,key)
     if moved then self.pendingWindows=self.pendingWindows or{};self.pendingWindows[key]=moved end
 end
@@ -827,7 +836,7 @@ function Menu:addonsPage(imgui,ui,model,callbacks,fonts)
     muted(imgui,ui,'Выберите задачу текущей смены. Общие параметры находятся в «Настройках».')
     if callbacks.openAssist and button(imgui,ui,'Открыть быстрое окно помощников ('..(model.assistKey or'F4')..')##assist-open',imgui.ImVec2(-1,42),fonts.button)then callbacks.openAssist()end
     local tools={{'patrol','Патруль и экипаж'},{'events','События патруля'},{'identity','Человек и личность'},
-        {'field','Навигация и инструменты'},{'vehicle','Машина и мегафон'},{'procedures','Розыск, штрафы, /setmark'},{'evidence','Фиксация (F8)'},{'training','Обучение'},{'extras','Собеседование'}}
+        {'field','Инструменты службы'},{'vehicle','Машина и мегафон'},{'procedures','Розыск, штрафы, /setmark'},{'evidence','Фиксация (F8)'},{'training','Обучение'},{'extras','Собеседование'}}
     selectorRow(imgui,tools,self.tool,'tool',function(key)self.tool=key end,ui)
     imgui.Separator()
     local route=({field='field',patrol='patrol',events='patrolEvents',identity='identity',vehicle='vehicle',procedures='procedures',

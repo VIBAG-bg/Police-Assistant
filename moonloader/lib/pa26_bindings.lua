@@ -479,7 +479,8 @@ function M.validate(raw, cfg)
     out.settings.wheel_system_groups={}
     local systemGroups=raw.settings.wheel_system_groups or{}
     if type(systemGroups)~='table'then return nil,'Неверные секции встроенных действий.'end
-    local validSystems={};for _,r in ipairs(require('pa26_wheel').systemRows)do validSystems[r[1]]=true end
+    -- Retain old wheel assignments even when the GPS action is unavailable.
+    local validSystems={['pa-gps-clear']=true};for _,r in ipairs(require('pa26_wheel').systemRows)do validSystems[r[1]]=true end
     local validGroups={disabled=true,citizen=true,documents=true,detention=true,frisk=true,wanted=true,service=true,leadership=true,custom=true}
     for id,group in pairs(systemGroups)do
         if not validSystems[id]or not validGroups[group]then return nil,'Неизвестное действие или секция колеса.'end
@@ -511,6 +512,7 @@ function M.validate(raw, cfg)
     out.settings.updates,alertError=updateSettings.validate(raw.settings.updates);if not out.settings.updates then return nil,alertError end
     out.settings.window_layout,alertError=windowLayout.validate(raw.settings.window_layout);if not out.settings.window_layout then return nil,alertError end
     out.settings.help,alertError=require('pa26_help').validate(raw.settings.help);if not out.settings.help then return nil,alertError end
+    if raw.settings.applied_author_defaults_0460==true then out.settings.applied_author_defaults_0460=true end
     out.settings.manual_chat,alertError=manualChat.validate(raw.settings.manual_chat);if not out.settings.manual_chat then return nil,alertError end
     out.settings.wheel_names={}
     local names=raw.settings.wheel_names

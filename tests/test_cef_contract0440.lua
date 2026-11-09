@@ -21,7 +21,7 @@ eq(next(ready.library.settings.window_layout.windows),nil)
 local layout=require 'pa26_geometry'
 for _,size in ipairs({{1152,864},{1366,768},{1920,1080},{2560,1440}})do
  local rect=layout.rect(size[1],size[2],'assist',nil,70,'author')
- check(rect.width>=math.min(1000,size[1]-32));check(rect.x>=16 and rect.y>=16)
+ check(rect.width>=math.min(720,size[1]-32));check(rect.x>=16 and rect.y>=16)
  check(rect.x+rect.width<=size[1]-16);check(rect.y+rect.height<=size[2]-16)
 end
 local fixture=require 'support.fixture';local f=fixture({reviewedCef=false,render=false});f.step()

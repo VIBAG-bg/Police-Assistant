@@ -32,7 +32,7 @@ s.tick();eq(#s.plans,1);check(v:validPlan(s.plans[1]));check(not s.plans[1].targ
 v:onExecution('completed',{plan=s.plans[1],demo=false});eq(v.phase,'10-55')
 -- A closer car cannot replace the captured target; only explicit selection can.
 s.cars[1].distance=1;s.tick();eq(v:view().nearest.id,11);eq(v.selected.id,12)
-p=assert(v:propose('megaphone'));check(p.prepared.line:find('/m Водитель автомобиля PoliceCar, говорит SFPS',1,true)==1)
+p=assert(v:propose('megaphone'));check(p.prepared.line:find('/m Говорит полиция.',1,true)==1)
 v:invalidate(12);check(not v:accept(p));check(not v.selected)
 -- Same handles/models reused after stream-out do not revive consent.
 s.tick();local p2=assert(v:propose('traffic_stop',true));v:invalidate(p2.target.id);s.tick();v:selectNearest();check(not v:accept(p2))
@@ -57,7 +57,7 @@ s.own.y=500;s.tick(300);eq(v:values().direction,'неизвестно')
 s.state.paused=true;s.tick();s.state.paused=false;s.tick();eq(v:values().direction,'неизвестно')
 v,s=setup();local values=assert(vehicle.describe(s.cars[1],s.cfg));check(values.vehicle_color:find('Белый',1,true));check(values.vehicle_color:find('Чёрный',1,true))
 s.cfg.color_aliases['1']='Белоснежный';s.cfg.model_aliases['411']='Infernus Custom';values=assert(vehicle.describe(s.cars[1],s.cfg));eq(values.model,'Infernus Custom');eq(values.color_one,'Белоснежный')
-s.cars[1].color1=254;values=assert(vehicle.describe(s.cars[1],s.cfg));eq(values.color_one,s.cfg.unknown_color)
+s.cars[1].color1=254;values=assert(vehicle.describe(s.cars[1],s.cfg));eq(values.color_one,'');eq(values.vehicle_color,'Чёрный')
 for _,field in ipairs({'radius','scan_ms','retain_distance','confirmation_ms'})do local c=settings.defaults();c[field]=-1;check(not settings.validate(c))end
 local c=settings.defaults();c.model_aliases['411']='bad\n/m injected';check(not settings.validate(c));c=settings.defaults();c.traffic_stop_template='{unknown}';check(not settings.validate(c))
 v,s=setup();p=assert(v:propose('traffic_stop',true));check(v:accept(p));s.state.focused=false;s.tick();s.state.focused=true;s.tick();eq(#s.plans,0,'Focus loss cannot defer old consent until return')
@@ -69,4 +69,16 @@ v,s=setup();v:selectNearest();local base={enabled=true,session_key='1',mode='pol
 v.phase='10-55';check(not v:periodic(base).enabled,'A traffic stop cannot emit an ordinary patrol update')
 v.phase='Преследование';local pursuit=v:periodic(base);check(pursuit.enabled);eq(pursuit.police_template,s.cfg.pursuit_periodic_template);eq(pursuit.police_interval_ms,60000)
 base.enabled=false;check(not v:periodic(base).enabled,'Delegating the radio disables pursuit reports too')
+local independent=v:periodic(base,true)
+check(independent.enabled);eq(independent.label,'Погоня 10-57');check(independent.pursuitKey)
+s.cfg.pursuit_periodic=false;check(not v:periodic(base,true).enabled)
+s.cfg.pursuit_periodic=true;v:clearTarget('Отмена');check(not v:periodic(base,true).enabled)
 base.enabled=true;v.phase=nil;eq(v:periodic(base).session_key,'1')
+
+v,s=setup();v:selectNearest();eq(v:values().patrol_return,'')
+s.state.patrolStatus='active';s.tick();eq(v:values().patrol_return,', продолжаю патруль')
+s.state.patrolStatus='paused';s.tick();eq(v:values().patrol_return,'')
+local legacy=settings.defaults()
+legacy.finish_template='{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area} ({map_square}), {stop_outcome}, продолжаю патрулирование, Код 4.'
+eq(assert(settings.validate(legacy)).finish_template,s.cfg.finish_template)
+legacy.finish_template='Мой доклад о завершении.';eq(assert(settings.validate(legacy)).finish_template,legacy.finish_template)

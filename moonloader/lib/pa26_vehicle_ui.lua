@@ -2,12 +2,13 @@ local model=require 'pa26_bindings'
 local settings=require 'pa26_vehicle_settings'
 local vehicle=require 'pa26_vehicle'
 local M={}
-function M.offer(studio,callbacks,kind,nearest)
-    local p,err=callbacks.vehicleOffer(kind,nearest)
-    if p then studio.vehicleConfirm=p else studio:notify(err,'vehicle',false)end
+function M.offer(studio,callbacks,kind)
+    local p,err=callbacks.vehicleOffer(kind)
+    require('pa26_copilot_ui').present(studio,callbacks,p,err)
 end
 function M.draw(studio,ui,data,callbacks)
     local im=studio.imgui;studio.currentNoticeScope='vehicle';studio.preferenceContext=true
+    if require('pa26_copilot_ui').editReport(studio,ui,callbacks)then return end
     local d=studio.vehicleDraft or model.copy(studio.lib.vehicle);local view=data.vehicle or {}
     studio:settingsHeading(ui,'Трафик-стоп и преследование')
     if studio:button('Открыть реплики мегафона##vehicle-megaphone',ui)then callbacks.openAssist('megaphone')end
@@ -22,7 +23,9 @@ function M.draw(studio,ui,data,callbacks)
         local values=vehicle.describe(view.nearest,d,studio.lib.profile.gender)
         ui.text('Ближайшая видимая: '..(values and values.vehicle_description or tostring(view.nearest.model_id)))
     else ui.text('Подходящая машина не найдена. Ваша машина исключена из выбора.')end
-    if studio:button('Выбрать ближайшую и начать 10-55##vehicle-select',ui)then M.offer(studio,callbacks,'traffic_stop',true)end
+    if studio:button('Начать 10-55##vehicle-select',ui)then
+        local ok,err=callbacks.nearestTrafficStop();if not ok then studio:notify(err,'vehicle',false)end
+    end
     if #(view.candidates or {})>1 then
         ui.text('Или выберите нужную машину из ближайших на экране:')
         for _,car in ipairs(view.candidates)do
@@ -34,7 +37,7 @@ function M.draw(studio,ui,data,callbacks)
     end
     if view.selected then
         for _,row in ipairs(settings.actions)do
-            if studio:button(row[2]..'##vehicle-action-'..row[1],ui)then M.offer(studio,callbacks,row[1],false)end
+            if studio:button(row[2]..'##vehicle-action-'..row[1],ui)then M.offer(studio,callbacks,row[1])end
         end
         if studio:button('Снять выбор машины##vehicle-clear',ui)then callbacks.vehicleClear()end
     end
@@ -43,7 +46,7 @@ function M.draw(studio,ui,data,callbacks)
     ui.text('Направление вашего экипажа: '..(view.direction or 'не определено'))
     if view.selection_status then ui.text(view.selection_status)end
     im.Separator();studio:settingsHeading(ui,'Настройки транспорта')
-    for _,row in ipairs({{'enabled','Трафик-стоп и погоня'},{'require_patrol','Только в активном патруле'},
+    for _,row in ipairs({{'enabled','Трафик-стоп и погоня'},{'require_patrol','Дополнительные действия только в патруле'},
         {'front_only','Экран и прямая видимость'},{'occupied_only','Только с игроком за рулём'},{'occupied_priority','Приоритет машин с людьми'},{'sync_driver_target','Водитель — цель биндов'},{'direction_enabled','Направление движения'},{'direction_on_foot','Пешком использовать последний курс автомобиля'}})do
         local v,edit=studio:check(row[2]..'##vehicle-'..row[1],d[row[1]]);if edit then d[row[1]]=v end
     end
@@ -68,7 +71,7 @@ function M.draw(studio,ui,data,callbacks)
     for i,label in ipairs({'Север','Северо-восток','Восток','Юго-восток','Юг','Юго-запад','Запад','Северо-запад'})do
         d.directions[i]=studio:field(label..'##vehicle-direction-'..i,'vehicle:direction:'..i,d.directions[i],256)
     end
-    for _,row in ipairs({{'stationary','При остановке'},{'unknown_model','Если модель не определена'},{'unknown_color','Если цвет не определён'},{'color_separator','Разделитель двух цветов'}})do
+    for _,row in ipairs({{'stationary','При остановке'},{'unknown_model','Если модель не определена'},{'color_separator','Разделитель двух цветов'}})do
         d[row[1]]=studio:field(row[2]..'##vehicle-label-'..row[1],'vehicle:label:'..row[1],d[row[1]],512)
     end
     local v,edit=studio:choice('Канал докладов##vehicle-channel',d.channel,require('pa26_server_commands').radioChoices,ui)
@@ -86,9 +89,9 @@ function M.draw(studio,ui,data,callbacks)
     d.pursuit_periodic_template=studio:field('Автодоклад о погоне##vehicle-pursuit-periodic','vehicle:pursuit-periodic',d.pursuit_periodic_template,2048,true,78)
     local periodic,periodicError=callbacks.vehiclePreview('pursuit_periodic',d)
     ui.text(periodic and('Предпросмотр: '..periodic)or('Для предпросмотра: '..tostring(periodicError)))
-    ui.text('Перед автодокладом появится предупреждение; до отправки его можно отменить. Доклады используют общую очередь. Если рацию ведёт напарник, PA не отправляет их автоматически.')
+    ui.text('Перед автодокладом появится предупреждение. Его можно отменить. Таймер погони работает и без сеанса патруля. Если рацию ведёт напарник, PA не отправляет доклад автоматически.')
     studio:settingsHeading(ui,'Тексты и предпросмотр')
-    ui.text('Грамматический род: {gender:передал|передала}. Без /команды. Переменные: {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}, {vehicle_description}, {direction}; также {unit}, {station}, {crew}, {area}, {location}, {map_square}, {sector}, {callsign} и поля профиля.')
+    ui.text('Грамматический род: {gender:передал|передала}. Без /команды. Переменные: {model}, {model_id}, {vehicle_id}, {vehicle_color}, {color_one}, {color_two}, {vehicle_description}, {direction}; также {unit}, {station}, {crew}, {area}, {location}, {map_square}, {sector}, {callsign} и поля профиля. Для представления: {officer_intro}, {rank}, {department}, {my_lastname}. {patrol_return} добавляет настроенную фразу о продолжении, пока сеанс патруля активен.')
     for _,row in ipairs(settings.actions)do
         local key=row[1]..'_template'
         d[key]=studio:field(row[2]..'##vehicle-template-'..key,'vehicle:template:'..key,d[key],2048,true,78)

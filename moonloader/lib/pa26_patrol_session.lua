@@ -134,12 +134,12 @@ function Session:collectCrew(cfg)
     end
     return out
 end
-function Session:crewText(a)
+function Session:crewText(a,verified)
     local names={a.officer..(a.callsign~=''and(' ('..a.callsign..')')or '')}
     local seen={[model.casefold(a.officer)]=true}
     for _,r in ipairs(a.crew)do
         local key=model.casefold(r.ic_name)
-        if r.available~=false and not seen[key]then names[#names+1]=r.ic_name..(r.callsign~=''and(' ('..r.callsign..')')or '');seen[key]=true end
+        if r.available==true and(not verified or verified[r.player_id])and not seen[key]then names[#names+1]=r.ic_name..(r.callsign~=''and(' ('..r.callsign..')')or '');seen[key]=true end
     end
     return table.concat(names,', '),#names
 end
@@ -155,7 +155,7 @@ function Session:values(s,a,override)
         if out[key]==nil or out[key]==''then out[key]=profile[key]and profile[key]~=''and profile[key]or fallback end
     end
     for _,k in ipairs({'officer','callsign','station','unit','vehicle','sector','post'})do out[k]=a[k]end
-    local count=settings.crewCount(s,a.crew)
+    local count,verified=settings.crewCount(s,a.crew)
     out.unit_crew_count=tostring(count)
     if a.unit_auto then out.unit=settings.autoUnit(profile,s,count,a.unit_number)end
     local grammar=cfg.grammar or settings.grammarDefaults();local form=count>=2 and'team'or'solo'
@@ -163,11 +163,11 @@ function Session:values(s,a,override)
         if type(grammar[key..'_'..form])~='string'then return nil,'Проверьте форму фразы патруля: '..key..'_'..form end
         out['patrol_'..key]=core.expandGender(grammar[key..'_'..form],s.gender or profile.gender)
     end
-    out.crew,out.crew_count=self:crewText(a)
+    out.crew,out.crew_count=self:crewText(a,verified)
     out.crewNamesKnown=out.crew_count==count;out.crew_count=tostring(out.crew_count)
     local roles={a.officer};local callsigns={}
     if a.callsign~=''then callsigns[#callsigns+1]=a.callsign end
-    for _,r in ipairs(a.crew)do if r.available~=false then
+    for _,r in ipairs(a.crew)do if r.available==true and verified[r.player_id]then
         roles[#roles+1]=r.ic_name..' · '..r.role
         if r.callsign~=''then callsigns[#callsigns+1]=r.callsign end
     end end
@@ -435,10 +435,12 @@ function Session:view(timer)
     local a=self.data.active;local cfg=self.env.settings();local out={active=a and model.copy(a),recoverable=self.recoverable and model.copy(self.recoverable),
         enabled=cfg.enabled,message=self.message,saveError=self.saveError,history=model.copy(self.data.history),pending=self.intent~=nil or self.queued~=nil}
     if not a then return out end
-    local crew,count=self:crewText(a);out.crew=crew;out.duration=settings.duration(a.elapsed_ms)
+    local count,verified=settings.crewCount(self.state,a.crew)
+    local crew=self:crewText(a,verified);out.crew=crew;out.duration=settings.duration(a.elapsed_ms)
+    local unit=a.unit_auto and settings.autoUnit(self.env.profile(),self.state,count,a.unit_number)or a.unit
     out.hud={visible=cfg.hud,label=(a.status=='paused'and 'Патруль · пауза'or 'Патруль')..' '..out.duration,
         status=self.suspended and self.suspendedReason or a.status=='paused'and a.reason or timer and timer.visible and timer.status or a.report_status,
-        crew='Экипаж: '..count..' · '..a.unit,remaining=timer and timer.remaining or 0,interval=timer and timer.interval or cfg.interval_ms,
+        crew='Экипаж: '..count..' · '..unit,remaining=timer and timer.remaining or 0,interval=timer and timer.interval or cfg.interval_ms,
         progress=timer and timer.progress or 0,phase=a.status}
     return out
 end

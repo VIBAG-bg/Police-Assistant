@@ -27,14 +27,17 @@ local function setup()
     return s
 end
 local s=setup();check(s.vehicleController:view().nearest);eq(#s.sent,0)
-click(s,'Выбрать ближайшую и начать 10-55##vehicle-select');check(s.workspace.studio.vehicleConfirm);eq(#s.sent,0)
+click(s,'Начать 10-55##vehicle-select');s.step();check(s.workspace.studio.vehicleConfirm);eq(#s.sent,0)
 click(s,'НЕТ##confirm-no');s.step();eq(#s.sent,0)
 -- Without a session, unit and station come from explicit saved patrol fields.
-click(s,'Выбрать ближайшую и начать 10-55##vehicle-select');click(s,'ДА##confirm-yes');eq(#s.sent,0)
+click(s,'Начать 10-55##vehicle-select');s.step();click(s,'ДА##confirm-yes');eq(#s.sent,0)
 s.step();healthy(s);check(#s.sent>=1);for _=1,5 do s.step(1500)end
-eq(s.vehicleController.phase,'10-55');check(s.sent[1].line:find('Infernus',1,true))
-local stored=model.copy(s.workspace.library);local seen=false
-for _,line in ipairs(s.sent)do if line.line:find('провожу остановку',1,true)then seen=true end end;check(seen)
+eq(s.vehicleController.phase,'10-55');check(s.sent[1].line:find('/m Говорит Auditore',1,true))
+check(not s.patrolSession.data.active)
+click(s,'Доклад 10-55 по выбранной машине##vehicle-action-traffic_stop');check(s.workspace.studio.vehicleConfirm)
+click(s,'ДА##confirm-yes');for _=1,5 do s.step(1500)end
+local seen=false
+for _,line in ipairs(s.sent)do if line.line:find('провожу остановку',1,true)and line.line:find('P-01',1,true)then seen=true end end;check(seen)
 -- Physical hotkeys work with F9 closed and open the vehicle tab, never the patrol tab.
 s.commands.pa26();s.physicalDown={};s.step()
 s.physicalDown={[0x12]=true,[0x37]=true};s.step();s.physicalDown={};s.step()
@@ -51,7 +54,9 @@ s.edits={['##Обратиться в мегафон##vehicle-template-megaphone_
 eq(s.workspace.library.vehicle.megaphone_template,'Водитель {model}, говорит {station}. Остановитесь у обочины.')
 check(s.savedLibrary().vehicle.enabled)
 -- Stream-out invalidates consent and does not auto-select a different car.
+s.step(s.workspace.library.vehicle.copilot.stop_warning_cooldown_ms)
 click(s,'Обратиться в мегафон##vehicle-action-megaphone');check(s.workspace.studio.vehicleConfirm)
+check(s.workspace.studio.vehicleConfirm.prepared.lines[1]:find('Водитель Infernus, говорит SFPS.',1,true))
 s.events.onVehicleStreamOut(105);local count=#s.sent;click(s,'ДА##confirm-yes');check(s.workspace.studio.modalError);eq(#s.sent,count)
 s.workspace.studio:cancelModal();s.step();healthy(s);onScriptTerminate(s.script);eq(s.events.onVehicleStreamOut,nil)
 -- The actual main hook captures a passport shown to us, even with chat filters off.

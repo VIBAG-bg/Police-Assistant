@@ -1,9 +1,15 @@
 -- Render plain cached observations only. Buttons create intents; main executes.
 local copy=require('pa26_bindings').copy;local menu=require 'pa26_menu';local prefs=require 'pa26_copilot_settings'
 local M={}
+function M.present(s,callbacks,p,err)
+ if not p then s:notify(err,'vehicle',false)
+ elseif p.rpVariants then s.copilotVariant=p
+ elseif p.navigation then callbacks.openGround(p)
+ else s.vehicleConfirm=p end
+end
 function M.offer(s,callbacks,action)
  local p,err=callbacks.copilotOffer(action)
- if p then if p.rpVariants then s.copilotVariant=p elseif p.navigation then callbacks.openGround(p)else s.vehicleConfirm=p end else s:notify(err,'vehicle',false)end
+ M.present(s,callbacks,p,err)
 end
 function M.editReport(s,ui,callbacks)
  if s.reportEdit then
@@ -23,28 +29,39 @@ function M.editReport(s,ui,callbacks)
  return false
 end
 local groups=require 'pa26_ui_groups'
+local dispatch=require 'pa26_dispatch'
 M.dispatchFamilies={}
-for _,row in ipairs(require('pa26_dispatch').primaryActions)do if row[1]~='gas_order'then M.dispatchFamilies[#M.dispatchFamilies+1]=row end end
-function M.quick(s,ui,callbacks,offer)
- if M.editReport(s,ui,callbacks)then return end
- local send=offer or function(action)M.offer(s,callbacks,action)end
- require('pa26_field_ui').shareControl(s,ui,callbacks)
+local dispatchChoices,dispatchById={},{}
+for _,row in ipairs(dispatch.primaryActions)do
+ if row[1]~='gas_order'then
+  M.dispatchFamilies[#M.dispatchFamilies+1]=row
+  dispatchChoices[#dispatchChoices+1]={row[1],row[2]..'##dispatch-family-'..row[1]}
+  dispatchById[row[1]]=row
+ end
+end
+function M.quick(s,ui,callbacks)
+ local send=function(action)M.offer(s,callbacks,action)end
  s:settingsHeading(ui,'Быстрые доклады')
  ui.text('Работают и без сеанса патруля. Перед отправкой — предпросмотр, юнит и экипаж, ДА / НЕТ.')
  local quick={};for _,r in ipairs(require('pa26_copilot').quick)do quick[#quick+1]={r[1],r[2]..'##copilot-quick-'..r[1]}end
- groups.buttons(s,ui,quick,send)
+ groups.buttons(s,ui,quick,send,true)
  if callbacks.custodyReport then
   groups.buttons(s,ui,{{'detention','Задержан · доклад##custody-detention'},{'jail','КПЗ · доклад##custody-jail'}},function(kind)
    local ok,err=callbacks.custodyReport(kind);if not ok then s:notify(err,'vehicle',false)end
-  end)
-  ui.text('После /cuff ID и /arrest ID эти доклады предлагаются автоматически. Нажатие здесь не выполняет команду над человеком.')
+  end,true)
+  ui.text('После /cuff ID и /arrest ID PA также предлагает эти доклады автоматически.')
  end
- s:settingsHeading(ui,'Вызовы и спецситуации')
- local dispatch=require 'pa26_dispatch'
- local families={{'none','Выберите происшествие'}};local byId={}
- for _,r in ipairs(M.dispatchFamilies)do families[#families+1]={r[1],r[2]};byId[r[1]]=r end
- s.dispatchIncident=s:choice('Происшествие##dispatch-incident',s.dispatchIncident or'none',families,ui)
- local r=byId[s.dispatchIncident]
+end
+function M.dispatch(s,ui,callbacks)
+ s:settingsHeading(ui,'Спецвызовы')
+ local r=dispatchById[s.dispatchIncident]
+ if not r then
+  ui.text('Выберите вид вызова, затем нужный этап доклада.')
+  groups.buttons(s,ui,dispatchChoices,function(action)s.dispatchIncident=action end,true)
+  return
+ end
+ if s:button('Все спецвызовы##dispatch-back',ui)then s.dispatchIncident=nil;return end
+ local send=function(action)M.offer(s,callbacks,action)end
  if r then
   s:settingsHeading(ui,r[2])
   local stage=callbacks.dispatchStatus and callbacks.dispatchStatus();if stage then ui.text((stage.demo and'Последний демо-этап: 'or'Последний переданный этап: ')..stage.label)end
@@ -52,15 +69,13 @@ function M.quick(s,ui,callbacks,offer)
   local rows={{r[1],(r[1]=='dispatch_search'and'Начинаю поиск'or'Выехал')..'##copilot-dispatch-'..r[1]}}
   for _,sub in ipairs(dispatch.followups[r[1]]or{})do rows[#rows+1]={sub[1],sub[2]..'##copilot-dispatch-'..sub[1]}end
   if r[1]=='dispatch_gas'then rows[#rows+1]={'gas_order',dispatch.byAction.gas_order.label..'##copilot-dispatch-gas_order'}end
-  groups.buttons(s,ui,rows,send)
+  groups.buttons(s,ui,rows,send,true)
   if r[1]=='dispatch_search'or r[1]=='dispatch_colleague'then ui.text(require('pa26_field_radio').source)end
  end
 end
 function M.draw(s,ui,data,callbacks)
  local im=s.imgui;local v=data.copilot or{};local c=v.car;local values=v.values or{}
  s.currentNoticeScope='vehicle';s:settingsHeading(ui,'Трафик и погоня')
- require('pa26_nearby').compact(s,ui,data,callbacks)
- if M.editReport(s,ui,callbacks)then return end
  s.copilotPage=s:choice('Раздел##copilot-page',s.copilotPage or'work',{{'work','Ситуация'},{'grounds','Причина и основание'},{'rights','Задержание и права'},{'settings','Настройки и тексты'}},ui)
  local d=s.vehicleDraft or copy(s.lib.vehicle);local cfg=d.copilot or prefs.defaults();d.copilot=cfg
  local function offer(action)
@@ -74,38 +89,53 @@ function M.draw(s,ui,data,callbacks)
    ui.text('Это отдельный доклад с предпросмотром. Таймер и состояние сеанса патруля меняются в разделе «Патруль и экипаж».')
    if s:button('Скрыть выбор доступности##wheel-duty-close',ui)then s.copilotDuty=nil end
   end
-  if not s.lib.alerts.on_duty or not s.lib.alerts.enabled then ui.text('Режим PA для докладов выключен. Включите «На службе» и связь в «Настройки и тексты».')end
+  if not s.lib.alerts.on_duty or not s.lib.alerts.enabled then
+   ui.text('Включите режим «На службе» и связь, чтобы отправлять доклады и начинать операции.')
+   if s:button('Открыть настройки службы##copilot-duty-settings',ui)then s.copilotPage='settings';return end
+  end
   if c then
-   s:settingsHeading(ui,(values.model or'Машина')..' ['..c.id..'] · '..(v.phase or'Выбрана'))
-   ui.text((values.vehicle_color or'Цвет неизвестен')..' · Гос. номер: '..(values.vehicle_plate or'не установлен'))
+   s:settingsHeading(ui,(values.vehicle_description or values.model or'Машина')..' ['..c.id..'] · '..(v.phase or'Выбрана'))
+   ui.text('Гос. номер: '..(values.vehicle_plate or'не установлен'))
    ui.text((values.occupants_text or'Салон не определён')..' · Водитель: '..(v.driver and('ID '..v.driver.id)or'не установлен')..' · '..(c.stale and'последнее наблюдение'or math.floor(c.distance or 0)..' м'))
    if c.armed or v.phase=='10-66'or v.phase=='Преследование'then ui.text('Повышенный риск · рассмотрите 10-66. Наличие оружия не подтверждает стрельбу.')end
   else ui.text('Выберите видимую машину. Если автовыбор водителя включён, его ID станет целью биндов и обычного взаимодействия.')end
-  -- A finish request stays beside the context, above optional actions/settings.
-  if s:button('10-99 · Завершить##copilot-finish',ui)then offer('finish')end
-  groups.buttons(s,ui,{{'select','Выбрать ближайшую впереди##copilot-select'},
-   {'pt','Быстрый /pt рядом · ДА/НЕТ##copilot-fast-pt'}},function(action)
-    if action=='pt'then callbacks.fastPt()else local ok,err=callbacks.copilotSelect();if not ok then s:notify(err,'vehicle',false)end end
-   end)
-  s:settingsHeading(ui,'Оперативные действия')
-  local primary={{'stop_order','10-55 · К обочине##copilot-stop_order'},
-   {'pursuit','10-57 · Начать погоню##copilot-pursuit'},{'stop','Доклад 10-55##copilot-stop'},
-   {'tire','Мегафон: колёса (+1)##copilot-tire'}}
-  groups.buttons(s,ui,primary,offer)
-  if v.pinned and s:button((v.pinned=='pursuit_mark'and'Только /pt · без повторного /su'or v.pinned=='combat_wanted'and'Розыск 2.2 · отдельно от /pt'or'Розыск 8.1 · отдельно от /pt')..'##copilot-wanted',ui)then offer(v.pinned)end
-  local narrow=im.GetContentRegionAvail().x<580
-  if narrow and s:button((s.copilotMore and 'Скрыть остальные действия'or'Остальные действия (6)')..'##copilot-more',ui)then s.copilotMore=not s.copilotMore end
-  if not narrow or s.copilotMore then
-   groups.buttons(s,ui,{{'high_risk','10-66 · CODE 3##copilot-high_risk'},
-    {'approach','Осмотр автомобиля##copilot-approach'},{'risk_order','10-66 · Ключи, выход##copilot-risk_order'},
-    {'explain_stop','Причина и документы##copilot-explain_stop'},{'foot','10-57 FOXTROT##copilot-foot'},
-    {'explain_detention','Основание и права##copilot-explain_detention'}},offer)
+  if v.phase=='10-55'then ui.text(v.stopWarningStatus or'')end
+  local startLabel=v.phase=='10-55'and'Повторить требование'or'Начать 10-55'
+  local primary={{'stop_order',startLabel..'##copilot-stop_order'},{'pursuit','10-57 · Начать погоню##copilot-pursuit'},
+   {'explain_stop','Причина остановки##copilot-explain_stop','Выберите основание 10-55 и запрос документов. Реплики отправляются только после подтверждения. Причина розыска и основание задержания выбираются отдельно.'},{'finish','10-99 · Завершить##copilot-finish'}}
+  if v.phase=='10-55'and v.stopWarnings>=v.stopWarningLimit then table.remove(primary,1)end
+  groups.buttons(s,ui,primary,function(action)
+   if action=='stop_order'or action=='pursuit'then
+    s.vehicleDraft=d;s:autoSettings('vehicle',{'vehicle'},d,'vehicleDraft');s:flushAutosave(callbacks,true)
+    if s.autosaves.vehicle then s:notify('Исправьте и сохраните настройки транспорта.','vehicle',false);return end
+    local ok,err=callbacks.requestVehicleAction(action);if not ok then s:notify(err,'vehicle',false)end
+   else offer(action)end
+  end,true)
+  if v.phase=='Преследование'or v.phase=='10-57 FOXTROT'then
+   groups.buttons(s,ui,{{'wanted','Причина розыска##copilot-pursuit-wanted'},{'pursuit_mark','Метка /pt##copilot-pursuit-mark'}},function(action)
+    if action=='wanted'then
+     local ok,err=callbacks.pursuitWanted();if not ok then s:notify(err,'vehicle',false)end
+    else offer(action)end
+   end,true)
   end
-  if v.phase then ui.text(v.stopWarningStatus or'');ui.text(v.tireStatus or'')end
+  if v.pinned and v.pinned~='pursuit_mark'and s:button((v.pinned=='combat_wanted'and'Розыск 2.2 · отдельно от /pt'or'Розыск 8.1 · отдельно от /pt')..'##copilot-wanted',ui)then offer(v.pinned)end
+  if s:button((s.copilotMore and 'Скрыть дополнительные действия'or'Доклады, осмотр и 10-66')..'##copilot-more',ui)then s.copilotMore=not s.copilotMore end
+  if s.copilotMore then
+   groups.buttons(s,ui,{{'stop','Доклад 10-55##copilot-stop'},{'high_risk','10-66 · CODE 3##copilot-high_risk'},
+    {'approach','Осмотр транспорта##copilot-approach'},{'risk_order','10-66 · Указания водителю##copilot-risk_order'},
+    {'foot','10-57 FOXTROT##copilot-foot'},{'tire','Мегафон: колёса (+1)##copilot-tire'},
+    {'explain_detention','Основание и права##copilot-explain_detention'},{'select','Выбрать машину впереди##copilot-select'},
+    {'pt','Быстрый /pt рядом##copilot-fast-pt'}},function(action)
+     if action=='pt'then callbacks.fastPt()
+     elseif action=='select'then local ok,err=callbacks.copilotSelect();if not ok then s:notify(err,'vehicle',false)end
+     else offer(action)end
+    end,true)
+   if v.phase then ui.text(v.tireStatus or'')end
+  end
   local bulletin=v.stolen
   if bulletin then
    s:settingsHeading(ui,'Ориентировка об угоне')
-   ui.text(bulletin.model..' · '..bulletin.color..' · '..bulletin.area..' · ещё '..bulletin.remaining..' с')
+   ui.text(bulletin.model..(bulletin.color and bulletin.color~=''and' · '..bulletin.color or'')..' · '..bulletin.area..' · ещё '..bulletin.remaining..' с')
    ui.text(bulletin.targetLabel or'Квадрат района не установлен. Точной позиции автомобиля в ориентировке нет.')
    if s:button('Уточнить ориентировку##stolen-edit',ui)then s.stolenDraft=copy(bulletin)end
    if s.stolenDraft then
@@ -122,7 +152,6 @@ function M.draw(s,ui,data,callbacks)
     if s:button(r[2]..'##window-manual-'..r[1],ui)then local ok,why=callbacks.copilotWindow(r[1]);if not ok then s:notify(why or'Нужны текущий водитель и активная остановка.','vehicle',false)end end
    end
   end
-  M.quick(s,ui,callbacks,offer)
   if s:button((s.fastPtChooseId and'Скрыть выбор человека'or'Выбрать человека по ID для /pt')..'##copilot-pt-manual',ui)then s.fastPtChooseId=not s.fastPtChooseId end
   if s.fastPtChooseId then
    ui.text('/pt: водитель ситуации → выбранный человек → водитель выбранной машины. Данные серверного списка розыска сейчас не доступны PA; случайный прохожий не выбирается.')
@@ -177,7 +206,8 @@ function M.draw(s,ui,data,callbacks)
   if s:button('Назначить клавишу быстрого /pt##copilot-pt-key',ui)then callbacks.capture({kind='feature',group='vehicle',field='fast_pt_shortcut'})end
   if d.fast_pt_shortcut.key~=0 and s:button('Убрать клавишу /pt##copilot-pt-key-clear',ui)then d.fast_pt_shortcut={key=0,ctrl=false,alt=false,shift=false}end
   d.enabled=s:check('Включить транспортные действия PA##copilot-vehicle-enabled',d.enabled)
-  d.require_patrol=s:check('Транспорт только в активном патруле##copilot-vehicle-patrol',d.require_patrol)
+  d.require_patrol=s:check('Дополнительные действия транспорта только в патруле##copilot-vehicle-patrol',d.require_patrol)
+  ui.text('10-55, 10-57 и действия текущей ситуации доступны во время смены без запущенного патруля.')
   d.megaphone_enabled=s:check('Включить мегафон##copilot-megaphone-enabled',d.megaphone_enabled)
   for _,r in ipairs(prefs.booleans)do
    if r[1]:match('^ground_')then cfg[r[1]]=require('pa26_procedure_window').check(s,ui,r[2]..'##copilot-setting-'..r[1],cfg[r[1]])
@@ -209,7 +239,7 @@ function M.draw(s,ui,data,callbacks)
   end
   cfg.templates[key]=s:field('Реплика##copilot-rp','copilot:rp:'..key,cfg.templates[key],8193,true,140)
   ui.text('Для RP розыска и вызовов — отдельные строки /me, /do, /try или /todo. У вызовов есть варианты в машине и пешком. Для докладов и требования на АЗС — текст без /команды; канал добавляется отдельно. Род: {gender:передал|передала}.')
-  ui.text('Переменные: {unit}, {station}, {crew}, {vehicle_type}, {vehicle_type_gen}, {model}, {vehicle_id}, {vehicle_color}, {vehicle_description}, {vehicle_plate}, {occupants_text}, {driver_id}, {driver_name}, {city}, {area}, {map_square}, {direction}, {tac}, {stop_outcome}, {armed_text}, {my_firstname}.')
+  ui.text('Переменные: {unit}, {station}, {crew}, {vehicle_type}, {vehicle_type_gen}, {model}, {vehicle_id}, {vehicle_color}, {vehicle_description}, {vehicle_plate}, {occupants_text}, {driver_id}, {driver_name}, {city}, {area}, {map_square}, {direction}, {tac}, {stop_outcome}, {armed_text}, {my_firstname}. {patrol_return} добавляет настроенную фразу о продолжении, пока сеанс патруля активен. Мегафон: {officer_intro} собирает звание, отдел и фамилию из профиля. Доступны отдельно {rank}, {department}, {my_lastname}.')
   local text,err=callbacks.copilotPreview(key,cfg);ui.text('Предпросмотр: '..tostring(text or err))
   ui.text('Состав на ограбление: порог подсказки по умолчанию 2 (п. 3.1 / 10.4). В предупреждении доступны {dispatch_officers}, {robbery_min_officers}. Число по радару/салону — оценка; реальный совместный выезд подтверждаете вы. Для всех подсказок доступны остальные переменные Copilot.')
   ui.text('База источников: 28.10.2026. Слоты мегафона учитываются только после отдельного включения и проверки, что их текст предупреждает об огне по колёсам. Обычное «остановитесь» не считается. По Мануалу также нужны погоня свыше 10 минут, место вне города, парный назначенный патруль и условия применения силы; исключения проверяются отдельно. Счётчик не разрешает огонь.')
@@ -232,16 +262,30 @@ function M.reserve(controller,im,hud,fonts,taserHeight)
   (values.area or'Район не определён')..' · '..(values.map_square or'квадрат неизвестен'),
   'Экипаж: '..(values.crew or'одиночный')..' · рядом ПД: '..#(colleagues.nearbyOfficers or{})..', авто: '..(colleagues.nearbyCruisers or 0)}
  if v.car then
-  rows[#rows+1]=(values.vehicle_type or'Транспорт')..' '..(values.model or'')..' ['..tostring(v.car.id)..']'
-  rows[#rows+1]='Цвет: '..(values.vehicle_color or'неизвестен')..' · '..(values.occupants_text or'салон не определён')
+  rows[#rows+1]=(values.vehicle_description or values.model or'Транспорт')..' ['..tostring(v.car.id)..'] · '..(values.occupants_text or'салон не определён')
   rows[#rows+1]='Водитель: '..(v.driver and((v.driver.name or'Игрок')..' ['..v.driver.id..']')or'не установлен')..' · '..(v.car.stale and'последнее наблюдение'or math.floor(v.car.distance or 0)..' м')
  end
  local traffic=v.phase~=nil and v.car~=nil
  if traffic then rows[#rows+1]=v.phase=='10-55'and(v.stopWarningStatus or'')or(v.tireStatus or'')end
  local text=table.concat(rows,'\n')
  local th=heading:CalcTextSizeA(14*scale,100000,math.max(1,wrap-30*scale),title).y;local bh=font:CalcTextSizeA(12*scale,100000,wrap,text).y
- local h=th+bh+(traffic and 108 or 30)*scale;local base=taserHeight or 0
- controller.hudMetrics={view=v,w=w,wrap=wrap,h=h,scale=scale,title=title,text=text,titleH=th,bodyH=bh,body=font,heading=heading,traffic=traffic,offset=base>0 and base+8*scale or 0}
+ local buttons={{'high_risk','10-66'},{'pursuit','10-57'}}
+ if v.phase~='10-55'or v.stopWarnings<v.stopWarningLimit then
+  buttons[#buttons+1]={'megaphone_order','Мегафон: приказ'}
+ end
+ if v.phase=='10-55'then buttons[#buttons+1]={'explain_stop','Причина остановки'}
+ elseif v.phase=='10-66'then buttons[#buttons+1]={'explain_detention','Основание задержания'}end
+ if v.phase=='Преследование'or v.phase=='10-57 FOXTROT'then
+  buttons[#buttons+1]={'pursuit_wanted','Причина розыска'}
+  buttons[#buttons+1]={'pursuit_mark','Метка /pt'}
+  buttons[#buttons+1]={'tire','Мегафон: колёса'}
+ end
+ if v.pinned and v.pinned~='pursuit_mark'then buttons[#buttons+1]={v.pinned,'Предложение розыска'}end
+ if v.phase then buttons[#buttons+1]={'finish','Завершить'}end
+ local h=th+bh+(30+math.ceil(#buttons/2)*38+(traffic and 49 or 0))*scale
+ local base=taserHeight or 0
+ controller.hudMetrics={view=v,w=w,wrap=wrap,h=h,scale=scale,title=title,text=text,titleH=th,bodyH=bh,body=font,heading=heading,
+  traffic=traffic,buttons=buttons,offset=base>0 and base+8*scale or 0}
  hud:setEquipmentHeight(controller.hudMetrics.offset+h)
 end
 function M.place(controller,im,hud,fonts)
@@ -266,19 +310,19 @@ function M.drawHud(controller,im)
   controller.widgetMail={action='hide',life=controller.life,at=controller.now}
  end
  list:AddTextFontPtr(m.heading,14*s,vec(x,y),white,m.title,nil,math.max(1,m.wrap-30*s));y=y+m.titleH+6*s;text(m.text,m.body,12,x,y);y=y+m.bodyH+5*s
- if not m.traffic then return end
- local primary=m.view.phase=='10-55'and{'explain_stop','Причина'}or m.view.phase=='10-66'and{'explain_detention','Основание'}or{'tire','/m +1'}
- local buttons={primary,{m.view.pinned or'high_risk',m.view.pinned=='pursuit_mark'and'Только /pt'or m.view.pinned and'Розыск /su'or'10-66'},{'finish','Завершить'}}
- local width=(m.wrap-8*s)/3
- for i,b in ipairs(buttons)do
-  local box={x=x+(i-1)*(width+4*s),y=y,w=width,h=32*s}
+ local width=(m.wrap-4*s)/2
+ for i,b in ipairs(m.buttons)do
+  local box={x=x+(i-1)%2*(width+4*s),y=y+math.floor((i-1)/2)*38*s,w=width,h=34*s}
   list:AddRectFilled(vec(box.x,box.y),vec(box.x+box.w,box.y+box.h),color(.12,.34,.50),5*s)
-  local ext=m.body:CalcTextSizeA(11*s,100000,width-4*s,b[2]);text(b[2],m.body,11,box.x+(width-ext.x)/2,box.y+7*s)
+  local wrap=math.max(1,width-8*s)
+  local ext=m.body:CalcTextSizeA(11*s,100000,wrap,b[2])
+  list:AddTextFontPtr(m.body,11*s,vec(box.x+(width-ext.x)/2,box.y+(box.h-ext.y)/2),white,b[2],nil,wrap)
   if controller.state and controller.state.mouseAllowed and not controller.state.modal and inside(box,io.MousePos.x,io.MousePos.y)and im.IsMouseClicked(0)then
    controller.widgetMail={action=b[1],life=controller.life,at=controller.now}
   end
  end
- y=y+37*s
+ if not m.traffic then return end
+ y=y+math.ceil(#m.buttons/2)*38*s
  local pause={x=x,y=y,w=m.wrap,h=22*s}
  list:AddRectFilled(vec(x,y),vec(x+m.wrap,y+22*s),color(.10,.25,.34),4*s)
  text(m.view.repeatPaused and'Возобновить подсказки /m'or'Пауза подсказок /m',m.body,11,x+6*s,y+3*s)

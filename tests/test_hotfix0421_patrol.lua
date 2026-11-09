@@ -13,14 +13,14 @@ eq(p.record.unit,'2-L-9');check(p.record.unit_auto)
 local lines=table.concat(p.prepared.lines,' ')
 check(lines:find('начинаю патруль',1,true));check(lines:find('доступен',1,true))
 check(lines:find('2-L-9',1,true),'Personal callsign may appear with the crew but is not the automatic unit')
-s.colleagues.patrolOccupants=3;session:tick(s,1200);check(not session:proposalValid(p),'Partner change requires a fresh confirmation')
+s.colleagues.patrolOccupants=3;s.colleagues.patrolCrew={{id=20,verifiedPolice=true},{id=21,verifiedPolice=true}};session:tick(s,1200);check(not session:proposalValid(p),'Partner change requires a fresh confirmation')
 local contacts={{id=1,nickname='Partner_One',callsign=''},{id=2,nickname='Partner_Two',callsign=''}}
 cfg.crew={{contact_id=1,ic_name='Напарник Один',role='Напарник'},{contact_id=2,ic_name='Напарник Два',role='Напарник'}}
 session.env.contacts=function()return contacts end
 session.env.resolve=function(nick)return{id=nick=='Partner_One'and 20 or 21,name=nick}end
 p=assert(session:propose('start'));eq(p.record.unit,'2-A-9')
 lines=table.concat(p.prepared.lines,' ');check(lines:find('начинаем патруль',1,true));check(lines:find('доступны',1,true));check(lines:find('двигаемся',1,true))
-s.colleagues.patrolOccupants=1;cfg.crew={};s.gender='female';session:tick(s,1400)
+s.colleagues.patrolOccupants=1;s.colleagues.patrolCrew={};cfg.crew={};s.gender='female';session:tick(s,1400)
 p=assert(session:propose('start'));check(table.concat(p.prepared.lines,' '):find('доступна',1,true))
 cfg.unit='3-ADAM-17';session:tick(s,1600);p=assert(session:propose('start'));eq(p.record.unit,'3-ADAM-17');check(not p.record.unit_auto)
 cfg.unit='';s.colleagues={};session:tick(s,1800);p=assert(session:propose('start'));eq(p.record.unit,'2-L-9')
@@ -51,13 +51,13 @@ local api={
 local radar=radarModule.new({read=function(k,...)if api[k]then return api[k](...)end end,settings=function()return radarCfg end,
  profile=function()return profile end,partners=function()return partners end})
 s.ped=1;s.onDuty=true;s.inVehicle=true;radar:tick(s,1000)
-local view=radar:view();eq(view.patrolOccupants,3);eq(view.unitAuto,'2-A-1')
+local view=radar:view();eq(view.patrolOccupants,2);eq(view.unitAuto,'2-A-1')
 cars[2]=51;cars[3]=nil;passengers=1;radar:tick(s,1001)
 view=radar:view();eq(view.patrolOccupants,1);eq(view.unitAuto,'2-L-1','Civilian passenger alone does not create an ADAM')
 eq(view.ownCruiserRole,'solo');eq(view.unitMode,'LINCOLN')
-radarCfg.colleagues_enabled=false;cars[3]=50;passengers=2;radar:tick(s,1002)
+radarCfg.colleagues_enabled=false;cars[2]=50;cars[3]=50;passengers=3;radar:tick(s,1002)
 view=radar:view();eq(view.patrolOccupants,2);eq(view.unitAuto,'2-A-1','Same-car unit detection works with the radar disabled')
-api.sampIsPlayerNpc=function(id)return id==13 end;radar:tick(s,2000);eq(radar:view().patrolOccupants,1)
+api.sampIsPlayerNpc=function(id)return id==12 end;radar:tick(s,2000);eq(radar:view().patrolOccupants,1)
 api.getAllChars=function()return nil end;radar:tick(s,3000);eq(radar:view().patrolOccupants,1)
 -- Changing the user's explicit unit and phrases remains an explicit GUI choice.
 eq(profile.callsign,'PERSONAL')

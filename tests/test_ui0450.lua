@@ -4,10 +4,10 @@ for _,wh in ipairs({{1152,864},{1366,768},{1920,1080},{2560,1440}})do
  local lib=model.defaults(core.defaults());lib.profile.gender='female'
  local s=fixture({library=lib,demo=false,productionWindows=true,copilot=true});s.io.DisplaySize.x=wh[1];s.io.DisplaySize.y=wh[2]
  s.step();if not s.frames[1].condition()then s.commands.pa26();s.step()end
- s.page('addons');click(s,'Навигация и инструменты##toolfield')
+ s.page('addons');click(s,'Инструменты службы##toolfield')
  local studio=s.workspace.studio
  for _,page in ipairs({'navigation','coordinates','cruiser','pinned','leadership'})do studio.fieldPage=page;s.render();check(not s.hasLog('Ошибка интерфейса'),page..' '..table.concat(s.logs,'\n'));eq(#s.scopes,0)end
- studio.fieldPage='coordinates';s.render();s.edits={['##Телефон получателя /sms##coord-phone']='123456'};s.render();s.edits={};s.step(700)
+ eq(studio.fieldPage,'leadership');studio.fieldPage='navigation';s.render();eq(studio.fieldPage,'coordinates');s.edits={['##Телефон получателя /sms##coord-phone']='123456'};s.render();s.edits={};s.step(700)
  eq(s.workspace.library.field.coordinates.phone,'123456');eq(s.savedLibrary().field.coordinates.phone,'123456')
  eq(#s.sent,0);s.ackInfo()
  -- Esc ownership: consume the whole first physical key cycle, not the next one.

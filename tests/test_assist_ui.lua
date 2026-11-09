@@ -9,7 +9,11 @@ local function toggle(s,label)s.toggle=label;s.render();eq(s.toggle,nil,'Not vis
 local function edit(s,values)s.edits=values;s.render();for k in pairs(s.edits)do error('Not visible input: '..k)end;s.edits={};healthy(s)end
 local function open(s,page)
     s.commands.pa26();s.render();s.page('addons');click(s,'Открыть быстрое окно помощников (F4)##assist-open')
-    click(s,({evidence='Фиксация',training='Обучение',megaphone='Мегафон'})[page]..'##assist-tabs'..page)
+    if page=='megaphone'then click(s,'Мегафон##assist-tabsmegaphone')
+    else
+        click(s,'Дополнительно##assist-tabsmore')
+        click(s,({evidence='Фиксация',training='Обучение'})[page]..'##assist-more'..page)
+    end
 end
 local lib=model.defaults(core.defaults());lib.vehicle.enabled=true;lib.vehicle.require_patrol=false
 lib.profile.name='Victor Auditore';lib.alerts.enabled=true;lib.alerts.on_duty=true;lib.patrol_session.station='SFPS';lib.patrol_session.unit='P-01'
@@ -19,7 +23,7 @@ local s=fixture({demo=false,library=lib,alerts=true,notifications=true,categoryW
         verify=function(path)check(not state.rendererContext,'File IO from renderer');if not state.image then return nil,'Нет нового снимка'end;return {key='new1',path=path,size=600}end}
 end})
 s.step();s.page('addons');click(s,'Открыть быстрое окно помощников (F4)##assist-open')
-click(s,'Фиксация##assist-tabsevidence')
+click(s,'Дополнительно##assist-tabsmore');click(s,'Фиксация##assist-moreevidence')
 edit(s,{['##Что фиксируем##evidence-label']='Проверка документов'})
 click(s,'Подготовить фиксацию##evidence-start');check(s.workspace.studio.assistConfirm);eq(#s.sent,0)
 click(s,'НЕТ##confirm-no');s.step();check(not s.evidence.active);eq(#s.sent,0)
@@ -66,7 +70,7 @@ click(s,'Добавить учебную карточку##study-add');s.step();
 check(s.workspace.studio.autosaves.training.failed)
 click(s,'ОК##warning-ok');s.render()
 click(s,'Удалить карточку##study-delete');click(s,'ДА##confirm-yes');eq(#s.workspace.library.assist.training.cards,0)
-click(s,'Фиксация##assist-tabsevidence')
+click(s,'Дополнительно##assist-tabsmore');click(s,'Фиксация##assist-moreevidence')
 edit(s,{['##Команда времени без аргументов##evidence-command']='/clock'});s.step(700)
 check(not s.workspace.library.assist.evidence.time_verified);check(not s.workspace.library.assist.evidence.time_enabled)
 -- Helper window follows normal screen bounds and releases cursor through F9.

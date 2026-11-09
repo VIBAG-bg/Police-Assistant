@@ -106,8 +106,12 @@ function Updater:tick()
             elseif row.phase=='current'then if mode~='Status'then self.env.notify('Новая подходящая версия не найдена.','info')end;self.job=nil
             elseif row.phase=='idle'then self.job=nil
             elseif row.phase=='error'or row.phase=='installed'or row.phase=='rolled_back'or row.phase=='cancelled'then
+                local handled=mode=='Status'and row.phase=='installed'and row.message=='update_installed'and type(row.details)=='table'
+                    and self.env.onInstalled and self.env.onInstalled(row.details.version)
                 if not(mode=='Status'and row.receipt_seen==true)then
-                    if row.phase~='cancelled'then self:notify(row.message,row.phase~='error')else self.env.notify('Отложенное обновление отменено.','info')end
+                    if not handled then
+                        if row.phase~='cancelled'then self:notify(row.message,row.phase~='error')else self.env.notify('Отложенное обновление отменено.','info')end
+                    end
                     if self.env.platform.seen then pcall(self.env.platform.seen,self.env.platform,row.job)end
                 end
                 self.job=nil

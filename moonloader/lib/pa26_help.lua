@@ -41,17 +41,23 @@ function M.new(settings)
     return setmetatable({firstPending=settings.welcome == true}, Overlay)
 end
 
-function Overlay:shortcuts(menu, wheel, assist)
+function Overlay:shortcuts(menu, wheel, assist, stop, stopEnabled)
     local old = self.keys
     if old and old.menu == menu and old.wheel == wheel and old.assist == assist.key and
-        old.ctrl == assist.ctrl and old.alt == assist.alt and old.shift == assist.shift then return old end
+        old.ctrl == assist.ctrl and old.alt == assist.alt and old.shift == assist.shift and
+        old.stopKey == (stop and stop.key) and old.stopCtrl == (stop and stop.ctrl) and
+        old.stopAlt == (stop and stop.alt) and old.stopShift == (stop and stop.shift) and
+        old.stopEnabled == stopEnabled then return old end
     local binds = require 'pa26_bindings'
     local function name(key, label)
         return key == 0 and 'Не назначена' or label
     end
     self.keys = {menu=menu, wheel=wheel, assist=assist.key, ctrl=assist.ctrl, alt=assist.alt, shift=assist.shift,
+        stopKey=stop and stop.key, stopCtrl=stop and stop.ctrl, stopAlt=stop and stop.alt,
+        stopShift=stop and stop.shift, stopEnabled=stopEnabled,
         menuLabel=name(menu, binds.keyName(menu)), wheelLabel=name(wheel, binds.keyName(wheel)),
-        assistLabel=name(assist.key, binds.shortcutName(assist))}
+        assistLabel=name(assist.key, binds.shortcutName(assist)),
+        stopLabel=stopEnabled and stop and stop.key~=0 and binds.shortcutName(stop) or 'Отключено'}
     return self.keys
 end
 
@@ -60,8 +66,8 @@ function M.instructions(keys)
         'Главное меню · '..keys.menuLabel..'. Здесь находятся настройки, библиотека биндов, памятки и журнал.',
         'Радиальное колесо · '..keys.wheelLabel..'. Выберите нужный раздел и действие. Пешком и за рулём доступны разные наборы.',
         'Помощники · '..keys.assistLabel..'. Откройте патруль, Copilot, работу с транспортом и служебные процедуры.',
-        'GPS и карта Esc. Выберите точку или маршрут в инструментах навигации PA. Маршрут отображается на радаре и на карте паузы, если это включено в настройках.',
-        'Патруль и Copilot. Начните смену и выберите ситуацию. PA подскажет подходящий доклад и покажет его перед подтверждением.',
+        'Карта Esc и координаты OOC. В инструментах службы можно поставить временную метку на карте и радаре, а также передать свои координаты.',
+        'Патруль и Copilot. 10-55 · '..(keys.stopLabel or'Отключено')..'. Во время смены можно начать остановку или погоню отдельно от патруля. PA покажет доклад перед подтверждением.',
         'RP и команды. В библиотеке можно просмотреть, отредактировать и запустить сценарий. Правила ручных команд находятся в «Чат и команды».',
         'Подсказки клавиш, HUD и масштаб настраиваются в «Экран, HUD и карта → HUD». Полная инструкция всегда доступна в боковом меню.',
     }
@@ -109,7 +115,7 @@ function M.settings(studio, ui, callbacks)
     if studio:button('Сбросить положение##pa26-help-reset', ui) then draft.position = nil; callbacks.editHelpPosition(nil, true) end
     if studio:button('Открыть инструкции##pa26-help-open', ui) then callbacks.openInstructions() end
     draft.welcome = studio:check('Показывать приветствие при следующем запуске##pa26-help-welcome', draft.welcome)
-    ui.text('Перетаскивание доступно в режиме изменения положения. В игре подсказки пропускают все нажатия.')
+    ui.text('Для перетаскивания включите режим изменения положения. В игре удерживайте Alt и нажмите ×, чтобы скрыть подсказки.')
     M.save(studio, draft)
     studio:autosaveHint(ui, 'help')
 end
@@ -124,7 +130,7 @@ function M.geometry(w, h, width, height, position, avoid)
     height = math.min(height, h - 2 * margin)
     local freeX, freeY = w - width - 2 * margin, h - height - 2 * margin
     local initial = position == nil
-    position = position or {x=1, y=.075}
+    position = position or {x=1, y=.13}
     local x, y = margin + freeX * clamp(position.x, 0, 1), margin + freeY * clamp(position.y, 0, 1)
     if initial and avoid and x < avoid.x+avoid.w and x+width > avoid.x and
         y < avoid.y+avoid.h and y+height+margin > avoid.y then
@@ -139,12 +145,38 @@ function Overlay:visible(cfg, state, editing)
     if not state or not state.session or not state.focused or not state.alive or state.paused or state.blocked or
         state.recording or state.editingHud or state.modal or state.wheel or state.busy then return false end
     if editing then return state.mainWindow and not state.typing end
-    return cfg.visible and not state.window
+    return cfg.visible and not state.window and not state.typing and not self.dismissPending
+end
+
+function Overlay:overClose(x,y)
+    local r=self.closeBounds
+    return r and core.finite(x)and core.finite(y)and x>=r.x and x<r.x+r.w and y>=r.y and y<r.y+r.h or false
+end
+
+function Overlay:mouseButton(down,active)
+    if down then
+        self.closePressed=active or nil
+        return active
+    end
+    if not self.closePressed then return false end
+    self.closePressed=nil
+    if active then self.dismissPending=true end
+    return true
+end
+
+function Overlay:applyDismiss(studio)
+    if not self.dismissPending then return false end
+    self.dismissPending=nil
+    local draft=M.draft(studio)
+    draft.visible=false
+    M.save(studio,draft)
+    return true
 end
 
 function Overlay:draw(im, ui, cfg, keys, studio, avoid)
     local io = im.GetIO()
     local display = io.DisplaySize
+    self.closeBounds=nil
     if display.x < 48 or display.y < 48 then return end
     local edit = self.editing
     local vec = im.ImVec2
@@ -157,7 +189,7 @@ function Overlay:draw(im, ui, cfg, keys, studio, avoid)
         local menu = require 'pa26_menu'
         local rows = {}
         for _, text in ipairs({'Клавиши PA', keys.wheelLabel..'  Колесо', keys.menuLabel..'  Главное меню',
-            keys.assistLabel..'  Помощники', 'Меню → Инструкции'}) do
+            keys.assistLabel..'  Помощники', (keys.stopLabel or'Отключено')..' — Начать 10-55', 'Меню → Инструкции · Alt + ×'}) do
             for _, line in ipairs(menu.labelLayout(font, size, math.max(1, w-20), text).lines) do
                 rows[#rows+1] = line.text
             end
@@ -194,7 +226,15 @@ function Overlay:draw(im, ui, cfg, keys, studio, avoid)
                 list:AddTextFontPtr(layout.font, size, vec(origin.x, origin.y+(index-1)*layout.lineHeight), tint, line)
             end
         end
-        if edit then
+        if not edit then
+            local side=math.max(20,math.ceil(size+7))
+            local close={x=x+w-side-5,y=y+4,w=side,h=side}
+            self.closeBounds=close
+            local hovered=self:overClose(io.MousePos.x,io.MousePos.y)
+            local fill=im.ColorConvertFloat4ToU32(im.ImVec4(.25,.38,.49,hovered and .9 or .55))
+            list:AddRectFilled(vec(close.x,close.y),vec(close.x+side,close.y+side),fill,4)
+            list:AddTextFontPtr(layout.font,size,vec(close.x+side*.28,close.y+(side-size)/2),tint,'×')
+        else
             im.InvisibleButton('Перетащить##pa26-help-drag', vec(math.max(1, w-18), #layout.rows*layout.lineHeight))
             if im.IsItemActive() and im.IsMouseDragging(0) then
                 edit.position = {

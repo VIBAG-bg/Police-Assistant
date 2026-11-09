@@ -20,7 +20,7 @@ local plans={};local own
 local v=vehicle.new({settings=function()return cfg end,equal=equal,codec=codec,scan=function()return {model.copy(car)}end,
     resolve=function()return model.copy(car)end,ownCar=function()return own end,start=function(p)plans[#plans+1]=p;return true end})
 local now=1000;local function tick()now=now+300;v:tick(state,now)end
-tick();check(v:selectCandidate(1));local p=assert(v:propose('megaphone_1'));check(p.prepared.line:find('Infernus',1,true));eq(p.label,'Остановиться');eq(#plans,0)
+tick();check(v:selectCandidate(1));local p=assert(v:propose('megaphone_1'));check(p.prepared.line:find('Говорит полиция.',1,true));eq(p.label,'Остановиться');eq(#plans,0)
 check(v:accept(p));tick();eq(#plans,1);check(v:validPlan(plans[1]));v:onExecution('completed',{plan=plans[1],demo=false})
 cfg.phrases[1].condition='pursuit';check(not v:propose('megaphone_1'));v.phase='Преследование';check(v:propose('megaphone_1'))
 cfg.phrases[1].condition='stop';check(not v:propose('megaphone_1'));v.phase='10-55';check(v:propose('megaphone_1'))

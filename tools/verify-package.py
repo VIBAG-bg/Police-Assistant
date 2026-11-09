@@ -13,7 +13,20 @@ if manifest['release'] in {'0.45.0','0.45.1','0.45.2'}:
     graph=ROOT/'moonloader/resource/pa26/roads.bin'
     assert graph.stat().st_size==589664 and hashlib.sha256(graph.read_bytes()).hexdigest()=='c1d347286ccb0349940800570078c6872bef31c12ac6d6f77a4b1cf8b857d7db'
     assert sum(row['path']=='resource\\pa26\\roads.bin' for row in manifest['files'])==1
+if manifest['release'] in {'0.45.0','0.45.1','0.45.2','0.46.0'}:
     assert hashlib.sha256((ROOT/'moonloader/lib/pa26_update_platform.lua').read_bytes()).hexdigest()=='995b131aa0250b7ea407915ad7d109de71a8e43cec088603bc99cc489e60565f'
+if manifest['release']=='0.46.0':
+    for path in ['lib/pa26_navigation.lua', 'lib/pa26_navigation_path.lua', 'lib/pa26_navigation_render.lua', 'lib/pa26_navigation_roads.lua', 'lib/pa26_road_file.lua', 'lib/pa26_road_sources.lua', 'resource/pa26/roads.bin']:
+        assert not (ROOT/'moonloader'/path).exists(), f'Frozen GPS file in distribution: {path}'
+        assert all(row['path'].replace('\\','/')!=path for row in manifest['files']), path
+    def preset(name):
+        return json.loads((ROOT/'presets'/f'{name}.json').read_text('utf-8-sig'))
+    base=preset('baseline')
+    expected={'binds':preset('pa-binds'),'settings':preset('pa-settings'),'baseline':{
+        'format':'police-assistant.author-settings','schema':1,'settings':base['settings'],'config':base['config']}}
+    payload=(ROOT/'moonloader/lib/pa26_author_defaults0460.lua').read_text('utf-8')
+    bundled={key:json.loads(value) for key,value in re.findall(r'    (\w+)=\[==\[(.*?)\]==\],',payload)}
+    assert bundled==expected, 'Automatic author defaults must match the published preset files'
 if manifest.get('update_carried_assets'):
     fm=json.loads((ROOT/'moonloader/resource/pa26/fonts/manifest.json').read_text('utf-8'))
     font=(ROOT/'moonloader/resource/pa26/fonts/fa-solid-900.ttf').read_bytes()
@@ -59,7 +72,7 @@ for p in [ROOT/'README.md', *(ROOT/'docs').rglob('*.md')]:
         assert (p.parent/target).exists(), f'Broken link in {p.relative_to(ROOT)}: {target}'
         links+=1
 setup_files={'tools/pa-setup.ps1','tools/pa-setup-window.ps1','tools/pa-start.ps1','tools/pa-seed-presets.ps1','DEPENDENCIES.json'}
-if manifest['release']=='0.45.1':
+if manifest['release'] in {'0.45.1','0.46.0'}:
     setup_files.update({'tools/pa-legacy-0440.json','tools/pa-legacy-migration.ps1','tools/pa-legacy-lua.ps1','tools/pa-legacy-presets.lua'})
 assert len(manifest['setup_files'])==len(setup_files)
 assert {row['path'] for row in manifest['setup_files']}==setup_files

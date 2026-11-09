@@ -5,16 +5,21 @@ eq(#migrated.notes,#old.notes);eq(#migrated.bindings,#old.bindings);eq(migrated.
 eq(migrated.profile.name,old.profile.name);eq(migrated.bindings[1].script,old.bindings[1].script)
 local bad=prefs.validate({enabled='true',navigation={observe_ms=0/0,max_segments=99999},coordinates={channel='/su',phone='/cuff 5'}})
 eq(bad.enabled,false);eq(bad.navigation.max_segments,256);eq(bad.coordinates.channel,'/fn');eq(bad.coordinates.phone,'')
+local legacyPath='D:\\Saved graph.bin'
+lib.field.navigation.road_external=legacyPath
+eq(assert(model.validate(lib,cfg)).field.navigation.road_external,legacyPath,'Legacy GPS preferences remain serializable')
 local t,revision,reads=0,1,0;local plans={};local warnings={}
 local field=require('pa26_field_services').new({library=function()return lib end,revision=function()return revision end,
  codec=codec,clock=function()return t end,gameNow=function()return t end,waypoint=function()reads=reads+1;return true,100,200,0 end,
+ openRoads=function()error('Frozen GPS must never open a graph')end,
  notice=function(x)warnings[#warnings+1]=x end,start=function(p)plans[#plans+1]=p;return true end,
  templateContext=function()return{values={unit='1-L-1'},gender='female'}end})
 local s={session='s',ped=1,demo=false,interior=0,x=1,y=2,z=3,area='Ganton',map_square='H-18',focused=true,alive=true,paused=false,blocked=false,typing=false,modal=false}
 for i=1,10000 do t=i;field:tick(s,i)end;eq(reads,0,'Master OFF never polls waypoint')
 lib.field.enabled=true;lib.field.navigation.enabled=true;lib.field.navigation.observe_waypoint=true
-field:tick(s,t);eq(reads,1);t=t+100;field:tick(s,t);eq(reads,1)
-t=t+200;s.paused=true;field:tick(s,1);eq(reads,2,'Monotonic observation continues while game timer frozen at pause')
+field:tick(s,t);t=t+100;field:tick(s,t)
+t=t+200;s.paused=true;field:tick(s,1);eq(reads,0,'Stored GPS settings do not activate waypoint reads')
+for _,name in ipairs({'pa26_navigation','pa26_navigation_roads','pa26_road_sources'})do eq(package.loaded[name],nil)end
 s.paused=false;lib.field.coordinates.enabled=true;lib.field.coordinates.observe=true;t=t+300;field:tick(s,t)
 local proposal=assert(field:propose('share'));eq(#plans,0);check(proposal.lines[1]:match('^/fn '))
 check(field:accept(proposal));s.typing=true;t=t+1;field:tick(s,t);eq(#plans,0);eq(field.intent,nil);s.typing=false
@@ -28,13 +33,29 @@ leader.lines[2]=string.rep('я',200);check(not field:propose('gnews'));eq(#plans
 leader.lines={'Юнит {unit}.','/cuff 3','Третья.'};check(not field:propose('gnews'))
 leader.lines={'Юнит {unknown}.','',''};check(not field:propose('gnews'))
 leader.lines={'Юнит {unit}.','',''};proposal=assert(field:propose('gnews'));eq(proposal.lines[1],'/gnews EPD | Юнит 1-L-1.')
-field:reset();eq(next(field.navigation.sources),nil);eq(field.coordinates.offer,nil)
--- Coordinates remain usable when the optional native-waypoint observer is OFF.
+field:reset();eq(field.coordinates.mark,nil);eq(field.coordinates.offer,nil)
+-- The marker has its own confirmation and lifetime.
 lib.field.navigation.enabled=false;t=t+300;field:tick(s,t)
 check(field:paste('200 300 5'));local token=field.coordinates.offer.token;field.coordinates:shown(token)
-check(field.coordinates:decide(token,true));t=t+300;field:tick(s,t);check(field.navigation.sources.mark)
-t=t+300;field:tick(s,t);check(field.navigation.sources.mark,'Independent OOC marker persists until its own TTL')
-lib.field.coordinates.enabled=false;t=t+1;field:tick(s,t);check(not field.navigation.sources.mark,'OFF cleans only the owned mark')
+check(field.coordinates:decide(token,true));t=t+300;field:tick(s,t);check(field.coordinates.mark)
+check(field.snapshot.hud:find('по прямой',1,true));eq(field.snapshot.points,nil)
+t=t+300;field:tick(s,t);check(field.coordinates.mark,'Independent OOC marker persists until its own TTL')
+t=field.coordinates.mark.expires;field:tick(s,t);eq(field.coordinates.mark,nil);eq(field.snapshot.target,nil)
+local function place(text)
+ check(field:paste(text));local key=field.coordinates.offer.token;field.coordinates:shown(key)
+ check(field.coordinates:decide(key,true));t=t+1;field:tick(s,t)
+end
+place('200 300 5');check(field.coordinates.mark)
+field:clear();t=t+1;field:tick(s,t);eq(field.snapshot.target,nil)
+lib.field.coordinates.arrival_clear=true
+place('1 2 3');eq(field.coordinates.mark,nil,'Arrival removes a confirmed-height point')
+place('1 2');check(field.coordinates.mark,'Unknown height cannot confirm arrival')
+s.interior=1;t=t+1;field:tick(s,t);eq(field.coordinates.mark,nil)
+s.interior=0;t=t+1;field:tick(s,t)
+place('200 300 5');check(field.coordinates.mark)
+s.session='reconnected';t=t+1;field:tick(s,t);eq(field.coordinates.mark,nil)
+place('200 300 5');check(field.coordinates.mark)
+lib.field.coordinates.enabled=false;t=t+1;field:tick(s,t);eq(field.coordinates.mark,nil,'OFF cleans only the owned mark')
 lib.field.coordinates.enabled=true
 for i,row in ipairs(lib.field.leadership.briefings)do for j=1,#row.lines do check(field:propose('briefing',{index=i,line=j}))end end
 local invalid=model.copy(lib);invalid.field.leadership.briefings[1].name='';check(not model.validate(invalid,cfg),'Invalid draft is rejected, never silently dropped on save')

@@ -9,12 +9,15 @@ lib.procedures.wanted_wheel=true;lib.procedures.wanted_enabled=true;lib.procedur
 for _,car in ipairs({false,true})do
  local state={inVehicle=car,onDuty=true,copilot={car={id=1},phase='10-55'}}
  local catalog=wheel.build(lib,1,true,state);eq(#catalog.categories,car and 6 or 8)
+ eq(catalog.bySystem['pa-gps-clear'],nil)
  local expected=car and o.car or o.foot;local root=car and o.car_order.root or o.foot_order.root
  for i,g in ipairs(root)do eq(catalog.categories[i].id,g)
   local actual={};for _,item in ipairs(catalog.byCategory[g].items)do actual[#actual+1]=item.id end
-  for n,id in ipairs(expected[g])do eq(actual[n],id,(car and'car'or'foot')..' '..g..' '..n..': '..tostring(actual[n]))end
-  local entries=wheel.entries(catalog.byCategory[g]);local limit=car and 6 or 8
-  for n=1,math.min(limit,#expected[g])do eq(entries[n].id,expected[g][n])end
+  local activeExpected={}
+  for _,id in ipairs(expected[g])do if id~='pa-gps-clear'then activeExpected[#activeExpected+1]=id end end
+  for n,id in ipairs(activeExpected)do eq(actual[n],id,(car and'car'or'foot')..' '..g..' '..n..': '..tostring(actual[n]))end
+  local entries=wheel.entries(catalog.byCategory[g]);local limit=15
+  for n=1,math.min(limit,#activeExpected)do eq(entries[n].id,activeExpected[n])end
  end
  if car then
   for _,id in ipairs({20,25,26,27,45})do eq(catalog.byId[id],nil)end

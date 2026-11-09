@@ -51,6 +51,13 @@ s.reply=TEST_JSON_ENCODE({product='police-assistant-2026',moonloader=s.u.env.pla
 s.tick();eq(s.u.job.root,'adopted');eq(#s.started,1,'reload must adopt, not launch a second download')
 local notices=#s.notices;s.tick('waiting','downloaded_close_game');eq(#s.notices,notices,'adoption cannot repeat waiting popup')
 check(s.u:cancel());check(s.cancelled)
+s=setup()
+local installed
+s.u.env.onInstalled=function(version)installed=version;return true end
+s.tick();s.tick('installed','update_installed',{version='0.46.0'})
+eq(installed,'0.46.0');eq(#s.notices,0);check(not s.u.job)
+s=setup();installed=nil;s.u.env.onInstalled=function(v)installed=v end
+s.tick();s.tick('idle','ready');eq(installed,nil,'Fresh installations have no update receipt')
 -- Real sidebar route and settings persistence, without a process/network mock
 -- accidentally creating a real update request from the test fixture.
 local fixture=require 'support.fixture';s=fixture({demo=true});s.step();s.page('binds')

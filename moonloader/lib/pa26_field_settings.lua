@@ -2,6 +2,7 @@
 local core=require 'pa26_core';local M={}
 function M.defaults()return {
  enabled=false,share_shortcut={key=0,ctrl=false,alt=false,shift=false},
+ -- Retain saved road settings for older installs. Only marker display uses this group now.
  navigation={enabled=false,observe_waypoint=false,overlay=false,native_path=false,keep_waypoint=false,road_external='',road_work=256,road_budget_ms=1,road_snap=300,hud=true,radar=true,pause_map=true,
   observe_ms=250,recalculate_ms=1500,movement=20,missing_grace_ms=750,retry_ms=5000,arrival=15,max_segments=256,line_width=3,opacity=.9},
  coordinates={enabled=false,observe=false,ttl_ms=300000,offer_ms=20000,arrival_clear=false,channel='/fn',phone='',
@@ -32,9 +33,6 @@ function M.validate(raw)
    elseif k=='shortcut'and shortcut(x)then defaults[k]={key=x.key,ctrl=x.ctrl,alt=x.alt,shift=x.shift}end
   end
  end end
- if d.navigation.road_external~=''and not require('pa26_road_sources').absolute(d.navigation.road_external)then
-  return nil,'Дополнительный граф дорог: нужен полный путь к обычному файлу на диске.'
- end
  if not({['/rn']=true,['/fn']=true,['/ln']=true,['/sms']=true})[d.coordinates.channel]then d.coordinates.channel='/fn'end
  if not d.coordinates.phone:match('^%d*$')then d.coordinates.phone=''end
  if not d.leadership.command:match('^/gnews$')then d.leadership.command='/gnews';d.leadership.verified=false end

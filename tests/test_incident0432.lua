@@ -15,7 +15,7 @@ check(cp:observeManualCommand('/ud 37','cef'),'duplicate hook has no additional 
 s.state.inVehicle=true;s.tick();local finish=assert(s.has('finish'));check(not s.has('pursuit'))
 cp:shown(finish.token);check(cp:decide(finish.token,false));check(not s.has('pursuit'),'declining finish while target parked cannot invent flight')
 s.tick();check(not s.has('finish'),'no nagging after an explicit decline')
-s.car.x=15;s.car.distance=35;s.tick();check(s.has('pursuit'),'departure after declined finish offers pursuit')
+s.car.x=15;s.car.distance=35;s.tick();check(not s.has('pursuit'),'Departure below the warning limit does not prompt');check(cp:propose('pursuit'),'Manual pursuit remains available')
 -- Complete after a true stream-out using the original stop location.
 cp,v,s=setup();s.send('stop_order');s.state.inVehicle=false;s.car.distance=3;s.person.distance=2;s.tick()
 check(cp:observeManualCommand('/ud 37','executor'))

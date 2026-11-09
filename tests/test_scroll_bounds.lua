@@ -8,9 +8,10 @@ for _,display in ipairs({{640,480},{1280,720},{2560,1440}})do
         local window=s.windows[row[3]];check(window,row[3]);check(bit.band(window.flags,s.imgui.WindowFlags.NoScrollbar)~=0)
         check(bit.band(window.flags,s.imgui.WindowFlags.NoScrollWithMouse)~=0,'resize handles must never create a scroll range')
         local body
-        for _,child in ipairs(s.childCalls)do if child.name=='workspace-content##'..row[2]then body=child end end
+        local childId=row[2]=='assist'and'assist-content##traffic'or'workspace-content##'..row[2]
+        for _,child in ipairs(s.childCalls)do if child.name==childId then body=child end end
         check(body);eq(body.window,row[3]);check(bit.band(body.flags,s.imgui.WindowFlags.NoScrollWithMouse)==0,'content retains native bounded scrolling')
-        for _,button in ipairs(s.buttonCalls)do if button.window==row[3]and button.label:match('^##resize%-')then check(button.parent~='workspace-content##'..row[2])end end
+        for _,button in ipairs(s.buttonCalls)do if button.window==row[3]and button.label:match('^##resize%-')then check(button.parent~=childId)end end
         eq(#s.scopes,0);check(not s.hasLog('Ошибка интерфейса'))
     end
     eq(#s.sent,0);onScriptTerminate(s.script)

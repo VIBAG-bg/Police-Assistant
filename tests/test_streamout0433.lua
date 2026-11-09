@@ -1,6 +1,8 @@
 local setup=require 'support.copilot_fixture'
-local function contact(source)
- local cp,v,s=setup();s.send('stop_order');s.state.inVehicle=false;s.car.distance=3;s.person.distance=2;s.tick()
+local function contact(source,limit)
+ local cp,v,s=setup();s.send('stop_order')
+ if limit then for _=2,s.cfg.copilot.stop_warning_count do s.tick(4000);s.send('stop_order')end end
+ s.state.inVehicle=false;s.car.distance=3;s.person.distance=2;s.tick()
  check(not cp:observeManualCommand('/ud 38',source));check(cp:observeManualCommand('/ud 37',source));check(not cp.done.explain_stop)
  return cp,v,s
 end
@@ -23,7 +25,10 @@ for _,field in ipairs({'modal','typing','recording','wheel','alertPending','ownU
 end
 cp,v,s=contact('native');stream(v,s);local toast=assert(s.has('finish'));check(toast.confirmationNote:find('вне наблюдения',1,true))
 s.state.modal=true;s.tick(s.cfg.copilot.toast_ms+1);s.state.modal=false;s.tick();check(s.has('finish'),'A hidden expired offer can be prepared afresh')
-cp,v,s=contact('native');s.car.x=20;s.tick();local finish=assert(s.has('finish'));cp:shown(finish.token);check(cp:decide(finish.token,false))
-for _=1,3 do s.tick();check(s.has('pursuit'),'Observed flight offer must not vanish on the next tick')end
+cp,v,s=contact('native',true);s.cfg.copilot.immediate_flight_offer=false
+s.car.x=20;s.car.distance=25;s.tick();local finish=assert(s.has('finish'));cp:shown(finish.token);check(cp:decide(finish.token,false))
+s.car.x=30;s.car.distance=35;s.tick();check(s.has('pursuit'))
+s.tick();check(s.has('pursuit'),'One stationary sample does not prove a stop')
+s.tick(s.cfg.copilot.stop_ms);check(not s.has('pursuit'),'The offer expires after a confirmed stop')
 cp,v,s=contact('native');s.car.id=43;s.car.handle=101;v.selected=require('pa26_bindings').copy(s.car);cp:tick(s.state,s.now+500)
 check(not s.has('finish'),'Another selected car cannot inherit the old contact');eq(cp.manualUdDone,nil)

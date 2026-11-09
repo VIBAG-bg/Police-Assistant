@@ -34,7 +34,9 @@ local function setup(occupants,gender,channel,confirm)
  s.occupants=occupants;local radar=s.colleagues;check(radar)
  local observed=radar.view
  radar.view=function(self)
-  local state=observed(self);state.patrolOccupants=s.occupants;return state
+  local state=observed(self);state.patrolOccupants=s.occupants;state.patrolCrew={}
+   for i=2,s.occupants do state.patrolCrew[#state.patrolCrew+1]={id=100+i,verifiedPolice=true,name='Partner_'..i}end
+   return state
  end
  s.vehicle=true;s.step();s.page('partners');click(s,'Патруль и смена##Патруль и служба##partners-pagepatrol')
  click(s,'Начать патруль##patrol-start');click(s,'ДА##confirm-yes');s.step()

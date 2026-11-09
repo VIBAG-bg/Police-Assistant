@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.45.1')
+script_version('0.46.0')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -66,7 +66,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.45.1' then
+if #missing > 0 or not core or core.VERSION ~= '0.46.0' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -899,6 +899,9 @@ sceneServices.bulletins=require('pa26_stolen_bulletin').new(function()return wor
 sceneServices.copilot=require('pa26_copilot').new({vehicle=sceneServices.vehicle,settings=function()return workspace.library.vehicle.copilot end,
     bulletin=function(now)return sceneServices.bulletins:view(now,workspace.library.map_grid)end,
     profile=function()return workspace.library.profile end,codec=codec,equal=patrolSession.env.equal,driver=sceneServices.readDriver,driverAccount=sceneServices.readDriverAccount,taserActive=function(s)return taser:activeFor(s)end,start=startAutomatic,
+    driverSeated=function(car,driver)
+        return car and driver and optionalRead('getDriverOfCar',car.handle)==driver.ped
+    end,
     notice=function(message)if sceneServices.userWarning then sceneServices.userWarning(message)end end,
     cancel=function(token,reason)local q=workspace.executor.queue;if q and q.plan.copilotAction and q.plan.copilotAction.token==token then workspace.executor:cancel(reason)end end})
 sceneServices.copilotUi=require 'pa26_copilot_ui'
@@ -951,7 +954,10 @@ sceneServices.evidence=sceneServices.evidenceModule.new({settings=function()retu
         while #history>48 do table.remove(history,1)end
         return workspace:save(copy)
     end})
-local function effectivePatrol()return sceneServices.vehicle:periodic(patrolSession:effectivePatrol(workspace.library.alerts.patrol))end
+local function effectivePatrol()
+    local independent=not patrolSession.data.active and workspace.library.patrol_session.reporter_self~=false
+    return sceneServices.vehicle:periodic(patrolSession:effectivePatrol(workspace.library.alerts.patrol),independent)
+end
 radioGuard=radioGuardModule.new({settings=function()return workspace.library.radio_guard end,
     patrol=effectivePatrol,codec=codec,log=pushLog,start=startAutomatic,
     cancel=cancelNoticePlan,uiAvailable=notificationUiAvailable})
@@ -1004,7 +1010,9 @@ patrol=patrolModule.new({settings=effectivePatrol,clockPolicy=function()return w
 studio=studioModule.new(imgui,ffi,workspace.library,function() return studioClock end); workspace.studio=studio
 sceneServices.help=sceneServices.helpModule.new(workspace.library.settings.help)
 sceneServices.helpKeys=function()
-    return sceneServices.help:shortcuts(cfg.main.menu_key,cfg.main.radial_key,workspace.library.assist.open_shortcut)
+    local vehicle=workspace.library.vehicle
+    return sceneServices.help:shortcuts(cfg.main.menu_key,cfg.main.radial_key,workspace.library.assist.open_shortcut,
+        vehicle.select_shortcut,vehicle.enabled and vehicle.copilot.enabled and vehicle.megaphone_enabled)
 end
 knowledge=knowledgeModule.new({json=workspace.json,now=function()return studioClock end,
     path=getWorkingDirectory()..'\\config\\police_assistant_2026_knowledge.json',
@@ -1028,6 +1036,12 @@ do
     sceneServices.updater=require('pa26_updater').new({platform=ok and p or nil,
         settings=function()return workspace.library.settings.updates end,now=function()return studioClock end,
         encode=workspace.json.encode,decode=workspace.json.decode,
+        onInstalled=function(version)
+            if version=='0.46.0'and core.VERSION==version and not workspace.library.settings.applied_author_defaults_0460 then
+                sceneServices.pendingAuthorUpgrade=true
+                return true
+            end
+        end,
         notify=function(message,kind)studio:notify(message,'updates',false,kind)end})
 end
 do
@@ -1101,18 +1115,23 @@ local function cancelManualActions(reason)
     if patrolEvents.intent or patrolEvents.queued then patrolEvents:cancelReport(reason)end
 end
 local studioCallbacks
--- Explicit UI/key requests share the same deferred vehicle scan and COPILOT toast.
--- No game sends or vehicle enumeration from the renderer.
-function sceneServices.requestVehicleAction(action,select)
+-- Keep the captured target when following up. A new selection is explicit or needed for an idle incident.
+function sceneServices.requestVehicleAction(action,preferNearest)
     local cfg=workspace.library.vehicle
-    if not cfg.enabled or not cfg.copilot.enabled then return nil,'Включите транспорт и COPILOT в настройках.'end
-    if sceneServices.vehicleHotkey then return nil,'Выбор машины уже выполняется.'end
-    if hasUiModal()then return nil,'Сначала завершите открытое подтверждение.'end
-    local revision=sceneServices.vehicle.selectionRevision or 0
-    if select then
-        local ok,err=sceneServices.vehicle:requestSelection();if not ok then return nil,err end
+    local vehicle,copilot=sceneServices.vehicle,sceneServices.copilot
+    local phrase=action:match('^megaphone_%d+$')~=nil
+    if not(phrase and cfg.megaphone_enabled or not phrase and cfg.enabled and cfg.copilot.enabled)then
+        return nil,phrase and'Включите мегафон в настройках.'or'Включите транспорт и Copilot в настройках.'
     end
-    sceneServices.vehicleHotkey={action=action,select=select,revision=revision,at=studioClock,session=sceneServices.vehicle.state.session}
+    if not vehicle.state or not vehicle.state.session then return nil,'Дождитесь подключения к игре.'end
+    if sceneServices.vehicleHotkey then return nil,'Действие с машиной уже готовится.'end
+    if hasUiModal()then return nil,'Сначала завершите открытое подтверждение.'end
+    local select=not copilot.phase and (preferNearest or not vehicle.selected) and (not phrase or sceneServices.model.needsTarget(action,cfg))
+    local revision=vehicle.selectionRevision or 0
+    if select then
+        local ok,err=vehicle:requestSelection(nil,not phrase);if not ok then return nil,err end
+    end
+    sceneServices.vehicleHotkey={action=action,select=select,revision=revision,at=studioClock,session=vehicle.state.session}
     return true
 end
 studioCallbacks={
@@ -1127,6 +1146,16 @@ studioCallbacks={
         sceneServices.help.editing=not reset and {position=position} or nil
     end,
     nearestTrafficStop=function()return sceneServices.requestVehicleAction('stop_order',true)end,
+    requestVehicleAction=sceneServices.requestVehicleAction,
+    pursuitWanted=function()
+        local t,why=sceneServices.copilot:pursuitWantedTarget()
+        if not t then return nil,why end
+        if not caseFormsModule.enabled(workspace.library.procedures,'wanted')then return nil,'Включите помощник розыска в настройках.'end
+        if sceneServices.wantedInput then return nil,'Дождитесь открытия текущей формы розыска.'end
+        sceneServices.wantedInput={head='su',at=optionalRead('getGameTimer'),epoch=sceneServices.chatEpoch,
+            session=connectionKey(),demo=runtime.demo,id=t.id,name=t.name,generation=t.generation,pursuitLife=sceneServices.copilot.life}
+        return true
+    end,
     requestShutdown=function()sceneServices.shutdownRequested=true;return true end,
     manualFriskMode=function(token,mode)return sceneServices.manualActions:friskMode(token,mode)end,
     setDemoMode=function(value)if type(value)=='boolean'then sceneServices.requestDemoMode=value end end,
@@ -1194,13 +1223,40 @@ studioCallbacks={
         return sceneServices.copilot:previewTemplate(action,cfg)
     end,
     taserMode=function(active)return taser:confirmMode(active)end,
-    vehicleOffer=function(action,nearest)return sceneServices.vehicle:propose(action,nearest)end,
+    vehicleOffer=function(action)
+        local map={traffic_stop='stop',pursuit='pursuit',finish='finish',megaphone='megaphone_order'}
+        local cfg=workspace.library.vehicle
+        local cp=sceneServices.copilot
+        local stockPhrase=action=='megaphone_1'and cp.phase=='10-55'and
+            require('pa26_vehicle_settings').stockStopPhrase(cfg.phrases[1])and sceneServices.vehicle:phraseAllowed(action,cfg)
+        local sharedAction=stockPhrase and'megaphone_order'or map[action]
+        if not sharedAction then return sceneServices.vehicle:propose(action)end
+        local override=bindingModel.copy(cfg.copilot)
+        if stockPhrase then
+            override._megaphone_channel=cfg.phrases[1].channel
+        elseif sharedAction=='megaphone_order'then
+            if cfg.megaphone_template~=require('pa26_copilot_settings').stopOrder then
+                override.templates.stop_order=cfg.megaphone_template
+                override.templates.stop_order_bike=cfg.megaphone_template
+            end
+        else override.templates[sharedAction]=cfg[action..'_template']end
+        return cp:propose(sharedAction,{cfg=override})
+    end,
     vehicleAccept=function(p)if p.copilot then return sceneServices.copilot:accept(p)end;return sceneServices.vehicle:accept(p)end,
     vehicleClear=function()sceneServices.vehicle:clearTarget('Выбор машины снят вами.');sceneServices.copilot:reset('Выбор машины снят вами.')end,
     vehicleSelect=function(id)return sceneServices.vehicle:requestSelection(id)end,
     vehiclePreview=function(action,draft)
         local targeted=sceneServices.model.needsTarget(action,draft)
         local c=targeted and(sceneServices.vehicle.selected or sceneServices.vehicle.candidates[1])or nil
+        local cp=sceneServices.copilot
+        if action=='megaphone'and draft.megaphone_template==require('pa26_copilot_settings').stopOrder or
+            action=='megaphone_1'and cp.phase=='10-55'and require('pa26_vehicle_settings').stockStopPhrase(draft.phrases[1])then
+            if not cp.car or cp.car.stale then return nil,'Выберите машину для предпросмотра требования.'end
+            local class=require('pa26_rp_context').class({car=cp.car})
+            if class=='unknown'then return nil,'Сначала выберите вариант транспорта в окне подтверждения.'end
+            local key=class=='bike'and'stop_order_bike'or'stop_order'
+            return cp:previewTemplate(key,draft.copilot,action=='megaphone_1'and draft.phrases[1].channel or draft.megaphone_channel)
+        end
         local state,err=sceneServices.vehicle:values(alerts.state or {},c);if not state then return nil,err end
         if targeted then
             if not c then return nil,'Сначала выберите видимую машину.'end
@@ -1208,7 +1264,7 @@ studioCallbacks={
             for k,v in pairs(values)do state[k]=v end
         else for key in pairs(require('pa26_vehicle_settings').vehicleFields)do state[key]=nil end end
         local prepared;prepared,err=sceneServices.model.preview(action,draft,state,codec,workspace.library.radio_guard)
-        return prepared and prepared.line,err
+        return prepared and table.concat(prepared.lines,'\n'),err
     end,
     operationOffer=function(id,outcome,note)return workspace.operations:propose(id,outcome,note)end,
     operationAccept=function(p)return workspace.operations:accept(p)end,
@@ -1380,11 +1436,6 @@ end
 sceneServices.field=require('pa26_field_services').new({library=function()return workspace.library end,revision=function()return workspace.libraryRevision end,
     codec=codec,perf=sceneServices.chatPerf,clock=sceneServices.patrolClock,gameNow=function()return studioClock end,start=startAutomatic,
     templateContext=function()local b=bindingModel.newBinding(1);b.target_required=false;b.script='/me действие.';return workspace:snapshot(b,{})end,
-    waypoint=function()if type(getTargetBlipCoordinates)=='function'then return getTargetBlipCoordinates()end end,
-    roadSources=require('pa26_road_sources').new({
-        script=function()local s=thisScript();local path=s and s.path;return path and(core.validUtf8(path)and path or codec.decode(path))end,
-        moonloader=function()local path=getWorkingDirectory();return core.validUtf8(path)and path or codec.decode(path)end}),
-    roadHash=require('pa26_author_io').hash,
     notice=function(message)studio:notify(message,'field',false)end})
 studioCallbacks.openTrackingOoc=function(id)
     if not workspace.library.procedures.enabled or not workspace.library.procedures.mark_enabled then studio:notify('Отдельная OOC-форма выключена. Включите её в настройках процедур. Обычная пеленгация доступна без этой формы.','procedures',false);return end
@@ -1395,7 +1446,7 @@ end
 studioCallbacks.fieldPreview=function(text)return sceneServices.field:previewText(text)end
 studioCallbacks.fieldOffer=function(kind,arg)return sceneServices.field:propose(kind,arg)end
 studioCallbacks.fieldAccept=function(p)hideWorkspaceUi();return sceneServices.field:accept(p)end
-studioCallbacks.fieldClear=function(kind)sceneServices.field:clear(kind)end
+studioCallbacks.fieldClear=function()sceneServices.field:clear()end
 studioCallbacks.fieldPaste=function(text)return sceneServices.field:paste(text)end
 studioCallbacks.openField=function()openWorkspace('addons');menu.tool='field'end
 local knowledgeCallbacks={codec=codec,nextBindingId=function()return workspace.library.next_id end,
@@ -1429,12 +1480,13 @@ env.wheelNavigate=function(route,profile,target)
         if item.action=='fast_pt'then return studioCallbacks.fastPt()end
         studioCallbacks.openAssist('traffic')
         if item.action=='rights'then studio.copilotPage='rights'
+        elseif item.action=='stop_order'or item.action=='pursuit'then
+            local ok,why=sceneServices.requestVehicleAction(item.action);if not ok then studio:notify(why,'vehicle',false)end
         else sceneServices.copilotUi.offer(studio,studioCallbacks,item.action)end
         return true
     end
     if route.kind=='assist'then
         local id=route.id
-        if id=='pa-gps-clear'then studioCallbacks.fieldClear();return true end
         if id=='pa-share-coordinates'then
             local p,why=studioCallbacks.fieldOffer('share');if p then studio.assistConfirm={kind='field',proposal=p};imgui.DisableInput=false else studio:notify(why,'field',false)end;return true
         end
@@ -1581,11 +1633,36 @@ end
 sceneServices.authorPresets.env.callbacks=studioCallbacks
 sceneServices.installAuthorPreset=function(p)
     workspace:cancel('Применён авторский набор.');runtime:cancel('Применён авторский набор.')
-    if p.kind=='settings' then cfg=p.config;runtime:applyConfig(cfg);workspace.cfg=cfg;workspace.userFiles.cfg=cfg end
+    local configChanged=p.kind=='settings'or p.kind=='upgrade0460'
+    if configChanged then cfg=p.config;runtime:applyConfig(cfg);workspace.cfg=cfg;workspace.userFiles.cfg=cfg end
     local lib=workspace.userFiles:load();workspace.library=lib;workspace.libraryFresh=false;workspace.libraryRevision=workspace.libraryRevision+1;workspace.commandDirty=true
     studio.autosaves={};studio.dirty=false;studio:setLibrary(lib)
-    if p.kind=='settings' then hud.settings=bindingModel.copy(cfg.widget);hud.dirty=false;hud.dirtyAt=nil end
+    if configChanged then hud.settings=bindingModel.copy(cfg.widget);hud.dirty=false;hud.dirtyAt=nil end
     showWindow[0],showQuick[0],showTips[0],sceneServices.showAssist[0],sceneServices.showWanted[0]=false,false,false,false,false;sceneServices.hideProcedureWindows()
+end
+function sceneServices.applyUpgradeDefaults()
+    sceneServices.pendingAuthorUpgrade=nil
+    local host=require 'pa26_author_io'
+    local current=bindingModel.copy(cfg);current.main.demo_mode=runtime.demo
+    local ok,applied,note,prepared=pcall(require('pa26_author_upgrade0460').apply,workspace,current,
+        sceneServices.authorIO,host.hash,host.lock,host.newId)
+    if ok and applied then
+        if not prepared then return end
+        sceneServices.installAuthorPreset(prepared)
+        loadDraft()
+        pushLog('Авторские бинды и настройки 0.46.0 применены. Резервная копия: '..note)
+        if pcall(function()thisScript():reload()end)then return true end
+        return
+    end
+    local why=tostring(ok and note or applied)
+    local recovered,restored,recoveryError=pcall(require('pa26_author_store').recover,workspace.base,workspace.json,
+        sceneServices.authorIO and sceneServices.authorIO.fs or require('pa26_library').fs,host.hash,host.lock)
+    if not recovered or not restored then
+        pushLog('Перенос авторских настроек: '..tostring(recovered and recoveryError or restored))
+        workspace.userFiles.blocked=why
+        if pcall(function()thisScript():reload()end)then return true end
+    end
+    studio:notify('PA 0.46.0 установлен. Авторские наборы не применены: '..why,'updates',false,'warning')
 end
 local generalSaveFailed=false
 local function saveSettings(preferencesOnly)
@@ -2212,7 +2289,13 @@ local function drawWorkspaceWindows()
     imgui.PushStyleVarVec2(imgui.StyleVar.WindowPadding,imgui.ImVec2(18,18)); pushScope(function() imgui.PopStyleVar(1) end)
     local function window(title,flag,key,body)
         if not menu:prepareWindow(imgui,key) then return end
-        local flags=imgui.WindowFlags.NoCollapse+imgui.WindowFlags.NoSavedSettings+imgui.WindowFlags.NoMove+imgui.WindowFlags.NoResize+imgui.WindowFlags.NoScrollbar+imgui.WindowFlags.NoScrollWithMouse
+        local flags=imgui.WindowFlags.NoCollapse+imgui.WindowFlags.NoSavedSettings+imgui.WindowFlags.NoMove+
+            imgui.WindowFlags.NoResize+imgui.WindowFlags.NoScrollbar+imgui.WindowFlags.NoScrollWithMouse
+        if key=='assist'then
+            imgui.PushStyleVarVec2(imgui.StyleVar.WindowPadding,imgui.ImVec2(10,10))
+            imgui.PushStyleVarVec2(imgui.StyleVar.ItemSpacing,imgui.ImVec2(8,6))
+            pushScope(function()imgui.PopStyleVar(2)end)
+        end
         if alerts:overWidget(imgui) or taser:overWidget(imgui)or notifications:overWidget(imgui)or sceneServices.copilotUi.over(sceneServices.copilot,imgui)then flags=flags+imgui.WindowFlags.NoMouseInputs end
         local visible=imgui.Begin(title,flag,flags)
         if not flag[0]and studio:unsavedChanges()then
@@ -2220,8 +2303,13 @@ local function drawWorkspaceWindows()
             studio:requestNavigation(function()flag[0]=false;studio:flushAutosave(studioCallbacks,true)end,'закрыть дополнительное окно PA')
         end
         pushScope(function() imgui.End() end)
-        if visible then menu:resizeWindow(imgui,ui,key);menuModule.scrollBody(imgui,ui,'workspace-content##'..key,body,key=='wanted'and 12 or 0);studio:drawModal(ui,studioData(),studioCallbacks)end
+        if visible then
+            menu:resizeWindow(imgui,ui,key)
+            if key=='assist'then body()else menuModule.scrollBody(imgui,ui,'workspace-content##'..key,body,key=='wanted'and 12 or 0)end
+            studio:drawModal(ui,studioData(),studioCallbacks)
+        end
         endScope()
+        if key=='assist'then endScope()end
     end
     if showQuick[0] then window('Police Assistant · Быстрое меню##pa26-quick',showQuick,'quick',function() studio:drawQuick(ui,studioData(),studioCallbacks) end) end
     if showTips[0] then window('Police Assistant · Памятки##pa26-tips',showTips,'tips',function() studio:drawNotes(ui,studioData(),studioCallbacks,true) end) end
@@ -2291,25 +2379,25 @@ end,function() safeDraw(beforeUiFrame) end,function() safeDraw(drawWorkspaceWind
 workspaceFrame.LockPlayer=false; workspaceFrame.HideCursor=true
 subscriptions[#subscriptions + 1]=workspaceFrame
 
-sceneServices.field.drawNavigation=sceneServices.chatPerf:wrap('fieldProjection',require('pa26_navigation_render').draw)
+sceneServices.field.drawMarker=sceneServices.chatPerf:wrap('fieldProjection',require('pa26_coord_share').drawMarker)
 sceneServices.field.drawSettings=sceneServices.chatPerf:wrap('fieldUI',require('pa26_field_ui').settings)
-sceneServices.field.markVisible=function()local f=workspace.library.field;local target=sceneServices.field.snapshot.target;return f.enabled and f.coordinates.enabled and target and target.kind=='mark'end
+sceneServices.field.markVisible=function()local f=workspace.library.field;return f.enabled and f.coordinates.enabled and sceneServices.field.coordinates.mark~=nil end
 sceneServices.mapFrame=imgui.OnFrame(function()
-    return not shutdown and focused and hud.connected and(workspace.library.map_grid.enabled or workspace.library.field.enabled and workspace.library.field.navigation.enabled and workspace.library.field.navigation.overlay or sceneServices.field.markVisible())and not sceneServices.mapAdapter.failed
+    return not shutdown and focused and hud.connected and(workspace.library.map_grid.enabled or sceneServices.field.markVisible())and not sceneServices.mapAdapter.failed
 end,function()
     local ok,err=pcall(function()
         local io=imgui.GetIO();local state=sceneServices.mapState
         if not state then return end
         local settings=workspace.library.map_grid
         local projection=settings
-        local nc=workspace.library.field.navigation;local navOn=workspace.library.field.enabled and nc.enabled and nc.overlay
+        local markerSettings=workspace.library.field.navigation
         local markerOn=sceneServices.field.markVisible()
-        if navOn or markerOn then
+        if markerOn then
             local c=sceneServices.field.projection
-            if not c or c.grid~=settings or c.nav~=nc then
+            if not c or c.grid~=settings or c.marker~=markerSettings then
                 projection=bindingModel.copy(settings);projection.enabled=true
-                projection.radar=settings.enabled and settings.radar or nc.radar;projection.pause_map=settings.enabled and settings.pause_map or nc.pause_map
-                c={grid=settings,nav=nc,value=projection};sceneServices.field.projection=c
+                projection.radar=settings.enabled and settings.radar or markerSettings.radar;projection.pause_map=settings.enabled and settings.pause_map or markerSettings.pause_map
+                c={grid=settings,marker=markerSettings,value=projection};sceneServices.field.projection=c
             end
             projection=c.value
         end
@@ -2317,9 +2405,9 @@ end,function()
         local bulletin=sceneServices.bulletins:view(studioClock,settings)
         if view then
             if settings.enabled and(view.kind=='map'and settings.pause_map or view.kind=='radar'and settings.radar)then sceneServices.mapGrid.draw(imgui,menuSmallFont or hudFont,settings,view,sceneServices.mapGrid.cell(settings,state.x,state.y,state.interior),bulletin and bulletin.targetCell,bulletin and bulletin.targetLabel)end
-            if(navOn or markerOn)and not sceneServices.field.renderFailed and(view.kind=='map'and nc.pause_map or view.kind=='radar'and nc.radar)then
-                local ok,why=pcall(sceneServices.field.drawNavigation,imgui,sceneServices.field.snapshot.points,view,nc,sceneServices.field.snapshot.target,sceneServices.field.renderCache or(function()local c={};sceneServices.field.renderCache=c;return c end)())
-                if not ok then sceneServices.field.renderFailed=true;sceneServices.field.navigation.suspended='Отрисовка маршрута отключена';pushLog('Навигация: ошибка отрисовки без отключения сетки.')end
+            if markerOn and not sceneServices.field.renderFailed and(view.kind=='map'and markerSettings.pause_map or view.kind=='radar'and markerSettings.radar)then
+                local ok=pcall(sceneServices.field.drawMarker,imgui,view,sceneServices.field.coordinates.mark,markerSettings.opacity)
+                if not ok then sceneServices.field.renderFailed=true;pushLog('OOC-метка: ошибка отрисовки.')end
             end
         end
     end)
@@ -2558,7 +2646,10 @@ function onWindowMessage(message, wparam, lparam)
             end
         end
     end
-    if not keyboard and(message==0x8 or message==0x1c and wparam==0 or message==0x6 and wparam==0)then sceneServices.escapeHeld=nil end
+    if not keyboard and(message==0x8 or message==0x1c and wparam==0 or message==0x6 and wparam==0)then
+        sceneServices.escapeHeld=nil
+        sceneServices.help.closePressed=nil
+    end
     if keyboard and wparam==0x1B then
         if sceneServices.escapeHeld then
             if type(consumeWindowMessage)=='function'then consumeWindowMessage(true,false)end
@@ -2680,7 +2771,19 @@ end
 
 sceneServices.windowHandler=sceneServices.chatPerf:wrap('onWindowMessage',onWindowMessage)
 function onWindowMessage(message,wparam,lparam)
-    -- No profiler call or CEF work on mouse, selection, character/IME messages.
+    if message==0x201 or message==0x202 then
+        local help=sceneServices.help
+        if shutdown or not(help.closePressed or widgetCursor and help.closeBounds and not help.editing)then return end
+        local x,y=optionalRead('getCursorPos')
+        local active=help:overClose(x,y) and widgetCursor and focused and not ownUi() and
+            not help.failed and help:visible(workspace.library.settings.help,sceneServices.helpState,false)and
+            optionalRead('isGamePaused')==false and optionalRead('sampIsChatInputActive')==false and
+            optionalRead('sampIsDialogActive')==false and not(sceneServices.chatBridge and
+                sceneServices.chatBridge:inputBusy(studioClock,workspace.library.settings.cef_chat_grace_ms))
+        if help:mouseButton(message==0x201,active)and type(consumeWindowMessage)=='function'then consumeWindowMessage(true,false)end
+        return
+    end
+    -- No profiler call or CEF work on motion, selection, character/IME messages.
     if message~=0x100 and message~=0x101 and message~=0x104 and message~=0x105 and message~=0x7 and message~=0x8 and message~=0x1C and message~=0x6 then return end
     return sceneServices.windowHandler(message,wparam,lparam)
 end
@@ -2752,6 +2855,13 @@ sceneServices.processWantedInput=function(state,now)
         local age=core.elapsed(optionalRead('getGameTimer'),p.at)
         if not age or age>5000 or connectionKey()~=p.session or sceneServices.chatEpoch~=p.epoch or runtime.demo~=p.demo then
             studio:notify('Команда устарела. Повторите её вручную.','procedures',false);return
+        end
+        if p.pursuitLife then
+            local c=sceneServices.copilot
+            local driver=c:pursuitWantedTarget()
+            if c.life~=p.pursuitLife or not driver or driver.id~=p.id or driver.name~=p.name or driver.generation~=p.generation then
+                studio:notify('Цель погони изменилась. Откройте форму заново.','procedures',false);return
+            end
         end
         if p.id then
             local t,why=sceneServices.wantedAccounts:select(p.id,p)
@@ -3165,19 +3275,6 @@ local function connectChatFilters()
         return previous
     end
     events.onServerMessage=chatHandler
-    for _,spec in ipairs({{'onSetCheckpoint','server',1},{'onDisableCheckpoint','server'}, {'onSetRaceCheckpoint','race',2},{'onDisableRaceCheckpoint','race'}})do
-        local hook={events=events,key=spec[1],previous=events[spec[1]],kind=spec[2],index=spec[3]}
-        hook.handler=function(...)
-            local result;if type(hook.previous)=='function'then result=hook.previous(...);if result==false then return false end end
-            if workspace.library.field.enabled then
-                local args=type(result)=='table'and result or{...};local p=hook.index and args[hook.index]
-                if p then local ok,point=pcall(function()return{x=tonumber(p.x),y=tonumber(p.y),z=tonumber(p.z)}end);if ok then sceneServices.field:checkpoint(hook.kind,point)end
-                elseif not hook.index then sceneServices.field:checkpoint(hook.kind,nil)end
-            end
-            return result
-        end
-        events[hook.key]=hook.handler;sceneServices.hooks[#sceneServices.hooks+1]=hook
-    end
     for _,name in ipairs({'onVehicleStreamIn','onVehicleStreamOut'})do
         local old=events[name]
         local handler=function(id,...)local result;if type(old)=='function'then result=old(id,...);if result==false then return false end end;sceneServices.vehicle:invalidate(id,name);return result end
@@ -3193,6 +3290,8 @@ local function updateGame()
     bindingKeyCaptured=keyRecorder~=nil
     local now = getGameTimer()
     studioClock=now
+    if sceneServices.help:applyDismiss(studio)then studio:flushAutosave(studioCallbacks,true)end
+    if studio.reportEdit and not ownUi()then studioCallbacks.openAssist('traffic')end
     if sceneServices.patrolUiRecovery then
         local p=sceneServices.patrolUiRecovery;sceneServices.patrolUiRecovery=nil;patrolSession:recoverUi(p.active)
     end
@@ -3241,6 +3340,13 @@ local function updateGame()
     end
     studio:flushAutosave(studioCallbacks)
     sceneServices.updater:tick()
+    if sceneServices.pendingAuthorUpgrade and focused and not ctx.paused and not ctx.blocked and not ownUi()and not hasUiModal()
+        and not ctx.recording and not hud.dirty and not hud.editing and not hud.drag and not runtime.wheel
+        and not workspace.libraryFresh and not studio.dirty and(not studio.autosaves or not next(studio.autosaves))
+        and not sceneServices.authorPresets.job and not sceneServices.authorPresets.ready
+        and not workspace.pending and not workspace.executor.queue and not runtime.queue and not patrolSession.data.active then
+        if sceneServices.applyUpgradeDefaults()then return end
+    end
     prepareNativeChat()
     hud:refresh(ctx.session, now)
     sceneServices.mapState,sceneServices.mapValues=sceneServices.mapSample()
@@ -3282,6 +3388,7 @@ local function updateGame()
     -- Server login dialogs and its cursor keep priority during connection.
     if ctx.paused or(ctx.inputBlocked and(not workspace.pending or ctx.chatActive or ctx.dialogActive))then closeForInput('Открыт серверный ввод. Действие отменено.', true) end
     if autoOpenForSession == ctx.session and ctx.session and focused and not ctx.paused and
+        not sceneServices.pendingAuthorUpgrade and not(sceneServices.updater.job and sceneServices.updater.job.mode=='Status')and
         not ctx.blocked and ctx.alive and not runtime.wheel and not runtime.queue and not workspace.executor.queue and not workspace.pending then
         showWindow[0] = true
         autoOpenForSession = nil
@@ -3403,8 +3510,7 @@ local function updateGame()
         if patrolKey:match('^assist%-')then studioCallbacks.openAssist(patrolKey=='assist-megaphone-window'and'megaphone'or patrolKey:sub(8))end
         if patrolKey:match('^vehicle%-')then
             local action=patrolKey=='vehicle-select'and'stop_order'or patrolKey=='vehicle-pursuit'and'pursuit'or'megaphone_'..patrolKey:match('(%d+)$')
-            local select=patrolKey=='vehicle-select'or patrolKey=='vehicle-pursuit'and not sceneServices.vehicle.selected
-            local ok,err=sceneServices.requestVehicleAction(action,select)
+            local ok,err=sceneServices.requestVehicleAction(action,patrolKey=='vehicle-select')
             if not ok then studio:notify(err,'vehicle',false)end
         end
         if patrolKey=='patrol-events'then studioCallbacks.openPatrolEvents()elseif not patrolKey:match('^vehicle%-')and not patrolKey:match('^assist%-')then studioCallbacks.openPatrol()end
@@ -3447,13 +3553,7 @@ local function updateGame()
     alertState.verifiedCrew=patrolSession.data.active and patrolSession.data.active.crew or nil
     local hour=optionalRead('getTimeOfDay');alertState.gameHour=core.finite(hour)and hour or nil;alertState.moscowTime=core.moscowTime()
     alertState.patrolActive=patrolSession.data.active~=nil
-    if sceneServices.patrolWasActive and not alertState.patrolActive then
-        patrol:reset()
-        local c=sceneServices.copilot
-        if not c.phase and not c.intent and not c.queued and not sceneServices.vehicle.phase and not sceneServices.vehicle.intent and not sceneServices.vehicle.queued then
-            sceneServices.vehicle:clearTarget('Патруль завершён.');c:reset('Патруль завершён.');c:hideHud()
-        end
-    end
+    if sceneServices.patrolWasActive and not alertState.patrolActive then patrol:reset()end
     sceneServices.patrolWasActive=alertState.patrolActive
     alertState.patrolStatus=patrolSession.data.active and patrolSession.data.active.status or nil
     sceneServices.vehicle:tick(alertState,now)
@@ -3463,10 +3563,11 @@ local function updateGame()
     local hot=sceneServices.vehicleHotkey;sceneServices.vehicleHotkey=nil
     if hot and hot.session==ctx.session and(core.elapsed(now,hot.at)or math.huge)<2000 and not hasUiModal()then
         if not hot.select or(sceneServices.vehicle.selectionRevision or 0)>hot.revision then
-            if hot.action:match('^megaphone_')then require('pa26_vehicle_ui').offer(studio,studioCallbacks,hot.action,false)
+            if hot.action:match('^megaphone_%d+$')then require('pa26_vehicle_ui').offer(studio,studioCallbacks,hot.action)
             else
                 local p,err=sceneServices.copilot:propose(hot.action)
-                if p then sceneServices.copilot.offers={p}else studio:notify(err,'vehicle',false)end
+                if p and not ownUi() and not p.rpVariants and not p.report then sceneServices.copilot.offers={p}
+                else sceneServices.copilotUi.present(studio,studioCallbacks,p,err);uiInputReset=true end
             end
         end
     end
@@ -3477,11 +3578,16 @@ local function updateGame()
     if alertState.taserCombatEnabled and person and person.armed then alertState.taserCombatText=workspace.library.vehicle.copilot.combat_warning end
     local cm=sceneServices.copilot.widgetMail;sceneServices.copilot.widgetMail=nil
     if cm and cm.life==sceneServices.copilot.life and(core.elapsed(now,cm.at)or math.huge)<500 and not hasUiModal()then
-        local p,err
         if cm.action=='hide'then sceneServices.copilot:hideHud()
         elseif cm.action=='repeat_pause'then sceneServices.copilot:pauseRepeats()
-        else p,err=sceneServices.copilot:propose(cm.action)end
-        if p then if p.navigation then sceneServices.groundInput=p else studio.vehicleConfirm=p end;uiInputReset=true elseif err then studio:notify(err,'vehicle',false)end
+        elseif cm.action=='pursuit_wanted'then
+            local ok,err=studioCallbacks.pursuitWanted();if not ok then studio:notify(err,'vehicle',false)end
+        elseif cm.action=='stop_order'or cm.action=='pursuit'or cm.action=='megaphone_order'then
+            local ok,err=sceneServices.requestVehicleAction(cm.action);if not ok then studio:notify(err,'vehicle',false)end
+        else
+            local p,err=sceneServices.copilot:propose(cm.action)
+            sceneServices.copilotUi.present(studio,studioCallbacks,p,err);uiInputReset=true
+        end
     end
     alertState.busy=alertState.busy or(workspace.executor.queue and tostring(workspace.executor.queue))
     sceneServices.evidence:tick(alertState,now)
@@ -3547,7 +3653,7 @@ local function updateGame()
         local map=sceneServices.mapState
         alertState.x=map.x;alertState.y=map.y;alertState.z=map.z;alertState.interior=map.interior
     end
-    sceneServices.field:tick(alertState,now,ctx)
+    sceneServices.field:tick(alertState,now)
     sceneServices.custody:tick(alertState,now)
     local candidates=radioGuard:candidates()
     for _,c in ipairs(weaponWarning:candidates())do candidates[#candidates+1]=c end
@@ -3638,6 +3744,7 @@ local function updateGame()
     ctx.typing=uiTyping;ctx.wheel=runtime.wheel~=nil
     ctx.busy=runtime.queue~=nil or workspace.executor.queue~=nil or workspace.pending~=nil
     sceneServices.helpState=ctx
+    sceneServices.helpFrame.HideCursor=not widgetCursor
     imgui.DisableInput = shutdown or not focused or ctx.paused or ctx.blocked or
         ((uiFailed or (not ownUi() and runtime.wheel == nil and not(studio.statusInfo and widgetCursor))) and not hud.editing)
 end

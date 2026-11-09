@@ -23,11 +23,12 @@ eq(s.workspace.selectedTarget.id,37,'Driver ID reaches ordinary interaction imme
 s.workspace.studio.vehicleConfirm=assert(s.copilot:propose('call911'));s.render();check(s.workspace.studio.vehicleConfirm.carFree);eq(#s.sent,0)
 s.click='ДА##confirm-yes';s.render();for _=1,8 do s.step(1600)end;check(#s.sent>0);check(not s.copilot.phase,'Manual radio report does not start traffic')
 local radioBefore=#s.sent
-s.physicalDown={[0x12]=true,[0x38]=true};s.step();s.physicalDown={};s.step();local pursuit=s.copilot.offers[1];check(pursuit and pursuit.action=='pursuit');s.copilot:shown(pursuit.token)
-check(s.copilot:decide(pursuit.token,true))
+s.physicalDown={[0x12]=true,[0x38]=true};s.step();s.physicalDown={};s.step()
+local pursuit=s.workspace.studio.vehicleConfirm;check(pursuit and pursuit.action=='pursuit' and pursuit.report)
+s.click='ДА##confirm-yes';s.render();eq(s.click,nil)
 eq(#s.sent,radioBefore)
 for _=1,8 do s.step(1600)end
-eq(s.copilot.phase,'Преследование');eq(s.copilot.pinned,'fast_wanted');check(not s.workspace.studio.caseConfirm)
+eq(s.copilot.phase,'Преследование');eq(s.copilot.pinned,'pursuit_mark');check(not s.workspace.studio.caseConfirm)
 local prior=#s.sent;s.workspace.studio.vehicleConfirm=assert(s.copilot:propose('fast_wanted'));s.render();check(s.workspace.studio.vehicleConfirm);eq(#s.sent,prior)
 s.click='ДА##confirm-yes';s.render();for _=1,12 do s.step(1600)end
 local wanted,pt=0,0

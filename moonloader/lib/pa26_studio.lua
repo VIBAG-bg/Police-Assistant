@@ -999,7 +999,7 @@ function Studio:drawNotes(ui,data,callbacks,floating)
         else
             if callbacks.openField and self:button('Закрепить поверх игры##note-pin',ui)then
                 local candidate=model.copy(self.lib);candidate.field.enabled=true;candidate.field.pinned.enabled=true;candidate.field.pinned.note_id=selected.id
-                local ok,why=callbacks.save(candidate);self:notify(ok and'Памятка закреплена. Размер и положение: Помощники службы → Навигация и инструменты → Памятка.'or why,'hints',false,ok and'info'or'warning')
+                local ok,why=callbacks.save(candidate);self:notify(ok and'Памятка закреплена. Размер и положение: Помощники службы → Инструменты службы → Памятка поверх игры.'or why,'hints',false,ok and'info'or'warning')
             end
             ui.text(selected.name); child(self,ui,'notebody##studio',0,math.max(120,im.GetContentRegionAvail().y-130),function() ui.text(selected.body) end)
             if im.Button('Редактировать##note') then self.noteMode=true end

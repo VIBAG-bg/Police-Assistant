@@ -20,7 +20,7 @@ M.systemRows={{'sos','SOS'},{'shots','Shots fired'},{'code0','CODE 0'},{'assist-
     {'patrol-finish','Патруль · завершить'},{'procedure-wanted','Помощник розыска'},{'procedure-wanted_list','Список преступников'},
     {'procedure-fine','Штраф'},{'procedure-mark','Пеленгация'},{'pa-fast-wanted','Быстрая выдача розыска УК/АК'}}
 for _,r in ipairs({{'pa-bulletins','Ориентировки и угон'},{'pa-finish-stop','Завершить 10-55 · Code 4'},
- {'pa-gps-clear','Сбросить маршрут GPS PA'},{'pa-call911','Принять последний вызов 9-1-1'},{'pa-share-coordinates','Координаты OOC'},
+ {'pa-call911','Принять последний вызов 9-1-1'},{'pa-share-coordinates','Координаты OOC'},
  {'pa-patrol-busy','Перерыв / доступность'},{'pa-copilot','Панель Copilot'},{'pa-vehicle-bulletins','Ориентировки по автомобилям'},
  {'pa-custody-timers','Таймеры задержания'}})do M.systemRows[#M.systemRows+1]=r end
 M.copilotRows={{'stop_order','Остановить авто','service','car'},{'stop','Доклад 10-55','service','car'},
@@ -162,7 +162,7 @@ function M.build(lib,revision,includeAlerts,serviceState)
     end
     if includeAlerts then
         for _,r in ipairs({{'pa-bulletins','Ориентировки и угон','wanted'},
-          {'pa-finish-stop','Завершить 10-55 · Code 4','citizen'}, {'pa-gps-clear','Сбросить маршрут GPS PA','wanted'},
+          {'pa-finish-stop','Завершить 10-55 · Code 4','citizen'},
           {'pa-call911','Принять последний вызов 9-1-1','service'},{'pa-share-coordinates','Координаты OOC','service'},
           {'pa-patrol-busy','Перерыв / доступность','leadership'},{'pa-copilot','Панель Copilot','leadership'},
           {'pa-vehicle-bulletins','Ориентировки по автомобилям','leadership'},{'pa-custody-timers','Таймеры задержания','leadership'}})do

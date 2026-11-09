@@ -27,7 +27,7 @@ function C:invalidate(id)
  for name,row in pairs(self.radioOfficers)do if row.id==id then self.radioOfficers[name]=nil;self.knownColleagues[name]=nil end end
  local function prune(rows)for i=#(rows or{}),1,-1 do if rows[i].id==id then table.remove(rows,i)end end end
  prune(self.physicalCrew);prune(self.snapshot.patrolCrew);prune(self.snapshot.nearbyOfficers)
- self.snapshot.patrolOccupants=1+#(self.snapshot.patrolCrew or{})
+ self.snapshot.patrolOccupants=require('pa26_patrol_settings').crewCount({inVehicle=true,colleagues=self.snapshot})
  self.scanAt=nil
 end
 function C:verifiedPolice(cfg,name,id,skin,skins)
@@ -53,7 +53,7 @@ function C:observe(line)
   end
  end
 end
-function C:carCrew(s,car,total)
+function C:carCrew(s,car)
  self.physicalCrew={};if not car then return 1 end
  local r=self.env.read;local cfg=self.env.settings();local count=1
  local contacts={};for _,p in ipairs(self.env.partners()or{})do if type(p.nickname)=='string'then contacts[p.nickname:lower()]=p end end
@@ -75,9 +75,10 @@ function C:carCrew(s,car,total)
      if back==true and handle==ped then
      local name=r('sampGetPlayerNickname',id);local skin=r('getCharModel',ped)
      if type(name)=='string'and(contacts[name:lower()]or cfg.uniforms_enabled and skins[skin]or cfg.radio_cache and self.knownColleagues[name:lower()])then
-      count=count+1;local contact=contacts[name:lower()]
-      self.physicalCrew[#self.physicalCrew+1]={id=id,ped=ped,name=name,ic_name=contact and contact.ic_name,contact_id=contact and contact.id,
-       verifiedPolice=self:verifiedPolice(cfg,name,id,skin,skins)and true or false}
+      local contact=contacts[name:lower()]
+      local verified=self:verifiedPolice(cfg,name,id,skin,skins)==true
+      if verified then count=count+1 end
+      self.physicalCrew[#self.physicalCrew+1]={id=id,ped=ped,name=name,ic_name=contact and contact.ic_name,contact_id=contact and contact.id,verifiedPolice=verified}
      end
      end
     end
@@ -91,7 +92,7 @@ function C:ownSnapshot(s)
  if car and r('doesVehicleExist',car)~=true then car=nil end
  local mode,role,occupants=M.role(car~=nil,car and r('getDriverOfCar',car)==s.ped,car and r('getNumberOfPassengers',car))
  local skin=r('getCharModel',s.ped);local profile=self.env.profile()or{}
- local patrolCount=self:carCrew(s,car,occupants)
+ local patrolCount=self:carCrew(s,car)
  mode,role=M.role(car~=nil,car and r('getDriverOfCar',car)==s.ped,patrolCount-1)
  local automatic=copy(profile);automatic.callsign=''
  local dept=profile.department;local station=type(dept)=='string'and dept~=''and dept~='EPD'and dept or'LSPS'

@@ -28,12 +28,13 @@ end
 local function signature(spec,s,skipDynamic)
     if type(spec)~='table'or type(spec.name)~='string'or type(spec.channel)~='string'or type(s)~='table'then return nil,'Проверьте данные автодоклада.'end
     local policy,err=mapGrid.reportPolicy(s,spec.template);if policy==nil then return nil,err end
-    return table.concat({spec.name,spec.template,spec.channel,tostring(spec.confirmation),tostring(spec.interval_ms),identity(s,spec.template,skipDynamic),policy},'\0')
+    return table.concat({spec.name,spec.template,spec.channel,tostring(spec.confirmation),tostring(spec.interval_ms),spec.pursuitKey or'',identity(s,spec.template,skipDynamic),policy},'\0')
 end
 function M.prepare(spec,s,codec,now,life)
     if type(spec)~='table'or type(spec.name)~='string'or type(s)~='table'then return nil,'Проверьте данные автодоклада.'end
     local template,err=prefs.template(spec.template,prefs.radioVariables);if not template then return nil,err end
     template,err=require('pa26_report_context').directionTemplate(template,s);if not template then return nil,err end
+    template=require('pa26_vehicle').colorTemplate(template,s)
     if template:find('{crew}',1,true)and s.crewNamesKnown==false then return nil,'Наблюдаемый экипаж не соответствует подтверждённому IC-составу. Укажите IC-имена и подтвердите состав патруля.'end
     if spec.channel~='/r' and spec.channel~='/f' and spec.channel~='/d' then return nil,'Канал автодоклада: /r, /f или /d.'end
     local source;source,err=mapGrid.reportValues(s,template);if not source then return nil,err end
@@ -57,7 +58,7 @@ end
 function M.new(env)return setmetatable({env=env,life=1,serial=0,tickets={},jobs={}},Guard)end
 function M.patrolSpec(cfg)
     local kind=cfg.mode
-    return {source='patrol',kind=kind,name=kind=='police' and 'Патруль · рация' or 'Охрана тюрьмы · рация',
+    return {source='patrol',kind=kind,pursuitKey=cfg.pursuitKey,name=cfg.label and(cfg.label..' · рация')or(kind=='police'and'Патруль · рация'or'Охрана тюрьмы · рация'),
         template=cfg[kind..'_template'],channel=cfg[kind..'_channel'],interval_ms=cfg[kind..'_interval_ms'],confirmation=cfg.confirmation,mapDeferred=cfg.map_due==true}
 end
 function Guard:currentSpec(t)

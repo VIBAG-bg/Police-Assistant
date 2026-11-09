@@ -2,13 +2,20 @@ local shared=require 'pa26_patrol_settings'
 local core=require 'pa26_core'
 local M={}
 local copilot=require 'pa26_copilot_settings'
+local oldMegaphone='Водитель автомобиля {model}, говорит {station}. Немедленно остановитесь у обочины и выключите двигатель.'
+local oldFirstPhrase='Водитель автомобиля {model}, говорит {station}. Остановитесь у обочины и выключите двигатель.'
+local oldFinish='{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area} ({map_square}), {stop_outcome}, продолжаю патрулирование, Код 4.'
 M.variables=shared.copy(shared.variables)
+for _,k in ipairs({'officer_intro','my_lastname','department','patrol_return'})do M.variables[k]=true end
 M.vehicleFields={vehicle_type=true,vehicle_type_gen=true,model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true,vehicle_description=true}
 for _,k in ipairs({'occupants','occupants_text','driver_id','driver_name','vehicle_plate','tac','armed_text','stop_outcome'})do M.variables[k]=true;if k~='tac'and k~='stop_outcome'then M.vehicleFields[k]=true end end
 for _,k in ipairs({'vehicle_type','vehicle_type_gen','model','model_id','vehicle_id','vehicle_color','color_one','color_two','direction','vehicle_description'})do M.variables[k]=true end
-M.actions={{'traffic_stop','Начать трафик-стоп 10-55'},{'pursuit','Начать преследование'},{'megaphone','Обратиться в мегафон'},{'finish','Завершить остановку / погоню'},{'approach','Подойти к остановленной машине'},{'window','Спросить об открытом окне'}}
+M.actions={{'traffic_stop','Доклад 10-55 по выбранной машине'},{'pursuit','Начать преследование'},{'megaphone','Обратиться в мегафон'},{'finish','Завершить остановку / погоню'},{'approach','Подойти к остановленной машине'},{'window','Спросить об открытом окне'}}
 M.keys={{'select_shortcut','Выбрать машину и предложить остановку'},{'pursuit_shortcut','Подтвердить преследование'},{'megaphone_shortcut','Открыть выбор реплик мегафона'}}
 M.phraseCount=8
+function M.stockStopPhrase(phrase)
+    return phrase and phrase.enabled and phrase.target=='vehicle'and phrase.template==copilot.stopOrder
+end
 M.extraTemplates={{'approach_bike','Подход к мотоциклу'},{'approach_neutral','Подход к другому транспорту'},{'inspect_bike','Осмотр мотоцикла'},{'inspect_neutral','Осмотр другого транспорта'}}
 M.phraseConditions={{'any','Всегда'},{'vehicle','Из служебной машины'},{'foot','Пешком'},{'stop','Во время 10-55'},{'pursuit','Во время погони'}}
 for i=1,M.phraseCount do M.keys[#M.keys+1]={'phrase_'..i..'_shortcut','Мегафон · требование '..i}end
@@ -26,8 +33,8 @@ function M.defaults()
         traffic_stop_template="{local_tag}{unit}, провожу остановку {vehicle_description} в {city}, район {area} ({map_square}), направление: {direction}, {occupants_text}, Код 4.",
         pursuit_template="{local_tag}{unit}, 10-57 VICTOR за {vehicle_description}, {occupants_text}. Двигаюсь на {direction}, {city}, район {area} ({map_square}), {tac}, Код 3.{armed_text}",
         pursuit_periodic_template='{local_tag}{unit}, продолжаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}.',
-        megaphone_template='Водитель автомобиля {model}, говорит {station}. Немедленно остановитесь у обочины и выключите двигатель.',
-        finish_template="{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area} ({map_square}), {stop_outcome}, продолжаю патрулирование, Код 4.",
+        megaphone_template=copilot.stopOrder,
+        finish_template='{local_tag}{unit}, заканчиваю проведение остановки {vehicle_description} в районе {area} ({map_square}), {stop_outcome}{patrol_return}. Код 4.',
         approach_template='подойдя к машине, {gender:коснулся|коснулась} заднего фонаря и, держа руку у кобуры, {gender:направился|направилась} к водителю.',
         approach_bike_template='{gender:подошёл|подошла} к мотоциклу, остановившись на безопасном расстоянии от водителя.',
         approach_neutral_template='{gender:подошёл|подошла} к транспортному средству и {gender:обратился|обратилась} к водителю.',
@@ -35,11 +42,11 @@ function M.defaults()
         inspect_neutral_template='Видимые элементы транспортного средства доступны для внешнего осмотра?',
         window_template='Открыто ли окно со стороны водителя?',
         unknown_model='Модель не определена',unknown_color='Цвет не определён',color_separator=' / ',
-        description_template='{vehicle_type} {model}, цвет: {vehicle_color}'}
+        description_template='{vehicle_color} {model}'}
     out.copilot=copilot.defaults()
     out.phrases={}
     local initial={
-        {'Остановиться','Водитель автомобиля {model}, говорит {station}. Остановитесь у обочины и выключите двигатель.'},
+        {'Остановиться',copilot.stopOrder},
         {'Оставаться в машине','Водитель автомобиля {model}, оставайтесь в машине. Держите руки на руле и ожидайте указаний сотрудника {station}.'},
         {'Освободить дорогу','Говорит {station}. Водитель автомобиля {model}, освободите дорогу для служебного транспорта.'},
         {'Уступите дорогу','Говорит {station}. Уступите дорогу служебному транспорту и освободите полосу движения.','none'},
@@ -114,7 +121,13 @@ function M.validate(raw)
     end
     local typeError;out.type_names,typeError=require('pa26_vehicle_types').validate(raw.type_names)
     if not out.type_names then return nil,typeError end
-    if raw.description_template=='{model}, цвет: {vehicle_color}'then out.description_template=M.defaults().description_template end
+    if raw.description_template=='{model}, цвет: {vehicle_color}'or raw.description_template=='{vehicle_type} {model}, цвет: {vehicle_color}'then
+        out.description_template='{vehicle_color} {model}'
+    end
+    if raw.megaphone_template==oldMegaphone then out.megaphone_template=copilot.stopOrder end
+    if raw.finish_template==oldFinish or raw.finish_template==legacyRadio.finish_template then
+        out.finish_template=M.defaults().finish_template
+    end
     local description=core.stripGender(out.description_template):gsub('{([a-z_]+)}',function(k)
         return({vehicle_type=true,vehicle_type_gen=true,model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true})[k]and ''or '{'
     end)
@@ -145,7 +158,9 @@ function M.validate(raw)
                 p.template=='Водитель автомобиля {model}, говорит {station}.'and p.channel=='/m'and p.condition=='any'then
                 p=out.phrases[i]
             end
-            local name=shared.text(p.name,120);local body,err=M.template(p.template)
+            local template=p.template
+            if i==1 and p.name=='Остановиться'and template==oldFirstPhrase then template=copilot.stopOrder end
+            local name=shared.text(p.name,120);local body,err=M.template(template)
             if not name or name==''or not body then return nil,err or 'Укажите название требования.'end
             if p.channel~='/m'and p.channel~='/s'then return nil,'Мегафон: выберите /m или /s.'end
             local condition=false;for _,c in ipairs(M.phraseConditions)do if c[1]==p.condition then condition=true end end

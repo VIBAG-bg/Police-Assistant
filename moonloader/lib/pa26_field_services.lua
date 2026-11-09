@@ -1,93 +1,44 @@
 -- One opt-in service owner in the existing main loop. No independent thread,
 -- chat input listener, filesystem polling or native address dereference.
-local core=require 'pa26_core';local copy=require('pa26_bindings').copy
-local nav=require 'pa26_navigation';local M={};local F={};F.__index=F
+local core=require 'pa26_core';local coords=require 'pa26_coord_share';local M={};local F={};F.__index=F
 function M.new(env)
- local path=(env.openRoads or env.roadSources)and require('pa26_navigation_roads').new({open=env.openRoads,hash=env.roadHash,
-  openCandidate=env.roadSources and function(index,custom)return env.roadSources:open(index,custom)end})or require('pa26_navigation_path').new()
- local instance=setmetatable({env=env,navigation=nav.new({path=path,clock=env.clock}),
-  coordinates=require('pa26_coord_share').new(env),cruiser=require('pa26_cruiser_assist').new(),
-  pinned=require('pa26_pinned_note').new(),serial=0,snapshot={status='Новые сервисы выключены'}},F)
+ local instance=setmetatable({env=env,coordinates=coords.new(env),cruiser=require('pa26_cruiser_assist').new(),
+  pinned=require('pa26_pinned_note').new(),serial=0,snapshot={status='Инструменты выключены'}},F)
  if env.perf then
-  if path.tick then path.tick=env.perf:wrap('fieldPath',path.tick)end
-  for _,r in ipairs({{instance.navigation,'tick','fieldNavigation'},{instance.navigation,'calculate','fieldPath'},
-   {instance.coordinates,'observe','fieldCoordinates'},{instance.cruiser,'tick','fieldCruiser'},
+  for _,r in ipairs({{instance.coordinates,'observe','fieldCoordinates'},{instance.cruiser,'tick','fieldCruiser'},
    {instance.pinned,'draw','fieldPinned'},{instance,'reset','fieldCleanup'}})do r[1][r[2]]=env.perf:wrap(r[3],r[1][r[2]])end
  end
  return instance
 end
 function F:reset(reason)
- if self.navigation.env.path.reset then self.navigation.env.path:reset()end
- self.navigation:reset(nil);self.coordinates:reset();self.cruiser:release(reason);self.intent=nil;self.queued=nil
- self.proposal=nil;self.state=nil;self.previewContext=nil;self.previewAt=nil;self.markSettingsSource=nil
- self.snapshot={status=reason or'Отключено'};self.observedAt=nil;self.sampleAt=nil;self.on=false;self.serial=self.serial+1
- self.renderFailed=nil;self.projection=nil;self.renderCache={};self.routeRevision=nil;self.routePoints=nil;self.routeMaximum=nil
+ self.coordinates:reset();self.cruiser:release(reason);self.intent=nil;self.queued=nil
+ self.proposal=nil;self.state=nil;self.previewContext=nil;self.previewAt=nil
+ self.snapshot={status=reason or'Отключено'};self.sampleAt=nil;self.on=false;self.serial=self.serial+1
+ self.renderFailed=nil;self.projection=nil
 end
 function F:observe(text,source,now)
  local cfg=self.env.library().field;if not cfg.enabled or not cfg.coordinates.enabled or not cfg.coordinates.observe or not self.state then return end
  self.coordinates:observe(text,now,self.state,cfg.coordinates)
 end
-function F:checkpoint(kind,p)
- local cfg=self.env.library().field;if not cfg.enabled or not cfg.navigation.enabled or not self.state then return end
- if p then self.navigation:put(kind,p,self.now)else self.navigation:remove(kind,self.now)end
-end
-function F:tick(s,gameNow,input)
+function F:tick(s,gameNow)
  local lib=self.env.library();local cfg=lib.field
- if not cfg.enabled then if self.on then self:reset('Новые сервисы выключены')end;return end
+ if not cfg.enabled then if self.on then self:reset('Инструменты выключены')end;return end
  self.on=true
  local now=self.env.clock and self.env.clock()or gameNow
  if not core.finite(now)then self:reset('Монотонный таймер недоступен');return end
  if self.state and(self.state.session~=s.session or self.state.ped~=s.ped or self.now and now<self.now)then self:reset('Сеанс изменился');self.on=true end
  self.now=now;self.state=s
- local path=self.navigation.env.path
- if path.tick then
-  if cfg.navigation.enabled then
-   if path.prepare and path:prepare(cfg.navigation.road_external)then self.navigation:invalidatePath()end
-   -- The ordinary Esc map owns a cursor. It must not be confused with chat,
-   -- a server dialog or a PA editor: pure data search may continue there.
-   local pauseMenu=input and input.paused==true and input.focused==true and input.alive==true and
-    input.menuBlocked==false and input.chatActive==false and input.dialogActive==false and
-    not input.window and not input.typing and not input.recording and not input.incapacitated
-   path:tick(cfg.navigation,s.focused==true and not s.typing and(not s.blocked or pauseMenu)and s.interior==0)
-  elseif path.phase~='idle'then path:reset()end
- end
- if self.navigation.session~=s.session then self.navigation:reset(s.session)end
- -- Safety release is immediate; the native backend is intentionally absent.
  self.cruiser:tick(s,cfg.cruiser)
- -- Approval safety follows current input ownership, independently of slow world sampling.
- self.coordinates:tick(s,now,cfg.coordinates)
- if not cfg.coordinates.enabled and self.navigation.sources.mark then self.navigation:remove('mark',now);self.sampleAt=nil end
- local observe=s.paused and math.min(50,cfg.navigation.observe_ms)or cfg.navigation.observe_ms
- local due=not self.sampleAt or now-self.sampleAt>=observe
- if due then
+ local display=cfg.navigation
+ self.coordinates:tick(s,now,cfg.coordinates,display.arrival)
+ local mark=self.coordinates.mark
+ if mark~=self.snapshot.target or not self.sampleAt or now-self.sampleAt>=display.observe_ms then
   self.sampleAt=now
-  if cfg.navigation.enabled and cfg.navigation.observe_waypoint and s.session and s.interior==0 and self.env.waypoint then
-   local ok,a,x,y,z=pcall(self.env.waypoint)
-   if not ok then a=nil end
-   local status,p=nav.waypoint(a,x,y,z)
-   self.navigation:observe(status,p,now,cfg.navigation)
-  end
-  local effective=cfg.navigation
-  if cfg.coordinates.enabled and not effective.enabled then
-   if self.markSettingsSource~=effective then self.markSettings=copy(effective);self.markSettings.enabled=true;self.markSettings.native_path=false;self.markSettingsSource=effective end
-   effective=self.markSettings
-  end
-  self.navigation:tick(s,now,effective)
-  local accepted=self.coordinates.accepted;self.coordinates.accepted=nil
-  if accepted and accepted.session==s.session and accepted.ped==s.ped then self.navigation:put('mark',accepted,now,cfg.coordinates.ttl_ms)end
-  if accepted and nav.point(s)then self.navigation.distance=nav.distance(s,accepted);self.navigation.distanceKind='по прямой';self.navigation.status='Временная OOC-метка'end
-  local mark=self.navigation.sources.mark
-  if mark and cfg.coordinates.arrival_clear and s.interior==0 and nav.point(s)and not mark.height_unknown and math.abs((s.z or 0)-mark.z)<8 and nav.distance(s,mark)<cfg.navigation.arrival then self.navigation:remove('mark',now)end
   self.pinned:update(lib.notes,cfg.pinned,self.env.revision())
-  local view=self.navigation:view();view.cruiser=self.cruiser:view();view.roads=path.view and path:view()or{available=false,status='Дорожный backend недоступен'}
-  if self.routeRevision~=view.revision or self.routeMaximum~=cfg.navigation.max_segments then
-   self.routeRevision=view.revision;self.routeMaximum=cfg.navigation.max_segments
-   self.routePoints=require('pa26_navigation_render').simplify(view.points,cfg.navigation.max_segments+1)
-  end
-  view.points=self.routePoints
-  if view.target and view.distance and cfg.navigation.hud then
-   local source=({waypoint='GTA',mark='OOC',server='Сервер',race='Checkpoint',bulletin='Примерный район'})[view.target.kind]or'Метка'
-   view.hud=string.format('Навигация · %s · %.0f м (%s)',source,view.distance,view.distanceKind or'по прямой')
+  local view={target=mark,cruiser=self.cruiser:view()}
+  if mark and coords.point(s)then
+   view.distance=coords.distance(s,mark)
+   if display.hud then view.hud=string.format('OOC-метка · %.0f м по прямой',view.distance)end
   end
   self.snapshot=view
  end
@@ -121,7 +72,7 @@ function F:propose(kind,arg)
  local lines={};local label
  if kind=='share'then
   if not cfg.coordinates.enabled then return nil,'OOC-координаты выключены.'end
-  local p,why=require('pa26_coord_share').format(s,cfg.coordinates,self.env.codec,s.area,s.map_square);if not p then return nil,why end
+  local p,why=coords.format(s,cfg.coordinates,self.env.codec,s.area,s.map_square);if not p then return nil,why end
   lines={p.line};label='Передать координаты (OOC)?'
  elseif kind=='gnews'then
   local d=cfg.leadership
@@ -176,21 +127,15 @@ function F:validPlan(plan)return self.queued and plan.fieldAction and plan.field
 function F:execution(kind,q,line)
  if q and q.plan.fieldAction and self.queued and q.plan.fieldAction.token==self.queued.token and(kind=='completed'or kind=='cancelled')then self.queued=nil end
 end
-function F:clear(kind)
- if kind=='roads'then
-  local path=self.navigation.env.path;if path.reset then path:reset()end
-  self.navigation:invalidatePath()
- elseif kind=='mark'then self.navigation:remove('mark',self.now or 0)
- elseif kind=='resume'then self.navigation:resume(self.now or 0)
- else self.navigation:clear(self.now or 0)end
- self.sampleAt=nil
+function F:clear()
+ self.coordinates.mark=nil;self.sampleAt=nil
 end
 function F:paste(text)
  if not self.env.library().field.enabled or not self.env.library().field.coordinates.enabled then return nil,'Включите OOC-координаты в настройках инструментов.'end
- local p=require('pa26_coord_share').parse('Мои координаты: '..tostring(text or''))
+ local p=coords.parse('Мои координаты: '..tostring(text or''))
  if not p then return nil,'Введите X Y Z, например: -1984 442 35.'end
  if not self.state or self.state.interior~=0 then return nil,'Выйдите из интерьера.'end
- self.serial=self.serial+1;p.token='coordinates:'..self.serial;p.serial=self.serial;p.at=self.now;p.duration=self.env.library().field.coordinates.offer_ms
- p.session=self.state.session;p.ped=self.state.ped;self.coordinates.offer=p;return true
+ local c=self.coordinates;c.serial=c.serial+1;p.token='coordinates:'..c.serial;p.serial=c.serial;p.at=self.now;p.duration=self.env.library().field.coordinates.offer_ms
+ p.session=self.state.session;p.ped=self.state.ped;c.offer=p;return true
 end
 return M

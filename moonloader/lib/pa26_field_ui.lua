@@ -1,6 +1,6 @@
 -- Existing Studio widgets, persistence and acknowledgment windows; no native work.
 local core=require 'pa26_core';local model=require 'pa26_bindings';local menu=require 'pa26_menu';local M={}
-local tabs={{'navigation','Навигация'},{'coordinates','Координаты (OOC)'},{'cruiser','Помощь водителю'},{'pinned','Памятка поверх игры'},{'leadership','Руководство'}}
+local tabs={{'coordinates','Координаты (OOC)'},{'cruiser','Помощь водителю'},{'pinned','Памятка поверх игры'},{'leadership','Руководство'}}
 local function offer(s,callbacks,kind,arg)
  local p,why=callbacks.fieldOffer(kind,arg)
  if p then s.assistConfirm={kind='field',proposal=p}else s:notify(why,'field',false)end
@@ -15,79 +15,26 @@ local function save(s,callbacks,d)
  s:notify(ok and'Настройки инструментов сохранены.'or why,'field',false,ok and'info'or'warning')
  if ok then s.fieldDraft=nil end;return ok
 end
-local function roadStatus(ui,v)
- local r=v.roads or{};local loading=r.phase=='loading'
- ui.text('Дорожный GPS: '..(r.available and'доступен'or loading and'подготовка'or'недоступен'))
- ui.text('Граф: '..(r.source or'Включите навигацию для подготовки'))
- if r.validation then ui.text(r.validation)end
- if loading then ui.text('Подготовка: '..tostring(r.progress or 0)..'% · '..(r.status or''))
- elseif r.status and not r.available then ui.text(r.status)end
- if r.fallback then ui.text('Резервный источник: '..r.fallback)end
- ui.text('Маршрут: '..(v.points and #v.points>=2 and'построен'or v.target and'ожидает построения'or'выберите метку на карте'))
-end
-function M.shareControl(s,ui,callbacks)
- if not s.lib.field.enabled or not s.lib.field.coordinates.enabled then return end
- if s:button('Мои координаты (OOC)##field-share-compact',ui)then offer(s,callbacks,'share')end
-end
-function M.quick(s,ui,data,callbacks,embedded)
- local cfg=s.lib.field;local v=data.field or{}
- s:settingsHeading(ui,'Навигация и координаты')
- if not cfg.enabled then ui.text('Новые инструменты выключены. Их можно включить в настройках F9.');return end
- ui.text(v.status or'Назначение не выбрано')
- if cfg.navigation.enabled and not embedded then roadStatus(ui,v);if data.mapAdapterStatus then ui.text('Проекция: '..data.mapAdapterStatus)end end
- if v.resumable and s:button('Возобновить маршрут PA##field-resume',ui)then callbacks.fieldClear('resume')end
- if v.target then
-  if v.target.marker_missing then ui.text('PA сохраняет назначение; штатный маркер GTA исчез.')end
-  ui.text(({waypoint='Метка GTA',mark='OOC-координаты',server='Серверная точка',race='Серверная гонка',bulletin='Примерный сектор ориентировки'})[v.target.kind]or'Назначение')
-  if v.distance then ui.text(string.format('%.0f м (%s)',v.distance,v.distanceKind or'по прямой'))end
-  if s:button('Сбросить маршрут PA##field-clear',ui)then callbacks.fieldClear()end
- end
- if s:button('Передать мои координаты (OOC)##field-share',ui)then offer(s,callbacks,'share')end
- local text=s:field('Полученные X Y Z##field-paste','field:paste','',160)
- if s:button('Показать на карте · с подтверждением##field-paste-map',ui)then local ok,why=callbacks.fieldPaste(text);if not ok then s:notify(why,'field',false)end end
- if s:button('Убрать OOC-метку##field-mark-clear',ui)then callbacks.fieldClear('mark')end
- ui.text('Координаты OOC. Принятие предложения не устанавливает IC-местоположение человека.')
- if s:button('Открыть настройки инструментов в F9##field-settings-open',ui)then callbacks.openField()end
-end
 function M.settings(s,ui,data,callbacks)
  local d=s.fieldDraft or model.copy(s.lib.field);s.fieldDraft=d;s.currentNoticeScope='field';s.preferenceContext=true
- s:settingsHeading(ui,'Навигация и инструменты службы')
- d.enabled=s:check('Включить новые инструменты · общий выключатель##field-master',d.enabled)
- ui.text('Выключение останавливает наблюдение, временные маршруты и подсказки этих инструментов. Остальные функции PA сохраняются.')
+ s:settingsHeading(ui,'Инструменты службы')
+ d.enabled=s:check('Включить инструменты службы · общий выключатель##field-master',d.enabled)
+ ui.text('Выключение останавливает наблюдение, временные метки и подсказки этих инструментов. Остальные функции PA сохраняются.')
  if s:button('Сохранить настройки инструментов##field-save',ui)then save(s,callbacks,d);return end
- s.fieldPage=menu.choiceControl(s.imgui,ui,'##field-pages','',s.fieldPage or'navigation',tabs,s,{buttons=true,font=s.buttonFont})
+ if s.fieldPage=='navigation'then s.fieldPage='coordinates'end
+ s.fieldPage=menu.choiceControl(s.imgui,ui,'##field-pages','',s.fieldPage or'coordinates',tabs,s,{buttons=true,font=s.buttonFont})
  local page=s.fieldPage;local c=d[page]
- if page=='navigation'then
-  c.enabled=s:check('Навигация PA##nav-enabled',c.enabled)
-  c.observe_waypoint=s:check('Наблюдать штатную метку GTA на Esc-карте##nav-observe',c.observe_waypoint)
-  c.overlay=s:check('Показывать метку и доступный маршрут##nav-overlay',c.overlay)
-  c.hud=s:check('Источник и расстояние в компактном HUD##nav-hud',c.hud)
-  c.radar=s:check('Маршрут на радаре##nav-radar',c.radar);c.pause_map=s:check('Маршрут поверх Esc-карты##nav-map',c.pause_map)
-  c.native_path=s:check('Дорожный маршрут PA · экспериментальный##nav-roads',c.native_path)
-  c.keep_waypoint=s:check('Сохранять маршрут PA, если лаунчер убрал метку GTA##nav-keep',c.keep_waypoint)
-  ui.text('Карта дорог входит в PA: ничего скачивать или копировать вручную не нужно. Сеть готовится заранее при включённой навигации, затем используется из памяти. Путь строится небольшими порциями; ввод в чат приостанавливает расчёт. Граф двумерный: этаж и высота не подтверждаются.')
-  roadStatus(ui,data.field or{})
-  c.road_external=s:field('Дополнительный файл дорог · необязательно, используется при ошибке встроенного##nav-external','field:road-external',c.road_external,1024)
-  ui.text('Обычно оставьте поле пустым. Сначала проверяется встроенный граф PA, затем выбранный файл и известные резервные папки игры. PA не изменяет эти файлы и не ищет их по всему диску.')
-  number(s,ui,c,'road_snap','Максимум до ближайшей дороги, м',25,600)
-  number(s,ui,c,'road_work','Предел операций поиска за кадр',16,1024)
-  number(s,ui,c,'road_budget_ms','CPU-бюджет расчёта, мс',.25,3)
-  if s:button('Перезагрузить дорожный граф##nav-roads-reload',ui)then callbacks.fieldClear('roads');s:notify('Кэш очищен. Граф подготовится заново при включённой навигации, даже до выбора назначения.','field',false)end
-  ui.text('Прямое расстояние подписано «по прямой». Это не дорожный маршрут. PA не перехватывает клики карты и не удаляет вашу красную метку.')
-  number(s,ui,c,'observe_ms','Наблюдение метки, мс',200,2000)
-  number(s,ui,c,'recalculate_ms','Минимальная пауза поиска, мс',1500,10000)
-  number(s,ui,c,'movement','Перемещение для нового поиска, м',5,200)
-  number(s,ui,c,'missing_grace_ms','Подтверждение удаления метки, мс',200,5000)
-  number(s,ui,c,'retry_ms','Повтор после пустого маршрута, мс',1000,30000)
-  number(s,ui,c,'arrival','Радиус прибытия к временной метке, м',1,100)
-  number(s,ui,c,'max_segments','Предел сегментов отрисовки',16,256)
-  number(s,ui,c,'line_width','Толщина линии',1,8);number(s,ui,c,'opacity','Прозрачность маршрута',.1,1)
-  if data.mapAdapterStatus then ui.text('Проекция: '..data.mapAdapterStatus)end
-  M.quick(s,ui,data,callbacks,true)
- elseif page=='coordinates'then
-  c.enabled=s:check('Разрешить передачу координат##coord-enabled',c.enabled)
+ if page=='coordinates'then
+  local mark=d.navigation
+  c.enabled=s:check('Разрешить координаты OOC##coord-enabled',c.enabled)
   c.observe=s:check('Предлагать полученные OOC-координаты##coord-observe',c.observe)
+  mark.hud=s:check('Расстояние до метки в HUD##coord-hud',mark.hud)
+  mark.radar=s:check('Метка на радаре##coord-radar',mark.radar)
+  mark.pause_map=s:check('Метка на карте Esc##coord-map',mark.pause_map)
+  number(s,ui,mark,'opacity','Непрозрачность метки',.1,1)
+  number(s,ui,mark,'observe_ms','Обновление расстояния в HUD, мс',200,2000)
   c.arrival_clear=s:check('Убирать временную метку после прибытия##coord-arrival',c.arrival_clear)
+  number(s,ui,mark,'arrival','Радиус прибытия к временной метке, м',1,100)
   c.channel=s:choice('Канал OOC##coord-channel',c.channel,{{'/rn','/rn · подразделение'},{'/fn','/fn · организация'},{'/ln','/ln · требует проверки'},{'/sms','/sms · требует проверки'}},ui)
   c.phone=s:field('Телефон получателя /sms##coord-phone','field:phone',c.phone,24)
   c.ln_verified=s:check('Я проверил формат и доступ к /ln на сервере##coord-ln',c.ln_verified)
@@ -97,6 +44,16 @@ function M.settings(s,ui,data,callbacks)
   ui.text('Формат: Мои координаты: X Y Z (Район, квадрат H-18). Предпросмотр показывает полную команду; длинный пакет не обрезается. Непроверенные /ln и /sms отключены по умолчанию.')
   require('pa26_assist_ui').shortcut(s,ui,callbacks,'field','share_shortcut','Открыть предпросмотр координат')
   if s:button('Предпросмотр передачи координат##coord-preview',ui)then if save(s,callbacks,d)then offer(s,callbacks,'share')end end
+  local v=data.field or{}
+  if v.target then
+   ui.text(v.distance and string.format('Временная метка · %.0f м по прямой',v.distance)or'Временная OOC-метка')
+   if s:button('Убрать OOC-метку##field-mark-clear',ui)then callbacks.fieldClear()end
+  end
+  local text=s:field('Полученные X Y Z##field-paste','field:paste','',160)
+  if s:button('Показать на карте · с подтверждением##field-paste-map',ui)then
+   local ok,why=callbacks.fieldPaste(text);if not ok then s:notify(why,'field',false)end
+  end
+  ui.text('Координаты относятся к OOC. Место персонажа устанавливается в RP отдельно.')
  elseif page=='cruiser'then
   c.enabled=s:check('Помощь водителю##cruiser-enabled',c.enabled);c.cruise=s:check('Круиз-контроль · после проверки backend##cruiser-cruise',c.cruise)
   c.signals=s:check('Локальные поворотники и аварийка##cruiser-signals',c.signals)

@@ -8,7 +8,7 @@ local api={getAllChars=function()return{1}end,getDriverOfCar=function()return 1 
  sampIsPlayerConnected=function()return connected end,sampIsPlayerNpc=function()return npc end,sampGetPlayerNickname=function()return name end,getCharModel=function()return skin end}
 local contacts={};local c=module.new({read=function(key,...)if api[key]then return api[key](...)end end,settings=function()return cfg end,partners=function()return contacts end})
 local state={ped=1};eq(c:carCrew(state,50,2),2);eq(calls,20);eq(c.physicalCrew[1].name,'Partner_Name')
-skin=10;eq(c:carCrew(state,50,2),1,'A random passenger is not a partner');contacts={{id=1,nickname=name,ic_name='Иван Петров'}};eq(c:carCrew(state,50,2),2);eq(c.physicalCrew[1].ic_name,'Иван Петров')
+skin=10;eq(c:carCrew(state,50,2),1,'A random passenger is not a partner');contacts={{id=1,nickname=name,ic_name='Иван Петров'}};eq(c:carCrew(state,50,2),1,'A contact without evidence of service is not verified');eq(c.physicalCrew[1].ic_name,'Иван Петров')
 seated=false;eq(c:carCrew(state,50,2),1,'A planned contact outside the car is not crew');seated=true
 npc=true;eq(c:carCrew(state,50,2),1);npc=false;connected=false;eq(c:carCrew(state,50,2),1);connected=true
 api.sampGetCharHandleBySampPlayerId=function()return true,3 end;eq(c:carCrew(state,50,2),1,'A reused ID / broken round trip is excluded')

@@ -39,6 +39,11 @@ function M.lock(path)
  if h==ffi.cast('void*',-1)then return nil end
  return function()k.CloseHandle(h)end
 end
+function M.newId()
+ local g=ffi.new('PaUpdateGuid[1]');if ffi.load('ole32').CoCreateGuid(g)~=0 then return nil end
+ local raw=ffi.cast('unsigned char*',g);local id='';for i=0,15 do id=id..string.format('%02x',raw[i])end
+ return id
+end
 function M.new(ml)
  local p,err=require('pa26_update_platform').new(ml);if not p then return nil,err end
  local self={platform=p};local k=native()
@@ -61,8 +66,7 @@ function M.new(ml)
   if kind~='binds'and kind~='settings'then return nil,'Неверный вид набора.'end
   if not repository:match('^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$')then return nil,'Неверный репозиторий.'end
   timeout=math.max(1,math.min(120,math.floor(timeout or 30)))
-  local g=ffi.new('PaUpdateGuid[1]');if ffi.load('ole32').CoCreateGuid(g)~=0 then return nil,'Не удалось создать задание.'end
-  local raw=ffi.cast('unsigned char*',g);local id='';for i=0,15 do id=id..string.format('%02x',raw[i])end
+  local id=M.newId();if not id then return nil,'Не удалось создать задание.'end
   local base=p.base:match('^(.*)\\updates$');if not base then return nil,'Неверная папка загрузки.'end
   local cache=base..'\\presets';local jobs=cache..'\\jobs';local job=jobs..'\\'..id
   for _,path in ipairs({base,cache,jobs,job})do local ok,why=p:mkdir(path);if not ok then return nil,why end end

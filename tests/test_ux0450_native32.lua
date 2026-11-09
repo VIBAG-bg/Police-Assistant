@@ -1,6 +1,6 @@
 -- Native x86 CPU UI frames and optional mesh captures. No GTA or network writes.
 local root=assert(os.getenv('PA_SOURCE_ROOT'),'Set PA_SOURCE_ROOT to the candidate directory')
-local game=os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game/'
+local game=(os.getenv('PA_NATIVE_GAME')or os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game')..'/'
 package.path=root..'/moonloader/lib/?.lua;'..game..'MoonLoader/lib/?.lua;'..package.path
 package.cpath=game..'MoonLoader/lib/?.dll;'..package.cpath
 getWorkingDirectory=function()return game..'MoonLoader'end -- Read-only native library lookup.
@@ -26,14 +26,14 @@ local stack={};local ui={push=function(fn)stack[#stack+1]=fn end,finish=function
  text=function(t)im.PushTextWrapPos(0);im.TextUnformatted(t);im.PopTextWrapPos()end}
 studio.currentUi=ui
 local callbacks={save=function()error('No save from an untouched draw')end,patrolPreview=function()return '/f 1-L-1, продолжаю патруль.'end}
-local screens={'patrol','patrol-settings','f4','f4-dispatch','f4-shell','f9-shell','home','knowledge','guide','appearance','field-navigation','field-coordinates','field-cruiser','field-pinned','field-leadership','field-briefings','pinned-overlay','route','cef-diagnostics','help-guide','help-overlay','help-position'}
+local screens={'patrol','patrol-settings','f4','f4-dispatch','f4-shell','f9-shell','home','knowledge','guide','appearance','field-coordinates','field-cruiser','field-pinned','field-leadership','field-briefings','pinned-overlay','ooc-marker','cef-diagnostics','help-guide','help-overlay','help-position'}
 local hotkeys=require 'pa26_help'
 local help=hotkeys.new(lib.settings.help)
 local helpKeys=help:shortcuts(0x77,0x56,{key=0x73,ctrl=false,alt=true,shift=false})
 local frames,checks=0,0;local function check(ok,why)checks=checks+1;assert(ok,why)end
 local data={radioState={area='Doherty',city='Сан-Фиерро',map_square='J-6'},patrolSession={},copilot={phase='10-55',
  car={id=42,distance=12},driver={id=37,name='Known_Driver'},values={model='Sultan',vehicle_color='Чёрный',vehicle_plate='PA-42',occupants_text='Водитель и 1 пассажир',unit='1-A-12'},
- colleagues={nearbyOfficers={},nearbyCruisers=1},stopWarningStatus='Требования остановиться: 1',tireStatus='Огонь по колёсам требует проверки условий.'}}
+ colleagues={nearbyOfficers={},nearbyCruisers=1},stopWarnings=1,stopWarningLimit=5,stopWarningStatus='Требования остановиться: 1/5',tireStatus='Огонь по колёсам требует проверки условий.'}}
 local function write(path,bytes)local f=assert(_G.io.open(root..'/'..path,'wb'));f:write(bytes);f:close()end
 local capture=os.getenv('PA_CAPTURE_NATIVE')=='1'
 local function mesh(name,display)
@@ -67,7 +67,8 @@ for _,display in ipairs({{640,480},{800,600},{800,1100},{1024,768},{1366,768},{1
    elseif screen=='f4-shell'then studio.assistPage='traffic';require('pa26_assist_ui').draw(studio,ui,data,callbacks)
    elseif screen=='patrol'then require('pa26_patrol_ui').draw(studio,ui,data,callbacks,'partners')
    elseif screen=='patrol-settings'then require('pa26_patrol_ui').drawSessionSettings(studio,ui,data,callbacks)
-   elseif screen=='f4'or screen=='f4-dispatch'then require('pa26_copilot_ui').draw(studio,ui,data,callbacks)
+   elseif screen=='f4-dispatch'then require('pa26_copilot_ui').dispatch(studio,ui,callbacks)
+   elseif screen=='f4' then require('pa26_copilot_ui').draw(studio,ui,data,callbacks)
    elseif screen:match('^field%-')then
     studio.fieldPage=screen=='field-briefings'and'leadership'or screen:sub(7)
     studio.leaderPage=screen=='field-briefings'and'briefing'or'news';studio.briefingIndex=1
@@ -76,10 +77,10 @@ for _,display in ipairs({{640,480},{800,600},{800,1100},{1024,768},{1366,768},{1
     local cfg=require('pa26_field_settings').defaults().pinned;cfg.enabled=true;cfg.note_id=1
     local pin=require('pa26_pinned_note').new();pin:update({{id=1,name='Памятка',body=string.rep('Строка памятки. ',600)}},cfg,1)
     pin:draw(im,cfg,display[1],display[2],false)
-   elseif screen=='route'then
+   elseif screen=='ooc-marker'then
     local view={a=.1,b=0,c=0,d=.1,ox=200,oy=200,left=0,top=0,right=display[1],bottom=display[2]}
     local cfg=require('pa26_field_settings').defaults().navigation
-    require('pa26_navigation_render').draw(im,{{x=0,y=0},{x=100,y=100}},view,cfg,{x=100,y=100,kind='mark'},{})
+    assert(require('pa26_coord_share').drawMarker(im,view,{x=100,y=100},cfg.opacity))
    elseif screen=='cef-diagnostics'then
     studio.showCefDiagnostics=true;data.cefCompatibility={state='RUNTIME_VERIFIED',known=false,sha256=string.rep('d',64),fingerprint='exsellent-chat-v1:demo',mode='cef',runtime='CONFIRMED',capabilities={dom=true,outgoing=true,incoming=true,payloads=true,lifecycle=true,focus=true,ipc=true,adapter_order=true},reason='normalized_contract_and_dom'}
     studio:drawProfile(ui,data,callbacks,'chat_cef')
@@ -99,6 +100,41 @@ for _,display in ipairs({{640,480},{800,600},{800,1100},{1024,768},{1366,768},{1
   end
  end end end
 end
+-- Drive actual x86 mouse frames through F4's production geometry, including the fallback path.
+local m26=require 'pa26_menu'
+local initial={x=220,y=115,width=730,height=500,displayW=1366,displayH=768}
+io.DisplaySize=im.ImVec2(initial.displayW,initial.displayH);io.FontGlobalScale=1
+local edges={{'left',-1,0},{'right',1,0},{'top',0,-1},{'bottom',0,1},
+ {'tl',-1,-1},{'tr',1,-1},{'bl',-1,1},{'br',1,1}}
+for _,native in ipairs({false,true})do
+ io.BackendFlags=native and 2 or 0
+ io.ConfigWindowsResizeFromEdges=native
+ for _,edge in ipairs(edges)do
+  local m=m26.new();m.windows.assist=model.copy(initial);m.forceWindows={assist=true}
+  local saved
+  m.geometryChanged=function(_,rect)saved=model.copy(rect)end
+  local function frame(x,y,down)
+   io.MousePos=im.ImVec2(x,y);io.MouseDown[0]=down
+   im.NewFrame();check(m:prepareWindow(im,'assist'))
+   local flags=im.WindowFlags.NoCollapse+im.WindowFlags.NoSavedSettings+im.WindowFlags.NoMove+
+    im.WindowFlags.NoResize+im.WindowFlags.NoScrollbar+im.WindowFlags.NoScrollWithMouse
+   im.Begin('F4 geometry##'..tostring(native)..edge[1],nil,flags)
+   m:resizeWindow(im,ui,'assist')
+   check(#stack==0,'Resize scope closed')
+   im.End();im.Render();frames=frames+1
+  end
+  local dx,dy=edge[2],edge[3]
+  local x=initial.x+(dx<0 and 2 or dx>0 and initial.width-3 or initial.width/2)
+  local y=initial.y+(dy<0 and 2 or dy>0 and initial.height-3 or initial.height/2)
+  frame(x,y,false);frame(x,y,false);frame(x,y,true)
+  frame(x+dx*27,y+dy*23,true);frame(x+dx*27,y+dy*23,false)
+  frame(x+dx*27,y+dy*23,false)
+  check(saved and (dx==0 or saved.width>initial.width) and (dy==0 or saved.height>initial.height),
+   ('F4 edge %s, native=%s, got %.1fx%.1f'):format(edge[1],tostring(native),saved and saved.width or 0,saved and saved.height or 0))
+  local reopened=m26.windowRect(initial.displayW,initial.displayH,'assist',saved)
+  check(reopened.width==saved.width and reopened.height==saved.height,'Saved F4 dimensions restore')
+ end
+end
 icons.clear();im.DestroyContext(ctx)
-write('tests/UX_NATIVE32_0452.json',json.encode({status='passed',checks=checks,frames=frames,screen_sizes=7,views=#screens,font_scales=2,icon_states=2,game_started=false,game_written=false}))
+write(os.getenv('PA_NATIVE_REPORT')or'tests/UX_NATIVE32_0452.json',json.encode({status='passed',checks=checks,frames=frames,screen_sizes=7,views=#screens,font_scales=2,icon_states=2,game_started=false,game_written=false}))
 print('UX 0.45.2 native32: '..frames..' frames; '..#screens..' views, seven sizes, two scales and icon states.')

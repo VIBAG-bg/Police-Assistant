@@ -127,7 +127,7 @@ for _,count in ipairs({1,2,3})do
  t.cfg.copilot.robbery_guard=false;t.tick();p=t.propose('dispatch_business');check(not p.guardRisk and p.confirmationTitle=='Подтверждение доклада')
 end
 do
- local cp,v,t=setup(false);local p=t.propose('dispatch_business');t.state.colleagues.cruiserOccupants=2;t.state.colleagues.patrolCrew={{id=44,name='Officer_Test',verifiedPolice=true}};t.tick();check(not cp:accept(p),'Crew guard must be re-confirmed when the risk changes')
+ local cp,v,t=setup(false);local p=t.propose('dispatch_business');t.state.colleagues.cruiserOccupants=2;t.state.colleagues.patrolCrew={{id=44,name='Officer_Test',ic_name='Дежурный Напарник',verifiedPolice=true}};t.tick();check(not cp:accept(p),'Crew guard must be re-confirmed when the risk changes')
  p=t.propose('dispatch_business');check(cp:accept(p));t.tick(1);local plan=t.plans[#t.plans];check(cp:validPlan(plan))
  cp:onExecution('sent_line',{plan=plan},plan.lines[1]);t.state.colleagues.cruiserOccupants=1;t.state.colleagues.patrolCrew={};t.tick(1);check(not cp:validPlan(plan),'Guard remains checked between RP/radio lines')
 end
@@ -160,31 +160,36 @@ do
  check(table.concat(t.propose('lost_code4_adam').prepared.lines,' '):find('преследуемому т/с',1,true))
  t.cfg.copilot.lost_vehicle_fallback='красному авто';t.tick();check(table.concat(t.propose('lost').prepared.lines,' '):find('красному авто',1,true))
 end
--- Main/Studio path: all new buttons exist on BOTH pages; NO never starts a plan.
+-- Every family and follow-up lives in the dedicated F4 tab. NO never starts a plan.
 local fixture=require 'support.fixture';local lib=model.defaults(core.defaults());lib.alerts.enabled=true;lib.alerts.on_duty=true;lib.profile.name='Иван Петров'
 local f=fixture({demo=false,library=lib,alerts=true,copilot=true});f.step();f.commands.pa26();f.step();if f.frames[1].condition()then f.commands.pa26();f.step()end
 f.physicalDown={[0x73]=true};f.step();f.physicalDown={};f.step();check(f.frames[4].condition())
-for _,page in ipairs({'traffic','patrol'})do
- f.workspace.studio.assistPage=page
- f.workspace.studio.dispatchExpanded=nil
- for _,row in ipairs(D.actions)do
+f.click='Спецвызовы##assist-tabsdispatch';f.render();eq(f.click,nil)
+eq(f.workspace.studio.assistPage,'dispatch')
+for _,row in ipairs(D.primaryActions)do
+ if row[1]~='gas_order'then
+  f.click=row[2]..'##dispatch-family-'..row[1];f.render();eq(f.click,nil)
+  eq(f.workspace.studio.dispatchIncident,row[1])
+  f.click='Все спецвызовы##dispatch-back';f.render();eq(f.click,nil)
+ end
+end
+for _,row in ipairs(D.actions)do
   local family,label
   for _,primary in ipairs(D.primaryActions)do if primary[1]==row[1]then family=row[1];label=family=='dispatch_search'and'Начинаю поиск'or'Выехал'end end
   for key,rows in pairs(D.followups)do for _,sub in ipairs(rows)do if sub[1]==row[1]then family=key;label=sub[2]end end end
   if row[1]=='gas_order'then family='dispatch_gas';label=row[2]end
   f.workspace.studio.dispatchIncident=family;f.render()
-  local before=#f.sent;f.click=label..'##copilot-dispatch-'..row[1];f.render();eq(f.click,nil,'Button missing from '..page)
+  local before=#f.sent;f.click=label..'##copilot-dispatch-'..row[1];f.render();eq(f.click,nil,'Button missing from Спецвызовы')
   local notice=f.workspace.studio.feedback:peek()
   check(f.workspace.studio.vehicleConfirm and f.workspace.studio.vehicleConfirm.dispatchAction,row[1]..': '..tostring(notice and notice.text)..' '..table.concat(f.logs,'\n'));eq(#f.sent,before)
   f.click='НЕТ##confirm-no';f.render();eq(f.click,nil);check(not f.workspace.studio.vehicleConfirm);f.workspace.studio.reportEdit=nil;f.step();eq(#f.sent,before)
- end
 end
-f.workspace.studio.assistPage='traffic';f.workspace.studio.dispatchIncident='dispatch_911';f.click='Выехал##copilot-dispatch-dispatch_911';f.render()
+f.workspace.studio.dispatchIncident='dispatch_911';f.click='Выехал##copilot-dispatch-dispatch_911';f.render()
 check(f.workspace.studio.vehicleConfirm);f.click='ДА##confirm-yes';f.render();eq(f.click,nil)
 for _=1,15 do f.step(1600)end
 check(#f.sent>0);check(f.sent[1].line:match('^/me '));check(f.sent[#f.sent].line:match('^/r '));check(not f.copilot.phase)
 -- GUI drafts use the same validator/persistence path as all existing settings.
-f.workspace.studio.copilotPage='settings';f.workspace.studio.copilotTemplate='dispatch_911_rp'
+f.workspace.studio.assistPage='traffic';f.workspace.studio.copilotPage='settings';f.workspace.studio.copilotTemplate='dispatch_911_rp'
 f.edits={['##Реплика##copilot-rp']='/me Передала диспетчеру данные.\n/do Вызов принят.'};f.render();check(next(f.edits)==nil)
 f.step(1000);f.step(1000);eq(f.workspace.library.vehicle.copilot.templates.dispatch_911_rp,'/me Передала диспетчеру данные.\n/do Вызов принят.')
 f.toggle='RP перед докладом о вызове##copilot-setting-dispatch_rp_enabled';f.render();eq(f.toggle,nil);f.step(1000);check(not f.workspace.library.vehicle.copilot.dispatch_rp_enabled)
