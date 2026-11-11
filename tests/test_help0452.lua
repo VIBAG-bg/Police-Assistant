@@ -21,7 +21,7 @@ for _,size in ipairs({{640,480},{1152,864},{1366,768},{1920,1080},{2560,1440}}) 
     end
 end
 local _,y=help.geometry(640,480,225,120,nil,{x=394,y=137,w=234,h=180})
-check(y+120<137)
+check(y>317 and y+120<=480)
 check(not help.validate({position={x=-1,y=.4}}))
 check(not help.validate({opacity=0}))
 

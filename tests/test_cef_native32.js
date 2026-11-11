@@ -12,6 +12,7 @@ assert([
  'c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410',
  'd7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2',
  'f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0',
+ 'b0c3e72a6f424340fc625cfb225398e84285f5296ce7cc5fdbdcbabdcf85ab4f',
 ].includes(hudSha),'Use a reviewed HUD fixture for executable tests');
 const box=path.join(release,'tests/update-sandbox/cef-runtime-probe',crypto.randomUUID());fs.mkdirSync(box,{recursive:true});
 const slash=p=>p.replaceAll('\\','/');const q=s=>JSON.stringify(slash(s));
@@ -19,7 +20,7 @@ const adapter=path.join(release,'cef/assets/hud/pa26-chat.js');
 const tag='<!-- PA26 CEF chat adapter --><script src="pa26-chat.js"></script>';
 const originalHtml=fs.readFileSync(path.join(game,'cef/assets/hud/index.html'),'utf8').replace(tag,'');
 assert(Buffer.byteLength(originalHtml)>32768,'Probe must use the real large HUD');
-fs.writeFileSync(path.join(box,'index.html'),originalHtml);fs.copyFileSync(adapter,path.join(box,'pa26-chat.js'));
+fs.writeFileSync(path.join(box,'index.html'),originalHtml);
 const control={enabled:true,accentEnabled:true,diagnostics:true,layoutIndicator:true,keyboardLayout:'RU',accent:'[Русский акцент]:',generation:1};
 const setControl=values=>{Object.assign(control,values);fs.writeFileSync(path.join(box,'control.json'),JSON.stringify(control));};setControl({});
 const lua=`local game=${q(game+'/')}
@@ -28,6 +29,7 @@ package.cpath=game..'MoonLoader/lib/?.dll;'..package.cpath
 local socket=require'socket';local json=require'cjson';local m=require'pa26_chat_bridge';local fs=require'pa26_config'.fs;local assets=require'pa26_cef_assets'
 local base=${q(box+'/')};local state={};local function readControl()local raw=fs.read(base..'control.json');if raw then local ok,t=pcall(json.decode,raw);if ok then state=t end end end
 local env={path=base,fs=fs,assetFs=assets.fs,json=json,token=function()return m.entropy(require'ffi')end,session=function()return'probe-session'end,
+ adapter=require('pa26_cef_contract').adapter,
  settings=function()readControl();state.filters=state.filterPrefixes or{};return state end,layout=function()return state.keyboardLayout end,
  log=function(text)print(text);io.stdout:flush()end,message=function()local p=base..'incoming-count.json';local old=fs.read(p);local n=old and tonumber(old)or 0;assert(fs.write(p,tostring(n+1)))end,command=function()end}
 local manualLib=require 'pa26_manual_chat';local converter=require('encoding').CP1251;local manualSent={};local b;local probeNow=0
@@ -113,6 +115,7 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  eq(fs.readFileSync(path.join(box,'index.html'),'utf8').replace(tag,''),originalHtml,'only the PA tag may change');
  eq(fs.readFileSync(path.join(box,'index.html.pa26-before-repair'),'utf8'),originalHtml,'real x86 backup is exact');
  eq(fs.readFileSync(path.join(box,'index.html'),'utf8').split(tag).length-1,1);
+ eq(sha(path.join(box,'pa26-chat.js')),sha(adapter),'Program update provisions the exact approved adapter');
  ok(!fs.existsSync(path.join(box,'index.html.pa26-tmp')),'atomic replacement leaves no pending file');
  context=vm.createContext(Object.create(null),{codeGeneration:{strings:false,wasm:false}});
  Object.assign(context,{__testField:field,AbortController,performance:{now:()=>performance.now()+offset},
@@ -141,7 +144,7 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
    'isPromocodeActive','isDeathScreen','isShowActive','isFactionRating','isAuthActive','isAdminToolsActive',
    'isTuningActive','isHouseSpawnSelectorActive'];
  const chatFunctions=['showCursor','hideCursor','showChat','hideChat','showChatInput','hideChatInput',
-   'isChatInputActive','isDialogActive','sendMessageToChat','addChatMessage'];
+   'isChatInputActive','isDialogActive','moveCursorToEnd','sendMessageToChat','addChatMessage'];
  const incomingRegistration=[...source.matchAll(/typeof cef!==(_0x[0-9a-f]+)\(0x[0-9a-f]+\)&&\(cef\['on'\]\(\1\(0x[0-9a-f]+\),addChatMessage\),cef\['on'\]\(\1\(0x[0-9a-f]+\),addAdvertisement\)\);/g)];
  eq(incomingRegistration.length,1,'Find the actual HUD incoming event registration');
  vm.runInContext(`
@@ -168,7 +171,7 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  context.showChatInput();dialog.classList.add('active');
  eq(context.isDialogActive(),true);context.hideChatInput();eq(focusCalls.at(-1),true,'Game dialog retains CEF focus');
  dialog.classList.remove('active');context.hideCursor();eq(focusCalls.at(-1),false);
- if(hudSha.startsWith('f6122')){
+ if(hudSha.startsWith('f6122')||hudSha.startsWith('b0c3e72a')){
    context.showChatInput();casesOpen=true;context.hideChatInput();
    eq(focusCalls.at(-1),true,'The new cases window keeps its original CEF focus');
    casesOpen=false;context.hideCursor();eq(focusCalls.at(-1),false);
@@ -205,8 +208,10 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  setControl({chat_dot_commands:true,accentEnabled:true});await refreshAdapter();
  type('Привет.');eq(field.value,'Привет.','the draft stays native until submission');await submit('Привет.');eq(sent.at(-1),['HandleHudSendMessage',control.accent+' Привет.']);
  // Reproduce a launcher removing the tag/endpoint while the adapter page exists.
- fs.writeFileSync(path.join(box,'index.html'),originalHtml);fs.unlinkSync(path.join(box,'pa26-chat-endpoint.js'));
+ fs.writeFileSync(path.join(box,'index.html'),originalHtml);
+ fs.unlinkSync(path.join(box,'pa26-chat.js'));fs.unlinkSync(path.join(box,'pa26-chat-endpoint.js'));
  await until(()=>fs.readFileSync(path.join(box,'index.html'),'utf8').includes(tag)&&fs.existsSync(path.join(box,'pa26-chat-endpoint.js')),'Automatic asset repair did not run');
+ eq(sha(path.join(box,'pa26-chat.js')),sha(adapter));
  loadEndpoint();await context.PA26Chat.exchange();await submit('.к После восстановления.');eq(sent.at(-1)[1],'/r После восстановления.');
  eq(fs.readFileSync(path.join(box,'index.html'),'utf8').replace(tag,''),originalHtml);
  const beforeFault=fs.readFileSync(path.join(box,'pa26-chat-endpoint.js'),'utf8');setControl({forceClose:true});

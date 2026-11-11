@@ -1,7 +1,7 @@
 -- Native presentation only. Font/atlas work happens once in OnInitialize.
 -- Glyphs never modify widget IDs, source records, user text or outgoing messages.
 local points=require 'pa26_icon_glyphs'
-local M={enabled=true,points=points,glyphs={},available={}}
+local M={enabled=true,points=points,glyphs={},metrics={}}
 M.tones={normal={.21,.72,.79,1},safe={.33,.79,.58,1},warning={.89,.69,.35,1},
  info={.46,.60,.91,1},danger={.91,.49,.47,1},muted={.65,.73,.80,1}}
 local function utf8(n)return string.char(224+math.floor(n/4096),128+math.floor(n/64)%64,128+n%64)end
@@ -44,7 +44,7 @@ function M.semantic(label)
 end
 function M.setEnabled(value)M.enabled=value~=false end
 function M.clear()
- M.font=nil;M.owner=nil;M.available={};M.buffer=nil;M.ranges=nil;M.config=nil;M.mode=nil
+ M.font=nil;M.owner=nil;M.metrics={};M.buffer=nil;M.ranges=nil;M.config=nil;M.mode=nil
 end
 function M.initialize(im,ffi,base)
  M.clear()
@@ -67,20 +67,33 @@ function M.initialize(im,ffi,base)
 end
 function M.get(name)
  if not M.enabled or not M.font or not points[name]then return end
- local known=M.available[name]
- if known==nil then
+ local bounds=M.metrics[name]
+ if bounds==nil then
   local ok,glyph=pcall(function()return M.font:FindGlyphNoFallback(points[name])end)
-  known=ok and glyph~=nil;M.available[name]=known
+  bounds=ok and glyph~=nil and {left=glyph.X0,top=glyph.Y0,right=glyph.X1,bottom=glyph.Y1}or false
+  M.metrics[name]=bounds
  end
- return known and M.glyphs[name]or nil
+ return bounds and M.glyphs[name]or nil
 end
 function M.draw(im,name,x,y,size,tone,alpha,drawList)
  if M.owner~=im then return false end
  local glyph=M.get(name);if not glyph then return false end
+ local bounds=M.metrics[name]
+ local width,height=bounds.right-bounds.left,bounds.bottom-bounds.top
+ local fontSize=M.font.FontSize
+ if size<3 or fontSize<=0 or width<=0 or height<=0 then return false end
+ local scale=math.min(size/fontSize,(size-2)/width,(size-2)/height)
+ local left=math.floor(x+(size-width*scale)/2-bounds.left*scale)
+ local top=math.floor(y+(size-height*scale)/2-bounds.top*scale)
+ local list=drawList or im.GetWindowDrawList()
+ local clipMin=list:GetClipRectMin()
+ local minX,minY=clipMin.x,clipMin.y
+ local clipMax=list:GetClipRectMax()
+ if left+bounds.left*scale<minX or top+bounds.top*scale<minY or
+    left+bounds.right*scale>clipMax.x or top+bounds.bottom*scale>clipMax.y then return false end
  local t=M.tones[tone]or M.tones.normal
  local color=im.ColorConvertFloat4ToU32(im.ImVec4(t[1],t[2],t[3],(alpha or 1)*t[4]))
- local list=drawList or im.GetWindowDrawList()
- list:AddTextFontPtr(M.font,size,im.ImVec2(x,y),color,glyph,nil,0)
+ list:AddTextFontPtr(M.font,fontSize*scale,im.ImVec2(left,top),color,glyph,nil,0)
  return true
 end
 function M.heading(im,ui,text,name,tone)

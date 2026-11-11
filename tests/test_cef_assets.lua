@@ -57,6 +57,16 @@ for _,fail in ipairs({'backup_write','backup_verify','tmp_write','tmp_verify','r
     eq(f['hud/index.html.pa26-tmp'],nil)
 end
 f,fs,original,writes=make();check(not assets.ensure('hud/',fs,false));eq(#writes,0)
+local approved=require('pa26_cef_contract').adapter
+check(type(approved)=='string'and #approved>32000)
+f['hud/pa26-chat.js']=nil
+check(assets.ensure('hud/',fs,true,approved));eq(f['hud/pa26-chat.js'],approved)
+f['hud/pa26-chat.js']='outdated adapter'
+check(assets.ensure('hud/',fs,true,approved));eq(f['hud/pa26-chat.js'],approved)
+count=#writes
+check(assets.ensure('hud/',fs,true,approved));eq(#writes,count)
+f['hud/pa26-chat.js']=nil;f['hud/index.html']=original..assets.MARKER
+check(not assets.ensure('hud/',fs,true,approved));eq(#writes,count)
 -- The same production adapter and bounded reader are used by the bridge.
 local files,assetFs,html,assetWrites=make();local enabled=true;local attempts=0;local logs={}
 local server={}

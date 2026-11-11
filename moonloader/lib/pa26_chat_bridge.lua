@@ -42,7 +42,7 @@ function Bridge:fail(reason,server)
 end
 function Bridge:installed()
     if self.env.assetFs then
-        local ok,reason=assets.ensure(self.env.path,self.env.assetFs,true)
+        local ok,reason=assets.ensure(self.env.path,self.env.assetFs,true,self.env.adapter)
         if reason=='asset_restored'then self:diagnose('adapter_restored; reload_if_page_already_loaded')end
         return ok,reason
     end

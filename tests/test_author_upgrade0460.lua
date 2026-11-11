@@ -106,7 +106,7 @@ eq(state.n,writes,'Second startup must not write anything')
 fs,values,state=memory();w=workspaceFor(fs)
 values[base..'_settings.json']='EXTERNAL EDIT'
 check(not upgrade.apply(w,cfg,{fs=fs},hash,lock,newId));eq(values[base..'_settings.json'],'EXTERNAL EDIT');eq(state.n,0)
-local prevVersion=core.VERSION;core.VERSION='0.46.1'
+local prevVersion=core.VERSION;core.VERSION='0.46.2'
 check(upgrade.apply(w,cfg,{fs=fs},hash,lock,newId));eq(state.n,0)
 core.VERSION=prevVersion
 
@@ -133,7 +133,7 @@ function platform:start(mode)
 end
 function platform:poll()
  return json.encode({product='police-assistant-2026',moonloader=self.ml,phase='installed',
-  message='update_installed',details={version='0.46.0'},job=id,receipt_seen=true})
+  message='update_installed',details={version=core.VERSION},job=id,receipt_seen=true})
 end
 local realPlatform,realIO=package.loaded.pa26_update_platform,package.loaded.pa26_author_io
 package.loaded.pa26_update_platform={new=function()return platform end}

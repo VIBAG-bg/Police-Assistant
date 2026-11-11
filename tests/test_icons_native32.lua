@@ -1,6 +1,6 @@
 -- Real x86 ImGui atlas and ID smoke. No GTA, network or game writes.
 local source=debug.getinfo(1,'S').source:sub(2):gsub('\\','/');local root=assert(source:match('^(.*)/tests/'))
-local game=os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game/'
+local game=(os.getenv('PA_NATIVE_GAME') or os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game'):gsub('\\','/'):gsub('/$','')..'/'
 package.path=root..'/moonloader/lib/?.lua;'..game..'MoonLoader/lib/?.lua;'..package.path
 package.cpath=game..'MoonLoader/lib/?.dll;'..package.cpath
 getWorkingDirectory=function()return game..'MoonLoader'end
@@ -32,6 +32,29 @@ local function run(merged)
     local id=im.GetIDStr(label)
     menu.fittedButton(im,ui,label,im.ImVec2(math.max(1,im.GetContentRegionAvail().x),38),base)
     check(im.GetIDStr(label)==id,'Decorative icon changed widget ID')
+   end
+   if enabled then
+    local list=im.GetWindowDrawList()
+    local clip=list:GetClipRectMin()
+    local x,y=clip.x+2,clip.y+2
+    for _,name in ipairs({'car-side','tower-broadcast','circle-question'})do
+     local first=list.VtxBuffer.Size
+     check(icons.draw(im,name,x,y,14),'Icon must fit at compact size')
+     check(list.VtxBuffer.Size==first+4,'Expected one complete glyph')
+     for i=first,first+3 do
+      local p=list.VtxBuffer.Data[i].pos
+      check(p.x>=x and p.x<=x+14 and p.y>=y and p.y<=y+14,'Icon exceeds its own bounds')
+     end
+    end
+    local first=list.VtxBuffer.Size
+    check(not icons.draw(im,'tower-broadcast',x-8,y,14),'Partially clipped icon should be skipped')
+    check(list.VtxBuffer.Size==first)
+    local confirmation={title='Подтвердить действие в компактном окне',icon='circle-question',buttons={'ДА','НЕТ'}}
+    local layout=menu.confirmationLayout(im,confirmation)
+    check(layout.titleGutter>0)
+    im.SetCursorScreenPos(im.ImVec2(x,y+20))
+    menu.confirmationBody(im,ui,layout,confirmation)
+    check(list.VtxBuffer.Size>first+4,'Confirmation draws its icon and title within the window')
    end
    check(#stack==0,'Unbalanced UI scopes');im.End();im.Render();frames=frames+1
   end end

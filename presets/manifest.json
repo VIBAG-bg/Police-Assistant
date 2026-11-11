@@ -1,7 +1,7 @@
 {
   "format": "police-assistant.author-presets",
   "schema": 1,
-  "version": "0.46.0",
+  "version": "0.46.1",
   "minimum_pa": "0.45.1",
   "files": {
     "pa-binds.json": {
@@ -9,14 +9,14 @@
       "size": 115554
     },
     "pa-settings.json": {
-      "sha256": "a7ad63689cf798683c450c9837718d663ad141ebbb922b9aea9159307a4f20c4",
-      "size": 110207
+      "sha256": "e57dea3011e03fa109d3fcaea839805aec6e181003d223b8a175805a7e86772f",
+      "size": 110246
     },
     "baseline.json": {
       "sha256": "070b440081266945321bede19da9d931a1f7f27d3ef4cffa20597a59119069e3",
       "size": 75967
     }
   },
-  "settings_revision": "2026-11-09-wheel-0460",
+  "settings_revision": "2026-11-09-wheel-capacity",
   "binds_revision": "2026-11-05-author-83-rp-0451"
 }

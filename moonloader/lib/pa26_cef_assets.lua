@@ -33,26 +33,38 @@ function M.commit(path,text,fs,expected)
         call(fs,'remove',tmp);return false,'asset_write'
     end
     -- Do not overwrite a launcher update that arrived during preparation.
-    if expected and call(fs,'read',path)~=expected then
-        call(fs,'remove',tmp);return false,'asset_changed'
+    if expected~=nil then
+        local current,reason=call(fs,'read',path)
+        if (current or false)~=expected or reason=='asset_too_large' then
+            call(fs,'remove',tmp);return false,'asset_changed'
+        end
     end
     if not call(fs,'replace',tmp,path)then call(fs,'remove',tmp);return false,'asset_replace'end
     if call(fs,'read',path)~=text then return false,'asset_verify'end
     return true
 end
-function M.ensure(path,fs,repair)
+function M.ensure(path,fs,repair,adapter)
     fs=fs or M.fs
     local html,err=call(fs,'read',path..'index.html')
     if type(html)~='string'then return false,err=='asset_too_large'and err or'asset_missing'end
     if #html>M.MAX_BYTES then return false,'asset_too_large'end
-    local script=call(fs,'read',path..'pa26-chat.js')
-    if type(script)~='string'or #script==0 then return false,'adapter_file_missing'end
     local remaining,count=html:gsub(M.TAG:gsub('([^%w])','%%%1'),'')
     if count>1 or remaining:find(M.MARKER,1,true)or remaining:find('pa26-chat.js',1,true)then return false,'asset_tag_conflict'end
     local at=remaining:find('<script%s+src="main%.js"%s*>')or remaining:find("<script%s+src='main%.js'%s*>")
     if not at or html:find('%z')or not html:find('chatInputField',1,true)then
         return false,'asset_contract'
     end
+    local scriptPath=path..'pa26-chat.js'
+    local script,scriptErr=call(fs,'read',scriptPath)
+    -- Only the verified launcher path receives the PA-owned adapter carried
+    -- by the update. Old update workers can keep their existing ZIP policy.
+    if repair and adapter and script~=adapter then
+        if scriptErr=='asset_too_large'then return false,scriptErr end
+        local ok,reason=M.commit(scriptPath,adapter,fs,script or false)
+        if not ok then return false,reason end
+        script=adapter
+    end
+    if type(script)~='string'or #script==0 then return false,'adapter_file_missing'end
     local desired=remaining:sub(1,at-1)..M.TAG..remaining:sub(at)
     if html==desired then return true,'asset_ready'end
     if not repair then return false,'adapter_missing'end

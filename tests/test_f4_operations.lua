@@ -135,7 +135,26 @@ local cx,cy=panel.x+panel.width-12,panel.y+12
 eq(clickAt(cx,cy),0,'No capture during normal gameplay')
 s.physicalDown={[0x12]=true};s.step()
 eq(clickAt(panel.x+10,panel.y+36),0,'Overlay body passes clicks through')
+s.mx,s.my=panel.x+16,panel.y+13
+local originalX,originalY=panel.x,panel.y
+local beforeDrag=s.consumed
+onWindowMessage(0x201,0,0)
+eq(s.consumed-beforeDrag,1,'Alt and the title grab the panel')
+s.mx,s.my=s.mx-135,s.my+55
+s.step()
+local moved=assert(s.windows[name])
+check(moved.x<originalX and moved.y>originalY)
+eq(s.workspace.library.settings.help.position,nil,'Dragging does not save every frame')
+onWindowMessage(0x202,0,0)
+eq(s.consumed-beforeDrag,2)
+s.step(250)
+local savedPosition=s.savedLibrary().settings.help.position
+check(savedPosition and savedPosition.x<1 and savedPosition.y>0)
+panel=assert(s.windows[name])
+cx,cy=panel.x+panel.width-12,panel.y+12
 s.chat=true;eq(clickAt(cx,cy),0,'Chat activation blocks close even before a new frame')
+s.mx,s.my=panel.x+16,panel.y+13
+eq(clickAt(s.mx,s.my),0,'Chat activation blocks a new drag')
 s.chat=false;s.step()
 eq(clickAt(cx,cy),2,'Only the X click pair is consumed')
 s.step();check(not s.workspace.library.settings.help.visible);check(not s.savedLibrary().settings.help.visible)

@@ -88,7 +88,7 @@ function M.prepare(lib, cfg, json, payload)
 end
 
 function M.apply(workspace, cfg, io, hash, lock, newId)
-    if core.VERSION ~= '0.46.0' or workspace.library.settings.applied_author_defaults_0460 then return true end
+    if core.VERSION ~= '0.46.1' or workspace.library.settings.applied_author_defaults_0460 then return true end
     if not io then return nil, 'Хранилище авторских наборов недоступно.' end
     local files = workspace.userFiles
     if files.blocked then return nil, files.blocked end

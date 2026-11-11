@@ -238,11 +238,12 @@ function M.confirmationLayout(im,spec)
     local buttonFont=spec.buttonFont or bodyFont;local buttonSize=tonumber(buttonFont.FontSize)
     local titleWidth=titleFont:CalcTextSizeA(titleSize,100000,0,spec.title or '').x
     local maxWidth=math.max(1,math.min(960,display.x-32));local maxHeight=math.max(1,display.y-32)
-    local width=math.min(math.max(400,math.min(600,titleWidth+80)),maxWidth)
+    local titleGutter=maxWidth>=180 and icons.owner==im and icons.get(spec.icon) and 24 or 0
+    local width=math.min(math.max(400,math.min(600,titleWidth+80+titleGutter)),maxWidth)
     local title,body,footer,height,inner
     repeat
         inner=math.max(1,width-56)
-        title=M.labelLayout(titleFont,titleSize,inner,spec.title or '')
+        title=M.labelLayout(titleFont,titleSize,math.max(1,inner-titleGutter),spec.title or '')
         body=spec.extraHeight or 0
         for _,line in ipairs(spec.lines or{})do if line then body=body+M.labelLayout(bodyFont,bodySize,inner,line).height+10 end end
         body=math.max(1,body-10)
@@ -276,13 +277,14 @@ function M.confirmationLayout(im,spec)
         height=math.min(maxHeight,48+title.height+10+body+20+footer+50)
     end
     return {width=width,height=height,body=body,footer=footer,title=title,pages=pages,
-        titleFont=titleFont,titleSize=titleSize,overflow=pages~=nil}
+        titleFont=titleFont,titleSize=titleSize,titleGutter=titleGutter,overflow=pages~=nil}
 end
 function M.confirmationBody(im,ui,layout,spec,extra)
     im.PushFont(layout.titleFont);ui.push(function()im.PopFont()end)
-    if spec.icon then
-        local p=im.GetCursorScreenPos();local window=im.GetWindowPos()
-        if p.x-window.x>=24 then icons.draw(im,spec.icon,p.x-22,p.y+2,16,spec.iconTone or'info')end
+    if layout.titleGutter>0 then
+        local p=im.GetCursorScreenPos()
+        icons.draw(im,spec.icon,p.x,p.y+math.max(0,(im.GetFontSize()-16)/2),16,spec.iconTone or'info')
+        im.SetCursorPosX(im.GetCursorPosX()+layout.titleGutter)
     end
     ui.text(spec.title);ui.finish()
     if extra and not spec.extraAfterLines then extra()end

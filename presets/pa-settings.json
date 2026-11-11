@@ -1554,7 +1554,8 @@
         "wheel_system_groups": {
           "procedure-fine": "wanted",
           "code0": "frisk",
-          "assist-megaphone": "detention",
+          "assist-megaphone": "citizen",
+          "copilot-finish": "service",
           "procedure-mark": "detention",
           "shots": "frisk",
           "sos": "frisk",

@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.46.0')
+script_version('0.46.1')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -66,7 +66,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.46.0' then
+if #missing > 0 or not core or core.VERSION ~= '0.46.1' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -1037,7 +1037,7 @@ do
         settings=function()return workspace.library.settings.updates end,now=function()return studioClock end,
         encode=workspace.json.encode,decode=workspace.json.decode,
         onInstalled=function(version)
-            if version=='0.46.0'and core.VERSION==version and not workspace.library.settings.applied_author_defaults_0460 then
+            if version=='0.46.1'and core.VERSION==version and not workspace.library.settings.applied_author_defaults_0460 then
                 sceneServices.pendingAuthorUpgrade=true
                 return true
             end
@@ -1650,7 +1650,7 @@ function sceneServices.applyUpgradeDefaults()
         if not prepared then return end
         sceneServices.installAuthorPreset(prepared)
         loadDraft()
-        pushLog('Авторские бинды и настройки 0.46.0 применены. Резервная копия: '..note)
+        pushLog('Авторские бинды и настройки применены. Резервная копия: '..note)
         if pcall(function()thisScript():reload()end)then return true end
         return
     end
@@ -1662,7 +1662,7 @@ function sceneServices.applyUpgradeDefaults()
         workspace.userFiles.blocked=why
         if pcall(function()thisScript():reload()end)then return true end
     end
-    studio:notify('PA 0.46.0 установлен. Авторские наборы не применены: '..why,'updates',false,'warning')
+    studio:notify('PA '..core.VERSION..' установлен. Авторские наборы не применены: '..why,'updates',false,'warning')
 end
 local generalSaveFailed=false
 local function saveSettings(preferencesOnly)
@@ -2649,6 +2649,7 @@ function onWindowMessage(message, wparam, lparam)
     if not keyboard and(message==0x8 or message==0x1c and wparam==0 or message==0x6 and wparam==0)then
         sceneServices.escapeHeld=nil
         sceneServices.help.closePressed=nil
+        sceneServices.help.drag=nil
     end
     if keyboard and wparam==0x1B then
         if sceneServices.escapeHeld then
@@ -2773,14 +2774,14 @@ sceneServices.windowHandler=sceneServices.chatPerf:wrap('onWindowMessage',onWind
 function onWindowMessage(message,wparam,lparam)
     if message==0x201 or message==0x202 then
         local help=sceneServices.help
-        if shutdown or not(help.closePressed or widgetCursor and help.closeBounds and not help.editing)then return end
+        if shutdown or not(help.closePressed or help.drag or widgetCursor and help.closeBounds and not help.editing)then return end
         local x,y=optionalRead('getCursorPos')
-        local active=help:overClose(x,y) and widgetCursor and focused and not ownUi() and
+        local active=(help.drag or help:overClose(x,y) or help:overHeader(x,y)) and widgetCursor and focused and not ownUi() and
             not help.failed and help:visible(workspace.library.settings.help,sceneServices.helpState,false)and
             optionalRead('isGamePaused')==false and optionalRead('sampIsChatInputActive')==false and
             optionalRead('sampIsDialogActive')==false and not(sceneServices.chatBridge and
                 sceneServices.chatBridge:inputBusy(studioClock,workspace.library.settings.cef_chat_grace_ms))
-        if help:mouseButton(message==0x201,active)and type(consumeWindowMessage)=='function'then consumeWindowMessage(true,false)end
+        if help:mouseButton(message==0x201,active,x,y)and type(consumeWindowMessage)=='function'then consumeWindowMessage(true,false)end
         return
     end
     -- No profiler call or CEF work on motion, selection, character/IME messages.
@@ -3290,7 +3291,7 @@ local function updateGame()
     bindingKeyCaptured=keyRecorder~=nil
     local now = getGameTimer()
     studioClock=now
-    if sceneServices.help:applyDismiss(studio)then studio:flushAutosave(studioCallbacks,true)end
+    if sceneServices.help:applyPointer(studio)then studio:flushAutosave(studioCallbacks,true)end
     if studio.reportEdit and not ownUi()then studioCallbacks.openAssist('traffic')end
     if sceneServices.patrolUiRecovery then
         local p=sceneServices.patrolUiRecovery;sceneServices.patrolUiRecovery=nil;patrolSession:recoverUi(p.active)
@@ -3687,6 +3688,7 @@ local function updateGame()
     if widgetCursor or hud.drag then
         local x, y = optionalRead('getCursorPos')
         px,py=x,y;hud:setPointer(x,y,isKeyDown(0x01),isKeyDown(0x02))
+        if widgetCursor and allowWidgetInput and sceneServices.help.drag then sceneServices.help:move(x,y) end
     end
     local b=hud.bounds
     local overHud=b and core.finite(px)and core.finite(py)and px>=b.x and px<=b.x+b.w and py>=b.y and py<=b.y+b.h
@@ -3758,6 +3760,7 @@ sceneServices.cefContractAllowed=false;sceneServices.cefContractReason='analysis
 sceneServices.chatBridge=sceneServices.chatModule.new({compatibility=function(now)
         local r=sceneServices.cefVerifier:check(now or 0);sceneServices.cefContractAllowed=r.allowed==true;sceneServices.cefContractReason=r.reason;return r
     end,fs=storage.fs,assetFs=require('pa26_cef_assets').fs,json=workspace.json,
+    adapter=require('pa26_cef_contract').adapter,
     path=getWorkingDirectory()..'\\..\\cef\\assets\\hud\\',token=function()return sceneServices.chatModule.entropy(ffi)end,
     session=function()local key=connectionKey();return key and(key..'@'..sceneServices.chatEpoch)or nil end,
     settings=function()

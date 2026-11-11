@@ -115,7 +115,7 @@ function M.settings(studio, ui, callbacks)
     if studio:button('Сбросить положение##pa26-help-reset', ui) then draft.position = nil; callbacks.editHelpPosition(nil, true) end
     if studio:button('Открыть инструкции##pa26-help-open', ui) then callbacks.openInstructions() end
     draft.welcome = studio:check('Показывать приветствие при следующем запуске##pa26-help-welcome', draft.welcome)
-    ui.text('Для перетаскивания включите режим изменения положения. В игре удерживайте Alt и нажмите ×, чтобы скрыть подсказки.')
+    ui.text('В игре удерживайте Alt и потяните заголовок левой кнопкой мыши. Alt + × скрывает подсказки.')
     M.save(studio, draft)
     studio:autosaveHint(ui, 'help')
 end
@@ -130,13 +130,14 @@ function M.geometry(w, h, width, height, position, avoid)
     height = math.min(height, h - 2 * margin)
     local freeX, freeY = w - width - 2 * margin, h - height - 2 * margin
     local initial = position == nil
-    position = position or {x=1, y=.13}
+    position = position or {x=1, y=.19}
     local x, y = margin + freeX * clamp(position.x, 0, 1), margin + freeY * clamp(position.y, 0, 1)
     if initial and avoid and x < avoid.x+avoid.w and x+width > avoid.x and
         y < avoid.y+avoid.h and y+height+margin > avoid.y then
-        if avoid.y-height >= 2*margin then y = avoid.y-height-margin
+        if avoid.y+avoid.h+height+2*margin <= h then y = avoid.y+avoid.h+margin
+        elseif avoid.y-height >= 2*margin then y = avoid.y-height-margin
         elseif avoid.x-width >= 2*margin then x = avoid.x-width-margin
-        elseif avoid.y+avoid.h+height+2*margin <= h then y = avoid.y+avoid.h+margin end
+        end
     end
     return x, y, width, height, margin, freeX, freeY
 end
@@ -148,27 +149,58 @@ function Overlay:visible(cfg, state, editing)
     return cfg.visible and not state.window and not state.typing and not self.dismissPending
 end
 
-function Overlay:overClose(x,y)
-    local r=self.closeBounds
+local function inside(r,x,y)
     return r and core.finite(x)and core.finite(y)and x>=r.x and x<r.x+r.w and y>=r.y and y<r.y+r.h or false
 end
 
-function Overlay:mouseButton(down,active)
+function Overlay:overClose(x,y)
+    return inside(self.closeBounds,x,y)
+end
+
+function Overlay:overHeader(x,y)
+    return inside(self.dragBounds,x,y)
+end
+
+function Overlay:move(x,y)
+    local drag=self.drag
+    if not drag or not core.finite(x) or not core.finite(y) then return end
+    if not drag.position and x==drag.startX and y==drag.startY then return end
+    local origin=drag.origin
+    drag.position={
+        x=clamp((origin.x+x-drag.startX-origin.margin)/math.max(1,origin.freeX),0,1),
+        y=clamp((origin.y+y-drag.startY-origin.margin)/math.max(1,origin.freeY),0,1),
+    }
+end
+
+function Overlay:mouseButton(down,active,x,y)
     if down then
-        self.closePressed=active or nil
-        return active
+        self.closePressed=active and self:overClose(x,y) or nil
+        if self.closePressed then return true end
+        if active and self:overHeader(x,y) then
+            self.drag={origin=self.dragBounds,startX=x,startY=y}
+            return true
+        end
+        return false
+    end
+    if self.drag then
+        if active then self:move(x,y) end
+        self.positionPending=self.drag.position
+        self.drag=nil
+        return true
     end
     if not self.closePressed then return false end
     self.closePressed=nil
-    if active then self.dismissPending=true end
+    if active and self:overClose(x,y) then self.dismissPending=true end
     return true
 end
 
-function Overlay:applyDismiss(studio)
-    if not self.dismissPending then return false end
-    self.dismissPending=nil
+function Overlay:applyPointer(studio)
+    if not self.dismissPending and not self.positionPending then return false end
     local draft=M.draft(studio)
-    draft.visible=false
+    if self.dismissPending then draft.visible=false end
+    if self.positionPending then draft.position=self.positionPending end
+    self.dismissPending=nil
+    self.positionPending=nil
     M.save(studio,draft)
     return true
 end
@@ -177,6 +209,7 @@ function Overlay:draw(im, ui, cfg, keys, studio, avoid)
     local io = im.GetIO()
     local display = io.DisplaySize
     self.closeBounds=nil
+    self.dragBounds=nil
     if display.x < 48 or display.y < 48 then return end
     local edit = self.editing
     local vec = im.ImVec2
@@ -184,22 +217,24 @@ function Overlay:draw(im, ui, cfg, keys, studio, avoid)
     local font = im.GetFont()
     local layout = self.layout
     local wantedWidth = math.max(228 * cfg.scale, 14 * size)
-    local x, y, w, _, margin, freeX, freeY = M.geometry(display.x, display.y, wantedWidth, 1)
-    if not layout or layout.keys ~= keys or layout.w ~= w or layout.size ~= size or layout.font ~= font then
+    local padding = 10
+    local _, _, width = M.geometry(display.x, display.y, wantedWidth, 1)
+    if not layout or layout.keys ~= keys or layout.w ~= width or layout.size ~= size or layout.font ~= font then
         local menu = require 'pa26_menu'
         local rows = {}
         for _, text in ipairs({'Клавиши PA', keys.wheelLabel..'  Колесо', keys.menuLabel..'  Главное меню',
-            keys.assistLabel..'  Помощники', (keys.stopLabel or'Отключено')..' — Начать 10-55', 'Меню → Инструкции · Alt + ×'}) do
-            for _, line in ipairs(menu.labelLayout(font, size, math.max(1, w-20), text).lines) do
+            keys.assistLabel..'  Помощники', (keys.stopLabel or'Отключено')..' — Начать 10-55', 'Меню → Инструкции',
+            'Alt + ЛКМ по заголовку — перенос'}) do
+            for _, line in ipairs(menu.labelLayout(font, size, math.max(1, width-2*padding), text).lines) do
                 rows[#rows+1] = line.text
             end
         end
-        layout = {keys=keys, w=w, size=size, rows=rows, font=font, lineHeight=size+3}
+        layout = {keys=keys, w=width, size=size, rows=rows, font=font, lineHeight=size+3}
         self.layout = layout
     end
-    local height
-    x, y, w, height, margin, freeX, freeY = M.geometry(display.x, display.y, wantedWidth,
-        16 + #layout.rows * layout.lineHeight + (edit and 112 or 0), edit and edit.position or cfg.position, not edit and avoid)
+    local position = edit and edit.position or self.drag and self.drag.position or self.positionPending or cfg.position
+    local x, y, w, height, margin, freeX, freeY = M.geometry(display.x, display.y, wantedWidth,
+        2*padding + #layout.rows * layout.lineHeight + (edit and 112 or 0), position, not edit and avoid)
     local flags = im.WindowFlags.NoTitleBar + im.WindowFlags.NoResize + im.WindowFlags.NoMove +
         im.WindowFlags.NoSavedSettings
     if not edit then flags = flags + im.WindowFlags.NoInputs + im.WindowFlags.NoFocusOnAppearing +
@@ -218,22 +253,24 @@ function Overlay:draw(im, ui, cfg, keys, studio, avoid)
     local expanded = im.Begin('Клавиши PA##pa26-help-overlay', nil, flags)
     ui.push(function() im.End() end)
     if expanded then
-        local origin = im.GetCursorScreenPos()
         local list = im.GetWindowDrawList()
         local tint = im.ColorConvertFloat4ToU32(im.ImVec4(.93, .97, 1, 1))
         for index, line in ipairs(layout.rows) do
-            if (index+1)*layout.lineHeight <= height then
-                list:AddTextFontPtr(layout.font, size, vec(origin.x, origin.y+(index-1)*layout.lineHeight), tint, line)
+            local top=padding+(index-1)*layout.lineHeight
+            if top+size<=height-padding then
+                list:AddTextFontPtr(layout.font, size, vec(x+padding,y+top), tint, line)
             end
         end
         if not edit then
             local side=math.max(20,math.ceil(size+7))
             local close={x=x+w-side-5,y=y+4,w=side,h=side}
             self.closeBounds=close
+            self.dragBounds={x=x,y=y,w=close.x-x,h=padding+layout.lineHeight,margin=margin,freeX=freeX,freeY=freeY}
             local hovered=self:overClose(io.MousePos.x,io.MousePos.y)
             local fill=im.ColorConvertFloat4ToU32(im.ImVec4(.25,.38,.49,hovered and .9 or .55))
             list:AddRectFilled(vec(close.x,close.y),vec(close.x+side,close.y+side),fill,4)
-            list:AddTextFontPtr(layout.font,size,vec(close.x+side*.28,close.y+(side-size)/2),tint,'×')
+            local cross=layout.font:CalcTextSizeA(size,100000,0,'×')
+            list:AddTextFontPtr(layout.font,size,vec(close.x+(side-cross.x)/2,close.y+(side-cross.y)/2),tint,'×')
         else
             im.InvisibleButton('Перетащить##pa26-help-drag', vec(math.max(1, w-18), #layout.rows*layout.lineHeight))
             if im.IsItemActive() and im.IsMouseDragging(0) then
