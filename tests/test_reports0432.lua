@@ -17,6 +17,32 @@ local wires=table.concat(edited.prepared.lines,'\n');check(cp:accept(edited));s.
 cp:onExecution('completed',{plan=plan});s.tick();check(not cp.phase)
 for _,field in ipairs({'unit','crew','area'})do local bad=copy(fields);bad[field]='';check(not cp:editReport(p,bad));bad[field]='x\n/pt 42';check(not cp:editReport(p,bad))end
 s.state.onDuty=false;s.tick();check(not cp:propose('patrol_continue'));s.state.onDuty=true;s.cfg.copilot.enabled=false;s.tick();check(not cp:propose('patrol_continue'))
+local swat=s.cfg.copilot
+swat.swat_reports=true;swat.swat_channel='/d';s.cfg.copilot.enabled=true;s.tick()
+for _,row in ipairs(prefs.swatReports)do
+ local report,why=cp:propose(row[1]);check(report,why);check(report.report);check(not report.needsPatrol);check(report.carFree)
+ local preview=table.concat(report.prepared.lines,'\n')
+ check(preview:find('/d ',1,true));check(preview:find('SWAT',1,true));check(preview:find('Doherty',1,true))
+ eq(assert(cp:previewTemplate(row[1],swat)),preview)
+ if row[1]=='swat_patrol'then check(preview:find('Обстановка спокойная.',1,true));check(preview:find('продолжаю патруль',1,true))end
+ s.run(report);check(not cp.phase);check(s.plans[#s.plans].copilotAction.routineRadio)
+end
+swat.swat_reports=false;s.tick();check(not cp:propose('swat_patrol'))
+local saved=prefs.defaults();saved.swat_channel='/f';saved.window_answer_delay_ms=7500;saved.window_reply_ms=90000
+saved.templates.swat_patrol='Мой доклад SWAT · {area}';saved.templates.documents='Мой запрос документов.'
+saved.window_answer_text='Что ответил водитель {driver_id}?'
+local loaded=assert(prefs.validate(saved));eq(loaded.swat_channel,'/f');eq(loaded.window_answer_delay_ms,7500);eq(loaded.window_reply_ms,90000)
+eq(loaded.templates.swat_patrol,saved.templates.swat_patrol);eq(loaded.templates.documents,saved.templates.documents)
+eq(loaded.window_answer_text,saved.window_answer_text)
+saved.swat_channel='/su';check(not prefs.validate(saved));saved.swat_channel='/f'
+saved.window_answer_text='{invalid}';check(not prefs.validate(saved))
+local legacy=assert(prefs.validate({templates={documents='Предъявите, пожалуйста, документы для проверки. Основание: {stop_ground}.'}}))
+eq(legacy.templates.documents,prefs.defaults().templates.documents)
+local oldArmed='{local_tag}{unit}, водитель {vehicle_description} вооружён. Район {area} ({map_square}), запрашиваю поддержку, Код 3!'
+legacy=assert(prefs.validate({exit_offer=false,templates={armed=oldArmed}}))
+check(not legacy.armed_offer);check(legacy.templates.armed:find('возможно, вооружены',1,true))
+legacy=assert(prefs.validate({exit_offer=false,armed_offer=true,templates={armed='Мой текст об оружии.'}}))
+check(legacy.armed_offer);eq(legacy.templates.armed,'Мой текст об оружии.')
 local custom=prefs.defaults();custom.templates.explain_stop='Моя собственная фраза: {stop_ground}.';custom.templates.stolen_car='Мой поиск {area}.';custom.ground_speech.speed='Я хочу уточнить скорость.'
 local validated=assert(prefs.validate(custom));eq(validated.templates.explain_stop,custom.templates.explain_stop);eq(validated.templates.stolen_car,custom.templates.stolen_car);eq(validated.ground_speech.speed,custom.ground_speech.speed)
 custom.templates.explain_stop='Причина остановки: {stop_ground}. Основание: {ground_article}.';eq(assert(prefs.validate(custom)).templates.explain_stop,'{ground_speech}')
@@ -25,6 +51,6 @@ cp,v,s=setup();s.state.inVehicle=false;s.car.distance=2;s.person.distance=2;s.ti
 local nav=assert(cp:propose('explain_stop'));local cfg=copy(s.cfg.copilot);cfg.stop_ground='wrong_way';cfg._ground_speech='Вы выехали на встречную полосу. Давайте уточним, что произошло.'
 local g=assert(require('pa26_operational').ground('stop','wrong_way'));eq(g.article,'')
 local speech=assert(cp:proposeGround(nav,cfg,g));local lines=table.concat(speech.prepared.lines,'\n');check(lines:find('/s '..cfg._ground_speech,1,true));check(not lines:find('Причина остановки:',1,true));check(not lines:find('Основание: .',1,true))
-cp.manualUdDone=true;local noIntro=assert(cp:proposeGround(nav,cfg,g));check(not table.concat(noIntro.prepared.lines,' '):find('/ud ',1,true))
+check(cp:observeManualCommand('/ud 37','native'));local noIntro=assert(cp:proposeGround(nav,cfg,g));check(not table.concat(noIntro.prepared.lines,' '):find('/ud ',1,true))
 cfg._ground_speech='/su 42 8 1';check(not cp:proposeGround(nav,cfg,g),'A speech field cannot turn into a server command')
 cfg.ground_channel='';cfg._ground_speech=nil;cfg.templates.explain_stop='/clear 42';check(not cp:proposeGround(nav,cfg,g))

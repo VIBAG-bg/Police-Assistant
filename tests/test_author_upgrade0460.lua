@@ -106,7 +106,7 @@ eq(state.n,writes,'Second startup must not write anything')
 fs,values,state=memory();w=workspaceFor(fs)
 values[base..'_settings.json']='EXTERNAL EDIT'
 check(not upgrade.apply(w,cfg,{fs=fs},hash,lock,newId));eq(values[base..'_settings.json'],'EXTERNAL EDIT');eq(state.n,0)
-local prevVersion=core.VERSION;core.VERSION='0.46.2'
+local prevVersion=core.VERSION;core.VERSION='0.46.3'
 check(upgrade.apply(w,cfg,{fs=fs},hash,lock,newId));eq(state.n,0)
 core.VERSION=prevVersion
 

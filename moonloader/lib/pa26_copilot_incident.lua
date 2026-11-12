@@ -1,10 +1,29 @@
--- Pure incident/contact observations; extends the existing confirmed Copilot flow.
-local core=require 'pa26_core';local model=require 'pa26_bindings';local vehicle=require 'pa26_vehicle'
+-- Contact and observations for the existing 10-55 Copilot.
+local core=require 'pa26_core'
+local model=require 'pa26_bindings'
+local vehicle=require 'pa26_vehicle'
+local vehicleTypes=require 'pa26_vehicle_types'
 local M={}
-local function same(a,b)return a and b and a.id==b.id and a.name==b.name and a.generation==b.generation end
-local function point(v)return v and core.finite(v.x)and core.finite(v.y)and core.finite(v.z)end
-local function dist(a,b)if point(a)and point(b)then return math.sqrt((a.x-b.x)^2+(a.y-b.y)^2+(a.z-b.z)^2)end end
-local function remove(self,action)local keep={};for _,p in ipairs(self.offers)do if p.action~=action then keep[#keep+1]=p end end;self.offers=keep end
+
+local function same(a,b)
+ return a and b and a.id==b.id and a.name==b.name and a.generation==b.generation and a.ped==b.ped
+end
+local function point(v)
+ return v and core.finite(v.x)and core.finite(v.y)and core.finite(v.z)
+end
+local function dist(a,b)
+ if point(a)and point(b)then return math.sqrt((a.x-b.x)^2+(a.y-b.y)^2+(a.z-b.z)^2)end
+end
+local function remove(self,action)
+ for index=#self.offers,1,-1 do
+  if self.offers[index].action==action then table.remove(self.offers,index)end
+ end
+end
+local function canPrompt(s)
+ return s and s.session and s.alive and s.focused and not s.paused and not s.blocked and s.onDuty and s.radioEnabled and
+  not s.modal and not s.typing and not s.recording and not s.wheel and not s.alertPending and not s.ownUi and not s.busy
+end
+
 function M.install(C)
  function C:beginIncident()
   if self.phase~='10-55'or not self.car then return end
@@ -15,16 +34,59 @@ function M.install(C)
   if not self.car.stale then self.lastCar=model.copy(self.car)end
   return self.incident
  end
- function C:observeManualCommand(line,source)
-  if self.state and self.state.demo or type(line)~='string'or #line>4096 or not core.validUtf8(line)then return false end
-  local i=self:beginIncident();if not i then return false end
+
+ function C:stopDriver(atWindow,cfg)
+  local s,c,driver=self.state,self.car,self.driverLive
+  if self.phase~='10-55'or not s or not s.session or not s.alive or s.incapacitated or s.inVehicle or
+   not c or c.stale or not driver or driver.stale or not same(driver,self.driver)then return end
+  local radius=atWindow and cfg.window_interaction_distance or self.env.vehicle.env.settings().approach_distance+2
+  if not core.finite(c.distance)or c.distance>radius or not core.finite(driver.distance)or driver.distance>radius then return end
+  if atWindow then
+   local class=vehicleTypes.class(c.model_id)
+   if not(class=='car'or class=='van'or class=='truck'or class=='bus')or not self:seatedDriver()then return end
+  end
+  return driver
+ end
+
+ function C:stopContactStarted()
+  local i=self.incident
+  return i and(i.greeted or i.documentsRequested or i.reasonExplained)or false
+ end
+
+ function C:recordStopContact(stage)
+  local i=self:beginIncident()
+  if not i then return false end
+  i[stage]=true
+  i.onFoot=true
+  if stage=='documentsChecked'then
+   i.documentsRequested=true
+   local p=self.env.position and self.env.position()
+   i.checkedPosition=point(p)and{x=p.x,y=p.y,z=p.z}or nil
+  end
+  self.windowAwait=nil
+  remove(self,'approach');remove(self,'window_question');remove(self,'window_knock')
+  if stage=='introduced'then i.greeted=true;i.badge=true;remove(self,'greet_stop')end
+  if i.documentsRequested then remove(self,'documents')end
+  if i.reasonExplained then remove(self,'explain_stop')end
+  return true
+ end
+
+ function C:markStopContact(stage)
+  if not self.env.settings().enabled or not self:stopDriver(false)or self.intent or self.queued then
+   return nil,'Подойдите к водителю текущей 10-55 и дождитесь окончания действия.'
+  end
+  if stage~='introduced'and stage~='documentsRequested'and stage~='documentsChecked'and stage~='reasonExplained'then return false end
+  return self:recordStopContact(stage)
+ end
+
+ function C:observeManualCommand(line)
+  if self.phase~='10-55'or not self.state or self.state.demo or type(line)~='string'or #line>4096 or not core.validUtf8(line)then return false end
   local head,args=line:match('^%s*/([A-Za-z]+)%s*(.-)%s*$');head=head and head:lower()
   if head=='ud'then
-   if self.state.inVehicle or not self.car or self.car.stale or not self.driverLive or not same(self.driver,self.driverLive)then return false end
-   local radius=self.env.vehicle.env.settings().approach_distance+2
-   if not core.finite(self.car.distance)or self.car.distance>radius or not core.finite(self.driverLive.distance)or self.driverLive.distance>radius then return false end
-   if args~=''and(not args:match('^%d+$')or tonumber(args)~=self.driver.id)then return false end
-   self.manualUdDone=true;i.onFoot=true;self.windowAwait=nil;remove(self,'explain_stop');return true
+   local driver=self:stopDriver(false)
+   if not driver or not args:match('^%d+$')or tonumber(args)~=driver.id then return false end
+   local i=self:beginIncident();i.ud=true
+   return self:recordStopContact('introduced')
   elseif head=='r'or head=='f'then
    local body=model.casefold(args)
    for _,word in ipairs({'10-99','заверш','отмен','ранее','прошл','планир','не провожу','не начина','обсужд','пример'})do if body:find(word,1,true)then return false end end
@@ -36,6 +98,100 @@ function M.install(C)
   end
   return false
  end
+
+ function C:observeContactBinding(q)
+  if self.phase~='10-55'then return end
+  local p=q.plan
+  local ref=p.binding and p.binding.author_ref
+  if q.demo or p.demo or not q.sent or q.sent==0 or(ref~='A02'and ref~='A14')then return end
+  local driver=self:stopDriver(false)
+  local target=p.target
+  -- A verified executor target may predate generation-aware binding snapshots.
+  if not driver or not target or target.id~=driver.id or target.name~=driver.name or target.ped~=driver.ped or
+   (target.generation~=nil and target.generation~=driver.generation)then return end
+  local stamp=p.bindingContext
+  if ref=='A14'and stamp and stamp.life==self.life and vehicle.same(stamp.car,self.car)then
+   local stock=require('pa26_author_rp').bindings['14']
+   if p.binding.script==stock.script or p.binding.script==stock.rp_context.bike_script then
+    self.done.approach=true
+    self.inspectedDriver=model.copy(driver)
+   end
+  end
+  local speech=model.casefold(table.concat(p.lines or{},' '))
+  if speech:find('паспорт',1,true)and speech:find('лицензи',1,true)and
+   (speech:find('предъявите',1,true)or speech:find('передайте',1,true))then
+   self:recordStopContact('documentsRequested')
+  end
+ end
+
+ function C:windowTiming(q)
+  local s,cfg=self.state,self.env.settings()
+  if not q or not cfg.enabled or not s or not s.onDuty or not s.radioEnabled or not s.focused or
+   q.life~=self.life or q.session~=s.session or q.ped~=s.ped or q.demo~=s.demo or
+   not vehicle.same(q.car,self.car)or not same(q.driver,self:stopDriver(true,cfg))then return end
+  local age=core.elapsed(self.now,q.at)
+  local shownAge=q.shownAt and core.elapsed(self.now,q.shownAt)
+  if not age or q.shownAt and(not shownAge or shownAge>=q.duration)or not q.shownAt and age>=q.delay+q.duration then return end
+  return age>=q.delay,q.duration-(shownAge or 0)
+ end
+
+ function C:windowCandidate()
+  local q=self.windowAwait
+  if not q or not canPrompt(self.state)or self.intent or self.queued then return end
+  local ready,remaining=self:windowTiming(q)
+  if not ready then return end
+  return {owner='vehicle',token=q.token,mode='confirm',title=q.title,status='10-55 · '..q.driver.name..' ['..q.driver.id..']',
+   body='Отметьте, что ответил водитель.',hint='ДА — перейти к представлению. НЕТ — предложить постучать.',
+   full=true,priority=45,serial=q.at,remaining=remaining,duration=q.duration,unseen=q.shownAt==nil,shortcut={key=0}}
+ end
+
+ function C:windowAnswer(answer,token)
+  local q=self.windowAwait
+  if not q or token and(token~=q.token or not q.shownAt or not canPrompt(self.state))then
+   return nil,'Ответ об окне устарел. При необходимости задайте вопрос заново.'
+  end
+  local ready=self:windowTiming(q)
+  if ready==nil or answer~='skip'and(not ready or(answer~='open'and answer~='closed'))then
+   return nil,'Дождитесь вопроса об окне у текущего водителя.'
+  end
+  self.windowAwait=nil
+  if answer=='skip'then self.windowSkipped=true;return true end
+  self.windowReply=answer
+  return true
+ end
+
+ function C:advanceStopContact(s,i,cfg)
+  if not canPrompt(s)or self.windowAwait or self.groundRequest or not self:stopDriver(false)then return end
+  if self:stopContactStarted()then
+   if not cfg.ground_offer then return end
+   if i.documentsRequested then
+    if not i.reasonExplained then self:offer('explain_stop')end
+   elseif i.greeted and not i.introduced and not i.reasonExplained and(not i.badge or cfg.stop_greeting_ud)then
+    self:offer('greet_stop')
+   elseif not i.reasonExplained and self:documentsNeedGround(cfg)then
+    self:offer('explain_stop')
+   else
+    self:offer('documents')
+   end
+   return
+  end
+  if self.windowReply=='closed'and self:stopDriver(true,cfg)then
+   self:offer('window_knock')
+   return
+  end
+  if self.windowReply=='open'or self.windowSkipped or self.done.approach and(not cfg.window_offer or not self:seatedDriver()or
+   not self:windowVehicle())then
+   if cfg.ground_offer then self:offer('greet_stop')end
+   return
+  end
+  if cfg.window_offer and self.done.approach and self:stopDriver(true,cfg)then self:offer('window_question')end
+ end
+
+ function C:windowVehicle()
+  local class=self.car and vehicleTypes.class(self.car.model_id)
+  return class=='car'or class=='van'or class=='truck'or class=='bus'
+ end
+
  function C:incidentStep(s,now)
   local i=self:beginIncident();if not i then return end
   local c=self.car;local cfg=self.env.settings()
@@ -56,14 +212,20 @@ function M.install(C)
    if not age or age>=100 then i.lastPoint={x=c.x,y=c.y,z=c.z,travelled=travelled,at=now}end
   else i.flightSamples=0;i.confirmedFlight=false;i.flightAt=nil end
   if not self:seatedDriver()then i.flightAt=nil end
-  local contact=self.manualUdDone or self.done.explain_stop
-  if contact and not s.inVehicle then i.onFoot=true end
+
   local own=self.env.vehicle.own
-  local returned=contact and i.onFoot and s.inVehicle and own and i.own and own.handle==i.own.handle and
+  local returned=i.onFoot and s.inVehicle and own and i.own and own.handle==i.own.handle and
    (i.own.id==nil or own.id==i.own.id)and(i.own.model_id==nil or own.model_id==i.own.model_id)
-  local unavailable=self.manualUdDone and c.stale==true
-  local canOffer=not s.modal and not s.typing and not s.recording and not s.wheel and not s.alertPending and not s.ownUi and not s.busy
-  if contact and cfg.finish_offer and canOffer and not(cfg.flee_offer and cfg.immediate_flight_offer and self:canEscalateStop())and(returned or i.departed or unavailable)then
+  local live=self.driverLive
+  local away=live and core.finite(live.distance)and live.distance>=cfg.departure_distance or c.stale==true
+  if self:seatedDriver()and core.finite(c.distance)and c.distance>=cfg.departure_distance then away=true end
+  local checkedAndLeft=i.documentsChecked and(away or not live)and
+   (dist(i.checkedPosition,self.env.position and self.env.position())or 0)>=cfg.departure_distance
+  local readyToFinish=i.reasonExplained and(returned or away)or checkedAndLeft
+  if not readyToFinish then
+   remove(self,'finish')
+   if not i.finishDeclined then i.finishOffered=nil end
+  elseif cfg.finish_offer and canPrompt(s)and not(cfg.flee_offer and cfg.immediate_flight_offer and self:canEscalateStop())then
    if not i.finishDeclined then remove(self,'pursuit')end
    if i.finishOffered and not i.finishDeclined and not self.intent and not self.queued and(core.elapsed(now,i.finishOfferAt)or 0)>=cfg.toast_ms then
     local present=false;for _,p in ipairs(self.offers)do if p.action=='finish'then present=true;break end end
@@ -74,54 +236,27 @@ function M.install(C)
     for _,p in ipairs(self.offers)do if p.action=='finish'then i.finishOffered=true;i.finishOfferAt=now;break end end
    end
   end
-  if self.windowAwait then
-   local age=core.elapsed(now,self.windowAwait.at)
-   if c.stale or not same(self.windowAwait.driver,self.driverLive)or not age or age>cfg.window_reply_ms then self.windowAwait=nil end
+
+  if self.windowAwait and self:windowTiming(self.windowAwait)==nil then
+   self.windowAwait=nil
   end
-  local class=require('pa26_vehicle_types').class(c.model_id)
-  local enclosed=class=='car'or class=='van'or class=='truck'or class=='bus'
-  if enclosed and cfg.window_offer and self.done.approach and not contact and not c.stale and not s.inVehicle and self.driverLive and
-   core.finite(self.driverLive.distance)and self.driverLive.distance<=cfg.window_interaction_distance then self:offer('window_question')end
+  self:advanceStopContact(s,i,cfg)
  end
- function C:windowAnswer(answer,manual)
-  local i=self.incident;local q=self.windowAwait or self.windowQuestion
-  if not i or self.phase~='10-55'or not self.car or self.car.stale or not self.driverLive or not same(self.driver,self.driverLive)then return false end
-  if not manual and(not q or not same(q.driver,self.driverLive)or q.life~=self.life)then return false end
-  self.windowAwait=nil
-  remove(self,'window_question');remove(self,'window_knock');self.dismissed.window_question=true
-  if answer=='skip'then self.windowSkipped=true;self.windowQuestion=nil;self.windowReply=nil;return true end
-  if answer~='open'and answer~='closed'then return false end
-  self.windowReply=answer
-  if answer=='open'then
-   remove(self,'window_knock')
-   if not self.manualUdDone and not self.done.explain_stop then self:offer('explain_stop')end
-  elseif not self.manualUdDone and not self.done.explain_stop then self:offer('window_knock')end
-  return true
- end
- function C:observeWindowReply(line)
-  if not self.state or self.state.demo then return false end
-  local q=self.windowAwait or self.windowReply=='closed'and self.windowQuestion
-  if not q or type(line)~='string'or #line>1024 or not core.validUtf8(line)then return false end
-  local age=core.elapsed(self.now,q.at);if not age or age>self.env.settings().window_reply_ms then return false end
-  local text=line:gsub('{%x%x%x%x%x%x}',''):gsub('%s+',' ')
-  local body,nick=text:match('^%s*(.-)%s*%(%s*([A-Za-z_][A-Za-z_0-9]*)%s*%)%s*$')
-  if not body or not same(q.driver,self.driverLive)or q.life~=self.life or nick:lower()~=q.driver.name:lower()or nick:lower()==tostring(self.state.local_nick or self.state.my_nick):lower()then return false end
-  body=model.casefold(body):gsub('[%.!%?]+$',''):match('^%s*(.-)%s*$')
-  local open={['окно открыто']=true,['да']=true,['да, открыто']=true,['открыто']=true}
-  local closed={['окно закрыто']=true,['нет']=true,['нет, закрыто']=true,['закрыто']=true}
-  return(open[body]or closed[body])and self:windowAnswer(open[body]and'open'or'closed',false)or false
- end
- function C:repeatWindowQuestion()
-  if not self.incident or self.phase~='10-55'then return nil,'Нет активной остановки.'end
-  self.done.window_question=nil;self.dismissed.window_question=nil;self.windowAwait=nil;self.windowSkipped=nil;self.windowQuestion=nil;self.windowReply=nil
-  remove(self,'window_question');self:offer('window_question');return true
- end
- function C:incidentCompleted(action,p)
-  if action=='explain_stop'and self.incident and not self.state.inVehicle then self.incident.onFoot=true end
-  if action=='window_question'then
-   local q={at=self.now,life=self.life,driver=model.copy(self.driverLive)}
-   self.windowQuestion=q;self.windowAwait=not p.demo and model.copy(q)or nil;self.windowReply=nil;self.windowSkipped=nil
-  elseif action=='window_knock'and not self.manualUdDone and not self.done.explain_stop then self:offer('explain_stop')end
+
+ function C:incidentLine(p,index)
+  local stage=p.prepared.contactSteps[index]
+  if stage=='window_question'then
+   self.windowReply=nil;self.windowSkipped=nil
+   self.done.window_knock=nil;self.dismissed.window_knock=nil
+   self.windowAwait={token=p.token..':answer',at=self.now,life=self.life,session=p.session,ped=p.ped,demo=p.demo,
+    car=model.copy(p.car),driver=model.copy(p.contactDriver),title=p.prepared.windowPrompt,
+    delay=p.cfg.window_answer_delay_ms,duration=p.cfg.window_reply_ms}
+  elseif stage=='window_knock'then
+   self.windowReply=nil
+   self.done.window_question=nil;self.dismissed.window_question=nil
+  elseif stage and self.phase=='10-55'and p.contactDriver then
+   self:recordStopContact(stage)
+  end
  end
 end
 return M

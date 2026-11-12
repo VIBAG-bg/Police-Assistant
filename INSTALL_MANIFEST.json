@@ -1,5 +1,5 @@
 {
-  "release": "0.46.1",
+  "release": "0.46.2",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -23,7 +23,7 @@
     },
     {
       "path": "lib\\pa26_author_upgrade0460.lua",
-      "sha256": "cb8c1d382f892ec3f00f857cad27cf465a06599b8f7b4e6958d0b29288d1ec33"
+      "sha256": "5b65d45e4bd68ad943fcf9b2995ceaa347266d67abc9bd1511ec6a0cd252713d"
     },
     {
       "path": "lib\\pa26_author_controller.lua",
@@ -111,23 +111,23 @@
     },
     {
       "path": "lib\\pa26_copilot.lua",
-      "sha256": "4e313b63065edcbac140a9b5fc0b37619b9990ec02563e30f07279ce44484705"
+      "sha256": "0f0729388e744d98bc289967feb134d63abd4f7035c8d40b6cb37ebec431ef68"
     },
     {
       "path": "lib\\pa26_copilot_incident.lua",
-      "sha256": "f3e747cffb2a6be7664499e8bb500aabc1ce271c88acd8703fdbd1c009f66680"
+      "sha256": "9f0c55ddeb0161c87ee8b9dede0434d83e07af9d68479d35618320ae2b4db094"
     },
     {
       "path": "lib\\pa26_copilot_settings.lua",
-      "sha256": "723b3007662c6cbafecb05334764ab1d9d392763717f22400d85a7a8c2cae6f4"
+      "sha256": "03f3952e8627a8370e631f94c570bcf7e398567b5180461ffd24359166f19d9a"
     },
     {
       "path": "lib\\pa26_copilot_ui.lua",
-      "sha256": "0d04aa8fa1f525c778a55a30bab667d301df63b48ba996bc021c7908c3a8aeb1"
+      "sha256": "da4501e61f4a6ecec8eddab081d12a9b35f5d7dcd52b85663668f0c8e5fc64dc"
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "fda8e793568d6db628a079439f3a035c7eefe2e8252523e5e298df4a20a97b3c"
+      "sha256": "3950b929d35f37750df917380e1fb3782a8b109aa7edf420953a07a59135ca58"
     },
     {
       "path": "lib\\pa26_cruiser_assist.lua",
@@ -223,7 +223,7 @@
     },
     {
       "path": "lib\\pa26_ground_window.lua",
-      "sha256": "3fbaac431d52a944260e70875b00b60dd8d56a3b55cf2faf11bec9d0804b1fce"
+      "sha256": "1609c826c15f7efab52b6c3b5ac45f5b6e1ea7fea8f1c6efc80b2b8bddd80e8d"
     },
     {
       "path": "lib\\pa26_help.lua",
@@ -619,7 +619,7 @@
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "2c8c6dc93b09ed2acb8f92c998dba8ff244a8d11da334c9c8f70d4f12cb4e814"
+      "sha256": "aa3a5f442dd9fb6ab16b5e348bc654397a19c009d2265bb55c8f65817a0fa7eb"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",
@@ -709,7 +709,7 @@
   "preset_files": [
     {
       "path": "presets/manifest.json",
-      "sha256": "048edafa124823540bb6eaaabfdf274218353a9ba10ca293d7051e7dfbb975c7"
+      "sha256": "f1b9f951d9858747a60fb2302c3aeff334e5356bef88c49d6cb3f20a6c4b65af"
     },
     {
       "path": "presets/pa-binds.json",

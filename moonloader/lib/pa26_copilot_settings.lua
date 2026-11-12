@@ -3,6 +3,14 @@ local shared=require 'pa26_patrol_settings'
 local core=require 'pa26_core'
 local dispatch=require 'pa26_dispatch'
 local M={}
+M.swatReports={
+ {'swat_start','SWAT · Начало патруля'},
+ {'swat_patrol','SWAT · Обстановка спокойная'},
+ {'swat_finish','SWAT · Завершение патруля'},
+}
+local previousDocuments='Предъявите, пожалуйста, документы для проверки. Основание: {stop_ground}.'
+local previousStopOffer='Представиться и назвать причину 10-55?'
+local previousArmed='{local_tag}{unit}, водитель {vehicle_description} вооружён. Район {area} ({map_square}), запрашиваю поддержку, Код 3!'
 local previousFinish='{local_tag}{unit}, 10-99 по остановке {vehicle_description} в районе {stop_area} ({stop_map_square}), {stop_outcome}. Продолжаю патрулирование, Код 4.'
 local finishTemplate='{local_tag}{unit}, 10-99 по остановке {vehicle_description} в районе {stop_area} ({stop_map_square}), {stop_outcome}{patrol_return}. Код 4.'
 M.stopOrder='Говорит {officer_intro}. Водитель, примите вправо и остановитесь в безопасном месте!'
@@ -45,7 +53,7 @@ M.texts={{'plate_prefix','Начало условного номера (напр
  {'robbery_warning','Предупреждение о составе на ограбление',2048},
  {'dispatch_confirmation_note','Подтверждение RP-вызова',2048}, {'gas_confirmation_note','Подсказка перед требованием на АЗС',2048}}
 M.templates={{'risk_stage_question','10-66 · вопрос перед каждым этапом (не отправляется в чат)'},{'stop_order_bike','Мотоцикл · требование остановиться'},{'call911','Вызов 9-1-1'},{'arrived','Прибытие и опрос граждан'},{'break_report','Перерыв · Код 7'},{'lost','Потерян · Код 4 АДАМ'},{'stop','Доклад 10-55'},{'pursuit','Доклад 10-57 VICTOR'},{'foot','Доклад 10-57 FOXTROT'},
- {'high_risk','Доклад 10-66'},{'combat','CODE 0 · попадание по офицеру'}, {'armed','Вооружённый водитель · без подтверждения стрельбы'},
+ {'high_risk','Доклад 10-66'},{'combat','CODE 0 · попадание по офицеру'}, {'armed','Возможно вооружены · доклад после осмотра'},
  {'finish','Завершение ситуации'}, {'approach_day','Подход днём'}, {'approach_night','Подход ночью'},
  {'taser_warning','Предупреждение тайзера при пешей погоне'}, {'window','Вопрос об осмотре'}, {'ooc_hint','Подсказка новичку'}, {'return_car','Вернуться в машину'},
  {'stop_order','Требование остановиться'}, {'tire','Предупреждение в погоне'},
@@ -68,7 +76,7 @@ M.variables.city=true;M.variables.department=true;M.variables.dispatch_officers=
 for _,r in ipairs({{'risk_confirm_ms','10-66: ожидание решения, мс',1000,90000},{'risk_car_stage_ms','10-66: пауза этапов авто, мс',1000,60000},{'risk_bike_stage_ms','10-66: пауза этапов мото, мс',1000,60000}})do M.numbers[#M.numbers+1]=r end
 M.templates[#M.templates+1]={'busy_report','Рация · временно занят 10-8'}
 M.variables.rank=true
-for _,r in ipairs({{'ground_offer','После осмотра предложить назвать причину'},{'ground_intro','В форме причины сначала представляться'},{'ground_ud','При представлении показывать удостоверение через /ud'},{'ground_miranda','В форме задержания читать полную Миранду'}})do M.booleans[#M.booleans+1]=r end
+for _,r in ipairs({{'ground_offer','Предлагать следующие шаги общения 10-55'},{'ground_intro','В форме причины сначала представляться'},{'ground_ud','При представлении показывать удостоверение через /ud'},{'ground_miranda','В форме задержания читать полную Миранду'}})do M.booleans[#M.booleans+1]=r end
 M.templates[#M.templates+1]={'intro','Представление перед причиной остановки'}
 M.templates[#M.templates+1]={'badge','RP · показать жетон / удостоверение'}
 M.variables.stop_ground=true;M.variables.detention_ground=true;M.variables.ground_article=true
@@ -107,7 +115,7 @@ function M.defaults()
    foot="{local_tag}{unit}, подозреваемый покинул {model}, веду пешую погоню 10-57 FOXTROT в {city}, район {area} ({map_square}), двигаюсь на {direction}, {tac}, Код 3!{armed_text}",
    high_risk="{local_tag}{unit}, провожу остановку повышенного риска 10-66 {vehicle_description}, {occupants_text}, нахожусь в {city}, район {area} ({map_square}), запрашиваю свободные экипажи, Код 3!",
    combat='{local_tag}{unit}, CODE 0! По офицеру открыт огонь! Район {area} ({map_square})! Требуется срочная поддержка всех юнитов!',
-   armed='{local_tag}{unit}, водитель {vehicle_description} вооружён. Район {area} ({map_square}), запрашиваю поддержку, Код 3!',
+   armed='{local_tag}{unit}, {vehicle_description} в районе {area} ({map_square}). Подозреваемые, возможно, вооружены. Запрашиваю поддержку, Код 3.',
    finish=finishTemplate,
    approach_day='подходя к автомобилю, {gender:коснулся|коснулась} ладонью задней левой фары, оставив отпечаток, и {gender:осмотрел|осмотрела} салон.',
    approach_night='достав с пояса тактический фонарик, {gender:коснулся|коснулась} ладонью задней левой фары и {gender:посветил|посветила} лучом в салон автомобиля.',
@@ -126,12 +134,18 @@ function M.defaults()
  d.stop_ground='none';d.stop_branch='none';d.stop_custom='';d.detention_ground='none';d.detention_custom=''
  d.detention_timers=true;d.lawyer_response_seconds=300;d.lawyer_arrival_seconds=600;d.phone_call_seconds=180
  d.ground_offer=true;d.ground_intro=true;d.ground_ud=false;d.ground_miranda=true;d.ground_channel='/s'
- d.finish_offer=true;d.window_offer=true;d.window_interaction_distance=4;d.window_reply_ms=60000;d.departure_distance=8
+ d.finish_offer=true;d.window_offer=true;d.window_interaction_distance=4;d.window_answer_delay_ms=5000;d.window_reply_ms=60000;d.departure_distance=8
+ d.stop_greeting_ud=true;d.armed_offer=true
+ d.swat_reports=true;d.swat_channel='/r'
  d.finish_offer_text='10-55 завершена? Передать 10-99 / Код 4?'
  d.pursuit_after_finish_text='Подозреваемый уезжает? Начать 10-57 VICTOR?'
  d.window_question_offer_text='Вы у окна водителя · Спросить, открыто ли оно?'
  d.window_knock_offer_text='Окно закрыто · Постучаться в водительское окно?'
- d.window_open_offer_text='Представиться и назвать причину 10-55?'
+ d.window_open_offer_text='Назвать причину 10-55?'
+ d.window_answer_text='Игрок сказал, что окно открыто?'
+ d.templates.swat_start='{local_tag}{unit}, SWAT, {patrol_start} в районе {area} ({map_square}).'
+ d.templates.swat_patrol='{local_tag}{unit}, SWAT, {patrol_resume} в районе {area} ({map_square}). Обстановка спокойная.'
+ d.templates.swat_finish='{local_tag}{unit}, SWAT, {patrol_finish} в районе {area} ({map_square}).'
  d.templates.approach_bike_day='{gender:подошёл|подошла} к мотоциклу и {gender:осмотрел|осмотрела} его видимые детали и маркировку.'
  d.templates.approach_bike_night='{gender:достал|достала} тактический фонарь и {gender:осветил|осветила} видимые детали и маркировку мотоцикла.'
  d.templates.stop_order=M.stopOrder..'\n'..stopOrderTail
@@ -155,7 +169,7 @@ function M.defaults()
  d.templates.badge='{gender:указал|указала} рукой на закреплённый на груди полицейский бейдж, демонстрируя его собеседнику.'
  d.templates.explain_stop='{ground_speech}'
  d.ground_speech=require('pa26_bindings').copy(require('pa26_ground_speech').defaults)
- d.templates.documents='Предъявите, пожалуйста, документы для проверки. Основание: {stop_ground}.'
+ d.templates.documents='Предъявите, пожалуйста, паспорт и лицензии для проверки.'
  d.templates.explain_detention='Вы задержаны. Основание: {detention_ground}. {ground_article}.'
  d.templates.miranda=require('pa26_operational').miranda
  d.templates.rights_extra='Вы вправе обжаловать задержание. Основание и защитник разъясняются незамедлительно.\nЗвонок предоставляется до ареста, не более трёх минут, в присутствии сотрудника.\nАдвоката вызываем до ареста: ожидаем ответ пять минут, при ответе — прибытие десять минут.'
@@ -172,9 +186,12 @@ function M.validate(raw)
  local speeches,why=require('pa26_ground_speech').validate(raw.ground_speech);if not speeches then return nil,why end;d.ground_speech=speeches
  for _,r in ipairs(M.booleans)do if raw[r[1]]~=nil then if type(raw[r[1]])~='boolean'then return nil,'Проверьте переключатель Copilot: '..r[2]end;d[r[1]]=raw[r[1]]end end
  for _,r in ipairs(M.numbers)do if raw[r[1]]~=nil then if not shared.integer(raw[r[1]],r[3],r[4])then return nil,'Проверьте значение Copilot: '..r[2]end;d[r[1]]=raw[r[1]]end end
+ if raw.armed_offer==nil and raw.exit_offer==false then d.armed_offer=false end
  if raw.stop_warning_version~=nil and raw.stop_warning_version~=1 then return nil,'Неизвестная версия настроек требований 10-55.'end
  if raw.stop_warning_version==nil and raw.stop_warning_count==3 then d.stop_warning_count=5 end
  for _,r in ipairs(M.texts)do if raw[r[1]]~=nil then local t=shared.text(raw[r[1]],r[3]);if not t or(t==''and r[1]~='select_plate'and r[1]~='stop_custom'and r[1]~='detention_custom')then return nil,'Заполните Copilot: '..r[2]end;d[r[1]]=t end end
+ d.swat_channel=raw.swat_channel or d.swat_channel
+ if not({['/r']=true,['/f']=true,['/d']=true})[d.swat_channel]then return nil,'Выберите канал докладов SWAT.'end
  d.ground_channel=raw.ground_channel or d.ground_channel
  if d.ground_channel~=''and d.ground_channel~='/s'then return nil,'Для речи формы выберите обычный чат или /s.'end
  local grounds=require 'pa26_operational'
@@ -202,6 +219,7 @@ function M.validate(raw)
   if raw.templates.explain_stop=='Причина остановки: {stop_ground}. Основание: {ground_article}.'then d.templates.explain_stop='{ground_speech}'end
   local old={stop_order='Водитель автомобиля {model}, немедленно остановитесь у обочины и заглушите двигатель!',tire='Водитель автомобиля {model}, немедленно остановитесь у обочины! В случае неподчинения будет открыт огонь по колёсам!',return_car='Водитель автомобиля {model}, немедленно вернитесь в салон, заглушите двигатель и держите руки на виду! При неподчинении будет применена сила!'}
   local stock=M.defaults().templates
+  if raw.templates.armed==previousArmed then d.templates.armed=stock.armed end
   for key,value in pairs(old)do if raw.templates[key]==value then d.templates[key]=stock[key]end end
   if raw.stop_warning_version==nil then
    if raw.templates.stop_order==authorSpeech(46)or raw.templates.stop_order=='Водитель {vehicle_type_gen} {model}, цвет: {vehicle_color}, остановитесь у обочины и заглушите двигатель!'then
@@ -217,21 +235,36 @@ function M.validate(raw)
  if raw.radio_templates_version==nil and type(raw.templates)=='table'then
   local stock=M.defaults().templates;for k,old in pairs(legacyRadio)do if raw.templates[k]==old then d.templates[k]=stock[k]end end
  end
- for _,key in ipairs({'robbery_warning','dispatch_confirmation_note','gas_confirmation_note','finish_offer_text','pursuit_after_finish_text','window_question_offer_text','window_knock_offer_text','window_open_offer_text'})do
+ if type(raw.templates)=='table'and raw.templates.documents==previousDocuments then
+  d.templates.documents=M.defaults().templates.documents
+ end
+ if raw.window_open_offer_text==previousStopOffer then d.window_open_offer_text=M.defaults().window_open_offer_text end
+ for _,key in ipairs(M.prompts)do
   local text=core.stripGender(d[key]):gsub('{([a-z_]+)}',function(k)return M.variables[k]and''or'{'end)
   if text:find('[{}]')then return nil,'Неизвестная переменная в подсказке: '..key end
  end
  return d
 end
-for _,r in ipairs({{'finish_offer','Предлагать завершение 10-55 после общения и возвращения / отъезда'},
- {'window_offer','Предлагать вопрос об окне при подходе к водителю'}})do M.booleans[#M.booleans+1]=r end
+M.prompts={'robbery_warning','dispatch_confirmation_note','gas_confirmation_note','finish_offer_text','pursuit_after_finish_text',
+ 'window_question_offer_text','window_knock_offer_text','window_open_offer_text','window_answer_text'}
+M.promptKeys={}
+for _,key in ipairs(M.prompts)do M.promptKeys[key]=true end
+for _,r in ipairs({{'finish_offer','Предлагать завершение 10-55 после причины или проверки документов'},
+ {'window_offer','Предлагать вопрос об окне при подходе к водителю'},
+ {'armed_offer','После осмотра предлагать доклад о возможном оружии'},
+ {'stop_greeting_ud','В шаге представления 10-55 показывать удостоверение через /ud'},
+ {'swat_reports','Показывать отдельные доклады SWAT'}})do M.booleans[#M.booleans+1]=r end
 for _,r in ipairs({{'departure_distance','Перемещение машины для подтверждения отъезда, м',1,100},
- {'window_interaction_distance','Разговор у водителя: расстояние, м',1,10},{'window_reply_ms','Ожидание ответа об окне, мс',1000,300000}})do M.numbers[#M.numbers+1]=r end
+ {'window_interaction_distance','Разговор у водителя: расстояние, м',1,10},
+ {'window_answer_delay_ms','Пауза до окна Да / Нет, мс',1000,60000},
+ {'window_reply_ms','Срок показа окна Да / Нет, мс',1000,300000}})do M.numbers[#M.numbers+1]=r end
 for _,r in ipairs({{'finish_offer_text','Вопрос о завершении 10-55',512},{'pursuit_after_finish_text','Предложение погони после отказа завершать',512},
  {'window_question_offer_text','Предложение спросить об окне',512},{'window_knock_offer_text','Предложение постучаться',512},
- {'window_open_offer_text','Предложение перейти к причине остановки',512}})do M.texts[#M.texts+1]=r end
+ {'window_open_offer_text','Предложение озвучить причину остановки',512},
+ {'window_answer_text','Заголовок окна ответа водителя',240}})do M.texts[#M.texts+1]=r end
 for _,r in ipairs({{'window_question','Вопрос водителю об окне'},{'window_hint','Подсказка ответа об окне'},{'window_knock','Постучаться в окно · RP'}})do M.templates[#M.templates+1]=r end
 M.templates[#M.templates+1]={'patrol_continue','Продолжаю патрулирование · без запуска сеанса'}
+for _,row in ipairs(M.swatReports)do M.templates[#M.templates+1]=row end
 for _,k in ipairs({'stolen_summary','stolen_location','stolen_model','stolen_color','stolen_area','stolen_square'})do M.variables[k]=true end
 M.booleans[#M.booleans+1]={'stolen_enabled','Читать серверные ориентировки об угоне'}
 M.booleans[#M.booleans+1]={'stolen_highlight','Выделять приблизительный район угона на существующей сетке'}

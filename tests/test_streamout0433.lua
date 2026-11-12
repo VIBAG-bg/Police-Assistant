@@ -4,12 +4,13 @@ local function contact(source,limit)
  if limit then for _=2,s.cfg.copilot.stop_warning_count do s.tick(4000);s.send('stop_order')end end
  s.state.inVehicle=false;s.car.distance=3;s.person.distance=2;s.tick()
  check(not cp:observeManualCommand('/ud 38',source));check(cp:observeManualCommand('/ud 37',source));check(not cp.done.explain_stop)
+ check(cp:markStopContact('reasonExplained'))
  return cp,v,s
 end
 local function stream(v,s)s.car=nil;s.unstreamed=true;v:clearTarget('stream out',true);s.tick()end
 for _,source in ipairs({'native','cef','executor'})do
  local cp,v,s=contact(source);local before=cp.life
- stream(v,s);local p=s.has('finish');check(p,'/ud + stream-out on foot must offer finish')
+ stream(v,s);local p=s.has('finish');check(p,'A reason was explained before stream-out')
  check(cp.car.stale);eq(cp.life,before);check(not cp.incident.departed);check(not s.has('pursuit'))
  eq(cp:values().stop_area,'Doherty');eq(cp:values().stop_map_square,'J-6')
  cp:shown(p.token);check(cp:decide(p.token,false));for _=1,12 do s.tick()end
@@ -31,4 +32,4 @@ s.car.x=30;s.car.distance=35;s.tick();check(s.has('pursuit'))
 s.tick();check(s.has('pursuit'),'One stationary sample does not prove a stop')
 s.tick(s.cfg.copilot.stop_ms);check(not s.has('pursuit'),'The offer expires after a confirmed stop')
 cp,v,s=contact('native');s.car.id=43;s.car.handle=101;v.selected=require('pa26_bindings').copy(s.car);cp:tick(s.state,s.now+500)
-check(not s.has('finish'),'Another selected car cannot inherit the old contact');eq(cp.manualUdDone,nil)
+check(not s.has('finish'),'Another selected car cannot inherit the old contact');check(not cp:stopContactStarted())

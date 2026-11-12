@@ -46,8 +46,14 @@ function M.draw(s,ui,data,cb)
  local v=data.copilot and data.copilot.values or{};if f.request.groundCar then ui.text((v.vehicle_color or'')..' '..(v.model or'')..' · только текущий случай')else ui.text('Выбранный человек · только текущая ситуация')end
  if not cb.groundValid(f.request)then ui.text('Случай изменился. Повторите выбор причины для текущего человека; старое ДА не будет использовано.');return end
  local kind=f.request.kind;local cfg=f.cfg
- cfg.ground_intro=common.check(s,ui,'Сначала представиться и показать жетон##ground-intro',cfg.ground_intro)
- if cfg.ground_intro then cfg.ground_ud=common.check(s,ui,'Также показать удостоверение командой /ud##ground-ud',cfg.ground_ud)end
+ local contact=data.copilot or{}
+ local started=f.request.stopIncident and(contact.contactIntroduced or contact.documentsRequested or contact.reasonExplained)
+ if started then
+  ui.text('Продолжаем текущий разговор. Пройденные шаги не повторятся.')
+ else
+  cfg.ground_intro=common.check(s,ui,'Сначала представиться и показать жетон##ground-intro',cfg.ground_intro)
+  if cfg.ground_intro then cfg.ground_ud=common.check(s,ui,'Также показать удостоверение командой /ud##ground-ud',cfg.ground_ud)end
+ end
  if kind=='detention'then
   cfg.ground_miranda=common.check(s,ui,'Зачитать полную Миранду и разъяснение прав##ground-miranda',cfg.ground_miranda)
   if not cfg.ground_miranda then ui.text('Исключайте повтор только если права уже разъяснены в этой сцене. Этот выбор не отменяет обязанность разъяснить права.')end
@@ -115,7 +121,8 @@ function M.draw(s,ui,data,cb)
  local function offer(handoff)
   local p,e=cb.groundOffer(f,ground,handoff);if p then s.vehicleConfirm=p else s:notify(e,'vehicle',false)end
  end
- if s:button(kind=='stop'and'Озвучить причину и запросить документы · ДА/НЕТ##ground-send'or'Озвучить основание и права · ДА/НЕТ##ground-send',ui)then offer()end
+ local sendLabel=kind=='stop'and(f.request.stopIncident and contact.documentsRequested and'Озвучить причину'or'Озвучить причину и запросить документы')or'Озвучить основание и права'
+ if s:button(sendLabel..' · ДА/НЕТ##ground-send',ui)then offer()end
  if kind=='stop'and article and #article.branches>0 and s:button('Озвучить и подготовить штраф##ground-next-fine',ui)then offer('fine')end
  if kind=='detention'and s:button('Озвучить и открыть помощник /su##ground-next-wanted',ui)then offer('wanted')end
  ui.text('Сначала предпросмотр и ваше ДА. Следующая форма появится только после завершения RP; сама штраф или розыск не выдаёт.')

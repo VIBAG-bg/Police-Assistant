@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.46.1')
+script_version('0.46.2')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -66,7 +66,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.46.1' then
+if #missing > 0 or not core or core.VERSION ~= '0.46.2' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -898,6 +898,7 @@ end
 sceneServices.bulletins=require('pa26_stolen_bulletin').new(function()return workspace.library.vehicle.copilot end)
 sceneServices.copilot=require('pa26_copilot').new({vehicle=sceneServices.vehicle,settings=function()return workspace.library.vehicle.copilot end,
     bulletin=function(now)return sceneServices.bulletins:view(now,workspace.library.map_grid)end,
+    position=function()return sceneServices.mapState end,
     profile=function()return workspace.library.profile end,codec=codec,equal=patrolSession.env.equal,driver=sceneServices.readDriver,driverAccount=sceneServices.readDriverAccount,taserActive=function(s)return taser:activeFor(s)end,start=startAutomatic,
     driverSeated=function(car,driver)
         return car and driver and optionalRead('getDriverOfCar',car.handle)==driver.ped
@@ -1037,7 +1038,7 @@ do
         settings=function()return workspace.library.settings.updates end,now=function()return studioClock end,
         encode=workspace.json.encode,decode=workspace.json.decode,
         onInstalled=function(version)
-            if version=='0.46.1'and core.VERSION==version and not workspace.library.settings.applied_author_defaults_0460 then
+            if version=='0.46.2'and core.VERSION==version and not workspace.library.settings.applied_author_defaults_0460 then
                 sceneServices.pendingAuthorUpgrade=true
                 return true
             end
@@ -1186,10 +1187,8 @@ studioCallbacks={
     copilotEditReport=function(p,values)return sceneServices.copilot:editReport(p,values)end,
     stolenClear=function()sceneServices.bulletins:clear();return true end,
     stolenCorrect=function(fields,revision)return sceneServices.bulletins:correct(fields,studioClock,revision)end,
-    copilotWindow=function(answer)
-        if answer=='repeat'then return sceneServices.copilot:repeatWindowQuestion()end
-        return sceneServices.copilot:windowAnswer(answer,true)
-    end,
+    copilotWindow=function(answer)return sceneServices.copilot:windowAnswer(answer)end,
+    copilotContact=function(stage)return sceneServices.copilot:markStopContact(stage)end,
     openGround=function(p)sceneServices.groundInput=bindingModel.copy(p);return true end,
     groundValid=function(p)return sceneServices.copilot:groundContextValid(p,true)end,
     groundSpeech=function(f)
@@ -3015,7 +3014,6 @@ sceneServices.observeMessage=function(text,source,now)
     if fresh then
         if sceneServices.field and workspace.library.field.enabled then sceneServices.field:observe(visible,source,sceneServices.field.now or now)end
         identity:serverMessage(visible);taser:serverMessage(visible);sceneServices.colleagues:observe(visible)
-        if sceneServices.copilot then sceneServices.copilot:observeWindowReply(visible)end
         if sceneServices.bulletins then sceneServices.bulletins:observe(visible,now)end
     end
     for _,filter in ipairs(workspace.library.filters)do if filter.enabled and visible:sub(1,#filter.prefix)==filter.prefix then return false end end
@@ -3023,7 +3021,7 @@ sceneServices.observeMessage=function(text,source,now)
 end
 sceneServices.observeCommand=function(line)
     if sceneServices.custody then sceneServices.custody:observe(line)end
-    if sceneServices.copilot then sceneServices.copilot:observeManualCommand(line,'outgoing')end
+    if sceneServices.copilot then sceneServices.copilot:observeManualCommand(line)end
     sceneServices.colleagues:command(line,studioClock)
     taser:command(line,workspace.executor.queue and workspace.executor.queue.plan.manualCommand~=nil);patrolEvents:command(line,'Введено вручную · попытка',nil)
     workspace.operations:observe(line,'manual',nil,'observed')

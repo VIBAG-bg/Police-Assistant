@@ -51,6 +51,14 @@ function M.quick(s,ui,callbacks)
   end,true)
   ui.text('После /cuff ID и /arrest ID PA также предлагает эти доклады автоматически.')
  end
+ local cfg=s.lib.vehicle.copilot
+ if cfg.swat_reports then
+  s:settingsHeading(ui,'Доклады SWAT')
+  local reports={}
+  for _,row in ipairs(prefs.swatReports)do reports[#reports+1]={row[1],row[2]..'##copilot-quick-'..row[1]}end
+  groups.buttons(s,ui,reports,send,true)
+  ui.text('Передайте статус группы в '..cfg.swat_channel..' после предпросмотра. Сеанс обычного патруля не меняется.')
+ end
 end
 function M.dispatch(s,ui,callbacks)
  s:settingsHeading(ui,'Спецвызовы')
@@ -102,7 +110,7 @@ function M.draw(s,ui,data,callbacks)
   if v.phase=='10-55'then ui.text(v.stopWarningStatus or'')end
   local startLabel=v.phase=='10-55'and'Повторить требование'or'Начать 10-55'
   local primary={{'stop_order',startLabel..'##copilot-stop_order'},{'pursuit','10-57 · Начать погоню##copilot-pursuit'},
-   {'explain_stop','Причина остановки##copilot-explain_stop','Выберите основание 10-55 и запрос документов. Реплики отправляются только после подтверждения. Причина розыска и основание задержания выбираются отдельно.'},{'finish','10-99 · Завершить##copilot-finish'}}
+   {'explain_stop','Причина остановки##copilot-explain_stop','Выберите и озвучьте причину 10-55. Copilot продолжит с текущего шага. Отправка после подтверждения.'},{'finish','10-99 · Завершить##copilot-finish'}}
   if v.phase=='10-55'and v.stopWarnings>=v.stopWarningLimit then table.remove(primary,1)end
   groups.buttons(s,ui,primary,function(action)
    if action=='stop_order'or action=='pursuit'then
@@ -147,9 +155,51 @@ function M.draw(s,ui,data,callbacks)
    if s:button('Убрать ориентировку и выделение##stolen-clear',ui)then callbacks.stolenClear();s.stolenDraft=nil end
   end
   if v.windowActive then
-   ui.text(v.windowAwait and'Окно: ожидается ответ текущего водителя.'or v.windowReply and('Окно: '..(v.windowReply=='open'and'открыто'or'закрыто')..' · наблюдение / ваша отметка.')or'Окно: ответа нет. Можно продолжать общение вручную.')
-   for _,r in ipairs({{'repeat','Снова спросить об окне · предпросмотр'},{'open','Водитель открыл окно · моя отметка'},{'closed','Водитель не открыл окно · моя отметка'},{'skip','Пропустить вопрос об окне'}})do
-    if s:button(r[2]..'##window-manual-'..r[1],ui)then local ok,why=callbacks.copilotWindow(r[1]);if not ok then s:notify(why or'Нужны текущий водитель и активная остановка.','vehicle',false)end end
+   s:settingsHeading(ui,'Разговор с водителем')
+   if v.windowAwait then
+    ui.text(v.windowReady and'Отметьте ответ водителя об окне.'or'Вопрос об окне передан. Ожидаем ответ водителя.')
+    if v.windowReady then
+     groups.buttons(s,ui,{{'open','Да · окно открыто##window-open'},{'closed','Нет · окно закрыто##window-closed'}},function(answer)
+      local ok,why=callbacks.copilotWindow(answer)
+      if not ok then s:notify(why,'vehicle',false)end
+     end,true)
+    end
+    if s:button('Пропустить вопрос об окне##window-skip',ui)then
+     local ok,why=callbacks.copilotWindow('skip')
+     if not ok then s:notify(why,'vehicle',false)end
+    end
+   end
+   local stage=v.documentsChecked and'Документы проверены' or v.reasonExplained and'Причина озвучена' or
+    v.documentsRequested and'Паспорт и лицензии запрошены' or v.contactIntroduced and'Представление завершено' or
+    v.windowReply=='open'and'Окно открыто' or v.windowReply=='closed'and'Окно закрыто'
+   if stage then ui.text(stage..'.')end
+   if v.contactAvailable then
+    local actions={}
+    if not v.contactIntroduced and not v.documentsRequested and not v.reasonExplained then
+     actions[#actions+1]={'greet_stop','Представиться и показать удостоверение##copilot-greet-stop'}
+     if not v.windowAwait and v.windowVehicle then actions[#actions+1]={'window_question','Спросить об окне##copilot-window-question'}end
+    end
+    if not v.documentsRequested then actions[#actions+1]={'documents','Запросить паспорт и лицензии##copilot-request-documents'}end
+    groups.buttons(s,ui,actions,offer,true)
+    local marks={}
+    if not v.contactIntroduced and not v.documentsRequested and not v.reasonExplained then
+     marks[#marks+1]={'introduced','Уже представился и показал удостоверение##copilot-mark-intro'}
+    end
+    if not v.documentsRequested then marks[#marks+1]={'documentsRequested','Уже запросил документы##copilot-mark-request'}end
+    if not v.documentsChecked then marks[#marks+1]={'documentsChecked','Документы проверены##copilot-mark-documents'}end
+    if not v.reasonExplained then marks[#marks+1]={'reasonExplained','Причину уже объяснил##copilot-mark-reason'}end
+    if #marks>0 then
+     if s:button((s.copilotContactMarks and'Скрыть отметки'or'Отметить выполненный шаг')..'##copilot-contact-marks',ui)then
+      s.copilotContactMarks=not s.copilotContactMarks
+     end
+     if s.copilotContactMarks then
+      ui.text('Отмечайте шаги, которые уже выполнили сами. Эти кнопки не пишут в чат.')
+      groups.buttons(s,ui,marks,function(mark)
+       local ok,why=callbacks.copilotContact(mark)
+       if not ok then s:notify(why,'vehicle',false)end
+      end,true)
+     end
+    end
    end
   end
   if s:button((s.fastPtChooseId and'Скрыть выбор человека'or'Выбрать человека по ID для /pt')..'##copilot-pt-manual',ui)then s.fastPtChooseId=not s.fastPtChooseId end
@@ -213,7 +263,10 @@ function M.draw(s,ui,data,callbacks)
    if r[1]:match('^ground_')then cfg[r[1]]=require('pa26_procedure_window').check(s,ui,r[2]..'##copilot-setting-'..r[1],cfg[r[1]])
    else cfg[r[1]]=s:check(r[2]..'##copilot-setting-'..r[1],cfg[r[1]])end
   end
-  cfg.ground_channel=s:choice('Речь в формах основания##copilot-ground-channel',cfg.ground_channel or'/s',{{'','Обычный чат'},{'/s','Речь /s'}},ui)
+  cfg.ground_channel=s:choice('Канал речи при общении и в формах##copilot-ground-channel',cfg.ground_channel or'/s',{{'','Обычный чат'},{'/s','Речь /s'}},ui)
+  cfg.swat_channel=s:choice('Канал докладов SWAT##copilot-swat-channel',cfg.swat_channel,require('pa26_server_commands').radioChoices,ui)
+  ui.text('10-55: после вопроса /do Copilot ждёт вашу отметку Да / Нет. Задержка и срок показа настраиваются ниже.')
+  ui.text('Доклад о возможном оружии предлагается после RP-осмотра транспорта, если оружие у водителя ещё видно. Канал берётся из настроек докладов Copilot. Тексты докладов и реплики общения доступны в списке реплик.')
   for _,r in ipairs(prefs.numbers)do
    ui.text(r[2]);im.PushItemWidth(-1)
    local n=im.new.int(cfg[r[1]]);if im.InputInt('##copilot-setting-'..r[1],n)then cfg[r[1]]=n[0]end;im.PopItemWidth()
@@ -224,7 +277,7 @@ function M.draw(s,ui,data,callbacks)
   local delta=im.new.float(cfg.stationary_delta);if im.SliderFloat('##copilot-stationary',delta,.05,5)then cfg.stationary_delta=delta[0]end;im.PopItemWidth()
   for _,r in ipairs(prefs.texts)do
    cfg[r[1]]=s:field(r[2]..'##copilot-text-'..r[1],'copilot:text:'..r[1],cfg[r[1]],r[3]*2+1,true,64)
-   if({robbery_warning=true,dispatch_confirmation_note=true,gas_confirmation_note=true,finish_offer_text=true,pursuit_after_finish_text=true,window_question_offer_text=true,window_knock_offer_text=true,window_open_offer_text=true})[r[1]]then
+   if prefs.promptKeys[r[1]]then
     local preview,why=callbacks.copilotPreview(r[1],cfg);ui.text('Предпросмотр: '..tostring(preview or why))
    end
   end
@@ -239,6 +292,7 @@ function M.draw(s,ui,data,callbacks)
   end
   cfg.templates[key]=s:field('Реплика##copilot-rp','copilot:rp:'..key,cfg.templates[key],8193,true,140)
   ui.text('Для RP розыска и вызовов — отдельные строки /me, /do, /try или /todo. У вызовов есть варианты в машине и пешком. Для докладов и требования на АЗС — текст без /команды; канал добавляется отдельно. Род: {gender:передал|передала}.')
+  ui.text('SWAT: {unit}, {area}, {map_square}, {patrol_start}, {patrol_resume}, {patrol_finish}.')
   ui.text('Переменные: {unit}, {station}, {crew}, {vehicle_type}, {vehicle_type_gen}, {model}, {vehicle_id}, {vehicle_color}, {vehicle_description}, {vehicle_plate}, {occupants_text}, {driver_id}, {driver_name}, {city}, {area}, {map_square}, {direction}, {tac}, {stop_outcome}, {armed_text}, {my_firstname}. {patrol_return} добавляет настроенную фразу о продолжении, пока сеанс патруля активен. Мегафон: {officer_intro} собирает звание, отдел и фамилию из профиля. Доступны отдельно {rank}, {department}, {my_lastname}.')
   local text,err=callbacks.copilotPreview(key,cfg);ui.text('Предпросмотр: '..tostring(text or err))
   ui.text('Состав на ограбление: порог подсказки по умолчанию 2 (п. 3.1 / 10.4). В предупреждении доступны {dispatch_officers}, {robbery_min_officers}. Число по радару/салону — оценка; реальный совместный выезд подтверждаете вы. Для всех подсказок доступны остальные переменные Copilot.')

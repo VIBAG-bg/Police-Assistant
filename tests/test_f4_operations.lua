@@ -187,3 +187,62 @@ for _,d in ipairs({{1366,768},{1920,1080},{2560,1440}})do
  local min=geometry.bounds(d[1],d[2],'assist')
  eq(min.minW,420);eq(min.minH,380)
 end
+
+-- Launcher-facing chat events cannot answer the window question. The actual notice routes Y into the next preview.
+do
+ local g=game();local c=g.copilot
+ g.workspace.library.vehicle.copilot.stationary_offer=false
+ hold(g,0x37,0x12)
+ local start=assert(c.offers[1]);c:shown(start.token);check(c:decide(start.token,true));run(g)
+ check(not c:propose('armed'),'No weapon report before RP while in the cruiser')
+ g.vehicle=false;g.distance=2
+ getCarCoordinates=function(h)return 0,h==20 and 3 or 0,0 end
+ g.step(700)
+ check(not c:propose('armed'),'Exiting and approaching do not trigger a weapon report')
+ local function dispatch(action)
+  local p,why=c:propose(action);check(p,why);check(c:accept(p))
+  for _=1,12 do
+   g.step(900)
+   if c.done[action] then return end
+  end
+  error(action..' did not complete: '..table.concat(g.logs,' | '))
+ end
+ dispatch('approach');g.step()
+ local armed
+ for _,p in ipairs(c.offers)do if p.action=='armed'then armed=p end end
+ check(armed and armed.label:find('Возможно вооружены',1,true))
+ check(table.concat(armed.prepared.lines,' '):find('возможно, вооружены',1,true))
+ check(g.notifications.active and g.notifications.active.token==armed.token)
+ c:shown(armed.token);check(c:decide(armed.token,false))
+ dispatch('window_question')
+ local q=assert(c.windowAwait)
+ g.events.onServerMessage(-1,codec.encode('Окно открыто. ( '..g.name..' )'))
+ local sent=#g.sent
+ local age=assert(core.elapsed(c.now,q.at))
+ g.step(4999-age);check(not c:windowCandidate());check(not c.windowReply)
+ g.step(1)
+ local notice=assert(g.notifications.active)
+ eq(notice.token,q.token);eq(notice.title,'Игрок сказал, что окно открыто?')
+ check(g.notifications.buttons.yes and g.notifications.buttons.no)
+ g.step(150);hold(g,0x59)
+ eq(c.windowReply,'open');eq(#g.sent,sent,'The window answer only presents the greeting')
+ check(not c.incident.introduced)
+ dispatch('greet_stop');eq(g.sent[#g.sent].line,'/ud 37')
+ check(c.incident.introduced)
+ for _,offer in ipairs(c.offers)do check(offer.action~='finish')end
+ onScriptTerminate(g.script)
+end
+
+-- The F4 report uses the same preview and executor with its independent radio channel.
+do
+ local g=game();local ws=g.workspace.studio
+ g.workspace.library.vehicle.copilot.swat_channel='/f'
+ hold(g,0x73);ws.assistPage='patrol';ws.assistPatrolPage='reports';g.render()
+ click(g,'SWAT · Обстановка спокойная##copilot-quick-swat_patrol')
+ local p=assert(ws.vehicleConfirm);eq(p.action,'swat_patrol');eq(#g.sent,0)
+ local reportText=table.concat(p.prepared.lines,' ')
+ check(reportText:find('/f ',1,true));check(reportText:find('Обстановка спокойная.',1,true))
+ click(g,'ДА##confirm-yes');run(g)
+ eq(#g.sent,#p.prepared.lines);check(not g.copilot.phase)
+ onScriptTerminate(g.script)
+end
