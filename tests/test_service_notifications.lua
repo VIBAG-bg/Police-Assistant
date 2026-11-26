@@ -17,7 +17,7 @@ local font={CalcTextSizeA=function(_,size,_,wrap,text)
     local width=math.min(wrap,#text*size*.3);return {x=width,y=size*math.max(1,math.ceil(#text*size*.3/wrap))}
 end}
 local io={DisplaySize={x=1280,y=720},MousePos={x=0,y=0}}
-local list={AddRectFilled=function()end,AddTextFontPtr=function()end}
+local list={AddRectFilled=function()end,AddTextFontPtr=function()end,AddRect=function()end}
 local clicked=false
 local im={GetIO=function()return io end,GetFont=function()return font end,GetForegroundDrawList=function()return list end,
     ImVec2=function(x,y)return{x=x,y=y}end,ImVec4=function(...)return{...}end,ColorConvertFloat4ToU32=function(v)return v end,

@@ -1,5 +1,5 @@
 local model=require 'pa26_bindings';local users=require 'pa26_user_files';local core=require 'pa26_core'
-local M={MAX_BYTES=1048576,protected={profile=true,partners=true,next_partner_id=true,wanted_reminders=true,filters=true}}
+local M={MAX_BYTES=1048576,protected={profile=true,profile_presets=true,partners=true,next_partner_id=true,wanted_reminders=true,filters=true}}
 function M.equal(a,b)
  if type(a)~=type(b)then return false end;if type(a)~='table'then return a==b end
  for k,v in pairs(a)do if not M.equal(v,b[k])then return false end end
@@ -33,6 +33,7 @@ function M.prepare(kind,payload,lib,cfg)
   nextLib.assist.history=model.copy(lib.assist.history);nextLib.settings.updates=model.copy(lib.settings.updates);nextLib.settings.wheel_car_classic=model.copy(lib.settings.wheel_car_classic)
   for _,key in ipairs({'wheel_order','wheel_car_order'})do nextLib.settings[key]=require('pa26_author_merge').rebaseOrder(nextLib.settings[key],lib)end
   nextLib.settings.cef_profile_updates=lib.settings.cef_profile_updates
+  nextLib.settings.theme=lib.settings.theme
   nextLib.settings.applied_author_defaults_0460=lib.settings.applied_author_defaults_0460
   nextCfg=model.copy(p.config);nextCfg.main.demo_mode=cfg.main.demo_mode
  else return nil,'Неверный вид набора.'end

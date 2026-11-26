@@ -9,7 +9,9 @@ local function toggle(s,label)s.toggle=label;s.render();eq(s.toggle,nil,'Not vis
 local function edit(s,values)s.edits=values;s.render();for k in pairs(s.edits)do error('Not visible input: '..k)end;s.edits={};healthy(s)end
 local function open(s,page)
     s.commands.pa26();s.render();s.page('addons');click(s,'Открыть быстрое окно помощников (F4)##assist-open')
-    if page=='megaphone'then click(s,'Мегафон##assist-tabsmegaphone')
+    if page=='megaphone'then
+        click(s,'Мегафон##assist-tabsmegaphone')
+        check(table.concat(s.drawnText,'\n'):find('«Контакт и 10-55 → Мегафон»',1,true))
     else
         click(s,'Дополнительно##assist-tabsmore')
         click(s,({evidence='Фиксация',training='Обучение'})[page]..'##assist-more'..page)

@@ -4,6 +4,7 @@ local core = require 'pa26_core'
 local bit = require 'bit'
 local icons = require 'pa26_icons'
 local geometry = require 'pa26_geometry'
+local themes = require 'pa26_theme'
 local M = {}
 local Menu = {}
 Menu.__index = Menu
@@ -106,7 +107,7 @@ function Menu:resizeWindow(imgui,ui,key)
                     or (h[6]~=0 and imgui.MouseCursor.ResizeEW or imgui.MouseCursor.ResizeNS)
                 imgui.SetMouseCursor(shape)
                 local a,b=imgui.GetItemRectMin(),imgui.GetItemRectMax()
-                imgui.GetWindowDrawList():AddRectFilled(a,b,imgui.ColorConvertFloat4ToU32(imgui.ImVec4(.23,.60,.85,.5)),3)
+                imgui.GetWindowDrawList():AddRectFilled(a,b,themes.u32(imgui,(ui.theme or themes.get(self.theme)).wheelAccent,.5),3)
             end
             if active and core.finite(io.MouseDelta.x) and core.finite(io.MouseDelta.y) then
                 local newW=clamp(width+h[6]*io.MouseDelta.x,bounds.minW,bounds.maxW)
@@ -198,9 +199,9 @@ function M.labelLayout(font,fontSize,width,text)
     labelOrder[#labelOrder+1]=key;labelCache[key]=result
     return result
 end
-function M.drawCenteredLabel(imgui,font,fontSize,first,width,height,layout)
+function M.drawCenteredLabel(imgui,font,fontSize,first,width,height,layout,tint)
     local top=first.y+(height-layout.height)/2
-    local tint=imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1,1,1,1))
+    tint=tint or imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1,1,1,1))
     for n,line in ipairs(layout.lines) do
         imgui.GetWindowDrawList():AddTextFontPtr(font,fontSize,
             imgui.ImVec2(first.x+(width-line.width)/2,top+(n-1)*fontSize),tint,line.text,nil,0)
@@ -283,7 +284,7 @@ function M.confirmationBody(im,ui,layout,spec,extra)
     im.PushFont(layout.titleFont);ui.push(function()im.PopFont()end)
     if layout.titleGutter>0 then
         local p=im.GetCursorScreenPos()
-        icons.draw(im,spec.icon,p.x,p.y+math.max(0,(im.GetFontSize()-16)/2),16,spec.iconTone or'info')
+        icons.draw(im,spec.icon,p.x,p.y+math.max(0,(im.GetFontSize()-16)/2),16,nil,nil,nil,icons.color(ui.theme,spec.iconTone or'info'))
         im.SetCursorPosX(im.GetCursorPosX()+layout.titleGutter)
     end
     ui.text(spec.title);ui.finish()
@@ -301,8 +302,20 @@ function M.confirmationBody(im,ui,layout,spec,extra)
     im.Dummy(im.ImVec2(0,0))
 end
 
+function M.pushButtonTone(im,ui,tone)
+    if tone~='primary' and tone~='danger' then return false end
+    local p=ui.theme or themes.get()
+    local key=tone=='primary'and'btnPrimary'or'btnDanger'
+    im.PushStyleColor(im.Col.Button,themes.vec(im,p[key]))
+    im.PushStyleColor(im.Col.ButtonHovered,themes.vec(im,p[key..'Hover']))
+    im.PushStyleColor(im.Col.ButtonActive,themes.vec(im,p[key..'Active']))
+    ui.push(function()im.PopStyleColor(3)end)
+    return true
+end
+
 -- Native Button clips single-line text. Draw the complete label ourselves.
-function M.fittedButton(imgui,ui,label,size,font)
+function M.fittedButton(imgui,ui,label,size,font,tone)
+    local styled=M.pushButtonTone(imgui,ui,tone)
     if font then imgui.PushFont(font); ui.push(function() imgui.PopFont() end) end
     local current=imgui.GetFont(); local fontSize=imgui.GetFontSize()
     local visible=label:match('^(.-)##') or label
@@ -322,12 +335,60 @@ function M.fittedButton(imgui,ui,label,size,font)
     local clicked=imgui.Button(label,imgui.ImVec2(width,height)); ui.finish()
     local first=imgui.GetItemRectMin()
     if decorated then
+        local iconTone=visible:match('^НЕТ')and'danger'or visible:match('^ДА')and'safe'or'normal'
         icons.draw(imgui,name,first.x+12,first.y+(height-16)/2,16,
-            visible:match('^НЕТ')and'danger'or visible:match('^ДА')and'safe'or'normal')
+            nil,nil,nil,icons.color(ui.theme,iconTone))
     end
     M.drawCenteredLabel(imgui,current,fontSize,imgui.ImVec2(first.x+gutter,first.y),width-gutter,height,layout)
     if font then ui.finish() end
+    if styled then ui.finish() end
     return clicked
+end
+
+local statusRoles={safe='statusSafe',warn='statusWarn',alert='statusAlert',muted='statusMuted'}
+function M.statusPill(im,ui,text,tone,font)
+    local p=ui.theme or themes.get()
+    local active=p[statusRoles[tone] or 'statusMuted']
+    if font then im.PushFont(font);ui.push(function()im.PopFont()end)end
+    local current=im.GetFont();local size=im.GetFontSize()
+    local layout=M.labelLayout(current,size,math.max(1,im.GetContentRegionAvail().x-18),text)
+    local width=18
+    for _,line in ipairs(layout.lines)do width=math.max(width,line.width+18)end
+    local at=im.GetCursorScreenPos();local vec=im.ImVec2
+    local list=im.GetWindowDrawList()
+    local pad=2
+    local first,last=vec(at.x,at.y-pad),vec(at.x+width,at.y+layout.height+pad)
+    list:AddRectFilled(first,last,themes.u32(im,active,.18),7)
+    list:AddRect(first,last,themes.u32(im,active,.56),7)
+    M.drawCenteredLabel(im,current,size,at,width,layout.height,layout,themes.u32(im,active))
+    im.Dummy(vec(width,layout.height))
+    if font then ui.finish()end
+end
+
+-- Independent splitter allows legacy ImGui Columns inside the card as well.
+local cardSplitters=setmetatable({},{__mode='k'})
+function M.sectionCard(im,ui,body)
+    if not im.ImDrawListSplitter or not im.BeginGroup then return body() end
+    local splitter=cardSplitters[im]
+    if not splitter then splitter=im.ImDrawListSplitter();cardSplitters[im]=splitter end
+    local list=im.GetWindowDrawList();local p=ui.theme or themes.get()
+    local at=im.GetCursorScreenPos();local width=im.GetContentRegionAvail().x
+    local clipMin,clipMax=list:GetClipRectMin(),list:GetClipRectMax()
+    local left,right=math.max(at.x-12,clipMin.x),math.min(at.x+width+12,clipMax.x)
+    splitter:Split(list,2)
+    ui.push(function()splitter:Merge(list)end)
+    splitter:SetCurrentChannel(list,1)
+    im.BeginGroup();ui.push(function()im.EndGroup()end)
+    im.Dummy(im.ImVec2(0,12))
+    body()
+    im.Dummy(im.ImVec2(0,12))
+    ui.finish()
+    local bottom=im.GetItemRectMax().y
+    splitter:SetCurrentChannel(list,0)
+    local first,last=im.ImVec2(left,at.y),im.ImVec2(right,bottom)
+    list:AddRectFilled(first,last,themes.u32(im,p.cardBg),10)
+    list:AddRect(first,last,themes.u32(im,p.border),10)
+    ui.finish()
 end
 
 -- Small sets are visible choices. Large catalogues keep an explicit, searchable
@@ -371,7 +432,8 @@ function M.choiceControl(im,ui,id,label,value,choices,state,options)
         for i,v in ipairs(choices)do
             if (i-1)%layout.columns~=0 then im.SameLine(0,8)end
             local selected=v[1]==value
-            im.PushStyleColor(im.Col.Button,im.ImVec4(selected and .08 or .10,selected and .45 or .23,selected and .63 or .34,selected and .98 or .88));ui.push(function()im.PopStyleColor(1)end)
+            local p=ui.theme or themes.get()
+            im.PushStyleColor(im.Col.Button,themes.vec(im,selected and p.btnPrimary or p.btnSecondary));ui.push(function()im.PopStyleColor(1)end)
             if M.fittedButton(im,ui,clean(v[3]or v[2])..id..tostring(v[1]),
                 im.ImVec2(layout.width,layout.heights[math.ceil(i/layout.columns)]),font)then out=v[1]end
             ui.finish()
@@ -477,7 +539,7 @@ function Menu:drawAsset(imgui, key, width, maxHeight)
         if type(draw.AddImageRounded) == 'function' then
             draw:AddImageRounded(texture, position, corner, imgui.ImVec2(0, 0), imgui.ImVec2(1, 1),
                 imgui.ColorConvertFloat4ToU32(imgui.ImVec4(1, 1, 1, 1)), rounding)
-            local border = imgui.ImVec4(.19, .37, .53, .8)
+            local border = themes.vec(imgui, themes.get(self.theme).border)
             draw:AddRect(position, corner,
                 imgui.ColorConvertFloat4ToU32(border), rounding)
             imgui.Dummy(imgui.ImVec2(drawWidth, drawHeight))
@@ -508,34 +570,24 @@ end
 local function color(imgui, r, g, b, a) return imgui.ImVec4(r, g, b, a or 1) end
 
 function Menu:pushTheme(imgui, ui)
-    local colors = {
-        {imgui.Col.WindowBg, .045, .075, .115, self.opacity or .86},
-        {imgui.Col.ChildBg, .070, .112, .173, .35},
-        {imgui.Col.Text, 1, 1, 1, 1},
-        {imgui.Col.TextDisabled, .73, .81, .88, 1},
-        {imgui.Col.Border, .24, .38, .50, .42},
-        {imgui.Col.FrameBg, .09, .15, .22, .85},
-        {imgui.Col.FrameBgHovered, .12, .23, .34, 1},
-        {imgui.Col.FrameBgActive, .13, .29, .44, 1},
-        {imgui.Col.Button, .10, .25, .31, .94},
-        {imgui.Col.ButtonHovered, .13, .37, .43, 1},
-        {imgui.Col.ButtonActive, .12, .44, .49, 1},
-        {imgui.Col.Header, .11, .35, .56, 1},
-        {imgui.Col.HeaderHovered, .13, .43, .66, 1},
-        {imgui.Col.HeaderActive, .10, .40, .64, 1},
-        {imgui.Col.CheckMark, .23, .76, .92, 1},
-    }
-    if imgui.Col.TitleBg then colors[#colors+1]={imgui.Col.TitleBg,.07,.19,.30,1} end
-    if imgui.Col.TitleBgActive then colors[#colors+1]={imgui.Col.TitleBgActive,.09,.29,.46,1} end
-    for _, c in ipairs(colors) do
-        imgui.PushStyleColor(c[1], color(imgui, c[2], c[3], c[4], c[5]))
-        ui.push(function() imgui.PopStyleColor(1) end)
+    local p=themes.get(self.theme);ui.theme=p
+    local pushed=0
+    for enum,role in pairs(M.themeColors)do
+        local index=imgui.Col[enum]
+        if index~=nil then
+            imgui.PushStyleColor(index,themes.vec(imgui,p[role],enum=='WindowBg'and self.opacity or nil))
+            pushed=pushed+1
+        end
     end
-    for _, entry in ipairs({{imgui.StyleVar.WindowRounding, 18}, {imgui.StyleVar.FrameRounding, 10},
-        {imgui.StyleVar.ChildRounding, 14}, {imgui.StyleVar.WindowBorderSize, 1}}) do
-        imgui.PushStyleVarFloat(entry[1], entry[2])
-        ui.push(function() imgui.PopStyleVar(1) end)
+    local colorCount=pushed
+    ui.push(function()imgui.PopStyleColor(colorCount)end)
+    pushed=0
+    for enum,value in pairs(M.themeVars)do
+        local index=imgui.StyleVar[enum]
+        if index~=nil then imgui.PushStyleVarFloat(index,value);pushed=pushed+1 end
     end
+    local floats=pushed
+    ui.push(function()imgui.PopStyleVar(floats)end)
     for _, entry in ipairs({{imgui.StyleVar.WindowPadding, 0, 0},
         {imgui.StyleVar.FramePadding, 14, self.compact and 6 or 10}, {imgui.StyleVar.ItemSpacing, 12, self.compact and 6 or 10},
         {imgui.StyleVar.ButtonTextAlign, .5, .5}}) do
@@ -543,6 +595,19 @@ function Menu:pushTheme(imgui, ui)
         ui.push(function() imgui.PopStyleVar(1) end)
     end
 end
+
+M.themeColors={
+    WindowBg='windowBg',ChildBg='childBg',Text='text',TextDisabled='textMuted',Border='border',
+    FrameBg='frameBg',FrameBgHovered='frameHovered',FrameBgActive='frameActive',
+    Button='btnSecondary',ButtonHovered='btnSecondaryHover',ButtonActive='btnSecondaryActive',
+    Header='btnPrimary',HeaderHovered='btnPrimaryHover',HeaderActive='btnPrimaryActive',
+    CheckMark='checkMark',TitleBg='headerBg',TitleBgActive='btnPrimary',
+    ScrollbarBg='scrollbarBg',ScrollbarGrab='scrollbarGrab',ScrollbarGrabHovered='scrollbarGrabHovered',
+    ScrollbarGrabActive='scrollbarGrabActive',SliderGrab='sliderGrab',SliderGrabActive='sliderGrabActive',
+    PopupBg='popupBg',Separator='separator',
+}
+M.themeVars={WindowRounding=18,FrameRounding=10,ChildRounding=14,WindowBorderSize=1,
+    GrabRounding=6,ScrollbarRounding=8,ScrollbarSize=12,PopupRounding=10}
 
 local function child(imgui, ui, name, width, height, body, transparent, flags, padding)
     padding = padding == nil and 16 or padding
@@ -574,7 +639,7 @@ local function withFont(imgui, ui, font, body)
 end
 
 local function muted(imgui, ui, value)
-    imgui.PushStyleColor(imgui.Col.Text, color(imgui, .74, .82, .90, 1))
+    imgui.PushStyleColor(imgui.Col.Text, themes.vec(imgui,(ui.theme or themes.get()).textMuted))
     ui.push(function() imgui.PopStyleColor(1) end)
     ui.text(value)
     ui.finish()
@@ -584,8 +649,8 @@ local function heading(imgui, ui, value, font)
     withFont(imgui, ui, font, function() ui.text(value) end)
 end
 
-local function button(imgui, ui, label, size, font)
-    return M.fittedButton(imgui,ui,label,size,font)
+local function button(imgui, ui, label, size, font,tone)
+    return M.fittedButton(imgui,ui,label,size,font,tone)
 end
 
 function M.referenceSwitchLayout(layout,font,titleWidth)
@@ -603,16 +668,17 @@ end
 
 function Menu:referenceSwitch(imgui,ui,box,font)
     local vec=imgui.ImVec2
+    local palette=ui.theme or themes.get(self.theme)
     imgui.SetCursorPos(vec(box.x,box.y))
     local origin=imgui.GetCursorScreenPos()
     imgui.GetWindowDrawList():AddRectFilled(origin,vec(origin.x+box.w,origin.y+box.h),
-        imgui.ColorConvertFloat4ToU32(color(imgui,.04,.12,.19,.90)),box.h/2)
+        themes.u32(imgui,palette.windowBg,.90),box.h/2)
     imgui.PushStyleVarFloat(imgui.StyleVar.FrameRounding,(box.h-6)/2)
     ui.push(function()imgui.PopStyleVar(1)end)
     local width=(box.w-8)/2
     for index,entry in ipairs({{'Памятки',false,'notes'},{'Подсказки',true,'guide'}})do
         local active=(self.referenceOpen==true)==entry[2]
-        imgui.PushStyleColor(imgui.Col.Button,active and color(imgui,.09,.43,.62,.96)or color(imgui,0,0,0,0))
+        imgui.PushStyleColor(imgui.Col.Button,themes.vec(imgui,palette.btnPrimary,active and .96 or 0))
         ui.push(function()imgui.PopStyleColor(1)end)
         imgui.SetCursorPos(vec(box.x+3+(index-1)*(width+2),box.y+3))
         if button(imgui,ui,entry[1]..'##reference-'..entry[3],vec(width,box.h-6),font)then
@@ -632,7 +698,7 @@ function M.closeButton(imgui,ui,id,size)
     local x,y=(a.x+b.x)/2,(a.y+b.y)/2
     local radius=size*.155
     local draw=imgui.GetWindowDrawList()
-    local tint=imgui.ColorConvertFloat4ToU32(imgui.ImVec4(.86,.94,1,1))
+    local tint=themes.u32(imgui,(ui.theme or themes.get()).text)
     draw:AddLine(imgui.ImVec2(x-radius,y-radius),imgui.ImVec2(x+radius,y+radius),tint,2)
     draw:AddLine(imgui.ImVec2(x+radius,y-radius),imgui.ImVec2(x-radius,y+radius),tint,2)
     return clicked
@@ -640,8 +706,9 @@ end
 
 function M.starButton(im,ui,id,selected,size)
     size=size or 38
+    local palette=ui.theme or themes.get()
     im.PushStyleVarFloat(im.StyleVar.FrameRounding,11);ui.push(function()im.PopStyleVar(1)end)
-    im.PushStyleColor(im.Col.Button,selected and im.ImVec4(.32,.25,.09,.86)or im.ImVec4(.09,.21,.31,.84));ui.push(function()im.PopStyleColor(1)end)
+    im.PushStyleColor(im.Col.Button,selected and im.ImVec4(.32,.25,.09,.86)or themes.vec(im,palette.btnSecondary));ui.push(function()im.PopStyleColor(1)end)
     local clicked=im.Button('##'..id,im.ImVec2(size,size));ui.finish();ui.finish()
     local a,b=im.GetItemRectMin(),im.GetItemRectMax();local x,y=(a.x+b.x)/2,(a.y+b.y)/2
     local points={};local radius=size*.28;local draw=im.GetWindowDrawList()
@@ -657,6 +724,7 @@ function M.starButton(im,ui,id,selected,size)
 end
 local function selectorRow(imgui, items, active, prefix, onSelect,ui)
     local available, used = imgui.GetContentRegionAvail().x, 0
+    local palette=ui and ui.theme or themes.get()
     for _, entry in ipairs(items) do
         local label = entry[2]
         local width = math.min(available, imgui.CalcTextSize(label).x + 32)
@@ -666,9 +734,9 @@ local function selectorRow(imgui, items, active, prefix, onSelect,ui)
         else used = 0 end
         local selected=active==entry[1]
         if selected then
-            imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(.15,.43,.63,1))
-            imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(.18,.50,.70,1))
-            imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(.12,.37,.56,1))
+            imgui.PushStyleColor(imgui.Col.Button,themes.vec(imgui,palette.btnPrimary))
+            imgui.PushStyleColor(imgui.Col.ButtonHovered,themes.vec(imgui,palette.btnPrimaryHover))
+            imgui.PushStyleColor(imgui.Col.ButtonActive,themes.vec(imgui,palette.btnPrimaryActive))
         end
         local clicked
         if ui then clicked=M.fittedButton(imgui,ui,label..'##'..prefix..entry[1],imgui.ImVec2(width,44))
@@ -679,6 +747,10 @@ local function selectorRow(imgui, items, active, prefix, onSelect,ui)
     end
 end
 
+local function rowValue(imgui,ui,row)
+    local text=tostring(row[2]or'—')
+    if row[3]then M.statusPill(imgui,ui,text,row[3])else ui.text(text)end
+end
 local function rows(imgui, ui, data)
     if imgui.GetContentRegionAvail().x<380 then
         for _,row in ipairs(data)do ui.text(row[1]..': '..tostring(row[2]or'—'))end
@@ -689,7 +761,7 @@ local function rows(imgui, ui, data)
     imgui.SetColumnWidth(0, math.max(110, math.min(210, imgui.GetWindowSize().x * .38)))
     for _, row in ipairs(data) do
         muted(imgui, ui, row[1]); imgui.NextColumn()
-        ui.text(tostring(row[2] or '—')); imgui.NextColumn()
+        rowValue(imgui,ui,row); imgui.NextColumn()
     end
     ui.finish()
 end
@@ -732,6 +804,41 @@ function Menu:guidePage(imgui, ui, model)
     end
 end
 
+local function presetName(font,size,name,width)
+    name=name:gsub('##','# #')
+    if font:CalcTextSizeA(size,100000,0,name).x<=width then return name end
+    local chars={}
+    for char in name:gmatch('[%z\1-\127\194-\244][\128-\191]*')do chars[#chars+1]=char end
+    while #chars>0 do
+        chars[#chars]=nil
+        local text=table.concat(chars)..'…'
+        if font:CalcTextSizeA(size,100000,0,text).x<=width then return text end
+    end
+    return '…'
+end
+
+local function drawPresetRow(im,ui,model,select,font)
+    local presets=model.profilePresets
+    local width=im.GetContentRegionAvail().x
+    local gap=8
+    local cell=(width-(#presets-1)*gap)/#presets
+    if cell<92 then
+        local choices={}
+        for i,p in ipairs(presets)do choices[i]={p.id,p.name}end
+        local chosen,changed=M.choiceControl(im,ui,'##home-duty-profile','',model.activeProfilePreset,choices)
+        if changed then select(chosen)end
+    else
+        local fs=tonumber(font.FontSize)
+        for i,p in ipairs(presets)do
+            if i>1 then im.SameLine(0,gap)end
+            local label=presetName(font,fs,p.name,cell-(cell>=200 and 56 or 28))..'##home-duty-preset-'..p.id
+            local tone=p.id==model.activeProfilePreset and'primary'or'secondary'
+            if M.fittedButton(im,ui,label,im.ImVec2(cell,30),font,tone)then select(p.id)end
+            M.tooltip(im,ui,p.name)
+        end
+    end
+end
+
 function Menu:homePage(imgui, ui, model, callbacks, fonts)
     local available = imgui.GetContentRegionAvail().x
     local screens=model.evidence and model.evidence.screens
@@ -741,7 +848,8 @@ function Menu:homePage(imgui, ui, model, callbacks, fonts)
     end
     local profileRows={{'Номер личного дела',model.caseNumber and model.caseNumber~=''and model.caseNumber or 'Не заполнено'},
         {'Игровой ник',model.nickname},{'SA:MP ID',model.id},{'Доступ к программе','Локальная версия'},
-        {'Режим работы',model.demo and 'Демонстрационный'or'Реальные команды'},{'Подключение',model.connected and 'На сервере'or'Ожидание подключения'}}
+        {'Режим работы',model.demo and 'Демонстрационный'or'Реальные команды',model.demo and'warn'or'safe'},
+        {'Подключение',model.connected and 'На сервере'or'Ожидание подключения',model.connected and'safe'or'muted'}}
     local font=imgui.GetFont();local fs=imgui.GetFontSize();local profileHeight=68
     local wrap=math.max(1,available-32);local profileWide=wrap>=900
     local labelWidth=math.min(210,wrap*.17);local valueWidth=math.max(1,wrap/2-labelWidth-16)
@@ -750,7 +858,7 @@ function Menu:homePage(imgui, ui, model, callbacks, fonts)
             local rowHeight=0
             for _,index in ipairs({i,i+3})do local row=profileRows[index]
                 rowHeight=math.max(rowHeight,M.labelLayout(font,fs,labelWidth,row[1]).height,
-                    M.labelLayout(font,fs,valueWidth,tostring(row[2]or'—')).height)
+                    M.labelLayout(font,fs,valueWidth-(row[3]and 18 or 0),tostring(row[2]or'—')).height)
             end
             profileHeight=profileHeight+rowHeight+10
         end
@@ -760,6 +868,15 @@ function Menu:homePage(imgui, ui, model, callbacks, fonts)
             profileHeight=profileHeight+M.labelLayout(font,fs,wrap<380 and wrap or math.max(1,wrap*.48),text).height+12
         end
     end
+    local summary
+    if model.todayRuns~=nil then
+        summary=string.format('Сегодня · сценарии %d · строки %d · проверки %d · обыски %d · задержания %d',
+            model.todayRuns,model.todaySent or 0,model.todayDocuments or 0,model.todayFrisks or 0,model.todayCuffs or 0)
+        local small=fonts.small or font
+        profileHeight=profileHeight+M.labelLayout(small,tonumber(small.FontSize),wrap,summary).height+14
+    end
+    local showPresets=callbacks.applyProfilePreset and model.profilePresets and #model.profilePresets>0
+    if showPresets then profileHeight=profileHeight+48 end
     local columns=available>=1100 and 4 or available>=580 and 2 or 1
     local actionHeight=math.ceil(4/columns)*56+50
     -- Keep the owner's home hierarchy: banner first, personal record below.
@@ -772,6 +889,9 @@ function Menu:homePage(imgui, ui, model, callbacks, fonts)
         end)
     end
     imgui.Dummy(imgui.ImVec2(0,8))
+    local p=ui.theme or themes.get(self.theme)
+    imgui.PushStyleColor(imgui.Col.ChildBg,themes.vec(imgui,p.cardBg))
+    ui.push(function()imgui.PopStyleColor(1)end)
     child(imgui,ui,'profile##pa26',available,profileHeight,function()
         heading(imgui,ui,'Личное дело',fonts.heading)
         if profileWide then
@@ -779,11 +899,14 @@ function Menu:homePage(imgui, ui, model, callbacks, fonts)
             imgui.SetColumnWidth(0,labelWidth);imgui.SetColumnWidth(1,valueWidth+8)
             imgui.SetColumnWidth(2,labelWidth)
             for i=1,3 do for _,index in ipairs({i,i+3})do local row=profileRows[index]
-                muted(imgui,ui,row[1]);imgui.NextColumn();ui.text(tostring(row[2]or'—'));imgui.NextColumn()
+                muted(imgui,ui,row[1]);imgui.NextColumn();rowValue(imgui,ui,row);imgui.NextColumn()
             end end
             ui.finish()
         else rows(imgui,ui,profileRows)end
+        if summary then withFont(imgui,ui,fonts.small,function()muted(imgui,ui,summary)end)end
+        if showPresets then drawPresetRow(imgui,ui,model,callbacks.applyProfilePreset,fonts.compact or fonts.small or font)end
     end,false,imgui.WindowFlags.NoScrollbar+imgui.WindowFlags.NoScrollWithMouse)
+    ui.finish()
     imgui.Dummy(imgui.ImVec2(0,8))
     local width=(available-12*(columns-1))/columns
     local actions={{'Трафик и погоня · F4##home-fast',function()if callbacks.openAssist then callbacks.openAssist('traffic')end end},
@@ -792,14 +915,12 @@ function Menu:homePage(imgui, ui, model, callbacks, fonts)
         {'База знаний##home-knowledge',function()self:navigate('knowledge')end}}
     for i,action in ipairs(actions)do
         if (i-1)%columns~=0 then imgui.SameLine(0,12)end
-        if button(imgui,ui,action[1],imgui.ImVec2(width,46),fonts.button)then action[2]()end
+        if button(imgui,ui,action[1],imgui.ImVec2(width,46),fonts.button,i<=2 and'primary'or'secondary')then action[2]()end
     end
     if callbacks.openSettings and button(imgui,ui,'Профиль и первые настройки##home-setup',imgui.ImVec2(available,40),fonts.button)then callbacks.openSettings('profile')end
     withFont(imgui,ui,fonts.small,function()muted(imgui,ui,'F4 — действия и доклады. F9 — настройки. Перед отправкой проверьте предпросмотр и нажмите ДА.')end)
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(.40,.13,.18,.90));ui.push(function()imgui.PopStyleColor(1)end)
-    if button(imgui,ui,'Отключить PA##home',imgui.ImVec2(available,42),fonts.button)then callbacks.finishWork()end
-    ui.finish()
+    if button(imgui,ui,'Отключить PA##home',imgui.ImVec2(available,42),fonts.button,'danger')then callbacks.finishWork()end
     withFont(imgui,ui,fonts.small,function()muted(imgui,ui,'Полностью выключить Police Assistant до перезахода в игру.')end)
 
 end
@@ -811,10 +932,6 @@ function Menu:statsPage(imgui, ui, model, fonts)
     rows(imgui, ui, {{'Строк передано в чат', model.sent or 0}, {'Локальных предпросмотров', model.previews or 0},
         {'Подключений за запуск', model.connections or 0}, {'Пинг', model.ping and tostring(model.ping) .. ' мс' or '—'},
         {'Текущий район', model.district}, {'Квадрат карты', model.mapSquare or '—'}, {'Дата и время', model.clock}})
-    imgui.Dummy(imgui.ImVec2(0, 10))
-    heading(imgui, ui, 'Служебная статистика', fonts.heading)
-    rows(imgui, ui, {{'Задержания', '—'}, {'Проверки документов', '—'}, {'Обыски', '—'}})
-    muted(imgui, ui, 'Учёт служебных событий добавим отдельным модулем.')
 end
 
 function Menu:bindsPage(imgui, ui, model, callbacks, fonts)
@@ -889,16 +1006,18 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
     local footerTextH=creditH+4+contactH
     layout=M.layout(w,h,footerTextH,editing)
     local side = layout.side
+    local p=ui.theme or themes.get(self.theme)
+    ui.theme=p
     local list, vec = imgui.GetWindowDrawList(), imgui.ImVec2
     local function packed(r, g, b, a) return imgui.ColorConvertFloat4ToU32(color(imgui, r, g, b, a)) end
     local function panel(x, y, width, height, fill)
         local first, last = vec(pos.x + x, pos.y + y), vec(pos.x + x + width, pos.y + y + height)
         list:AddRectFilled(first, last, fill, 14)
-        list:AddRect(first, last, packed(.28, .45, .58, .25), 14)
+        list:AddRect(first, last, themes.u32(imgui,p.border), 14)
     end
-    panel(layout.margin, layout.margin, side, layout.panelH, packed(.09, .25, .40, .84))
-    panel(layout.x, layout.headerY, layout.w, layout.headerH, packed(.09, .23, .35, .55))
-    panel(layout.x, layout.footerY, layout.w, layout.footerH, packed(.09, .16, .24, .35))
+    panel(layout.margin, layout.margin, side, layout.panelH, themes.u32(imgui,p.sidebarBg))
+    panel(layout.x, layout.headerY, layout.w, layout.headerH, themes.u32(imgui,p.headerBg))
+    panel(layout.x, layout.footerY, layout.w, layout.footerH, themes.u32(imgui,p.footerBg))
     local pageTitle = 'Главная'
     for _, section in ipairs(M.sections) do if section.key == self.section then pageTitle = section.label end end
     local titleFont = fonts.heading or imgui.GetFont()
@@ -957,7 +1076,7 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
                 for index, section in ipairs(M.sections) do
                     local selected = self.section == section.key
                     if selected then
-                        imgui.PushStyleColor(imgui.Col.Button, color(imgui, .09, .50, .70, .94))
+                        imgui.PushStyleColor(imgui.Col.Button, themes.vec(imgui,p.btnPrimary))
                         ui.push(function() imgui.PopStyleColor(1) end)
                     end
                     local label = side < 244 and section.short or section.label
@@ -1022,7 +1141,7 @@ function Menu:draw(imgui, ui, model, callbacks, fonts)
         if (index - 1) % columns ~= 0 then imgui.SameLine(0, 12) end
         local label = (editing or layout.w < 650) and shortLabels[index] or link[2]
         local active=self.section=='hints'and self.referenceOpen and self.guide==link[1]
-        if active then imgui.PushStyleColor(imgui.Col.Button,color(imgui,.09,.43,.62,.94));ui.push(function()imgui.PopStyleColor(1)end)end
+        if active then imgui.PushStyleColor(imgui.Col.Button,themes.vec(imgui,p.btnPrimary));ui.push(function()imgui.PopStyleColor(1)end)end
         if button(imgui, ui, label .. '##footer', vec(buttonWidth, 40), fonts.compact or fonts.button) then
             self:navigate('hints',link[1])
         end

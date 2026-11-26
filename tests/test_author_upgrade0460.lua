@@ -12,6 +12,16 @@ local cfg=core.normalizeConfig(baseline.config)
 local lib=assert(users.combine(baseline,cfg))
 local settings=assert(author.decode('settings',bundle.settings,json)).settings.data
 local p,why=upgrade.prepare(lib,cfg,json);check(p,why)
+eq(package.loaded.pa26_author_defaults0460,nil,'One-time payload is released after decoding')
+package.loaded.pa26_author_defaults0460=bundle
+check(upgrade.prepare(lib,cfg,json,bundle))
+eq(package.loaded.pa26_author_defaults0460,bundle,'A caller-supplied payload does not change module ownership')
+package.loaded.pa26_author_defaults0460={binds='invalid'}
+check(not upgrade.prepare(lib,cfg,json))
+eq(package.loaded.pa26_author_defaults0460,nil,'Invalid payload is also released')
+local repeated=assert(upgrade.prepare(lib,cfg,json))
+check(author.equal(repeated.library,p.library),'The embedded payload can be loaded again')
+eq(package.loaded.pa26_author_defaults0460,nil)
 eq(p.library.settings.opacity,settings.settings.opacity)
 eq(p.library.settings.wheel_child_limit,15)
 eq(p.library.settings.wheel_car_child_limit,15)

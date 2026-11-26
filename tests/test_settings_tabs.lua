@@ -53,7 +53,7 @@ for _,display in ipairs({{640,480},{1366,768},{2560,1440}})do
   check(bar and content);check(content.height>0)
   for _,k in ipairs({'profile','chat','options','radio','weapons','general'})do check(sizes[k],'Tab lost: '..k)end
   check(bar.height>=sizes.profile.y+16)
-  if display[1]==640 then eq(bar.height,16+sizes.profile.y*2+8)end
+  if display[1]==640 then check(bar.height>=16+sizes.profile.y*2+8+46,'Reserve the fixed search row')end
   check(bit.band(bar.flags,s.imgui.WindowFlags.NoScrollbar)~=0)
   check(bit.band(bar.flags,s.imgui.WindowFlags.NoScrollWithMouse)~=0)
   check(bit.band(content.flags,s.imgui.WindowFlags.NoScrollbar)==0)

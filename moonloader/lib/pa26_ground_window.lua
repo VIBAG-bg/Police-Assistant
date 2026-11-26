@@ -52,7 +52,7 @@ function M.draw(s,ui,data,cb)
   ui.text('Продолжаем текущий разговор. Пройденные шаги не повторятся.')
  else
   cfg.ground_intro=common.check(s,ui,'Сначала представиться и показать жетон##ground-intro',cfg.ground_intro)
-  if cfg.ground_intro then cfg.ground_ud=common.check(s,ui,'Также показать удостоверение командой /ud##ground-ud',cfg.ground_ud)end
+  if cfg.ground_intro then cfg.ground_ud=common.check(s,ui,'Также показать жетон командой /ud##ground-ud',cfg.ground_ud)end
  end
  if kind=='detention'then
   cfg.ground_miranda=common.check(s,ui,'Зачитать полную Миранду и разъяснение прав##ground-miranda',cfg.ground_miranda)
@@ -122,7 +122,7 @@ function M.draw(s,ui,data,cb)
   local p,e=cb.groundOffer(f,ground,handoff);if p then s.vehicleConfirm=p else s:notify(e,'vehicle',false)end
  end
  local sendLabel=kind=='stop'and(f.request.stopIncident and contact.documentsRequested and'Озвучить причину'or'Озвучить причину и запросить документы')or'Озвучить основание и права'
- if s:button(sendLabel..' · ДА/НЕТ##ground-send',ui)then offer()end
+ if s:button(sendLabel..' · ДА/НЕТ##ground-send',ui,nil,'primary')then offer()end
  if kind=='stop'and article and #article.branches>0 and s:button('Озвучить и подготовить штраф##ground-next-fine',ui)then offer('fine')end
  if kind=='detention'and s:button('Озвучить и открыть помощник /su##ground-next-wanted',ui)then offer('wanted')end
  ui.text('Сначала предпросмотр и ваше ДА. Следующая форма появится только после завершения RP; сама штраф или розыск не выдаёт.')

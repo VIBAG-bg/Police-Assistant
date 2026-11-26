@@ -1,6 +1,6 @@
 -- Native x86 CPU UI frames and optional mesh captures. No GTA or network writes.
 local root=assert(os.getenv('PA_SOURCE_ROOT'),'Set PA_SOURCE_ROOT to the candidate directory')
-local game=os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game/'
+local game=(os.getenv('PA_NATIVE_GAME')or os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game')..'/'
 package.path=root..'/moonloader/lib/?.lua;'..game..'MoonLoader/lib/?.lua;'..package.path
 package.cpath=game..'MoonLoader/lib/?.dll;'..package.cpath
 getWorkingDirectory=function()return game..'MoonLoader'end -- Read-only native library lookup.

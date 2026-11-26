@@ -113,16 +113,18 @@ end
 function Notices:draw(im,fonts,avoid)
     local r=self:measure(im,fonts,avoid);if not r then return end
     local c=self.active;local m=self.measurement;local s=m.s;local io=im.GetIO();local list=im.GetForegroundDrawList();local vec=im.ImVec2
+    local themes=require 'pa26_theme';local p=themes.get(self.theme)
     local function tint(a,b,d,alpha)return im.ColorConvertFloat4ToU32(im.ImVec4(a,b,d,alpha or 1))end
-    local white,muted=tint(.98,.99,1),tint(.72,.84,.94)
+    local white,muted=themes.u32(im,p.text),themes.u32(im,p.textMuted)
     local function text(value,font,size,x,y,color,wrap)list:AddTextFontPtr(font,size*s,vec(x,y),color or white,value,nil,wrap or m.wrap)end
-    list:AddRectFilled(vec(r.x,r.y),vec(r.x+r.w,r.y+r.h),tint(.035,.13,.22,.91),13*s)
+    list:AddRectFilled(vec(r.x,r.y),vec(r.x+r.w,r.y+r.h),themes.u32(im,p.toastBg),13*s)
+    list:AddRect(vec(r.x,r.y),vec(r.x+r.w,r.y+r.h),themes.u32(im,p.border),13*s)
     local x,y=r.x+m.pad,r.y+m.pad
     icons.draw(im,m.icon,x,y,16*s,c.full and'info'or'warning',1,list)
     text(m.title,m.heading,16,x+m.gutter,y,nil,m.wrap-m.gutter);y=y+m.titleH+6*s
-    text(c.status,m.body,13,x,y,tint(.58,.83,1));y=y+m.statusH+8*s
+    text(c.status,m.body,13,x,y,themes.u32(im,p.wheelAccent));y=y+m.statusH+8*s
     if c.full then
-        list:AddRectFilled(vec(x-4*s,y-3*s),vec(x+m.wrap+4*s,y+m.bodyH+5*s),tint(.10,.24,.35,.9),7*s)
+        list:AddRectFilled(vec(x-4*s,y-3*s),vec(x+m.wrap+4*s,y+m.bodyH+5*s),themes.u32(im,p.toastBodyBg),7*s)
         text(c.body,m.body,14,x,y);y=y+m.bodyH+12*s
     end
     text(m.hint,m.body,12,x,y,muted);y=y+m.hintH+8*s
@@ -135,7 +137,7 @@ function Notices:draw(im,fonts,avoid)
     local function button(id,label,bx,bw,green)
         local b={x=bx,y=y,w=bw,h=34*s};self.buttons[id]=b
         local hover=inside(b,io.MousePos.x,io.MousePos.y)
-        list:AddRectFilled(vec(b.x,b.y),vec(b.x+b.w,b.y+b.h),green and tint(.12,.43,.28,.98)or tint(.51,.16,.22,.98),8*s)
+        list:AddRectFilled(vec(b.x,b.y),vec(b.x+b.w,b.y+b.h),green and tint(.12,.43,.28,.98)or themes.u32(im,p.btnDanger),8*s)
         local extent=m.heading:CalcTextSizeA(14*s,100000,bw-8*s,label)
         list:AddTextFontPtr(m.heading,14*s,vec(b.x+(bw-extent.x)/2,b.y+(b.h-extent.y)/2),white,label,nil,bw-8*s)
         return mouseReady and hover and clicked
@@ -144,7 +146,7 @@ function Notices:draw(im,fonts,avoid)
     if c.accentOption then
         local box={x=x,y=y,w=16*s,h=16*s};local hit={x=x,y=y-2*s,w=m.wrap,h=22*s}
         self.buttons.accent=hit
-        list:AddRectFilled(vec(box.x,box.y),vec(box.x+box.w,box.y+box.h),tint(.16,.30,.42),3*s)
+        list:AddRectFilled(vec(box.x,box.y),vec(box.x+box.w,box.y+box.h),themes.u32(im,p.frameHovered),3*s)
         if c.noAccent then
             list:AddLine(vec(x+3*s,y+8*s),vec(x+7*s,y+12*s),white,2*s)
             list:AddLine(vec(x+7*s,y+12*s),vec(x+13*s,y+4*s),white,2*s)
@@ -164,8 +166,8 @@ function Notices:draw(im,fonts,avoid)
     y=y+42*s;text(m.keys,m.body,12,x,y,muted)
     local remaining=math.max(0,c.remaining or 0);local total=c.duration or(c.owner=='radio'and self.env.lead()or self.env.weaponDuration())
     local progress=math.max(0,math.min(1,remaining/math.max(1,total)))
-    list:AddRectFilled(vec(x,r.y+r.h-6*s),vec(x+m.wrap,r.y+r.h-3*s),tint(.16,.29,.40),2*s)
-    list:AddRectFilled(vec(x,r.y+r.h-6*s),vec(x+m.wrap*progress,r.y+r.h-3*s),tint(.26,.65,.86),2*s)
+    list:AddRectFilled(vec(x,r.y+r.h-6*s),vec(x+m.wrap,r.y+r.h-3*s),themes.u32(im,p.frameHovered),2*s)
+    list:AddRectFilled(vec(x,r.y+r.h-6*s),vec(x+m.wrap*progress,r.y+r.h-3*s),themes.u32(im,p.wheelAccent),2*s)
     self.paintedToken=c.token;self.paintedAt=self.now;self.seenAt=self.seenAt or self.now
     self.env.shown(c.owner,c.token)
     if clicked then self.mouseArmed=nil end

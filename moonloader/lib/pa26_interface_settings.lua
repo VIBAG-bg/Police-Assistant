@@ -5,10 +5,9 @@ function M.draw(s,ui,data,cb,menu,part)
     local im=s.imgui;s.currentUi=ui;s.preferenceContext=true
     if part~='chat'then
     local layout=model.copy((s.autosaves and s.autosaves.window_layout and s.autosaves.window_layout.value)or s.lib.settings.window_layout)
-    s:settingsHeading(ui,'Размер и положение окон')
+    s:sectionCard(ui,'Размер и положение окон',function()
     layout.remember=s:check('Сохранять выставленный размер и положение после перезахода##window-remember',layout.remember)
     layout.wanted_separate=s:check('Открывать розыск в отдельном окне##wanted-detached',layout.wanted_separate)
-    ui.text('Новые окна используют просторное авторское расположение, адаптированное к вашему экрану. Ваши сохранённые размеры имеют приоритет. После сбоя возвращается последнее корректное расположение; повреждённые размеры восстанавливаются автоматически.')
     ui.text('Альтернативный размер главного окна: '..layout.initial_percent..'% ширины и высоты экрана. Ползунок применяется кнопкой ниже.')
     local percent=im.new.int(layout.initial_percent)
     im.PushItemWidth(math.max(1,im.GetContentRegionAvail().x));ui.push(function()im.PopItemWidth()end)
@@ -16,28 +15,29 @@ function M.draw(s,ui,data,cb,menu,part)
     if s:button('Применить начальный размер к главному окну##window-apply',ui)then
         layout.default_style='percent';layout.windows.main=nil;menu.windows.main=nil;menu.resetWindows=menu.resetWindows or{};menu.resetWindows.main=true
     end
-    if s:button('Сбросить размеры и положения всех окон##window-reset',ui)then
+    if s:button('Сбросить размеры и положения всех окон##window-reset',ui,nil,'danger')then
         layout.default_style='author';layout.windows={};menu.windows={};menu:resetWindowPositions()
     end
+    end,'Новые окна используют просторное авторское расположение, адаптированное к вашему экрану. Ваши сохранённые размеры имеют приоритет. После сбоя возвращается последнее корректное расположение. Повреждённые размеры восстанавливаются автоматически.','window-geometry-help')
     s:autoSettings('window_layout',{'settings','window_layout'},layout)
     s:autosaveHint(ui,'window_layout')
     end
     if part~='windows'then
-    s:settingsHeading(ui,'Перенос ручного чата')
     local cfg=model.copy((s.autosaves and s.autosaves.manual_chat and s.autosaves.manual_chat.value)or s.lib.settings.manual_chat)
+    s:sectionCard(ui,'Перенос ручного чата',function()
     cfg.enabled=s:check('Переносить длинный текст после Enter##manual-chat-enabled',cfg.enabled)
-    ui.text('Обычная речь, /me, /do, /try, /todo и включённые каналы рации/OOC (в том числе /n). Целые слова, ... на стыках, акцент только в первой части обычной речи. Команды с аргументами не разделяются. Порог берётся из настроек переноса RP: сейчас '..s.lib.rp_text.body_limit..' символов. До первой отправки проверяются все части.')
+    ui.text('Текущий порог · '..s.lib.rp_text.body_limit..' символов.')
     for _,row in ipairs({{'max_parts','Максимум частей (1–3)',1,3},{'interval_ms','Пауза между частями, мс',1000,10000}})do
         ui.text(row[2]);local n=im.new.int(cfg[row[1]])
         im.PushItemWidth(math.max(1,im.GetContentRegionAvail().x));ui.push(function()im.PopItemWidth()end)
         if im.SliderInt('##manual-chat-'..row[1],n,row[3],row[4])then cfg[row[1]]=n[0]end;ui.finish()
     end
-    ui.text('Если текст не помещается, отправки не будет и ввод сохранится. Enter разрешает реальную отправку ручного текста. При разрыве связи или остановке остаток возвращается в черновик; уже отправленные части повторно не отправляются.')
     if s:button('Изменить порог и маркер продолжения##manual-chat-rp-settings',ui)then if cb.openSettings then cb.openSettings('chat','split')else cb.openAssist('roleplay')end end
     if data.manualChatDraft and data.manualChatDraft~=''then
         if s.manualDraftShown~=data.manualChatDraft then s.cache['manual:recovery']=nil;s.manualDraftShown=data.manualChatDraft end
         s:field('Сохранённый остаток · можно выделить и скопировать##manual-recovery','manual:recovery',data.manualChatDraft,8192,true,90)
     end
+    end,'Поддерживаются обычная речь, /me, /do, /try, /todo и включённые каналы рации/OOC, включая /n. Перенос делит по словам и добавляет многоточия. Акцент остаётся в первой части обычной речи. Команды с аргументами не разделяются. До отправки проверяются все части.\n\nЕсли текст не помещается, ввод сохраняется. Enter разрешает отправку. При обрыве связи или остановке остаток возвращается в черновик. Отправленные части не повторяются.','manual-chat-help')
     s:autoSettings('manual_chat',{'settings','manual_chat'},cfg)
     s:autosaveHint(ui,'manual_chat')
     end

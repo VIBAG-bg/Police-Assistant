@@ -17,6 +17,7 @@ local limits={road_work={16,1024},road_budget_ms={.25,3},road_snap={25,600},obse
  arrival={1,100},max_segments={16,256},line_width={1,8},opacity={.1,1},ttl_ms={1000,1800000},offer_ms={1000,60000},
  target_speed={5,250},speed_step={1,20},note_id={0,999999998},x={0,1},y={0,1},width={.15,.9},height={.12,.85},font_scale={.7,2},
  channel_limit={16,127},delay_ms={1000,10000},left_key={0,254},right_key={0,254},hazard_key={0,254}}
+local integerFields={observe_ms=true,arrival=true,ttl_ms=true,offer_ms=true,channel_limit=true,delay_ms=true}
 local function text(s,n)return type(s)=='string'and #s<=n and core.validUtf8(s)and not s:find('%c')end
 local function shortcut(s)
  return type(s)=='table'and core.finite(s.key)and s.key%1==0 and s.key>=0 and s.key<=254 and type(s.ctrl)=='boolean'and type(s.alt)=='boolean'and type(s.shift)=='boolean'
@@ -28,7 +29,9 @@ function M.validate(raw)
  for group,defaults in pairs(d)do if group~='share_shortcut'and type(defaults)=='table'and type(raw[group])=='table'then
   for k,v in pairs(defaults)do local x=raw[group][k]
    if type(v)=='boolean'and type(x)=='boolean'then defaults[k]=x
-   elseif type(v)=='number'and core.finite(x)then local bound=limits[k];if bound and x>=bound[1]and x<=bound[2]then defaults[k]=x end
+   elseif type(v)=='number'and core.finite(x)then
+    local bound=limits[k]
+    if bound and x>=bound[1]and x<=bound[2]then defaults[k]=integerFields[k]and math.floor(x+.5)or x end
    elseif type(v)=='string'and text(x,(k=='source'or k=='road_external')and 1024 or 160)then defaults[k]=x
    elseif k=='shortcut'and shortcut(x)then defaults[k]={key=x.key,ctrl=x.ctrl,alt=x.alt,shift=x.shift}end
   end

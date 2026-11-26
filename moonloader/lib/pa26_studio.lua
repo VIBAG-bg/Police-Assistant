@@ -3,6 +3,7 @@ local model=require 'pa26_bindings'
 local binder=require 'pa26_binder'
 local core=require 'pa26_core'
 local menuModule=require 'pa26_menu'
+local themes=require 'pa26_theme'
 local wheelModel=require 'pa26_wheel'
 local preferences=require 'pa26_preferences'
 local alertModule=require 'pa26_alerts'
@@ -13,7 +14,7 @@ local identityUi=require 'pa26_identity_ui'
 local caseUi=require 'pa26_case_ui'
 local operationUi=require 'pa26_operation_ui'
 local feedbackModule=require 'pa26_feedback'
-local M={};M.optionKeys={'quick_key','tips_key','cancel_key','opacity','compact','retain_distance','retain_grace_ms','keep_target_on_interior_change','aim_select_enabled','aim_select_control','aim_select_delay_ms','wheel_mode','wheel_profile','wheel_enabled','interaction_notices','wheel_names','wheel_child_limit','wheel_system_groups','wheel_order','wheel_car_separate','wheel_car_mode','wheel_car_profile','wheel_car_names','wheel_car_child_limit','wheel_car_system_groups','wheel_car_order','wheel_car_classic','wheel_edit_enabled','shutdown_message','ask_screenshot_path'}; local Studio={}; Studio.__index=Studio
+local M={};M.optionKeys={'quick_key','tips_key','cancel_key','opacity','compact','theme','ui_icons','retain_distance','retain_grace_ms','keep_target_on_interior_change','aim_select_enabled','aim_select_control','aim_select_delay_ms','wheel_mode','wheel_profile','wheel_enabled','interaction_notices','wheel_names','wheel_child_limit','wheel_system_groups','wheel_order','wheel_car_separate','wheel_car_mode','wheel_car_profile','wheel_car_names','wheel_car_child_limit','wheel_car_system_groups','wheel_car_order','wheel_car_classic','wheel_edit_enabled','shutdown_message','ask_screenshot_path'}; local Studio={}; Studio.__index=Studio
 local function label(value) return tostring(value):gsub('##','# #') end
 local captureModifiers={[16]=true,[17]=true,[18]=true,[91]=true,[92]=true,
     [160]=true,[161]=true,[162]=true,[163]=true,[164]=true,[165]=true}
@@ -119,11 +120,11 @@ function Studio:autoSettings(scope,path,value,clearField)
     self.autosaves[scope]={value=model.copy(value),path=path,at=self.now(),delay=self.settingTextChanged and 600 or 0,
         clearField=clearField,owner=clearField and self[clearField]}
 end
-function Studio:flushAutosave(callbacks,force)
+function Studio:flushAutosave(callbacks,force,only)
     for scope,job in pairs(self.autosaves or{})do
         local age=core.elapsed(self.now(),job.at)
         local confirmingDelete=scope=='filters'and self.remove and self.remove.kind=='filter'
-        if not job.failed and not confirmingDelete and(force or age and age>=job.delay)then
+        if (not only or scope==only)and not job.failed and not confirmingDelete and(force or age and age>=job.delay)then
             local copy=model.copy(self.lib);local parent=copy
             for i=1,#job.path-1 do parent=parent[job.path[i]]end
             local value=model.copy(job.value)
@@ -294,9 +295,9 @@ function Studio:choice(label,value,choices,ui)
     elseif label:find('##bind-wheel-group',1,true)then options.buttons=true end
     return menuModule.choiceControl(self.imgui,ui,'##'..label,label:match('^(.-)##')or label,value,choices,self,options)
 end
-function Studio:button(label,ui,width)
+function Studio:button(label,ui,width,tone)
     return menuModule.fittedButton(self.imgui,ui,label,
-        self.imgui.ImVec2(width or math.max(1,self.imgui.GetContentRegionAvail().x),42),self.buttonFont)
+        self.imgui.ImVec2(width or math.max(1,self.imgui.GetContentRegionAvail().x),42),self.buttonFont,tone)
 end
 local function child(self,ui,label,width,height,body,flags,padding,border)
     local im=self.imgui
@@ -342,11 +343,12 @@ function Studio:tooltip(ui,value)
 end
 function Studio:rowTitle(ui,title,selected,width,height)
     local im=self.imgui
+    local p=ui.theme or themes.get(self.lib.settings.theme)
     im.PushStyleVarFloat(im.StyleVar.FrameRounding,12); ui.push(function() im.PopStyleVar(1) end)
     im.PushStyleVarVec2(im.StyleVar.ButtonTextAlign,im.ImVec2(0,.5)); ui.push(function() im.PopStyleVar(1) end)
-    im.PushStyleColor(im.Col.Button,im.ImVec4(.10,.32,.48,selected and .84 or 0)); ui.push(function() im.PopStyleColor(1) end)
-    im.PushStyleColor(im.Col.ButtonHovered,im.ImVec4(.13,.35,.50,.78)); ui.push(function() im.PopStyleColor(1) end)
-    im.PushStyleColor(im.Col.ButtonActive,im.ImVec4(.13,.42,.59,.94)); ui.push(function() im.PopStyleColor(1) end)
+    im.PushStyleColor(im.Col.Button,themes.vec(im,p.btnPrimary,selected and .84 or 0)); ui.push(function() im.PopStyleColor(1) end)
+    im.PushStyleColor(im.Col.ButtonHovered,themes.vec(im,p.btnSecondaryHover)); ui.push(function() im.PopStyleColor(1) end)
+    im.PushStyleColor(im.Col.ButtonActive,themes.vec(im,p.btnPrimaryActive)); ui.push(function() im.PopStyleColor(1) end)
     if self.buttonFont then im.PushFont(self.buttonFont); ui.push(function() im.PopFont() end) end
     local font,fontSize=im.GetFont(),im.GetFontSize()
     local visible=title:match('^(.-)##') or title
@@ -361,14 +363,15 @@ function Studio:rowTitle(ui,title,selected,width,height)
 end
 function Studio:iconButton(ui,id,kind,height,enabled)
     local im=self.imgui
+    local p=ui.theme or themes.get(self.lib.settings.theme)
     enabled=enabled~=false
     im.PushStyleVarFloat(im.StyleVar.FrameRounding,11); ui.push(function() im.PopStyleVar(1) end)
-    im.PushStyleColor(im.Col.Button,kind=='play' and im.ImVec4(.10,.40,.58,.84) or im.ImVec4(.10,.21,.31,.66)); ui.push(function() im.PopStyleColor(1) end)
+    im.PushStyleColor(im.Col.Button,themes.vec(im,kind=='play' and p.btnPrimary or p.btnSecondary)); ui.push(function() im.PopStyleColor(1) end)
     local clicked=im.Button('##'..id,im.ImVec2(34,height or 34))
     ui.finish(); ui.finish()
     local first,last=im.GetItemRectMin(),im.GetItemRectMax()
     local x,y=(first.x+last.x)/2,(first.y+last.y)/2
-    local list=im.GetWindowDrawList(); local tint=im.ColorConvertFloat4ToU32(im.ImVec4(.93,.97,1,enabled and 1 or .28))
+    local list=im.GetWindowDrawList(); local tint=themes.u32(im,p.text,enabled and 1 or .28)
     if kind=='play' then list:AddTriangleFilled(im.ImVec2(x-4,y-7),im.ImVec2(x+7,y),im.ImVec2(x-4,y+7),tint)
     elseif kind=='up' or kind=='down' then
         local direction=kind=='up' and -1 or 1
@@ -405,7 +408,7 @@ function Studio:bindingRow(ui,data,callbacks,binding,number,quick)
     local accessExtent=im.GetFont():CalcTextSizeA(im.GetFontSize(),100000,width,access)
     local height=24+titleHeight+10+accessExtent.y+4
     local selected=quick and self.quickSelected==binding.id or not quick and self.selected==binding.id
-    if selected then im.PushStyleColor(im.Col.ChildBg,im.ImVec4(.08,.21,.34,.76)); ui.push(function() im.PopStyleColor(1) end) end
+    if selected then im.PushStyleColor(im.Col.ChildBg,themes.vec(im,(ui.theme or themes.get(self.lib.settings.theme)).frameHovered,.76)); ui.push(function() im.PopStyleColor(1) end) end
     child(self,ui,(quick and 'quickrow##' or 'bindingrow##')..binding.id,0,height,function()
         local origin=im.GetCursorScreenPos()
         local actualTitleWidth=math.max(1,im.GetContentRegionAvail().x-80)
@@ -644,7 +647,7 @@ function Studio:drawEditorBody(ui,data,callbacks)
         local title=tab[2]; local width=math.min(available,im.CalcTextSize(title).x+24)
         if used>0 and used+10+width<=available then im.SameLine(0,10); used=used+10 else used=0 end
         local active=self.editorTab==tab[1]
-        if active then im.PushStyleColor(im.Col.Button,im.ImVec4(.15,.43,.63,1)); ui.push(function() im.PopStyleColor(1) end) end
+        if active then im.PushStyleColor(im.Col.Button,themes.vec(im,(ui.theme or themes.get(self.lib.settings.theme)).btnPrimary)); ui.push(function() im.PopStyleColor(1) end) end
         if im.Button(tab[2]..'##editor-tab',im.ImVec2(width,38)) then self.editorTab=tab[1] end; used=used+width
         if active then ui.finish() end
     end
@@ -738,7 +741,7 @@ function Studio:drawEditor(ui,data,callbacks)
     if not self.draft then ui.text('Добавьте первый сценарий.');return end
     local im=self.imgui
     -- Header belongs to the outer pane. Only the body below it can scroll.
-    if self:button('Сохранить сценарий',ui)then self:saveDraft(callbacks)end
+    if self:button('Сохранить сценарий',ui,nil,'primary')then self:saveDraft(callbacks)end
     ui.text(string.format('Сценарий %03d · ',model.bindingNumber(self.lib,self.draft.id)or(#self.lib.bindings+1))..(self.dirty and'Изменения ещё не сохранены'or'Все изменения сохранены'))
     im.Separator()
     child(self,ui,'bind-editor-body##studio',0,math.max(1,im.GetContentRegionAvail().y),function()
@@ -802,7 +805,7 @@ function Studio:drawBindingList(ui,data,callbacks,search)
             for _,name in ipairs(row)do height=math.max(height,font:CalcTextSizeA(tonumber(font.FontSize),100000,math.max(1,width-28),name:match('^(.-)##')or name).y+16)end
             for column,name in ipairs(row)do
                 if column==2 then im.SameLine(0,10)end
-                if menuModule.fittedButton(im,ui,name,im.ImVec2(width,height),self.buttonFont)then clicked[name]=true;self.bindToolsVisible=false;im.CloseCurrentPopup()end
+                if menuModule.fittedButton(im,ui,name,im.ImVec2(width,height),self.buttonFont,name=='Удалить##bind'and'danger'or nil)then clicked[name]=true;self.bindToolsVisible=false;im.CloseCurrentPopup()end
             end
         end
         ui.finish()
@@ -868,7 +871,7 @@ function Studio:drawBindings(ui,data,callbacks)
         end
         im.GetWindowDrawList():AddLine(im.ImVec2(cursor.x+left+panes.gap/2,cursor.y+6),
             im.ImVec2(cursor.x+left+panes.gap/2,cursor.y+math.max(6,height-6)),
-            im.ColorConvertFloat4ToU32(im.ImVec4(.30,.56,.73,(active or hovered) and .9 or .3)),2)
+            themes.u32(im,(ui.theme or themes.get(self.lib.settings.theme)).wheelAccent,(active or hovered) and .9 or .3),2)
         im.SetCursorScreenPos(cursor)
     end
     child(self,ui,'bindlist##studio',left,height,function()
@@ -968,7 +971,8 @@ function Studio:drawNotes(ui,data,callbacks,floating)
         local font=self.buttonFont or im.GetFont();local size=tonumber(font.FontSize)
         local height=math.max(42,menuModule.labelLayout(font,size,math.max(1,width-28),note.name).height+16)
         im.PushStyleVarFloat(im.StyleVar.FrameRounding,12);ui.push(function()im.PopStyleVar(1)end)
-        im.PushStyleColor(im.Col.Button,self.note==note.id and im.ImVec4(.09,.43,.62,.92)or im.ImVec4(.09,.23,.34,.86));ui.push(function()im.PopStyleColor(1)end)
+        local p=ui.theme or themes.get(self.lib.settings.theme)
+        im.PushStyleColor(im.Col.Button,themes.vec(im,self.note==note.id and p.btnPrimary or p.btnSecondary));ui.push(function()im.PopStyleColor(1)end)
         local clicked=menuModule.fittedButton(im,ui,label(note.name)..'##note'..note.id,im.ImVec2(width,height),font)
         ui.finish();ui.finish()
         if clicked then
@@ -1003,7 +1007,10 @@ function Studio:drawNotes(ui,data,callbacks,floating)
             end
             ui.text(selected.name); child(self,ui,'notebody##studio',0,math.max(120,im.GetContentRegionAvail().y-130),function() ui.text(selected.body) end)
             if im.Button('Редактировать##note') then self.noteMode=true end
-            im.SameLine(); if im.Button('Удалить##note') then self.remove={kind='note',id=selected.id} end
+            im.SameLine()
+            local styled=menuModule.pushButtonTone(im,ui,'danger')
+            if im.Button('Удалить##note') then self.remove={kind='note',id=selected.id} end
+            if styled then ui.finish()end
             if not floating and self:button('Экспорт выбранной заметки##notes-export-one',ui)then callbacks.export('notes',selected.id)end
         end
     end
@@ -1073,9 +1080,13 @@ function Studio:drawStatsSummary(ui,data,callbacks)
             end
         end
     end)
-    if self:button('Очистить журнал',ui) then self.reset='log' end
-    if self:button('Обнулить служебную статистику',ui) then self.reset='stats' end
+    if self:button('Очистить журнал',ui,nil,'danger') then self.reset='log' end
+    if self:button('Обнулить служебную статистику',ui,nil,'danger') then self.reset='stats' end
     self:drawNotice(ui)
+end
+function Studio:infoHint(ui,id,help)
+    self:iconButton(ui,'settings-info-'..id,'info',26)
+    self:tooltip(ui,help)
 end
 function Studio:settingsHeading(ui,title,help,helpId)
     local im=self.imgui
@@ -1084,7 +1095,7 @@ function Studio:settingsHeading(ui,title,help,helpId)
     if help then
         local pos=im.GetCursorScreenPos();local width=im.GetContentRegionAvail().x
         im.SetCursorScreenPos(im.ImVec2(pos.x+math.max(0,width-34),pos.y))
-        self:iconButton(ui,'settings-info-'..helpId,'info',26);self:tooltip(ui,help)
+        self:infoHint(ui,helpId,help)
         im.SetCursorScreenPos(pos)
         im.PushTextWrapPos(im.GetCursorPosX()+math.max(1,width-46));ui.push(function()im.PopTextWrapPos()end)
         im.TextUnformatted(title);ui.finish()
@@ -1092,9 +1103,15 @@ function Studio:settingsHeading(ui,title,help,helpId)
     if self.buttonFont then ui.finish() end
     im.Dummy(im.ImVec2(0,4))
 end
+function Studio:sectionCard(ui,title,body,help,id)
+    return menuModule.sectionCard(self.imgui,ui,function()
+        self:settingsHeading(ui,title,help,id)
+        body()
+    end)
+end
 function Studio:profileGroup(ui,copy,title,fields)
     local im=self.imgui
-    self:settingsHeading(ui,title)
+    self:sectionCard(ui,title,function()
     local width=im.GetContentRegionAvail().x; local columns=width>=620 and 2 or 1
     if columns==2 then
         im.Columns(2,'profile-group-'..fields[1][1],false); ui.push(function() im.Columns(1) end)
@@ -1105,7 +1122,7 @@ function Studio:profileGroup(ui,copy,title,fields)
         if columns==2 then im.NextColumn() end
     end
     if columns==2 then ui.finish() end
-    im.Dummy(im.ImVec2(0,8)); im.Separator()
+    end)
 end
 function Studio:drawAlerts(ui,data,callbacks)
     ui.text('В репликах доступно {gender:передал|передала}; род выбирается в Профиле.')
@@ -1153,7 +1170,7 @@ function Studio:drawAlerts(ui,data,callbacks)
         self:radioPreview(ui,data,draft,spec[1])
         if spec[1]=='sos'then
             self:settingsHeading(ui,'Дополнительная серверная команда помощи',
-                'Команду помощи нужно сначала проверить в игровом /help. Затем впишите её ниже и укажите, где проверили. При запросе SOS PA покажет её вместе с докладом и отправит после рации с заданной паузой. Без вашего ДА отправки не будет.','sos-help-command')
+                'Команду помощи нужно сначала проверить в игровом /help. Затем впишите её ниже и укажите, где проверили. При запросе SOS PA покажет её вместе с докладом и отправит после рации с заданной паузой от 1000 до 10000 мс. Доступны те же переменные, что и в докладе. Отметьте проверку после подтверждения работы команды на сервере. Отправка начинается после вашего ДА.','sos-help-command')
             for _,row in ipairs({{'help_enabled','Добавлять команду помощи к SOS'},{'help_verified','Я проверил название и параметры на сервере'}})do
                 local value,edit=self:check(row[2]..'##alerts-'..row[1],draft[row[1]])
                 if edit then draft[row[1]]=value;changed=true end
@@ -1164,16 +1181,15 @@ function Studio:drawAlerts(ui,data,callbacks)
             end
             local delay=im.new.int(draft.help_delay_ms)
             if im.InputInt('Пауза до команды помощи, мс##alerts-help-delay',delay)then draft.help_delay_ms=delay[0];changed=true end
-            ui.text('Допустимая пауза — 1000–10000 мс. Можно использовать переменные доклада, перечисленные ниже. Отметьте проверку только после того, как сами убедитесь, что команда работает.')
         end
     end
-    ui.text('Подстановки: {area}, {location}, {local_tag}, {prison_tag}, {global_tag}, {callsign}, {city}, {square}, {map_square}, {my_name}, {department}, {rank}, {post}.')
-    ui.text('Квадрат рядом с районом и формат места настраиваются в «Настройки → Карта». В докладах {area} дополняется квадратом, если в шаблоне ещё нет явного {square}, {map_square} или {location}. В биндах {area} остаётся районом.')
+    self:settingsHeading(ui,'Переменные докладов',
+        'В шаблонах доступны {area}, {location}, {local_tag}, {prison_tag}, {global_tag}, {callsign}, {city}, {square}, {map_square}, {my_name}, {department}, {rank} и {post}. Квадрат рядом с районом и формат места настраиваются в «Экран, HUD и карта → Карта». В докладах {area} дополняется квадратом, если в шаблоне ещё нет явного {square}, {map_square} или {location}. В биндах {area} остаётся районом.','radio-variables')
     self:settingsHeading(ui,'Поля начатого патруля',
         'Данные патруля: {officer} — ваше игровое имя; {unit} — обозначение экипажа; {station} — станция; {vehicle} — машина; {sector} — сектор; {crew} — имена напарников; {crew_count} — число участников; {crew_roles} — состав с ролями; {crew_callsigns} — позывные; {duration} — время патруля; {patrol_id} — номер патруля в PA. {patrol_start}, {patrol_resume}, {patrol_finish}, {patrol_moving}, {patrol_available} — настраиваемые фразы для одного или экипажа; {unit_crew_count} — число сотрудников текущего юнита. Эти значения доступны после начала патруля. Если состав изменится, старый доклад потребуется проверить заново.','radio-patrol-variables')
-    ui.text('Shots fired — сообщение о попадании по вашему персонажу. SOS — отдельный запрос поддержки (10-70). ДА отправляет выбранный доклад; НЕТ или истечение времени отменяет его.')
-    ui.text('CODE 0 — сообщение о тяжёлом ранении. PA предложит его после попадания из огнестрельного оружия, если здоровье действительно уменьшилось. Урон по броне, падение и тайзер не вызывают это предложение.')
-    ui.text('CODE 1 отменяет ранее переданный CODE 0, а CODE 4 сообщает, что помощь больше не нужна. Вы отправляете их вручную и каждый раз подтверждаете текст. Эти доклады не завершают патруль и не снимают розыск.')
+    self:infoHint(ui,'radio-help-commands','Shots fired — сообщение о попадании по вашему персонажу. SOS — отдельный запрос поддержки (10-70). ДА отправляет выбранный доклад; НЕТ или истечение времени отменяет его.')
+    self:infoHint(ui,'radio-code0-help','CODE 0 — сообщение о тяжёлом ранении. PA предложит его после попадания из огнестрельного оружия, если здоровье действительно уменьшилось. Урон по броне, падение и тайзер не вызывают это предложение.')
+    self:infoHint(ui,'radio-code14-help','CODE 1 отменяет ранее переданный CODE 0, а CODE 4 сообщает, что помощь больше не нужна. Вы отправляете их вручную и каждый раз подтверждаете текст. Эти доклады не завершают патруль и не снимают розыск.')
     if not data.chatFiltersAvailable then ui.text('События урона недоступны: работают ручные кнопки связи.') end
     local cooldown=im.new.int(draft.cooldown_ms/1000)
     if im.SliderInt('Повторный доклад, с##alerts-cooldown',cooldown,1,120) then draft.cooldown_ms=cooldown[0]*1000;changed=true end
@@ -1186,7 +1202,7 @@ function Studio:drawAlerts(ui,data,callbacks)
     self:autosaveHint(ui,'alerts')
     if self:button('Открыть Shots fired##alerts-shots',ui) then callbacks.alert('shots') end
     if self:button('Открыть SOS##alerts-sos',ui) then callbacks.alert('sos') end
-    if self:button('Открыть CODE 0##alerts-code0',ui) then callbacks.alert('code0') end
+    if self:button('Открыть CODE 0##alerts-code0',ui,nil,'danger') then callbacks.alert('code0') end
     if self:button('Открыть CODE 1##alerts-code1',ui) then callbacks.alert('code1') end
     if self:button('Открыть CODE 4##alerts-code4',ui) then callbacks.alert('code4') end
     ui.text('Предпросмотр использует сохранённые настройки. Отметку «На службе» нужно включить самостоятельно: PA не определяет вашу фракцию и должность.')
@@ -1210,8 +1226,8 @@ function Studio:radioPreview(ui,data,draft,kind)
 end
 function Studio:drawRadioGuard(ui,data,callbacks)
     local im=self.imgui;local d=self.radioGuardDraft or model.copy(self.lib.radio_guard);local changed=false
-    self:settingsHeading(ui,'Предупреждения перед автодокладами')
-    ui.text('Все автодоклады используют общую очередь. Время предупреждения и полной карточки задаётся ниже, от 1 секунды. Если интервал доклада короче предупреждения, оно сокращается до интервала; отмена остаётся доступной.')
+    self:settingsHeading(ui,'Предупреждения перед автодокладами',
+        'Все автодоклады используют общую очередь. Таймер предупреждения и время показа карточки начинаются от 1 секунды. Если интервал короче предупреждения, оно сокращается до интервала. При 00:00 доклад ждёт закрытия ввода и свободной очереди. Закрытие F6 сохраняет отсчёт. Alt+Tab, пауза игры и долгий зависший кадр останавливают отсчёт. Экстренные подтверждения идут первыми. Отмена пропускает один доклад.','radio-guard-timing')
     local clock,clockEdited=self:check('Считать время докладов при открытом чате или окне##guard-input-clock',d.count_during_input~=false)
     if clockEdited then d.count_during_input=clock;changed=true end
     local value=im.new.int(d.lead_ms/1000)
@@ -1221,22 +1237,19 @@ function Studio:drawRadioGuard(ui,data,callbacks)
     ui.text('Пропустить ближайший: '..model.shortcutName(d.skip_shortcut)..' · /pa26skip')
     if self:button('Назначить сочетание отмены##guard-key',ui)then callbacks.capture({kind='feature',group='radio_guard',field='skip_shortcut'})end
     im.SameLine();if self:button('Убрать##guard-key',ui)then d.skip_shortcut={key=0,ctrl=false,alt=false,shift=false};changed=true end
-    ui.text('При включённом флажке отсчёт идёт в чате и окнах PA. В 00:00 доклад ждёт закрытия ввода и свободной очереди; закрытие F6 не начинает предупреждение заново. Alt+Tab, пауза игры и долгий зависший кадр приостанавливают отсчёт. Экстренные подтверждения идут первыми; отмена пропускает один доклад.')
-    self:settingsHeading(ui,'Длинные доклады')
+    self:settingsHeading(ui,'Длинные доклады',
+        'Между строками действует больший из двух интервалов — этого и общего интервала PA. Если журнал показывает все строки, а сервер выводит часть, увеличьте интервал. Журнал подтверждает передачу клиенту. При коротком открытии чата сохраняются только оставшиеся строки, а после закрытия ввода PA снова проверяет ситуацию. Отмена, диалог, потеря фокуса, смена сеанса или ошибка прекращают доклад без повторной отправки. При делении по словам каждую часть можно проверить в предпросмотре.','radio-guard-delivery')
     local resume,resumeChanged=self:check('Продолжать многострочный доклад после краткого ввода в чат##guard-resume',d.resume_radio_batches~=false)
     if resumeChanged then d.resume_radio_batches=resume;changed=true end
     local resumeTime=im.new.int((d.radio_resume_ms or 15000)/1000)
     if im.SliderInt('Сколько ждать закрытия чата, с##guard-resume-time',resumeTime,1,60)then d.radio_resume_ms=resumeTime[0]*1000;changed=true end
     local gap=im.new.int((d.radio_gap_ms or 1000)/1000)
     if im.SliderInt('Минимум между строками доклада, с##guard-radio-gap',gap,1,5)then d.radio_gap_ms=gap[0]*1000;changed=true end
-    ui.text('Используется больший из этого интервала и общего интервала PA. Если журнал показывает все строки, а сервер выводит только часть, увеличьте интервал: передача клиенту не подтверждает получение сервером. Автоматического повтора нет.')
-    ui.text('Если часть патрульного доклада уже передана, краткое открытие чата сохраняет только неотправленный остаток. После закрытия ввода он продолжится с прежними интервалами и проверкой ситуации. Отмена, диалог, потеря фокуса, смена сеанса или ошибка отправки останавливают доклад без повтора; журнал показывает число переданных строк.')
     local split,splitChanged=self:check('Делить длинные доклады на строки##guard-split',d.split_enabled)
     if splitChanged then d.split_enabled=split;changed=true end
     local maxLines=im.new.int(d.max_lines);if im.InputInt('Максимум строк в докладе##guard-max-lines',maxLines)then d.max_lines=maxLines[0];changed=true end
     local continuation=self:field('Начало продолжения##guard-continuation','guard:continuation',d.continuation,256)
     if continuation~=d.continuation then d.continuation=continuation;changed=true end
-    ui.text('Длинный доклад делится по словам так, чтобы части помещались в чат. В предпросмотре видны все части. Между отправками действует общий интервал; остаток можно отменить.')
     self:settingsHeading(ui,'Свои автодоклады')
     if self:button('+ Новый автодоклад##guard-new',ui)and #d.custom<16 then
         local id=d.next_id;d.next_id=id+1
@@ -1305,9 +1318,9 @@ function Studio:drawWeaponWarning(ui,data,callbacks)
         local key=tostring(id);v,edit=self:check(preferences.weaponName(self.lib.weapons,id)..'##warning-weapon-'..key,d.items[key])
         if edit then d.items[key]=v;changed=true end
     end
-    ui.text('Текст отправится после нажатия кнопки, сочетания или ДА. НЕТ и истечение времени отменяют предупреждение. Если очередь занята, PA подождёт. Смена оружия или цели, а также открытый чат отменяют устаревшее подтверждение.')
-    ui.text('Отсчёт идёт, пока вы удерживаете прицел; смотреть на человека необязательно. Если режим камеры недоступен, нужно навести оружие на игрока. Отпускание прицела, открытие меню или смена оружия запускают отсчёт заново. На одно удержание появляется одно напоминание. Уже показанное напоминание можно подтвердить и после отпускания прицела.')
-    ui.text('Напоминание работает при включённой отметке «На службе». Допустимость применения оружия зависит от ситуации и правил сервера.')
+    self:settingsHeading(ui,'Отправка предупреждения',
+        'Текст отправится после нажатия кнопки, сочетания или ДА. НЕТ и истечение времени отменяют предупреждение. Если очередь занята, PA подождёт. Смена оружия или цели, а также открытый чат отменяют устаревшее подтверждение. Отпускание прицела, открытие меню или смена оружия запускают отсчёт заново. На одно удержание прицела появляется одно напоминание. Его можно подтвердить после отпускания прицела. Допустимость применения оружия зависит от ситуации и правил сервера.','weapon-warning-delivery')
+    ui.text('Для напоминаний включите «На службе».')
     if changed then self.warningDraft=d end
     self:autoSettings('weapon_warning',{'weapon_warning'},d,'warningDraft')
     self:autosaveHint(ui,'weapon_warning')
@@ -1372,8 +1385,8 @@ function Studio:drawWeapons(ui,data,callbacks)
     local holster,holsterChanged=self:check('Отыгрывать убирание оружия##weapons-holster',draft.holster_enabled)
     if holsterChanged then draft.holster_enabled=holster;changed=true end
     local holsterDelay=im.new.int(draft.holster_delay_ms);if im.InputInt('Убирание после смены, мс##weapons-holster-delay',holsterDelay)then draft.holster_delay_ms=holsterDelay[0];changed=true end
-    ui.text('Реплика об убирании появляется, только если PA уже отыграл доставание этого оружия. Если сразу взять его снова, реплика отменится. Для гранат убирание по умолчанию выключено.')
-    ui.text('После смены оружия PA ждёт заданное время. Если вы снова смените оружие или очередь занята, устаревшая реплика отменится. Оружие, которое уже было в руках при запуске PA, не отыгрывается.')
+    self:infoHint(ui,'weapon-store-help','Реплика об убирании появляется, только если PA уже отыграл доставание этого оружия. Если сразу взять его снова, реплика отменится. Для гранат убирание по умолчанию выключено.')
+    self:infoHint(ui,'weapon-delay-help','После смены оружия PA ждёт заданное время. Если вы снова смените оружие или очередь занята, устаревшая реплика отменится. Оружие, которое уже было в руках при запуске PA, не отыгрывается.')
     ui.text('Для автоматических /me включите отметку «На службе» в настройках связи.')
     local choices={};local checked=0
     for _,row in ipairs(preferences.weaponCatalog) do local key=tostring(row[1]);local item=draft.items[key]
@@ -1402,7 +1415,7 @@ function Studio:drawWeapons(ui,data,callbacks)
     local expanded=item.template:gsub('{weapon}',function()return item.name end)
     require('pa26_rp_ui').preview(self,ui,data,'/me '..expanded)
     if self:button('Настроить перенос /me и /do##weapon-rp-settings',ui)then if callbacks.openSettings then callbacks.openSettings('chat','split')else callbacks.openAssist('roleplay')end end
-    ui.text('В справке сервера указан /taser, который применяется с Deagle в руках. Прежнее имя /tazer сохранено в старых профилях. Оружие с ID 23 — обычный SD Pistol, а ID 17 — газовая граната. Меняйте эти назначения только после проверки предметов на сервере.')
+    self:infoHint(ui,'weapon-server-help','В справке сервера указан /taser, который применяется с Deagle в руках. Прежнее имя /tazer сохранено в старых профилях. Оружие с ID 23 — обычный SD Pistol, а ID 17 — газовая граната. Меняйте эти назначения только после проверки предметов на сервере.')
     child(self,ui,'weapon-checklist##preferences',0,220,function()
         for _,row in ipairs(preferences.weaponCatalog) do local key=tostring(row[1]);local item=draft.items[key]
             local value,edit=self:check('ID '..key..'##weapon-check-'..key,item.enabled)
@@ -1428,7 +1441,7 @@ function Studio:drawTaser(ui,data,callbacks)
         if value~=draft[row[1]]then draft[row[1]]=value;changed=true end
     end
     local reply=im.new.int(draft.reply_timeout_ms);if im.InputInt('Ожидание ответа сервера, мс##taser-reply-timeout',reply)then draft.reply_timeout_ms=reply[0];changed=true end
-    ui.text('Команда сама по себе ещё не подтверждает включение тайзера. Пока ответы сервера неизвестны, оставьте поля ниже пустыми и отмечайте режим вручную. Обычные выстрелы Deagle не учитываются как выстрелы тайзера. Переключение режима не восстанавливает заряды.')
+    self:infoHint(ui,'taser-confirmation-help','Команда сама по себе ещё не подтверждает включение тайзера. Пока ответы сервера неизвестны, оставьте поля ниже пустыми и отмечайте режим вручную. Обычные выстрелы Deagle не учитываются как выстрелы тайзера. Переключение режима не восстанавливает заряды.')
     require('pa26_rp_ui').preview(self,ui,data,'/me '..draft.draw_template:gsub('{weapon}',function()return draft.name end),'Доставание')
     require('pa26_rp_ui').preview(self,ui,data,'/me '..draft.holster_template:gsub('{weapon}',function()return draft.name end),'Убирание')
     ui.text('В игровой справке указан /taser. Если у вас сохранено другое имя, замените его вручную после проверки.')
@@ -1452,26 +1465,74 @@ function Studio:drawTaser(ui,data,callbacks)
     local value=self:field('Одна /me для перезарядки · без /me##taser-reload','taser:reload',draft.reload_template,2048,true,96)
     if value~=draft.reload_template then draft.reload_template=value;changed=true end
     require('pa26_rp_ui').preview(self,ui,data,'/me '..draft.reload_template)
-    ui.text('Счётчик учитывает ваши выстрелы, включая промахи. Он отражает заряды по выбранному RP-профилю, а не патроны GTA. Смена оружия его не обнуляет.')
-    ui.text(draft.reload_rp_enabled~=false and'Когда заряды закончатся, PA дождётся свободной очереди и отправит отыгровку перезарядки. Готовность вернётся после отправки всех её частей и заданной паузы. Если отправка не удалась, повтор нужно запустить вручную.'or'RP перезарядки отключена: PA только восстановит свой счётчик после паузы. При выключенной автоматике используйте кнопку учёта перезарядки. Это не подтверждение серверного результата и не изменение патронов GTA.')
+    self:infoHint(ui,'taser-shot-help','Счётчик учитывает ваши выстрелы, включая промахи. Он отражает заряды по выбранному RP-профилю, а не патроны GTA. Смена оружия его не обнуляет.')
+    self:settingsHeading(ui,'Как учитывается перезарядка',
+        'Когда заряды закончатся, PA дождётся свободной очереди для отыгровки перезарядки. Готовность вернётся после передачи всех её частей и заданной паузы. При сбое повтор запускается вручную. Если отыгровка выключена, PA восстанавливает только свой счётчик после паузы. При выключенной автоматике используйте кнопку учёта перезарядки. Проверьте результат на сервере. PA не блокирует выстрелы и не меняет патроны GTA. Перед применением тайзера сверяйтесь с правилами предупреждения, допустимой дистанцией и ограничениями сервера.','taser-reload-help')
     ui.text('Для автоматической перезарядки включите «На службе». Повторить её вручную можно командой /pa26reload или кнопкой на виджете.')
-    ui.text('PA не блокирует выстрелы и не меняет патроны. Перед применением тайзера учитывайте требование о предупреждении, допустимую дистанцию и ограничения сервера.')
     if not data.chatFiltersAvailable then ui.text('SAMP.Lua недоступна: автоматический подсчёт выстрелов не работает.')end
     if changed then self.taserDraft=draft end
     self:autoSettings('taser',{'taser'},draft,'taserDraft')
     self:autosaveHint(ui,'taser')
     self:drawNotice(ui)
 end
+function Studio:requestDutyPreset(action,value,name)
+    if self.dutyPresetIntent then return nil,'Предыдущее действие ещё сохраняется.'end
+    self.dutyPresetIntent={action=action,value=value,name=name}
+    return true
+end
+function Studio:processDutyPreset(callbacks)
+    local intent=self.dutyPresetIntent
+    if not intent then return end
+    self.dutyPresetIntent=nil
+    self:flushAutosave(callbacks,true,'profile')
+    if self.autosaves and self.autosaves.profile then return end
+    local copy=model.copy(self.lib)
+    local ok,err,message
+    if intent.action=='add'then
+        ok,err=model.addDutyPreset(copy,intent.value);message='Профиль службы сохранён.'
+    elseif intent.action=='apply'then
+        ok,err=model.applyDutyPreset(copy,intent.value);message='Профиль службы применён.'
+    elseif intent.action=='delete'then
+        local row,index=model.findDutyPreset(copy,intent.value)
+        if row and row.name==intent.name then table.remove(copy.profile_presets,index);ok=true;message='Профиль службы удалён.'
+        else err='Список профилей изменился. Выберите профиль заново.'end
+    end
+    if ok then ok,err=callbacks.save(copy)end
+    if not ok then self:notify(err,'profile',false,'warning');return end
+    if intent.action=='apply'then self.profileDraft=nil;self:clearPreferenceCache('profile:')end
+    if intent.action=='add'then self.cache['duty:preset:name']=nil end
+    self:notify(message,'profile',false,'info')
+end
+function Studio:drawDutyPresets(ui,profile)
+    self:sectionCard(ui,'Быстрые профили службы',function()
+        local im=self.imgui
+        for _,preset in ipairs(self.lib.profile_presets or {})do
+            local name=preset.name:gsub('##','# #')
+            local applied=model.dutyPresetMatches(profile,preset)
+            local width=im.GetContentRegionAvail().x
+            if self:button(name..'##duty-preset-apply-'..preset.id,ui,math.max(1,width-110),applied and'primary'or nil)then
+                self:requestDutyPreset('apply',preset.id)
+            end
+            im.SameLine(0,8)
+            if self:button('Удалить##duty-preset-delete-'..preset.id,ui,102,'danger')then
+                self.remove={kind='profile_preset',id=preset.id,name=preset.name}
+            end
+        end
+        if #(self.lib.profile_presets or {})<model.MAX_DUTY_PRESETS then
+            local name=self:field('Название профиля##duty-preset-name','duty:preset:name','',97)
+            if self:button('Сохранить текущий профиль как пресет##duty-preset-save',ui)then self:requestDutyPreset('add',name)end
+        else ui.text('Сохранено 8 из 8 профилей.')end
+    end,'Профиль службы хранит ведомство, должность, позывной, три префикса рации и номер значка. Имя персонажа, род, акцент и бинды остаются вашими.','duty-presets')
+end
 function Studio:drawProfile(ui,data,callbacks,part)
     part=part or 'all'
     local copy=model.copy(self.lib);local im=self.imgui;copy.profile=self.profileDraft or model.copy(copy.profile)
     if part=='profile'or part=='all'then
-    self:settingsHeading(ui,'Режим работы PA')
+    self:settingsHeading(ui,'Режим работы PA','Выбранный режим сохраняется после перезапуска. При первой установке включён реальный режим.','profile-mode')
     local mode,modeChanged=self:choice('Режим##profile-demo-mode',data.demo and'demo'or'real',
         {{'real','РЕАЛЬНЫЙ РЕЖИМ · ДЕМО ВЫКЛ'},{'demo','ДЕМО РЕЖИМ · без отправки'}},ui)
     if modeChanged and callbacks.setDemoMode then callbacks.setDemoMode(mode=='demo')end
     ui.text(data.demo and'ДЕМО включён: сценарии показывают предпросмотр и не отправляют команды в игру.'or'Реальный режим: после ваших действий и подтверждений PA отправляет реплики и команды в игру.')
-    ui.text('Выбранный режим сохраняется после перезапуска. При первой установке включён реальный режим.')
     im.Separator()
     ui.text('Данные персонажа и службы. Изменения сохраняются автоматически.')
     self:profileGroup(ui,copy,'Персонаж и служба',{{'name','RP-имя'},{'department','Ведомство'},{'rank','Должность'},{'case_number','Личное дело'},{'badge_number','Номер служебного значка (не SA:MP ID)'}})
@@ -1480,27 +1541,27 @@ function Studio:drawProfile(ui,data,callbacks,part)
     self:profileGroup(ui,copy,'Место и транспорт · ручные значения',{{'city','Город (вручную)'},{'square','Сектор патруля (вручную)'},
         {'my_plate','Свой номер авто (вручную)'},{'select_plate','Номер выбранной машины (вручную)'},{'closest_plate','Номер ближайшей машины (вручную)'}})
     copy.profile.gender=self:choice('Грамматический род',copy.profile.gender,{{'male','Мужской'},{'female','Женский'}},ui)
-    ui.text(require('pa26_gender_audit').fallback)
+    self:infoHint(ui,'profile-gender',require('pa26_gender_audit').fallback)
     copy.profile.timezone=self:choice('Часы в биндах',copy.profile.timezone,{{'local','Компьютер'},{'utc','UTC'},{'moscow','Москва (UTC+3)'}},ui)
     local grid=model.copy((self.autosaves and self.autosaves.map_grid and self.autosaves.map_grid.value)or self.lib.map_grid)
     local auto,changed=self:check('Автозаполнение {square} квадратом карты##profile-auto-square',grid.auto_square)
     if changed then grid.auto_square=auto;if self.mapDraft then self.mapDraft.auto_square=auto end;self:autoSettings('map_grid',{'map_grid'},grid)end
     ui.text('Ручной сектор сохраняется. Полная настройка сетки — Экран, HUD и карта → Карта.')
     if self:button('Настроить акцент, перевод .команд и чат →##profile-chat',ui)and callbacks.openSettings then callbacks.openSettings('chat','accent')end
+    self:drawDutyPresets(ui,copy.profile)
     end
     if part=='chat_accent'or part=='all'then
     local radio,radioChanged=self:check('Добавлять префикс локальной волны в мой /r##manual-radio-prefix',copy.settings.manual_radio_prefix)
     if radioChanged then self:autoSettings('manual_radio',{'settings','manual_radio_prefix'},radio)end
-    ui.text('При отправке вашего /r PA добавляет префикс из «Профиль → Префикс локальной волны». После перевода .к действует то же правило. Пустое поле или выключатель оставляют доклад без изменений. /rn, /f, /d и другие команды не затрагиваются. Акцент в рацию не добавляется.')
+    self:infoHint(ui,'manual-radio-prefix','При отправке вашего /r PA добавляет префикс из «Профиль → Префикс локальной волны». После перевода .к действует то же правило. Пустое поле или выключатель оставляют доклад без изменений. /rn, /f, /d и другие команды не затрагиваются. Акцент в рацию не добавляется.')
     local radioExample=require('pa26_chat_text').radioCommand('/r Запрашиваю помощь.',{manual_radio_prefix=radio,local_tag=copy.profile.local_tag})
     ui.text('Предпросмотр: '..radioExample)
     if data.codec then local wire,err=require('pa26_core').encodeWire(radioExample,data.codec);if not wire then ui.text('Пример не помещается в чат: '..tostring(err))end end
-    ui.text('Готовый префикс не дублируется. Длинный доклад продолжится по словам, если автоперенос включён. Перед отправкой проверяются все части и предел 127 байт вместе с /r и префиксом. Бинды и готовые доклады PA используют свои шаблоны: для них по-прежнему есть {local_tag}.')
+    self:infoHint(ui,'manual-radio-limit','Готовый префикс не дублируется. Длинный доклад продолжится по словам, если автоперенос включён. Перед отправкой проверяются все части и предел 127 байт вместе с /r и префиксом. Бинды и готовые доклады PA используют свои шаблоны: для них по-прежнему есть {local_tag}.')
     self:autosaveHint(ui,'manual_radio')
-    self:settingsHeading(ui,'Акцент и команды с точкой')
+    self:settingsHeading(ui,'Акцент и команды с точкой','Акцент добавляется только к обычному сообщению, которое вы сами вводите в игровой чат. Команды с / или !, /me, /do, рация и автоматические реплики PA не меняются. В собственном бинде можно явно поставить {accent}.','accent-chat')
     copy.profile.accent=self:field('Акцент##profile','profile:accent',copy.profile.accent,512)
     ui.text('Префикс обычной речи, например: [Русский акцент]:. Пустое поле отключает акцент.')
-    ui.text('Акцент добавляется только к обычному сообщению, которое вы сами вводите в игровой чат. Команды с / или !, /me, /do, рация и автоматические реплики PA не меняются. В собственном бинде можно явно поставить {accent}.')
     local live,changed=self:check('Добавлять акцент при отправке обычной речи##accent-live',copy.settings.accent_live_input)
     if changed then
         if live and model.accentPrefix(copy.profile.accent)==''then copy.profile.accent='[Русский акцент]:';self:setBuffer('profile:accent',copy.profile.accent,512)end
@@ -1508,26 +1569,25 @@ function Studio:drawProfile(ui,data,callbacks,part)
     end
     local preview=live and model.applyAccent('Привет.',copy.profile.accent)or'Привет.'
     ui.text('Предпросмотр: '..tostring(preview or'Проверьте текст акцента.'))
-    ui.text('Выключатель отключает акцент и при вводе, и при отправке. Текст префикса сохраняется. При включённом автопереносе длинная речь продолжается с многоточиями, а акцент остаётся только в первой части. Если подготовить все части нельзя, ввод сохраняется.')
+    self:infoHint(ui,'accent-toggle-help','Выключатель отключает акцент и при вводе, и при отправке. Текст префикса сохраняется. При включённом автопереносе длинная речь продолжается с многоточиями, а акцент остаётся только в первой части. Если подготовить все части нельзя, ввод сохраняется.')
     local brackets,bracketsChanged=self:check('Без акцента после ( и ) в начале сообщения##accent-brackets',copy.settings.accent_skip_brackets)
     if bracketsChanged then self:autoSettings('accent_chat',{'settings','accent_skip_brackets'},brackets)end
-    ui.text('Если сообщение начинается с ( или ), PA оставит его без акцента. Пробелы перед скобкой тоже учитываются. Скобки внутри обычной фразы ничего не меняют.')
+    self:infoHint(ui,'accent-brackets-help','Если сообщение начинается с ( или ), PA оставит его без акцента. Пробелы перед скобкой тоже учитываются. Скобки внутри обычной фразы ничего не меняют.')
     ui.text('Предпросмотр: '..tostring(brackets and') Привет.'or(live and model.applyAccent(') Привет.',copy.profile.accent)or') Привет.')))
     local dot,dotChanged=self:check('Команды с точкой на русской раскладке##chat-dot-commands',copy.settings.chat_dot_commands)
-    ui.text('Также при отправке: /b .и Привет! → /n Привет! Обычный /b, /n и слова вроде .информация не меняются. Преобразование происходит после Enter; ввод и выделение текста свободны.')
+    self:infoHint(ui,'dot-command-send','Поставьте точку в начале поля чата. После Enter PA заменит её на / и переведёт только имя команды по клавишам русской раскладки. Аргументы сохраняются. Обычные /b, /n и слова вроде .информация сохраняют написание. Для CEF требуется поддержка чата лаунчера. Перевод работает и с выключенным акцентом. При вводе и выделении текста преобразования не выполняются.')
     if dotChanged then self:autoSettings('accent_chat',{'settings','chat_dot_commands'},dot)end
-    ui.text('Поставьте одну точку в самом начале поля и сразу напишите команду. При отправке PA заменит точку на / и переведёт только имя команды по клавишам русской раскладки. Аргументы сохранятся. Работает и с выключенным акцентом. Для CEF-чата также нужна включённая поддержка чата лаунчера ниже.')
-    ui.text(dot and'Предпросмотр: .к Запрашиваю помощь. → /r Запрашиваю помощь.; .ыефеы → /stats.'or'Предпросмотр: .к Запрашиваю помощь. — перевод команд выключен.')
-    ui.text('Пробел перед точкой, .5, .., многоточия и точки внутри текста не создают команду. Начальная точка отключает акцент, пока эта настройка включена. Неизвестную команду проверяет сервер. Чтобы написать .слово как обычный текст, поставьте перед точкой пробел или выключите перевод.')
+    ui.text(dot and'Предпросмотр · .к → /r · .ыефеы → /stats · /b .и Привет! → /n Привет!'or'Предпросмотр · перевод команд выключен.')
+    self:infoHint(ui,'dot-command-plain-help','Пробел перед точкой, .5, .., многоточия и точки внутри текста не создают команду. Начальная точка отключает акцент, пока эта настройка включена. Неизвестную команду проверяет сервер. Чтобы написать .слово как обычный текст, поставьте перед точкой пробел или выключите перевод.')
     end
     if part=='chat_cef'or part=='all'then
     local cef,cefChanged=self:check('Поддержка чата лаунчера##cef-chat',copy.settings.cef_chat_support)
     if cefChanged then self:autoSettings('cef_chat',{'settings','cef_chat_support'},cef)end
     local profiles,profilesChanged=self:check('Проверять новые профили чата на GitHub##cef-profiles',copy.settings.cef_profile_updates)
     if profilesChanged then self:autoSettings('cef_chat',{'settings','cef_profile_updates'},profiles)end
-    ui.text('При запуске PA проверяет файлы чата. Если подходящего профиля нет в комплекте, PA сверяет их с каталогом официального репозитория. Переключатель применяется при следующем запуске PA.')
-    ui.text('При запуске проверяет контракт чата отдельным фоновым заданием. Известные версии проверяются быстрее; новый хеш допустим, если структура и поведение нужных интерфейсов совпадают с проверенным профилем. Затем адаптер подтверждает локальную связь. При отказе остаётся исходный чат и нативные функции PA. Main.js и DLL не меняются. Повторная проверка — после перезапуска PA.')
-    ui.text('Связывает CEF-чат с командами PA, фильтрами и распознаванием служебных сообщений. Во время ввода игровые сочетания и отправка сценариев блокируются так же, как в стандартном чате.')
+    self:infoHint(ui,'cef-catalog-help','При запуске PA проверяет файлы чата. Если подходящего профиля нет в комплекте, PA сверяет их с каталогом официального репозитория. Переключатель применяется при следующем запуске PA.')
+    self:infoHint(ui,'cef-check-help','При запуске проверяет контракт чата отдельным фоновым заданием. Известные версии проверяются быстрее; новый хеш допустим, если структура и поведение нужных интерфейсов совпадают с проверенным профилем. Затем адаптер подтверждает локальную связь. При отказе остаётся исходный чат и нативные функции PA. Main.js и DLL не меняются. Повторная проверка — после перезапуска PA.')
+    self:infoHint(ui,'cef-controls-help','Связывает CEF-чат с командами PA, фильтрами и распознаванием служебных сообщений. Во время ввода игровые сочетания и отправка сценариев блокируются так же, как в стандартном чате.')
     for _,r in ipairs({{'cef_chat_weapon_guard','Защита клавиш оружия'},
         {'cef_chat_weapon_lock','Оружие при вводе чата'}})do
         local value,changed=self:check(r[2]..'##'..r[1],copy.settings[r[1]])
@@ -1536,10 +1596,10 @@ function Studio:drawProfile(ui,data,callbacks,part)
     local grace=self.imgui.new.int(copy.settings.cef_chat_grace_ms)
     ui.text('Защита открытия CEF-чата, мс');self.imgui.PushItemWidth(-1)
     if self.imgui.SliderInt('##cef-grace',grace,50,1000)then self:autoSettings('cef_chat',{'settings','cef_chat_grace_ms'},grace[0])end;self.imgui.PopItemWidth()
-    ui.text('Во время ввода цифры и буквы продолжают печататься, но не переключают оружие. Защита открытия закрывает промежуток до ответа CEF; по умолчанию 350 мс. Пример: «/su 123» остаётся текстом чата, оружие не меняется.')
+    self:infoHint(ui,'cef-weapon-help','Во время ввода цифры и буквы продолжают печататься, но не переключают оружие. Защита открытия закрывает промежуток до ответа CEF; по умолчанию 350 мс. Пример: «/su 123» остаётся текстом чата, оружие не меняется.')
     local layout,layoutChanged=self:check('Язык ввода рядом с полем чата##cef-layout',copy.settings.cef_layout_indicator)
     if layoutChanged then self:autoSettings('cef_chat',{'settings','cef_layout_indicator'},layout)end
-    ui.text('Показывает текущую раскладку клавиатуры справа от поля CEF-чата: RU, EN, BG, UK и другие. Обновляется при смене языка. При закрытом чате или потере связи значок скрывается. Это отдельный индикатор, он не меняет текст и RP-акцент.')
+    self:infoHint(ui,'cef-layout-help','Показывает текущую раскладку клавиатуры справа от поля CEF-чата: RU, EN, BG, UK и другие. Обновляется при смене языка. При закрытом чате или потере связи значок скрывается. Это отдельный индикатор, он не меняет текст и RP-акцент.')
     ui.text(({
         disabled='CEF-функции PA отключены. Причина — в диагностике чата.',connected='Чат лаунчера: связь установлена.',waiting='Чат лаунчера: ожидается связь с игровым окном.',
         unavailable='Чат лаунчера: адаптер установлен, но локальная связь недоступна.',
@@ -1583,8 +1643,8 @@ function Studio:drawProfile(ui,data,callbacks,part)
     if cefLogChanged then self:autoSettings('cef_chat',{'settings','cef_chat_diagnostics'},cefLog)end
     local perf,perfChanged=self:check('Замер задержек CEF и кадров (временно)##cef-chat-profile',copy.settings.cef_chat_profile)
     if perfChanged then self:autoSettings('cef_chat',{'settings','cef_chat_profile'},perf)end
-    ui.text('По умолчанию выключен. Раз в 30 секунд пишет только времена и счётчики в журнал PA / moonloader.log: кадры, цикл PA, контекст, клавиши и мост. Переписка не записывается. Для сравнения повторите ту же сцену с PA и без него; браузерные замеры отдельно не доказывают плавность в GTA.')
-    ui.text('Записывает этап подключения и причины сбоев в moonloader.log. Текст переписки, сам акцент и секретный адрес не записываются. Счётчики означают подготовку и передачу сообщения чату, а не принятие сервером.')
+    self:infoHint(ui,'cef-measure-help','По умолчанию выключен. Раз в 30 секунд пишет только времена и счётчики в журнал PA / moonloader.log: кадры, цикл PA, контекст, клавиши и мост. Переписка не записывается. Для сравнения повторите ту же сцену с PA и без него; браузерные замеры отдельно не доказывают плавность в GTA.')
+    self:infoHint(ui,'cef-log-help','Записывает этап подключения и причины сбоев в moonloader.log. Текст переписки, сам акцент и секретный адрес не записываются. Счётчики означают подготовку и передачу сообщения чату, а не принятие сервером.')
     self:autosaveHint(ui,'cef_chat')
     self:autosaveHint(ui,'accent_chat')
     if not data.chatFiltersAvailable and not data.accentInputAvailable then ui.text('Перехват обычного чата недоступен в этом клиенте.') end
@@ -1609,27 +1669,26 @@ function Studio:drawOptions(ui,data,callbacks,part)
     ui.text('По умолчанию F4. Клавишу можно переназначить или убрать; она не срабатывает при наборе текста, открытом чате и подтверждениях.')
     end
     if part~='controls'then
-    self:settingsHeading(ui,'Оформление окон')
+    self:sectionCard(ui,'Оформление окон',function()
+    d.theme=self:choice('Тема оформления##ui-theme',d.theme or'police',require('pa26_theme').choices,ui)
     local alpha=im.new.float(d.opacity);if im.SliderFloat('Непрозрачность',alpha,.5,1)then d.opacity=alpha[0]end
     d.compact=self:check('Компактные отступы',d.compact)
     d.ui_icons=self:check('Показывать иконки интерфейса##ui-icons',d.ui_icons~=false)
     require('pa26_icons').setEnabled(d.ui_icons)
+    end)
     end
     if part~='appearance'then
-    im.Separator();self:settingsHeading(ui,'Выбранный человек')
+    self:sectionCard(ui,'Выбранный человек',function()
     d.aim_select_enabled=self:check('Выбирать человека при удержании ПКМ##aim-select',d.aim_select_enabled)
     d.aim_select_control=self:choice('Кнопка выбора##aim-select-control',d.aim_select_control,{{'mouse','Всегда правая кнопка мыши','ПКМ'},{'game','Кнопка прицеливания из управления GTA','Прицеливание GTA'}},ui)
-    ui.text('При стандартном управлении оба варианта используют ПКМ. «Всегда правая кнопка мыши» не зависит от переназначения клавиш GTA. Второй вариант следует настройке прицеливания в самой игре.')
     local aimDelay=im.new.int(d.aim_select_delay_ms);if im.SliderInt('Удержание перед выбором, мс',aimDelay,0,2000)then d.aim_select_delay_ms=aimDelay[0]end
-    ui.text('Наведитесь на человека и удерживайте ПКМ до его игрового выделения. PA запомнит его без X и без оружия, в том числе на мотоцикле. За одно удержание выбирается один человек; отпустите кнопку перед новым выбором. Реплики и команды от этого не отправляются.')
-    ui.text('При варианте «Прицеливание GTA» используется кнопка, назначенная в управлении игры. Меню, чат, диалоги и выполняющийся сценарий блокируют новый выбор. После их закрытия отпустите кнопку и нажмите снова.')
     d.keep_target_on_interior_change=self:check('Сохранять выбранного человека при смене интерьера##keep-target-interior',d.keep_target_on_interior_change)
-    ui.text('При входе и выходе человек остаётся выбранным. Пока он не загрузился рядом, действия недоступны. Незавершённый сценарий отменяется; новый запускайте после перехода. Выход с сервера, смерть и смена личности по-прежнему снимают выбор.')
+    self:infoHint(ui,'aim-interior','При входе и выходе человек остаётся выбранным. Пока он не загрузился рядом, действия недоступны. Незавершённый сценарий отменяется; новый запускайте после перехода. Выход с сервера, смерть и смена личности по-прежнему снимают выбор.')
     local distance=im.new.int(d.retain_distance);if im.SliderInt('Дальность выбора и сохранения, м',distance,20,200)then d.retain_distance=distance[0]end
     local grace=im.new.int(d.retain_grace_ms);if im.SliderInt('Перерыв стрима, мс',grace,500,5000)then d.retain_grace_ms=grace[0]end
-    ui.text('Выбранный человек остаётся закреплён, пока он в игре и достаточно близко. У каждой серверной команды могут быть свои ограничения по расстоянию.')
     require('pa26_nearby').settings(self,ui)
-    im.Separator();self:settingsHeading(ui,'Радиальное меню')
+    end,'При стандартном управлении оба варианта используют ПКМ. «Всегда правая кнопка мыши» не зависит от переназначения клавиш GTA. Прицеливание GTA следует настройке в игре.\n\nНаведитесь на человека и удерживайте кнопку до его игрового выделения. Выбор работает без X и без оружия, в том числе на мотоцикле. За одно удержание выбирается один человек. Реплики и команды не отправляются.\n\nМеню, чат, диалоги и выполняющийся сценарий блокируют выбор. После закрытия отпустите кнопку и нажмите снова. Выбранный человек остаётся закреплён, пока он в игре и достаточно близко. У серверных команд могут быть свои ограничения по расстоянию.','aim-select-help')
+    self:sectionCard(ui,'Радиальное меню',function()
     for _,spec in ipairs({{'wheel_enabled','Включить радиальное меню'},{'interaction_notices','Карточки взаимодействия с игроками'}})do d[spec[1]]=self:check(spec[2]..'##feature-'..spec[1],d[spec[1]])end
     if self:button('Тексты и сроки карточек##interaction-edit',ui)then callbacks.openAssist('notices')end
     d.wheel_car_separate=self:check('Отдельное колесо в машине##wheel-car-separate',d.wheel_car_separate==true)
@@ -1638,15 +1697,14 @@ function Studio:drawOptions(ui,data,callbacks,part)
     local scope=self.wheelEditScope;local wd=require('pa26_wheel_scope').settings(d,scope)
     wd.wheel_mode=self:choice('Способ выбора##wheel-mode',wd.wheel_mode,{{'categories','Категории и внешняя дуга','По категориям'},{'classic','Шесть прямых действий','Прямые действия'}},ui)
     d.wheel_edit_enabled=self:check('Ctrl + ЛКМ · переставлять секторы в колесе##wheel-edit-enabled',d.wheel_edit_enabled~=false)
-    ui.text('Удерживайте Ctrl, зажмите ЛКМ на секторе и отпустите на другом секторе того же кольца. Это меняет порядок без запуска действий. Порядок сохраняется отдельно от биндов.')
+    self:infoHint(ui,'wheel-drag','Удерживайте Ctrl, зажмите ЛКМ на секторе и отпустите на другом секторе того же кольца. Это меняет порядок без запуска действий. Порядок сохраняется отдельно от биндов.')
     if self:button('Вернуть стандартный порядок категорий и действий##wheel-order-reset',ui)then wd.wheel_order={}end
     d.shutdown_message=self:field('Локальное сообщение после отключения PA##shutdown-message','settings:shutdown-message',d.shutdown_message or'',2049,true,70)
     ui.text('Предпросмотр: '..(d.shutdown_message or'')..' · Это локальное сообщение, серверу не отправляется. Пустое поле отключает сообщение.')
     if wd.wheel_mode=='categories'then
         wd.wheel_profile=self:choice('Количество категорий##wheel-profile',wd.wheel_profile,{{'compact','4 крупные категории','4'},{'extended','6 категорий','6'},{'full','8 категорий','8'}},ui)
-        ui.text('Чтобы открыть колесо, удерживайте назначенную клавишу. Добавить бинд: откройте его в библиотеке, перейдите в «Общее», включите «В радиальном меню» и выберите категорию.')
         self:settingsHeading(ui,'Названия категорий колеса','Ниже показаны категории для выбранного числа секций. При переключении между 4, 6 и 8 секциями скрытые названия сохраняются. Бинды остаются в своих категориях.','wheel-names')
-        ui.text('Можно менять только названия: привязка биндов к категориям останется прежней. Пустое поле вернёт стандартное название.')
+        self:infoHint(ui,'wheel-names-default','Можно менять только названия. Привязка биндов к категориям останется прежней. Пустое поле вернёт стандартное название.')
         wd.wheel_names=wd.wheel_names or{}
         local ids=wheelModel.profiles[wd.wheel_profile]or wheelModel.profiles.compact
         for n,id in ipairs(ids)do
@@ -1655,19 +1713,12 @@ function Studio:drawOptions(ui,data,callbacks,part)
                 wd.wheel_names[id]or wheelModel.categoryName(id),256)
             if edited then wd.wheel_names[id]=name~=''and name or nil end
         end
-        ui.text('Названия скрытых категорий сохраняются. Верните 6 или 8 секций — поля появятся с вашими названиями.')
         local customCount,changed=self:check('Своё число действий второго кольца##wheel-child-custom',(wd.wheel_child_limit or 0)>0)
         if changed then wd.wheel_child_limit=customCount and 10 or 0 end
         if customCount then local v=im.new.int(wd.wheel_child_limit);if im.SliderInt('Действий перед кнопкой поиска##wheel-child-limit',v,1,16)then wd.wheel_child_limit=v[0]end end
-        ui.text('Авто сохраняет прежний размер. При своём числе, например 10, показываются до 10 действий, а при переполнении — дополнительная кнопка «Ещё и поиск».')
-        self:settingsHeading(ui,'Куда поместить встроенные действия')
+        self:settingsHeading(ui,'Куда поместить встроенные действия','Авто сохраняет прежний размер. При своём числе, например 10, показываются до 10 действий, а при переполнении появляется «Ещё и поиск». В 4 и 6 секциях скрытые категории объединяются. При возврате к 8 назначения сохраняются.','wheel-action-help')
         wd.wheel_system_groups=wd.wheel_system_groups or{}
-        local choices=wheelModel.systemCategoryChoices(wd.wheel_names)
-        for _,row in ipairs(wheelModel.systemRows)do
-            local value,edited=self:choice(row[2]..'##wheel-system-'..row[1],wd.wheel_system_groups[row[1]]or'auto',choices,ui)
-            if edited then wd.wheel_system_groups[row[1]]=value~='auto'and value or nil end
-        end
-        ui.text('В профиле с 4/6 секциями скрытые категории объединяются, как у биндов. При возврате к 8 назначения сохраняются.')
+        require('pa26_settings_ui').drawWheelActions(self,ui,wheelModel,scope,wd)
     else
         local slots=scope=='car'and d.wheel_car_classic or copy.wheel
         ui.text('Места прямого меню')
@@ -1677,6 +1728,7 @@ function Studio:drawOptions(ui,data,callbacks,part)
             if changed then slots[index]=value;if scope=='foot'then callbacks.save(copy)end end end
     end
     if scope=='car'then for _,field in ipairs(require('pa26_wheel_scope').fields)do d['wheel_car_'..field]=wd['wheel_'..field]end end
+    end,'Чтобы открыть колесо, удерживайте назначенную клавишу. Чтобы добавить бинд, откройте его в библиотеке, перейдите в «Общее», включите «В радиальном меню» и выберите категорию.','wheel-help')
     end
     self.optionDraft=d;self:autoSettings('options',{'settings'},d,'optionDraft');self:autosaveHint(ui,'options');self:drawNotice(ui)
 end
@@ -1958,8 +2010,8 @@ function Studio:modalIntent(data)
                 'Перед выходом сохраните бинд, отмените изменения или вернитесь к редактированию.'}}
     end
     if self.remove then
-        local r=self.remove; local names={binding='сценарий',note='памятку',partner='контакт',filter='фильтр чата'}
-        local key=({binding='bindings',note='notes',partner='partners',filter='filters'})[r.kind]
+        local r=self.remove; local names={binding='сценарий',note='памятку',partner='контакт',filter='фильтр чата',profile_preset='профиль службы'}
+        local key=({binding='bindings',note='notes',partner='partners',filter='filters',profile_preset='profile_presets'})[r.kind]
         if not key then return nil end
         local item
         if r.kind=='filter' then item=self.lib.filters[r.id]
@@ -2021,7 +2073,9 @@ function Studio:acceptModal(data,callbacks)
         self.radioGuardDraft=draft;self.autoReportId=nil;self:clearPreferenceCache('auto:'..r.id..':');return true
     end
     if self.remove then
-        local r=self.remove; local copy=model.copy(self.lib)
+        local r=self.remove
+        if r.kind=='profile_preset'then return self:requestDutyPreset('delete',r.id,r.name)end
+        local copy=model.copy(self.lib)
         local key=({binding='bindings',note='notes',partner='partners',filter='filters'})[r.kind]
         if not key then return nil,'Запись недоступна.' end
         if r.kind=='filter' then
@@ -2057,9 +2111,10 @@ end
 function Studio:drawCaptureSurface(ui,callbacks)
     local im=self.imgui; local capture=self.keyCapture
     if not capture then return end
+    local p=ui.theme or themes.get(self.lib.settings.theme)
     local width=math.max(1,im.GetContentRegionAvail().x)
-    im.PushStyleColor(im.Col.Button,im.ImVec4(.06,.16,.25,.94)); ui.push(function() im.PopStyleColor(1) end)
-    im.PushStyleColor(im.Col.ButtonHovered,im.ImVec4(.08,.22,.34,.97)); ui.push(function() im.PopStyleColor(1) end)
+    im.PushStyleColor(im.Col.Button,themes.vec(im,p.btnSecondary)); ui.push(function() im.PopStyleColor(1) end)
+    im.PushStyleColor(im.Col.ButtonHovered,themes.vec(im,p.btnSecondaryHover)); ui.push(function() im.PopStyleColor(1) end)
     local retry=im.Button('##capture-surface',im.ImVec2(width,126))
     ui.finish(); ui.finish()
     local first,last=im.GetItemRectMin(),im.GetItemRectMax()
@@ -2079,9 +2134,9 @@ function Studio:drawCaptureSurface(ui,callbacks)
         local x,y=first.x+(width-layout.total)/2,first.y+20+(58-layout.height)/2
         for i,text in ipairs(parts) do
             local w=layout.widths[i]; local h=layout.height
-            draw:AddRectFilled(vec(x,y+3),vec(x+w,y+h+3),tint(.02,.06,.10,.8),10)
-            draw:AddRectFilled(vec(x,y),vec(x+w,y+h),tint(.13,.31,.45,.99),10)
-            draw:AddRect(vec(x,y),vec(x+w,y+h),tint(.40,.64,.81,.84),10,15,1.2)
+            draw:AddRectFilled(vec(x,y+3),vec(x+w,y+h+3),themes.u32(im,p.windowBg,.80),10)
+            draw:AddRectFilled(vec(x,y),vec(x+w,y+h),themes.u32(im,p.frameHovered),10)
+            draw:AddRect(vec(x,y),vec(x+w,y+h),themes.u32(im,p.border,.84),10,15,1.2)
             local extent=font:CalcTextSizeA(layout.fontSize,100000,0,text)
             draw:AddTextFontPtr(font,layout.fontSize,vec(x+(w-extent.x)/2,y+(h-extent.y)/2),tint(1,1,1,1),text)
             x=x+w
@@ -2159,8 +2214,9 @@ function Studio:drawModal(ui,data,callbacks)
     style(im.StyleVar.WindowBorderSize,0)
     style(im.StyleVar.WindowPadding,im.ImVec2(28,24),true)
     style(im.StyleVar.ItemSpacing,im.ImVec2(10,10),true)
-    color(im.Col.PopupBg,im.ImVec4(.035,.09,.15,.88))
-    color(im.Col.ModalWindowDimBg,im.ImVec4(.01,.03,.06,.28))
+    local p=ui.theme or themes.get(self.lib.settings.theme)
+    color(im.Col.PopupBg,themes.vec(im,p.popupBg))
+    color(im.Col.ModalWindowDimBg,themes.vec(im,p.windowBg,.28))
     local flags=im.WindowFlags.NoTitleBar+im.WindowFlags.NoResize+im.WindowFlags.NoMove+
         im.WindowFlags.NoSavedSettings+im.WindowFlags.NoCollapse+im.WindowFlags.NoScrollbar+im.WindowFlags.NoScrollWithMouse
     local visible=im.BeginPopupModal(id,nil,flags)
@@ -2183,7 +2239,7 @@ function Studio:drawModal(ui,data,callbacks)
             end
             local function green(text,width) return answer(text,im.ImVec4(.10,.51,.29,.97),im.ImVec4(.14,.64,.37,1),im.ImVec4(.08,.43,.24,1),width) end
             local function red(text,width) return answer(text,im.ImVec4(.64,.17,.23,.97),im.ImVec4(.78,.23,.29,1),im.ImVec4(.54,.12,.17,1),width) end
-            local function neutral(text,width) return answer(text,im.ImVec4(.12,.28,.40,.94),im.ImVec4(.18,.39,.53,1),im.ImVec4(.08,.22,.32,1),width) end
+            local function neutral(text,width) return answer(text,themes.vec(im,p.btnSecondary),themes.vec(im,p.btnSecondaryHover),themes.vec(im,p.btnSecondaryActive),width) end
             local function close() self:cancelModal(); im.CloseCurrentPopup(); self.modalVisible=false end
             local function execute(fn)
                 local worked,ok,err=pcall(fn)
@@ -2257,7 +2313,7 @@ function Studio:drawModal(ui,data,callbacks)
                 local apply
                 if capture.valid then apply=green('Назначить##capture-apply',width)
                 else
-                    local muted=im.ImVec4(.09,.14,.19,.48)
+                    local muted=themes.vec(im,p.btnSecondary,.48)
                     answer('Назначить##capture-apply',muted,muted,muted,width)
                     self:tooltip(ui,capture.error or 'Сначала нажмите свободную клавишу или сочетание.')
                 end

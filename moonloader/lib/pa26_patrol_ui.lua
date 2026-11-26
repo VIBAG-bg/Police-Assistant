@@ -28,22 +28,22 @@ function M.drawSessionSettings(studio,ui,data,callbacks)
     for _,r in ipairs({{'interrupt_grace_ms','Подтверждать смену сервера или персонажа, с##session-grace'},{'reload_grace_ms','Перерыв для автовосстановления PA, с##session-reload-grace'}})do
         local n=im.new.int(draft[r[1]]/1000);if im.InputInt(r[2],n)then draft[r[1]]=n[0]*1000 end
     end
-    ui.text('Короткая потеря данных и 0 HP не завершают патруль. Ранение с возможностью реанимации сохраняет сцену; RP и команды ждут восстановления. Автовосстановление требует тот же процесс GTA, сервер и персонажа; ручная пауза сохраняется. Старые доклады не повторяются. Отсчёт при F6 настраивается в «Предупреждения и свои автодоклады».')
+    studio:infoHint(ui,'session-reload-help','Короткая потеря данных и 0 HP не завершают патруль. Ранение с возможностью реанимации сохраняет сцену; RP и команды ждут восстановления. Автовосстановление требует тот же процесс GTA, сервер и персонажа; ручная пауза сохраняется. Старые доклады не повторяются. Отсчёт при F6 настраивается в «Предупреждения и свои автодоклады».')
     for _,r in ipairs({{'downed_hp','Порог ранения: блокировать действия при HP не выше##session-downed-hp',1},{'respawn_distance','Перемещение для проверки респавна, м##session-respawn-distance',1},{'respawn_position_tolerance','Допуск совпадения с точкой спавна, м##session-respawn-tolerance',1},{'respawn_evidence_ms','Срок связи событий респавна, с##session-respawn-evidence',1000}})do
         local n=im.new.int(draft[r[1]]/r[3]);if im.InputInt(r[2],n)then draft[r[1]]=n[0]*r[3]end
     end
-    ui.text('Ни здоровье, ни дверь больницы, ни запрос спавна сами по себе не означают смерть. Нужны новая наблюдаемая позиция и связанные события спавна/телепорта от сервера. Неизвестный сценарий сохраняет патруль; его можно завершить вручную.')
-    ui.text('Включённый сеанс заменяет старый таймер полиции/тюрьмы. До начала сеанса периодических докладов нет. Все автодоклады проходят предупреждение и отмену.')
-    ui.text('Если рацию ведёт напарник, снимите флажок «Рацию в экипаже веду я»: начало, продолжение, смена состава и завершение сохраняются локально; периодические доклады PA не отправляются. Ручные SOS и мегафон остаются отдельными действиями.')
+    studio:infoHint(ui,'session-respawn-help','Ни здоровье, ни дверь больницы, ни запрос спавна сами по себе не означают смерть. Нужны новая наблюдаемая позиция и связанные события спавна/телепорта от сервера. Неизвестный сценарий сохраняет патруль; его можно завершить вручную.')
+    studio:infoHint(ui,'session-confirmation-help','Включённый сеанс заменяет старый таймер полиции/тюрьмы. До начала сеанса периодических докладов нет. Все автодоклады проходят предупреждение и отмену.')
+    studio:infoHint(ui,'session-radio-help','Если рацию ведёт напарник, снимите флажок «Рацию в экипаже веду я»: начало, продолжение, смена состава и завершение сохраняются локально; периодические доклады PA не отправляются. Ручные SOS и мегафон остаются отдельными действиями.')
     local seconds=im.new.int(draft.interval_ms/1000)
     if im.InputInt('Интервал докладов, с##session-interval',seconds)then draft.interval_ms=seconds[0]*1000 end
     local gap=im.new.int((draft.map_max_gap_ms or 3600000)/1000)
     if im.InputInt('Наибольший достоверный перерыв карты, с##session-map-gap',gap)then draft.map_max_gap_ms=gap[0]*1000 end
-    ui.text('На карте Esc время активного патруля идёт, но PA ничего не отправляет. После возврата — не больше одного текущего доклада с обычным подтверждением. Ручная пауза патруля и потеря фокуса время не учитывают. Слишком большой разрыв часов пропускается.')
+    studio:infoHint(ui,'session-map-help','На карте Esc время активного патруля идёт, но PA ничего не отправляет. После возврата — не больше одного текущего доклада с обычным подтверждением. Ручная пауза патруля и потеря фокуса время не учитывают. Слишком большой разрыв часов пропускается.')
     local distance=im.new.int(draft.bind_distance)
     if im.InputInt('Проверка напарника рядом, м##session-distance',distance)then draft.bind_distance=distance[0]end
     studio:settingsHeading(ui,'Реплики и предпросмотр')
-    ui.text('Грамматический род: {gender:передал|передала}. Без /r, /f или /d: канал добавляется отдельно. Переменные: {officer}, {callsign}, {crew}, {crew_count}, {crew_roles}, {crew_callsigns}, {unit}, {station}, {vehicle}, {sector}, {post}, {area}, {location}, {map_square}, {direction}, {duration}, {patrol_id}; также теги и поля профиля. Длинный итог может не поместиться в лимит чата — предпросмотр это проверяет.')
+    studio:infoHint(ui,'session-variables-help','Грамматический род: {gender:передал|передала}. Без /r, /f или /d: канал добавляется отдельно. Переменные: {officer}, {callsign}, {crew}, {crew_count}, {crew_roles}, {crew_callsigns}, {unit}, {station}, {vehicle}, {sector}, {post}, {area}, {location}, {map_square}, {direction}, {duration}, {patrol_id}; также теги и поля профиля. Длинный итог может не поместиться в лимит чата — предпросмотр это проверяет.')
     if studio:button('Вставить пример докладов SFPS##patrol-sfps-preset',ui)then
         local stock=settings.defaults();for _,key in ipairs({'start','resume','periodic','finish'})do draft[key..'_template']=stock[key..'_template']end
         for k in pairs(studio.cache)do if k:match('^session:template:')then studio.cache[k]=nil end end
@@ -53,7 +53,7 @@ function M.drawSessionSettings(studio,ui,data,callbacks)
     studio.patrolGrammar=studio:choice('Форма фразы##patrol-grammar',studio.patrolGrammar or'start_solo',settings.grammarRows,ui)
     local grammarKey=studio.patrolGrammar
     draft.grammar[grammarKey]=studio:field('Текст формы##patrol-grammar-text','session:grammar:'..grammarKey,draft.grammar[grammarKey],1024,true,64)
-    ui.text('В стандартных докладах {patrol_start}, {patrol_resume}, {patrol_finish}, {patrol_moving}, {patrol_available} выбирают единственное или множественное число. В машине учитываются распознанные напарники в салоне; пешком — подтверждённый состав сеанса. {unit_crew_count} — это количество участников юнита.')
+    studio:infoHint(ui,'session-grammar-help','В стандартных докладах {patrol_start}, {patrol_resume}, {patrol_finish}, {patrol_moving}, {patrol_available} выбирают единственное или множественное число. В машине учитываются распознанные напарники в салоне; пешком — подтверждённый состав сеанса. {unit_crew_count} — это количество участников юнита.')
     ui.text('Предпросмотр формы: '..require('pa26_core').expandGender(draft.grammar[grammarKey],studio.lib.profile.gender))
     local names={start='Начало патруля',resume='Продолжение патруля',finish='Завершение патруля',crew='Смена экипажа',periodic='Периодический доклад'}
     for _,key in ipairs({'start','resume','finish','crew','periodic'})do
@@ -73,22 +73,33 @@ function M.draw(studio,ui,data,callbacks,host)
  local im=studio.imgui;local draft=begin(studio)
  local view=type(data.patrolSession)=='table'and data.patrolSession or {};local a=view.active
  studio:settingsHeading(ui,'Смена')
- ui.text(a and ((a.status=='paused'and 'Пауза'or 'На службе')..' · '..tostring(view.duration)..' · № '..a.id)or 'Патруль не начат')
+ local menu=require 'pa26_menu'
+ local paused=a and a.status=='paused'
+ local state=a and(paused and'ПАУЗА'or'АКТИВЕН')or'НЕ ЗАПУЩЕН'
+ local inline=im.GetContentRegionAvail().x>=260
+ menu.statusPill(im,ui,state,a and(paused and'warn'or'safe')or'muted')
  if a then
+  local unit=view.unit or a.unit
+  if unit and unit~=''then
+   if inline then im.SameLine(0,8)end
+   menu.statusPill(im,ui,unit,'muted')
+  end
+  if inline then im.SameLine(0,8)end
+  ui.text(tostring(view.duration)..' · № '..a.id)
   ui.text('Экипаж: '..(view.crew or 'не определён')..' · Доклад: '..tostring(a.report_status))
   if a.status=='paused'then ui.text(a.reason)end
   if view.pending then ui.text('Подтверждённый доклад ожидает свободную очередь.')end
  end
  local actions={}
  if a then
-  actions={{a.status=='paused'and'resume'or'pause',a.status=='paused'and 'Продолжить патруль'or 'Пауза патруля'},
+  actions={{a.status=='paused'and'resume'or'pause',a.status=='paused'and 'Продолжить патруль'or 'Пауза патруля',nil,paused and'primary'or nil},
    {'crew','Применить новый состав##patrol-crew'},{'finish','Завершить с докладом##patrol-finish'},{'discard','Завершить без доклада##patrol-discard'}}
  elseif view.recoverable then
   ui.text('Сохранён патруль № '..view.recoverable.id..' · '..settings.duration(view.recoverable.elapsed_ms))
   ui.text('Перед восстановлением проверьте сервер, персонажа и экипаж.')
   if draft.restore_offer then actions[#actions+1]={'restore','Восстановить патруль##patrol-restore'}end
   actions[#actions+1]={'discard','Закрыть сохранённый патруль##patrol-discard'}
- else actions={{'start','Начать патруль##patrol-start'}}end
+ else actions={{'start','Начать патруль##patrol-start',nil,'primary'}}end
  groups.buttons(studio,ui,actions,function(action)if action=='pause'then callbacks.patrolPause()else M.offer(studio,action,callbacks)end end)
  if studio:button('Трафик-стоп и преследование##patrol-vehicle',ui)then
   if callbacks.patrolTraffic then callbacks.patrolTraffic(host)elseif host=='assist'then studio.assistPage='traffic'else studio.partnerPage='vehicle'end

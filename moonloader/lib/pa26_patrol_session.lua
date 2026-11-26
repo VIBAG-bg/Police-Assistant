@@ -438,6 +438,7 @@ function Session:view(timer)
     local count,verified=settings.crewCount(self.state,a.crew)
     local crew=self:crewText(a,verified);out.crew=crew;out.duration=settings.duration(a.elapsed_ms)
     local unit=a.unit_auto and settings.autoUnit(self.env.profile(),self.state,count,a.unit_number)or a.unit
+    out.unit=unit
     out.hud={visible=cfg.hud,label=(a.status=='paused'and 'Патруль · пауза'or 'Патруль')..' '..out.duration,
         status=self.suspended and self.suspendedReason or a.status=='paused'and a.reason or timer and timer.visible and timer.status or a.report_status,
         crew='Экипаж: '..count..' · '..unit,remaining=timer and timer.remaining or 0,interval=timer and timer.interval or cfg.interval_ms,

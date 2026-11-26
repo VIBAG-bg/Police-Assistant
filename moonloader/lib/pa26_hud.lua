@@ -569,19 +569,20 @@ function Hud:draw(imgui, bodyFont, headingFont)
     end
     local list = imgui.GetForegroundDrawList()
     local vec = imgui.ImVec2
+    local themes=require 'pa26_theme';local p=themes.get(self.theme)
     local function color(a, b, c, d) return imgui.ColorConvertFloat4ToU32(imgui.ImVec4(a, b, c, d)) end
     local white, shadow = color(1, 1, 1, 1), color(0, 0, 0, 0.70)
     list:AddRectFilled(vec(x + 1 * s, y + 2 * s), vec(x + w + 1 * s, y + h + 2 * s),
         color(0, 0, 0, 0.32), 6 * s)
-    list:AddRectFilled(vec(x, y), vec(x + w, y + h), color(0.035, 0.085, 0.145, 0.79), 8 * s)
+    list:AddRectFilled(vec(x, y), vec(x + w, y + h), themes.u32(imgui,p.hudBg), 8 * s)
     local topCorners = imgui.DrawCornerFlags.TopLeft + imgui.DrawCornerFlags.TopRight
     list:AddRectFilled(vec(x, y), vec(x + w, y + M.HEADER * s),
-        color(0.25, 0.62, 0.86, 0.96), 6 * s, topCorners)
-    list:AddRect(vec(x, y), vec(x + w, y + h), color(0.28, 0.56, 0.78, 0.16), 8 * s)
+        themes.u32(imgui,p.hudHeader), 6 * s, topCorners)
+    list:AddRect(vec(x, y), vec(x + w, y + h), themes.u32(imgui,p.hudBorder), 8 * s)
     local mapOffset=self.mapSquare and 28 or 0
     for _, offset in ipairs({24, 58, 88+mapOffset, 140+mapOffset}) do
         list:AddLine(vec(x + 2 * s, y + offset * s), vec(x + w - 2 * s, y + offset * s),
-            color(0.45, 0.65, 0.83, 0.18), math.max(1, s))
+            themes.u32(imgui,p.separator), math.max(1, s))
     end
     bodyFont, headingFont = bodyFont or imgui.GetFont(), headingFont or bodyFont or imgui.GetFont()
     local function line(value, font, size, top, centered, maxWidth)
@@ -598,8 +599,8 @@ function Hud:draw(imgui, bodyFont, headingFont)
         local labelW=bodyFont:CalcTextSizeA(14*s,100000,0,label).x
         local value,valueW=fitted(headingFont,self.mapSquare,17*s,math.max(0,242*s-labelW))
         local badgeW=math.min(254*s,labelW+valueW+12*s)
-        list:AddRectFilled(vec(x+9*s,y+84*s),vec(x+9*s+badgeW,y+110*s),color(.12,.36,.54,.70),4*s)
-        list:AddTextFontPtr(bodyFont,14*s,vec(x+15*s,y+89*s),color(.70,.89,1,1),label)
+        list:AddRectFilled(vec(x+9*s,y+84*s),vec(x+9*s+badgeW,y+110*s),themes.u32(imgui,p.hudBadge),4*s)
+        list:AddTextFontPtr(bodyFont,14*s,vec(x+15*s,y+89*s),themes.u32(imgui,p.textMuted),label)
         list:AddTextFontPtr(headingFont,17*s,vec(x+15*s+labelW,y+87*s),white,value)
     end
     local target=self.target or {state='none',status='Человек не выбран'}
@@ -618,14 +619,14 @@ function Hud:draw(imgui, bodyFont, headingFont)
     if self.navigation then line(self.navigation,bodyFont,12,178+mapOffset,false,254)end
     mapOffset=mapOffset+navigationOffset
     if self.patrol and self.patrol.visible then
-        list:AddLine(vec(x+9*s,y+(174+mapOffset)*s),vec(x+w-9*s,y+(174+mapOffset)*s),color(.40,.62,.78,.25),s)
+        list:AddLine(vec(x+9*s,y+(174+mapOffset)*s),vec(x+w-9*s,y+(174+mapOffset)*s),themes.u32(imgui,p.separator),s)
         line(self.patrol.label..(self.patrol.crew and ''or ' · рация'),headingFont,14,180+mapOffset,false,254)
         for n,text in ipairs(self.patrolStatusRows or{self.patrol.status})do line(text,bodyFont,13,201+mapOffset+(n-1)*16,false,254)end
         local extra=self.patrolExtraHeight or 0
         if self.patrol.crew then line(self.patrol.crew,bodyFont,13,222+mapOffset+extra,false,254)end
         local barY=(self.patrol.crew and 247 or 225)+mapOffset+extra
-        list:AddRectFilled(vec(x+9*s,y+barY*s),vec(x+w-9*s,y+(barY+3)*s),color(.12,.24,.34,.8),2*s)
-        list:AddRectFilled(vec(x+9*s,y+barY*s),vec(x+9*s+(w-18*s)*self.patrol.progress,y+(barY+3)*s),color(.24,.62,.86,.95),2*s)
+        list:AddRectFilled(vec(x+9*s,y+barY*s),vec(x+w-9*s,y+(barY+3)*s),themes.u32(imgui,p.frameBg),2*s)
+        list:AddRectFilled(vec(x+9*s,y+barY*s),vec(x+9*s+(w-18*s)*self.patrol.progress,y+(barY+3)*s),themes.u32(imgui,p.wheelAccent),2*s)
     end
     if overClose then
         list:AddRectFilled(vec(closeRect.x, closeRect.y), vec(closeRect.x + closeRect.w, closeRect.y + closeRect.h),
@@ -661,18 +662,19 @@ function Hud:drawNotices(imgui,bodyFont,headingFont)
     while #rows>#layout.notices do table.remove(rows)end
     self.noticeBounds=layout.notices; self.confirmationBounds=layout.confirmation;self.equipmentBounds=layout.equipment
     local list=imgui.GetForegroundDrawList(); local vec=imgui.ImVec2
+    local themes=require 'pa26_theme';local p=themes.get(self.theme)
     for i,row in ipairs(rows) do
         local note=row.note; local box=layout.notices[i]
         local alpha=math.min(1,(note.duration-row.age)/400)
-        local function tint(a,b,c,d) return imgui.ColorConvertFloat4ToU32(imgui.ImVec4(a,b,c,(d or 1)*alpha)) end
-        local accent=note.positive and tint(.28,.88,.52) or tint(1,.35,.38)
-        list:AddRectFilled(vec(box.x,box.y),vec(box.x+box.w,box.y+box.h),tint(.035,.085,.145,.87),9*s)
+        local function tint(role)return themes.u32(imgui,role,role[4]*alpha)end
+        local accent=tint(note.positive and p.statusSafe or p.statusAlert)
+        list:AddRectFilled(vec(box.x,box.y),vec(box.x+box.w,box.y+box.h),tint(p.toastBg),9*s)
         local top=box.y+pad
-        list:AddTextFontPtr(headingFont,15*s,vec(box.x+pad,top),tint(.96,.98,1),note.title,nil,wrap)
+        list:AddTextFontPtr(headingFont,15*s,vec(box.x+pad,top),tint(p.text),note.title,nil,wrap)
         top=top+row.titleH+4*s
         list:AddTextFontPtr(headingFont,16*s,vec(box.x+pad,top),accent,row.who,nil,wrap)
         top=top+row.nameH+4*s
-        list:AddTextFontPtr(bodyFont,14*s,vec(box.x+pad,top),tint(.79,.87,.94),note.detail,nil,wrap)
+        list:AddTextFontPtr(bodyFont,14*s,vec(box.x+pad,top),tint(p.textMuted),note.detail,nil,wrap)
         local progress=math.max(0,1-row.age/note.duration)
         list:AddRectFilled(vec(box.x+pad,box.y+box.h-5*s),vec(box.x+pad+wrap*progress,box.y+box.h-3*s),accent,2*s)
     end

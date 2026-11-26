@@ -5,37 +5,17 @@ local M={};local Controller={};Controller.__index=Controller
 local excluded={su=true,wanted=true,r=true,rn=true,f=true,fn=true,d=true,df=true,m=true,n=true,b=true,me=true,do_=true,try=true,todo=true}
 local targets={cuff=true,uncuff=true,push=true,hold=true,unhold=true,frisk=true,unmask=true,ticket=true,takelic=true,arrest=true,pt=true,unpt=true}
 M.targetHeads=targets
-local standard={
- mask='/me аккуратно {gender:расправил|расправила} маску и {gender:натянул|натянула} её на лицо, скрыв свои черты.',
- cuff='/me {gender:снял|сняла} наручники с пояса и {gender:зафиксировал|зафиксировала} их на запястьях задержанного.\n/do Фиксация наручников проверена.',
- uncuff='/me {gender:вставил|вставила} ключ в замок, {gender:расстегнул|расстегнула} наручники и {gender:убрал|убрала} их в подсумок.',
- frisk='/me {gender:надел|надела} перчатки и последовательно {gender:проверил|проверила} одежду и карманы задержанного.',
- unmask='/me аккуратно {gender:снял|сняла} маску с лица задержанного и {gender:убрал|убрала} её в пакет для имущества.',
- push='/me {gender:открыл|открыла} дверь служебного автомобиля и, придерживая задержанного, {gender:усадил|усадила} его внутрь.',
- hold='/me {gender:взял|взяла} задержанного под локоть и {gender:подготовился|подготовилась} сопроводить его за собой.',
- unhold='/me {gender:остановился|остановилась} и {gender:отпустил|отпустила} руку сопровождаемого.',
- arrest='/me {gender:оформил|оформила} материалы задержания и {gender:передал|передала} их вместе с задержанным дежурному.',
- ticket='/me {gender:заполнил|заполнила} постановление о штрафе, {gender:сверил|сверила} внесённые сведения и {gender:подготовил|подготовила} его к выдаче.',
- clear='/me {gender:открыл|открыла} служебную базу и {gender:оформил|оформила} запрос на прекращение розыска.',
- pt='/me {gender:активировал|активировала} служебный терминал и {gender:передал|передала} диспетчеру сведения о начале преследования.',
- unpt='/me {gender:передал|передала} диспетчеру сведения о завершении преследования и {gender:закрыл|закрыла} запись в терминале.',
- setmark='/me {gender:ввёл|ввела} известный по RP номер телефона в служебный терминал и {gender:запросил|запросила} пеленгацию.\n/do На терминале отображается запрос на определение местоположения по сигналу телефона.',
- ud='/me {gender:достал|достала} служебное удостоверение, {gender:раскрыл|раскрыла} его и {gender:продемонстрировал|продемонстрировала} собеседнику.',
- takelic='/me {gender:оформил|оформила} изъятие водительского удостоверения и {gender:внёс|внесла} сведения в служебную запись.',
- take='/me {gender:надел|надела} перчатки, {gender:подготовил|подготовила} пакеты для изъятого имущества и {gender:приступил|приступила} к оформлению протокола.'}
+local authorRP=require 'pa26_author_rp'
 function M.specs()
  local out={};for _,row in ipairs(require('pa26_server_commands').commands)do
   local head=row[1]:sub(2);if not excluded[head]then out[#out+1]={head=head,title=row[2],target=targets[head]==true}end
  end;out[#out+1]={head='mask',title='Надеть маску · подтверждено пользователем',target=false};return out
 end
-standard=require('pa26_author_rp').manual
 function M.defaults()
  local out={enabled=true,rules={},mask_delay_ms=700,mask_cleanup_enabled=true,mask_cleanup_command='/offobject',frisk_mode='saved',
-  frisk_primary_rp='/me {gender:поставил|поставила} задержанного у опоры и быстрыми движениями без перчаток {gender:прохлопал|прохлопала} верхнюю одежду, торс и ноги на наличие оружия.\n/do Что офицер {gender:мог|могла} нащупать под одеждой задержанного?',
-  frisk_full_rp='/me {gender:надел|надела} плотные чёрные резиновые перчатки, тщательно {gender:проверил|проверила} все карманы и обувь задержанного и {gender:выложил|выложила} вещи под камеру крузера.\n/do Предметы, подлежащие изъятию по результатам обыска, подготовлены к упаковке в зип-пакет и бокс для улик.'}
- out.frisk_primary_rp=standard.frisk;out.frisk_full_rp=require('pa26_author_rp').frisk_full
+  frisk_primary_rp=authorRP.manual.frisk,frisk_full_rp=authorRP.frisk_full}
  for _,s in ipairs(M.specs())do out.rules[s.head]={enabled=s.head~='find'and s.head~='taser',prefer_bind=false,
-  rp=standard[s.head]or('/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: '..s.title:lower()..'.')}end
+  rp=authorRP.manual[s.head]or('/me {gender:открыл|открыла} служебный терминал и {gender:подготовил|подготовила} действие: '..s.title:lower()..'.')}end
  return out
 end
 local function validHead(head)return type(head)=='string'and #head<=32 and head:match('^[a-z][a-z0-9_]*$')and not head:match('^pa26')and not excluded[head]and head~='do'end

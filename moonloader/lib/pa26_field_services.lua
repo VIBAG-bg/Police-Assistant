@@ -6,13 +6,16 @@ function M.new(env)
   pinned=require('pa26_pinned_note').new(),serial=0,snapshot={status='Инструменты выключены'}},F)
  if env.perf then
   for _,r in ipairs({{instance.coordinates,'observe','fieldCoordinates'},{instance.cruiser,'tick','fieldCruiser'},
-   {instance.pinned,'draw','fieldPinned'},{instance,'reset','fieldCleanup'}})do r[1][r[2]]=env.perf:wrap(r[3],r[1][r[2]])end
+   {instance.pinned,'draw','fieldPinned'},{instance,'reset','fieldCleanup'}})do
+  local clock=r[2]=='draw' and require('pa26_chat_perf').uiClock or nil
+  r[1][r[2]]=env.perf:wrap(r[3],r[1][r[2]],clock)
+ end
  end
  return instance
 end
 function F:reset(reason)
  self.coordinates:reset();self.cruiser:release(reason);self.intent=nil;self.queued=nil
- self.proposal=nil;self.state=nil;self.previewContext=nil;self.previewAt=nil
+ self.proposal=nil;self.state=nil;self.previewContext=nil;self.previewAt=nil;self.lastBriefingCompleted=nil
  self.snapshot={status=reason or'Отключено'};self.sampleAt=nil;self.on=false;self.serial=self.serial+1
  self.renderFailed=nil;self.projection=nil
 end
@@ -57,11 +60,18 @@ function F:valid(p)
  return p and s and age and age<60000 and p.session==s.session and p.ped==s.ped and p.demo==s.demo and
   p.revision==self.env.revision()and s.focused and not s.paused and not s.typing and not s.blocked and s.alive and self.env.library().field.enabled
 end
-function F:previewText(text)
+function F:refreshPreview()
+ if not self.previewRequested then return end
+ self.previewRequested=nil
  local now=self.env.gameNow();local revision=self.env.revision()
  if not self.previewContext or self.previewRevision~=revision or not self.previewAt or not core.elapsed(now,self.previewAt)or core.elapsed(now,self.previewAt)>500 then
   self.previewContext=self.env.templateContext and self.env.templateContext()or{values={},gender='male'};self.previewRevision=revision;self.previewAt=now
  end
+end
+function F:previewText(text)
+ if not text:find('{',1,true)then return text end
+ self.previewRequested=true
+ if not self.previewContext or self.previewRevision~=self.env.revision()then return nil,'Предпросмотр обновляется…'end
  local ctx=self.previewContext;local missing
  text=core.expandGender(text,ctx.gender):gsub('{([^{}]+)}',function(k)local v=ctx.values[k];if v==nil then missing=k;return''end;return tostring(v)end)
  if missing then return nil,'Не заполнена {'..missing..'}.'end;return text
@@ -90,8 +100,8 @@ function F:propose(kind,arg)
   lines={r.lines[i]};label='Произнести строку инструктажа?'
  else return nil,'Неизвестное действие.'end
  local steps={};local speechPlan={steps={},lines={},wire={}}
+ local ctx=self.env.templateContext and self.env.templateContext()or{values={},gender='male'}
  for i,line in ipairs(lines)do
-  local ctx=self.env.templateContext and self.env.templateContext()or{values={},gender='male'}
   local missing
   line=core.expandGender(line,ctx.gender):gsub('{([^{}]+)}',function(k)
    local value=ctx.values[k];if value==nil then missing=k;return''end;return tostring(value)
@@ -114,6 +124,7 @@ function F:propose(kind,arg)
  self.serial=self.serial+1
  local p={token='field:'..self.serial,kind=kind,label=label,lines=lines,session=s.session,ped=s.ped,demo=s.demo,
   revision=self.env.revision(),gameAt=self.env.gameNow()}
+ if kind=='briefing'then p.briefingRef={index=arg.index,line=arg.line}end
  p.plan={binding={id=999999981,name=label,stat='none'},requirements={},session=s.session,createdAt=p.gameAt,demo=s.demo,
   steps=steps,lines=lines,has_command=kind~='briefing',fieldAction={token=p.token}}
  p.plan.rpSignature=speechPlan.rpSignature;p.plan.textSignature=speechPlan.textSignature
@@ -124,8 +135,17 @@ function F:accept(p)
  self.proposal=nil;self.intent=p;return true
 end
 function F:validPlan(plan)return self.queued and plan.fieldAction and plan.fieldAction.token==self.queued.token and self:valid(self.queued)or false end
-function F:execution(kind,q,line)
- if q and q.plan.fieldAction and self.queued and q.plan.fieldAction.token==self.queued.token and(kind=='completed'or kind=='cancelled')then self.queued=nil end
+function F:execution(kind,q)
+ local p=self.queued
+ if not p or not q or not q.plan.fieldAction or q.plan.fieldAction.token~=p.token then return end
+ if kind=='completed'and p.briefingRef then
+  self.lastBriefingCompleted={token=p.token,index=p.briefingRef.index,line=p.briefingRef.line}
+ end
+ if kind=='completed'or kind=='cancelled'then self.queued=nil end
+end
+function F:view()
+ self.snapshot.lastBriefingCompleted=self.lastBriefingCompleted
+ return self.snapshot
 end
 function F:clear()
  self.coordinates.mark=nil;self.sampleAt=nil

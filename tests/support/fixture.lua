@@ -483,7 +483,13 @@ local function fixture(options)
     local function vector(v) check(ffi.istype('Pa26TestVec2',v)); check(core.finite(v.x) and core.finite(v.y)) end
     local function packed(c) check(type(c)=='number' and c>=0 and c<=0xFFFFFFFF) end
     list.AddRectFilled = function(_,a,b,c) renderer(); vector(a); vector(b); packed(c) end
-    list.AddRect = function(_,a,b,c) renderer(); vector(a); vector(b); packed(c); if s.rectError and #s.imageDraws>0 then error('injected image border error') end end
+    local imageBorder
+    list.AddRect = function(_,a,b,c)
+        renderer(); vector(a); vector(b); packed(c)
+        local asset=imageBorder and imageBorder.a==a and imageBorder.b==b
+        imageBorder=nil
+        if s.rectError and asset then error('injected image border error')end
+    end
     list.AddLine = function(_,a,b,c) renderer(); vector(a); vector(b); packed(c) end
     list.AddTriangleFilled = function(_,a,b,c,tint) renderer(); vector(a); vector(b); vector(c); packed(tint); s.triangleIcons=s.triangleIcons+1 end
     list.AddRectFilledMultiColor = function(_,a,b,c,d,e,f) renderer(); vector(a); vector(b); packed(c); packed(d); packed(e); packed(f) end
@@ -495,6 +501,7 @@ local function fixture(options)
             item=s.lastItemLabel,parent=s.childNames[#s.childNames]}
     end
     list.AddImageRounded = function(_,tex,a,b,uv0,uv1,c,rounding)
+        imageBorder={a=a,b=b}
         renderer(); check(s.textures[tostring(tex)]==true); vector(a); vector(b); vector(uv0); vector(uv1); packed(c)
         s.imageDraws[#s.imageDraws+1]={w=b.x-a.x,h=b.y-a.y,tex=tex}
     end

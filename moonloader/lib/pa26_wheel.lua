@@ -30,7 +30,7 @@ M.copilotRows={{'stop_order','Остановить авто','service','car'},{'
  {'explain_detention','Основание и права','detention','any'},{'rights','Адвокат и звонок','detention','foot'}}
 for _,r in ipairs({{'tire','Предупреждение: колёса','citizen','car'},{'risk_order','10-66 · Ключи и выход','detention','car'},
  {'return_car','Вернуться в салон','detention','car'},{'lost','Потерян · CODE 4 ADAM','detention','car'},
- {'finish','Завершить ситуацию','detention','any'},{'fast_wanted','Розыск по авто 8.1 + /pt','wanted','car'},
+ {'finish','Завершить ситуацию','detention','any'},{'fast_wanted','Розыск по авто 8.1 · без /pt','wanted','car'},
  {'call911','Вызов 9-1-1 · Код 3','service','car'},{'arrived','Прибыл на вызов','service','car'}})do M.copilotRows[#M.copilotRows+1]=r end
 M.copilotRows[#M.copilotRows+1]={'fast_pt','Быстрый /pt рядом','wanted','any'}
 M.copilotRows[#M.copilotRows+1]={'patrol_continue','Продолжаю патруль · Код 4','service','any'}
@@ -158,7 +158,7 @@ function M.build(lib,revision,includeAlerts,serviceState)
                 place({kind='copilot',id='copilot-'..r[1],action=r[1],category=r[3],name=r[2],disabled=not serviceState.onDuty,reason='Включите «На службе» в настройках PA.',needsTarget=r[4]=='any'and context=='none'and r[1]~='fast_pt'and r[1]~='patrol_continue'})
             end
         end end
-        if v.pinned and v.car then place({kind='copilot',id='copilot-pursuit_mark',action=v.pinned,category='wanted',name=v.pinned=='pursuit_mark'and'Только /pt'or'Розыск + /pt',needsTarget=false})end
+        if v.pinned and v.car then place({kind='copilot',id='copilot-pursuit_mark',action=v.pinned,category='wanted',name=v.pinned=='pursuit_mark'and'Только /pt'or'Розыск · без /pt',needsTarget=false})end
     end
     if includeAlerts then
         for _,r in ipairs({{'pa-bulletins','Ориентировки и угон','wanted'},
@@ -272,11 +272,12 @@ local function cornersFit(x,y,w,h,inner,outer,middle,span)
 end
 -- Fit native text to its actual wedge. Long action names also appear below the wheel.
 local labelCache,labelCacheCount={},0
-function M.fitLabel(font,text,size,wrap,inner,outer,middle,span)
-    local key=table.concat({tostring(font),text,size,wrap,inner,outer,middle,span},'|')
+function M.fitLabel(font,text,size,wrap,inner,outer,middle,span,offset)
+    local key=table.concat({tostring(font),text,size,wrap,inner,outer,middle,span,offset or 0},'|')
     local cached=labelCache[key]
+    if cached==false then return nil end
     if cached then return cached.size,cached.extent,cached.text,cached.wrap end
-    local r=(inner+outer)/2; local x,y=math.cos(middle)*r,math.sin(middle)*r
+    local r=(inner+outer)/2; local x,y=math.cos(middle)*r,math.sin(middle)*r+(offset or 0)
     local originalSize=size
     while #text>0 do
         for candidate=originalSize,11,-1 do
@@ -293,6 +294,12 @@ function M.fitLabel(font,text,size,wrap,inner,outer,middle,span)
             end
             end
         end end
+        if offset then
+            -- Keep the whole name when sharing the wedge with an icon.
+            if labelCacheCount>=256 then labelCache={};labelCacheCount=0 end
+            labelCache[key]=false;labelCacheCount=labelCacheCount+1
+            return nil
+        end
         local chars={};for c in text:gmatch('[%z\1-\127\194-\244][\128-\191]*') do if c~='…' then chars[#chars+1]=c end end
         if #chars<=1 then break end
         text=table.concat(chars,'',1,math.max(1,#chars-4))..'…'
@@ -318,19 +325,25 @@ function M.editHit(catalog,layout,nav,dx,dy)
  if not e or not e.id then return end
  return{ring='child',category=c.id,index=i,key=require('pa26_wheel_order').key(e),name=e.name}
 end
-function M.outline(list,vec,cx,cy,inner,outer,a,b,color,width)
+function M.edgeArc(list,vec,cx,cy,r,a,b,color,width)
  local segments=math.max(5,math.ceil((b-a)*22))
- for _,r in ipairs({inner+3,outer-3})do for i=0,segments-1 do
+ for i=0,segments-1 do
   local x=a+(b-a)*i/segments;local y=a+(b-a)*(i+1)/segments
   list:AddLine(vec(cx+math.cos(x)*r,cy+math.sin(x)*r),vec(cx+math.cos(y)*r,cy+math.sin(y)*r),color,width)
- end end
+ end
+end
+function M.outline(list,vec,cx,cy,inner,outer,a,b,color,width)
+ for _,r in ipairs({inner+3,outer-3})do M.edgeArc(list,vec,cx,cy,r,a,b,color,width)end
  for _,v in ipairs({a,b})do list:AddLine(vec(cx+math.cos(v)*inner,cy+math.sin(v)*inner),vec(cx+math.cos(v)*outer,cy+math.sin(v)*outer),color,width)end
 end
 function M.draw(im,layout,catalog,nav,info,fonts)
     local list,vec=im.GetWindowDrawList(),im.ImVec2
     local scale=layout.scale
+    local themes=require 'pa26_theme';local p=themes.get(info.theme)
+    local icons=require 'pa26_icons'
     local function color(r,g,b,a) return im.ColorConvertFloat4ToU32(im.ImVec4(r,g,b,a)) end
-    local white,muted=color(1,1,1,1),color(.70,.83,.93,1)
+    local white,muted=themes.u32(im,p.text),themes.u32(im,p.textMuted)
+    local accent,divider=themes.u32(im,p.wheelAccent),themes.u32(im,p.wheelDivider)
     local function centered(text,font,size,x,y,wrap,tint)
         font=font or im.GetFont(); size=size*scale; wrap=(wrap or 680)*scale
         local extent=font:CalcTextSizeA(size,100000,wrap,text)
@@ -348,21 +361,35 @@ function M.draw(im,layout,catalog,nav,info,fonts)
             list:PathLineTo(vec(layout.cx+math.cos(b)*inner,layout.cy+math.sin(b)*inner))
             list:PathFillConvex(fill)
         end
+        for _,a in ipairs({first,last})do
+            list:AddLine(vec(layout.cx+math.cos(a)*inner,layout.cy+math.sin(a)*inner),
+                vec(layout.cx+math.cos(a)*outer,layout.cy+math.sin(a)*outer),divider,math.max(1,scale))
+        end
     end
     local body=fonts.button or im.GetFont()
     for i,cat in ipairs(catalog.categories) do
         local first=-math.pi/2+(i-1)*layout.step; local last=first+layout.step
         local active=nav.active==i; local pending=nav.candidate==i
-        sector(layout.inner,layout.rootOuter,first,last,
-            active and color(.12,.42,.64,.84) or pending and color(.12,.31,.47,.78) or color(.035,.14,.23,.65))
+        sector(layout.inner,layout.rootOuter,first,last,themes.u32(im,active and p.wheelRootActive or pending and p.wheelRootPending or p.wheelRoot))
+        if active then M.edgeArc(list,vec,layout.cx,layout.cy,layout.rootOuter-1.6*scale,first+.023,last-.023,accent,2.5*scale)end
         for n,e in ipairs({nav.editSource or false,nav.editTarget or false})do if e and e.ring=='root'and e.key==cat.id then
             M.outline(list,vec,layout.cx,layout.cy,layout.inner,layout.rootOuter,first,last,n==1 and color(.25,1,.65,1)or color(1,.8,.25,1),3*scale)
         end end
-        local middle=(first+last)/2; local radius=(layout.inner+layout.rootOuter)/2
-        local size,extent,text,wrap=M.fitLabel(body,cat.label,18,layout.count==4 and 118 or layout.count==6 and 96 or 76,
-            82,176,middle,layout.step)
-        list:AddTextFontPtr(body,size*scale,vec(layout.cx+math.cos(middle)*radius-extent.x*scale/2,
-            layout.cy+math.sin(middle)*radius-extent.y*scale/2),white,text,nil,wrap*scale)
+        local middle=(first+last)/2
+        local x,y=math.cos(middle)*129,math.sin(middle)*129
+        local maxWrap=layout.count==4 and 118 or layout.count==6 and 96 or 76
+        local name=icons.wheel[cat.id]
+        local size,extent,text,wrap,offset
+        if info.icons~=false and scale>=.72 and icons.owner==im and icons.get(name) and
+            cornersFit(x,y-12,18,18,82,176,middle,layout.step)then
+            size,extent,text,wrap=M.fitLabel(body,cat.label,17,maxWrap,82,176,middle,layout.step,11)
+            if size and icons.draw(im,name,layout.cx+(x-9)*scale,layout.cy+(y-21)*scale,18*scale,nil,1,list,p.wheelAccent)then
+                offset=11
+            end
+        end
+        if not offset then size,extent,text,wrap=M.fitLabel(body,cat.label,18,maxWrap,82,176,middle,layout.step)end
+        list:AddTextFontPtr(body,size*scale,vec(layout.cx+(x-extent.x/2)*scale,
+            layout.cy+(y+(offset or 0)-extent.y/2)*scale),white,text,nil,wrap*scale)
     end
     local active=nav.active and catalog.categories[nav.active]
     if active then
@@ -371,8 +398,9 @@ function M.draw(im,layout,catalog,nav,info,fonts)
             local first=arc.first+(i-1)*arc.step; local last=first+arc.step; local middle=(first+last)/2
             local available=M.available(catalog,entry,info.demo,info.target)
             local selected=M.sameRoute(nav.choice,entry)
-            sector(layout.childInner,layout.outer,first,last,selected and color(.16,.48,.72,.90) or
-                available and color(.045,.19,.30,.70) or color(.075,.12,.17,.52))
+            sector(layout.childInner,layout.outer,first,last,themes.u32(im,selected and p.wheelChildSelected or
+                available and p.wheelChild or p.wheelChildDisabled))
+            if selected then M.edgeArc(list,vec,layout.cx,layout.cy,layout.outer-1.6*scale,first+.023,last-.023,accent,2.5*scale)end
             local label=M.shortLabel(entry.name)
             local size,extent,text,wrap=M.fitLabel(body,label,17,120,188,306,middle,arc.step)
             local radius=(layout.childInner+layout.outer)/2
@@ -387,8 +415,8 @@ function M.draw(im,layout,catalog,nav,info,fonts)
                 n==1 and color(.25,1,.65,1)or color(1,.8,.25,1),3*scale)
         end
     end
-    list:AddCircleFilled(vec(layout.cx,layout.cy),layout.inner-3*scale,color(.035,.10,.16,.84),80)
-    list:AddCircle(vec(layout.cx,layout.cy),layout.inner-3*scale,color(.29,.57,.75,.23),80,1.2*scale)
+    list:AddCircleFilled(vec(layout.cx,layout.cy),layout.inner-3*scale,themes.u32(im,p.wheelCenter),80)
+    list:AddCircle(vec(layout.cx,layout.cy),layout.inner-3*scale,themes.u32(im,p.wheelAccent,.70),80,1.6*scale)
     centered('Police Assistant · '..(catalog.scope=='car'and'В МАШИНЕ'or'ПЕШКОМ'),fonts.heading,20,layout.cx,layout.top+24*scale,600)
     centered(info.demo and 'ID 42' or info.target and ('ID '..info.target.id) or 'Нет цели',fonts.id,26,layout.cx,layout.cy-17*scale,146)
     centered(info.demo and 'Демо-игрок' or info.nickname or 'Свои действия',fonts.body,14,layout.cx,layout.cy+20*scale,138,muted)

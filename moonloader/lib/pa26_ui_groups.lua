@@ -15,7 +15,7 @@ function M.buttons(s,ui,rows,choose,compact)
   for n=first,math.min(#rows,first+columns-1)do
    if n>first then im.SameLine(0,gap)end
    local row=rows[n]
-   if menu.fittedButton(im,ui,row[2],im.ImVec2(cell,height),s.buttonFont)then choose(row[1],row)end
+   if menu.fittedButton(im,ui,row[2],im.ImVec2(cell,height),s.buttonFont,row[4])then choose(row[1],row)end
    if row[3]then menu.tooltip(im,ui,row[3])end
   end
  end

@@ -1,5 +1,6 @@
 local fixture=require 'support.fixture'
 local bit=require 'bit'
+local themes=require 'pa26_theme'
 local function healthy(s)
     check(not s.hasLog('Ошибка интерфейса'),table.concat(s.logs,'\n'))
     eq(#s.scopes,0);eq(s.invalidIOReads,0);eq(#s.sent,0)
@@ -34,7 +35,11 @@ for _,page in ipairs(pages)do
     local label=footer(s,page[1],page[2]);check(has(s,page[3]))
     local active
     for _,b in ipairs(s.buttonCalls)do if b.label==label then active=b end end
-    check(active and active.color and active.color.g>.4)
+    check(active and active.color)
+    local tone=themes.get(s.workspace.library.settings.theme).btnPrimary
+    for channel,key in ipairs({'r','g','b','a'})do
+        check(math.abs(active.color[key]-tone[channel])<.001,'The active shortcut uses the theme accent')
+    end
     click(s,'Памятки##reference-notes');check(has(s,'Название'));check(has(s,'Текст'))
     click(s,'Подсказки##reference-guide');check(has(s,page[3]),'the previously selected guide must survive')
 end
@@ -59,7 +64,7 @@ for _,width in ipairs({760,1180,1600})do
     end
     check(back and other and content);eq(back.parent,nil);eq(back.window,'Police Assistant 2026##pa26-main')
     check(back.width<160);eq(back.height,other.height)
-    check(other.color.g>back.color.g,'selected half must be visible')
+    check(other.color.a>back.color.a,'Selected half must be visible')
     check(bit.band(content.flags,s.imgui.WindowFlags.NoScrollWithMouse)==0)
     click(s,'Памятки##reference-notes')
     check(has(s,'Не потерять черновик'))

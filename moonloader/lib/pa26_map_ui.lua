@@ -8,8 +8,8 @@ function M.draw(studio,ui,data,callbacks)
     local preview=grid.validate(d)or studio.lib.map_grid
     studio:settingsHeading(ui,'Квадраты карты')
     if callbacks.openField and studio:button('Навигация и OOC-координаты##map-field',ui)then callbacks.openField();return end
-    ui.text('Буква и номер обозначают клетку координатной сетки, например H-18. По умолчанию 24 × 24 клетки с шагом 250 игровых единиц. Это отдельная сетка PA, а не подтверждённая карта официальных секторов SFPS.')
-    ui.text('Названия районов Doherty, Hashbury и другие уже берутся из GTA и показываются отдельно. Поддерживаются обычный чат и CEF: сетка сама ничего не отправляет.')
+    studio:infoHint(ui,'map-grid-description','Буква и номер обозначают клетку координатной сетки, например H-18. По умолчанию 24 × 24 клетки с шагом 250 игровых единиц. Это отдельная сетка PA, а не подтверждённая карта официальных секторов SFPS.')
+    studio:infoHint(ui,'map-neighborhoods','Названия районов Doherty, Hashbury и другие уже берутся из GTA и показываются отдельно. Поддерживаются обычный чат и CEF: сетка сама ничего не отправляет.')
     local autoCity,cityChanged=studio:check('Автозаполнение {city}##map-auto-city',d.auto_city)
     if cityChanged then d.auto_city=autoCity end
     local city=grid.values(d,studio.lib.profile,state and state.x,state and state.y,state and state.interior,state and state.z,state and state.zoneKey).city
@@ -27,20 +27,20 @@ function M.draw(studio,ui,data,callbacks)
     ui.text('{map_square} — клетка этой сетки. {location} — район вместе с доступным квадратом. В биндах {area} остаётся только районом; {square} по умолчанию берётся из профиля.')
     local reports,reportsChanged=studio:check('Квадрат рядом с районом в докладах##map-report-area',d.report_area)
     if reportsChanged then d.report_area=reports end
-    ui.text('Применяется к Shots fired, SOS, CODE 0/1/4, докладам патруля, остановки и погони, событиям и своим автодокладам с {area}. Личный текст шаблона сохраняется. Если в нём уже есть {map_square}, {square} или {location}, повторный квадрат не добавляется. Без {area} место автоматически не дописывается.')
+    studio:infoHint(ui,'map-radio-area','Применяется к Shots fired, SOS, CODE 0/1/4, докладам патруля, остановки и погони, событиям и своим автодокладам с {area}. Личный текст шаблона сохраняется. Если в нём уже есть {map_square}, {square} или {location}, повторный квадрат не добавляется. Без {area} место автоматически не дописывается.')
     d.location_template=studio:field('Формат места##map-location-template','map-location-template',d.location_template,1024,true,76)
-    ui.text('Используйте {area} и {map_square} по одному разу. Например: {area}, квадрат {map_square}. В интерьере и вне сетки остаётся только район: отсутствие квадрата не мешает передать SOS. Выключенный переключатель возвращает прежнее значение {area} в докладах; явная {location} по-прежнему использует этот формат.')
+    studio:infoHint(ui,'map-radio-format','Используйте {area} и {map_square} по одному разу. Например: {area}, квадрат {map_square}. В интерьере и вне сетки остаётся только район: отсутствие квадрата не мешает передать SOS. Выключенный переключатель возвращает прежнее значение {area} в докладах; явная {location} по-прежнему использует этот формат.')
     local locationValues={area=state.area or(data.radioState and data.radioState.area),map_square=live and live.label,map_grid=preview}
     ui.text('Место в предпросмотре: '..(grid.location(locationValues)or'нет доступного района')..'.')
-    ui.text('Изменения здесь сами ничего не отправляют. Предпросмотр конкретного доклада доступен в его разделе; перед отправкой сохраняются подтверждение и обычная очередь PA.')
+    studio:infoHint(ui,'map-radio-preview','Изменения здесь сами ничего не отправляют. Предпросмотр конкретного доклада доступен в его разделе; перед отправкой сохраняются подтверждение и обычная очередь PA.')
     local auto,changed=studio:check('Автозаполнение {square}##map-auto-square',d.auto_square)
     if changed then d.auto_square=auto end
-    ui.text('Эта настройка влияет на бинды и доклады с {square}. Ручной сектор не стирается: выключите переключатель, чтобы вернуть его. Сектор активного патруля {sector} остаётся отдельным полем.')
+    studio:infoHint(ui,'map-manual-square','Эта настройка влияет на бинды и доклады с {square}. Ручной сектор не стирается: выключите переключатель, чтобы вернуть его. Сектор активного патруля {sector} остаётся отдельным полем.')
     local current=grid.values(preview,studio.lib.profile,state.x,state.y,state.interior)
     ui.text('Предпросмотр: {map_square} = '..(current.map_square or'недоступен')..'; {square} = '..(current.square and current.square~=''and current.square or'не заполнен')..'.')
-    ui.text('Универсальный бинд: /r {local_tag}Патруль: {location}. В интерьере он передаст только район. Если нужен обязательный квадрат, используйте {map_square}: без него PA остановит такой бинд и попросит проверить данные. Мегафон и локальные /me /do автоматически местом не дополняются.')
+    studio:infoHint(ui,'map-example','Универсальный бинд: /r {local_tag}Патруль: {location}. В интерьере он передаст только район. Если нужен обязательный квадрат, используйте {map_square}: без него PA остановит такой бинд и попросит проверить данные. Мегафон и локальные /me /do автоматически местом не дополняются.')
     im.Separator();studio:settingsHeading(ui,'Геометрия и подписи')
-    ui.text('Меняйте эти поля, только если ваша команда договорилась о другой сетке. Название клетки одинаково рассчитывается для карты, HUD и переменных; на внутренней границе выбирается клетка справа или снизу.')
+    studio:infoHint(ui,'map-boundaries','Меняйте эти поля, только если ваша команда договорилась о другой сетке. Название клетки одинаково рассчитывается для карты, HUD и переменных; на внутренней границе выбирается клетка справа или снизу.')
     for _,r in ipairs({{'west','Западная граница X',-10000,10000},{'north','Северная граница Y',-10000,10000},
         {'cell_size','Размер клетки в единицах GTA',50,2000},{'columns','Количество столбцов',1,48},{'column_start','Первый номер столбца',0,99}})do
         ui.text(r[2]);im.PushItemWidth(-1);ui.push(function()im.PopItemWidth()end)

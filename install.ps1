@@ -209,6 +209,7 @@ $paOwned = @(
     'lib\pa26_studio.lua',
     'lib\pa26_target.lua',
     'lib\pa26_taser.lua',
+    'lib\pa26_theme.lua',
     'lib\pa26_text_editor.lua',
     'lib\pa26_tracking_ui.lua',
     'lib\pa26_training.lua',

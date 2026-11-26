@@ -5,6 +5,11 @@ eq(#migrated.notes,#old.notes);eq(#migrated.bindings,#old.bindings);eq(migrated.
 eq(migrated.profile.name,old.profile.name);eq(migrated.bindings[1].script,old.bindings[1].script)
 local bad=prefs.validate({enabled='true',navigation={observe_ms=0/0,max_segments=99999},coordinates={channel='/su',phone='/cuff 5'}})
 eq(bad.enabled,false);eq(bad.navigation.max_segments,256);eq(bad.coordinates.channel,'/fn');eq(bad.coordinates.phone,'')
+local rounded=prefs.validate({navigation={observe_ms=250.4,arrival=15.5,opacity=.83},
+ coordinates={ttl_ms=300001.9,offer_ms=1501.49},leadership={channel_limit=114.623,delay_ms=1542.4}})
+eq(rounded.navigation.observe_ms,250);eq(rounded.navigation.arrival,16);eq(rounded.navigation.opacity,.83)
+eq(rounded.coordinates.ttl_ms,300002);eq(rounded.coordinates.offer_ms,1501)
+eq(rounded.leadership.channel_limit,115);eq(rounded.leadership.delay_ms,1542)
 local legacyPath='D:\\Saved graph.bin'
 lib.field.navigation.road_external=legacyPath
 eq(assert(model.validate(lib,cfg)).field.navigation.road_external,legacyPath,'Legacy GPS preferences remain serializable')
@@ -58,6 +63,19 @@ place('200 300 5');check(field.coordinates.mark)
 lib.field.coordinates.enabled=false;t=t+1;field:tick(s,t);eq(field.coordinates.mark,nil,'OFF cleans only the owned mark')
 lib.field.coordinates.enabled=true
 for i,row in ipairs(lib.field.leadership.briefings)do for j=1,#row.lines do check(field:propose('briefing',{index=i,line=j}))end end
+for _,result in ipairs({'cancelled','completed'})do
+ local p=assert(field:propose('briefing',{index=1,line=1}));check(field:accept(p));t=t+1;field:tick(s,t)
+ eq(field.queued,p)
+ field:execution('completed',{plan={fieldAction={token='different'}}})
+ eq(field:view().lastBriefingCompleted,nil)
+ field:execution(result,{plan=p.plan});eq(field.queued,nil)
+ local completed=field:view().lastBriefingCompleted
+ if result=='completed'then
+  eq(completed.token,p.token);eq(completed.index,1);eq(completed.line,1)
+  t=t+lib.field.navigation.observe_ms;field:tick(s,t)
+  eq(field:view().lastBriefingCompleted,completed)
+ else eq(completed,nil)end
+end
 local invalid=model.copy(lib);invalid.field.leadership.briefings[1].name='';check(not model.validate(invalid,cfg),'Invalid draft is rejected, never silently dropped on save')
 local again=assert(model.validate(lib,cfg));eq(#again.field.leadership.briefings,#lib.field.leadership.briefings,'Roundtrip never duplicates the built-in library')
 local cruiser=require 'pa26_cruiser_assist';local released=0

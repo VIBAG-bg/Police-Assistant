@@ -3,6 +3,11 @@ local core=require 'pa26_core'
 local M={}
 function M.draw(s,ui,updater,callbacks,author)
     local im=s.imgui;s.currentUi=ui;s.preferenceContext=true
+    local function run(action)
+        if not callbacks.afterUi then return action()end
+        local ok,err=callbacks.afterUi(action)
+        if not ok then s:notify(err,'updates',false)end
+    end
     s:settingsHeading(ui,'Обновления Police Assistant')
     ui.text('Установлена PA '..core.VERSION)
     local job=s.autosaves and s.autosaves.updates
@@ -22,8 +27,8 @@ function M.draw(s,ui,updater,callbacks,author)
     if author then
         s:settingsHeading(ui,'Авторские бинды и настройки')
         ui.text('Отдельные наборы из того же GitHub. Загрузка не заменяет данные: сначала появится окно ДА / НЕТ. Профиль, контакты, заметки и журналы сохраняются. Перед заменой создаётся проверенная копия; после применения перезапустится только PA.')
-        if s:button('Обновить бинд-лист с GitHub##author-binds',ui)then author:start('binds')end
-        if s:button('Обновить настройки с GitHub##author-settings',ui)then author:start('settings')end
+        if s:button('Обновить бинд-лист с GitHub##author-binds',ui)then run(function()author:start('binds')end)end
+        if s:button('Обновить настройки с GitHub##author-settings',ui)then run(function()author:start('settings')end)end
         ui.text(author.status)
     end
     if not updater then ui.text('Помощник обновления недоступен.');return end
@@ -33,25 +38,31 @@ function M.draw(s,ui,updater,callbacks,author)
     ui.text('Состояние: '..(labels[updater.phase]or'Проверка состояния'))
     if not updater.job then
         if s:button('Проверить обновления##updates-check',ui)then
-            s:flushAutosave(callbacks,true)
-            if not(s.autosaves and s.autosaves.updates)then updater:check()end
+            run(function()
+                s:flushAutosave(callbacks,true)
+                if not(s.autosaves and s.autosaves.updates)then updater:check()end
+            end)
         end
         if updater.candidate then
             ui.text('Версия: '..updater.candidate.version)
             ui.text('Изменения из GitHub · описание автора выпуска:')
             ui.text((updater.candidate.notes or''):gsub('[%z\1-\8\11\12\14-\31]',' '))
             if s:button('Скачать и установить после выхода##updates-download',ui)then
-                s:flushAutosave(callbacks,true)
-                if not(s.autosaves and s.autosaves.updates)then updater:download()end
+                run(function()
+                    s:flushAutosave(callbacks,true)
+                    if not(s.autosaves and s.autosaves.updates)then updater:download()end
+                end)
             end
         end
     elseif updater.job.mode=='Prepare'then
-        if s:button('Отменить отложенное обновление##updates-cancel',ui)then updater:cancel()end
+        if s:button('Отменить отложенное обновление##updates-cancel',ui)then run(function()updater:cancel()end)end
     end
     if updater.result and updater.result.message then ui.text(require('pa26_updater').message(updater.result.message))end
     if updater.env.platform and s:button('Открыть резервные копии и отчёты##updates-backups',ui)then
-        local ok=pcall(updater.env.platform.openBackups,updater.env.platform)
-        if not ok then s:notify('Не удалось открыть папку обновлений.','updates',false)end
+        run(function()
+            local ok=pcall(updater.env.platform.openBackups,updater.env.platform)
+            if not ok then s:notify('Не удалось открыть папку обновлений.','updates',false)end
+        end)
     end
 end
 return M

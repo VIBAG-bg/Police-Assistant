@@ -70,3 +70,8 @@ s.toggle='Предлагать RP при ручном вводе команды#
 eq(s.workspace.library.settings.manual_actions.enabled,false)
 eq(s.savedLibrary().settings.manual_actions.rules.cuff.rp,'/me подготовил наручники.')
 check(not s.hasLog('Ошибка интерфейса'));eq(#s.sent,0);onScriptTerminate(s.script)
+local defaults=module.defaults()
+check(module.validate(defaults))
+check(defaults.rules.ud.rp:find('на груди полицейский бейдж',1,true))
+check(defaults.rules.ud.rp:find('{badge_number}',1,true),'The badge number comes from the officer profile')
+check(defaults.rules.takelic.rp:find('реестр лицензий',1,true))

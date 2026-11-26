@@ -4,7 +4,7 @@ M.channels={'','/s','/m','/r','/rn','/f','/fn','/d','/df','/l','/ln','/bkn','/n'
 function M.defaults()
     local channels={};for _,channel in ipairs(M.channels)do channels[channel]=true end
     return {revision=2,enabled=true,speech_enabled=true,channels=channels,display_limit=115,body_limit=90,margin=6,me_extra=1,do_extra=3,
-        fallback_nickname=24,max_lines=8,todo_action_limit=60,marker='...',preview_text='достал служебное удостоверение, развернул его перед собеседником и дал возможность ознакомиться с данными, после чего убрал удостоверение обратно.'}
+        fallback_nickname=24,max_lines=8,todo_action_limit=60,marker='...',preview_text='указал на полицейский бейдж (жетон), закреплённый на груди поверх формы, и дал собеседнику время прочитать имя и должность.'}
 end
 function M.validate(raw)
     local out=M.defaults();if raw==nil then return out end

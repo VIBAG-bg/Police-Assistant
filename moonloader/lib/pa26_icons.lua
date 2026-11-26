@@ -4,12 +4,19 @@ local points=require 'pa26_icon_glyphs'
 local M={enabled=true,points=points,glyphs={},metrics={}}
 M.tones={normal={.21,.72,.79,1},safe={.33,.79,.58,1},warning={.89,.69,.35,1},
  info={.46,.60,.91,1},danger={.91,.49,.47,1},muted={.65,.73,.80,1}}
+local toneRoles={normal='wheelAccent',info='wheelAccent',safe='statusSafe',
+ warning='statusWarn',danger='statusAlert',muted='statusMuted'}
+function M.color(theme,tone)
+ return theme and theme[toneRoles[tone] or 'wheelAccent'] or M.tones[tone] or M.tones.normal
+end
 local function utf8(n)return string.char(224+math.floor(n/4096),128+math.floor(n/64)%64,128+n%64)end
 for name,n in pairs(points)do M.glyphs[name]=utf8(n)end
 M.sections={home='house',binds='keyboard',addons='sliders',partners='car-side',hints='circle-question',
  knowledge='book-open',stats='clipboard-list',settings='gear',updates='rotate'}
 M.cards={radio='tower-broadcast',traffic='car-side',risk='car-burst',force='shield-halved',
  rights='scale-balanced',commands='keyboard',service='users',wanted='crosshairs',fines='gavel',catalog='file-lines'}
+M.wheel={citizen='id-card',detention='handcuffs',frisk='magnifying-glass',wanted='crosshairs',
+ documents='shield-halved',service='tower-broadcast',leadership='users',custom='sliders'}
 local actions={stop_order='bullhorn',pursuit='route',tire='triangle-exclamation',stop='clipboard-list',
  high_risk='car-burst',approach='magnifying-glass',risk_order='bullhorn',explain_stop='id-card',
  foot='route',explain_detention='scale-balanced',finish='flag-checkered',documents='id-card',
@@ -28,6 +35,7 @@ local function semantic(label)
  if label:match('^НЕТ')then return 'xmark'elseif label:match('^ДА')then return 'check'end
  local action=label:match('##copilot%-([a-z_]+)$');if action and actions[action]then return actions[action]end
  local section=label:match('##nav([a-z]+)$');if section then return M.sections[section]end
+ if label:find('##home-duty-preset-',1,true)or label:find('##duty-preset-apply-',1,true)then return end
  if label:find('##important%-open%-')then return 'book-open'end
  if label:find('##copilot%-dispatch%-')or label:find('##copilot%-quick%-')then return 'tower-broadcast'end
  if label:find('##session%-crew%-')then return end -- ordinary fields remain quiet
@@ -62,6 +70,7 @@ function M.initialize(im,ffi,base)
   assert(font~=nil,'Icon font could not be loaded')
   M.font=font;M.owner=im;M.buffer=buffer;M.ranges=ranges;M.config=cfg;M.mode=base and'merged'or'dedicated'
  end)
+ package.loaded.pa26_icon_font=nil
  if not ok then M.clear();return nil,tostring(why)end
  return true
 end
@@ -75,7 +84,7 @@ function M.get(name)
  end
  return bounds and M.glyphs[name]or nil
 end
-function M.draw(im,name,x,y,size,tone,alpha,drawList)
+function M.draw(im,name,x,y,size,tone,alpha,drawList,override)
  if M.owner~=im then return false end
  local glyph=M.get(name);if not glyph then return false end
  local bounds=M.metrics[name]
@@ -91,7 +100,7 @@ function M.draw(im,name,x,y,size,tone,alpha,drawList)
  local clipMax=list:GetClipRectMax()
  if left+bounds.left*scale<minX or top+bounds.top*scale<minY or
     left+bounds.right*scale>clipMax.x or top+bounds.bottom*scale>clipMax.y then return false end
- local t=M.tones[tone]or M.tones.normal
+ local t=override or M.color(nil,tone)
  local color=im.ColorConvertFloat4ToU32(im.ImVec4(t[1],t[2],t[3],(alpha or 1)*t[4]))
  list:AddTextFontPtr(M.font,fontSize*scale,im.ImVec2(left,top),color,glyph,nil,0)
  return true
@@ -99,7 +108,7 @@ end
 function M.heading(im,ui,text,name,tone)
  local size=im.GetFontSize();local p=im.GetCursorScreenPos();local width=im.GetContentRegionAvail().x
  local gutter=math.min(size,20)+9
- if width>=180 and M.draw(im,name or M.semantic(text),p.x,p.y+math.max(0,(size-18)/2),math.min(size,20),tone)then
+ if width>=180 and M.draw(im,name or M.semantic(text),p.x,p.y+math.max(0,(size-18)/2),math.min(size,20),tone,nil,nil,M.color(ui.theme,tone))then
   im.SetCursorPosX(im.GetCursorPosX()+gutter);ui.text(text)
  else ui.text(text)end
 end

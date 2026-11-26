@@ -273,17 +273,17 @@ function M.defaults(cfg)
         {id=1,name='Как пользоваться биндами',body='Создайте сценарий в разделе «Бинды».\n{my_name} в фигурных скобках подставляет имя из профиля.\n@wait(1500) добавляет паузу в миллисекундах.\n@sleep(F11) ждёт отдельного нажатия клавиши.\nБыстрое меню содержит только сценарии с отметкой «В быстром меню».\nДемо выполняет шаги без отправки в игру.',favorite=true},
         {id=2,name='Перед реальным запуском',body='Проверьте итоговый текст, цель и команду вашего сервера.\nID закрепляется на время сценария.\nEnd или Esc останавливают оставшиеся шаги.\nФакт передачи команды клиенту не доказывает её принятие сервером.',favorite=false},
     },next_note_id=3,partners={},next_partner_id=1,wheel={1,2,3,4,5,6},
-    profile={name='',gender='male',accent='',department='',rank='',case_number='',badge_number='',local_tag='',global_tag='',prison_tag='',callsign='',my_plate='',select_plate='',closest_plate='',square='',city='',timezone='local'},
+    profile={name='',gender='male',accent='',department='',rank='',case_number='',badge_number='',local_tag='',global_tag='',prison_tag='',callsign='',my_plate='',select_plate='',closest_plate='',square='',city='',timezone='local'},profile_presets={},
     alerts=M.alertDefaults(),weapons=preferences.weaponDefaults(),taser=preferences.taserDefaults(),
     wanted_reminders={},nearby=nearbyModel.defaults(),map_grid=mapGrid.defaults(),rp_text=rpSettings.defaults(),assist=assistSettings.defaults(),vehicle=vehicleSettings.defaults(),operations=operationSettings.defaults(),procedures=procedureSettings.defaults(),identity=identitySettings.defaults(),patrol_session=patrolSettings.defaults(),patrol_events=eventSettings.defaults(),radio_guard=preferences.radioGuardDefaults(),weapon_warning=preferences.weaponWarningDefaults(),alert_shortcuts=M.alertShortcutDefaults(),
-    settings={updates=updateSettings.defaults(),window_layout=windowLayout.defaults(),manual_chat=manualChat.defaults(),quick_key=0x7A,tips_key=0x7B,cancel_key=0x23,opacity=.86,compact=false,ui_icons=true,ask_screenshot_path=false,
+    settings={updates=updateSettings.defaults(),window_layout=windowLayout.defaults(),manual_chat=manualChat.defaults(),quick_key=0x7A,tips_key=0x7B,cancel_key=0x23,opacity=.86,compact=false,ui_icons=true,theme='police',ask_screenshot_path=false,
         retain_distance=40,retain_grace_ms=1500,keep_target_on_interior_change=true,aim_select_enabled=true,aim_select_control='mouse',aim_select_delay_ms=150,wheel_mode='categories',wheel_profile='compact',wheel_enabled=true,interaction_notices=true,accent_live_input=true,accent_skip_brackets=true,chat_dot_commands=true,manual_radio_prefix=true,cef_chat_support=true,cef_profile_updates=true,cef_chat_diagnostics=true,cef_chat_profile=false,cef_layout_indicator=true,cef_chat_weapon_guard=true,cef_chat_weapon_lock=true,cef_chat_grace_ms=350,wheel_names={}},
     filters={},recruitment={min_age=18,min_level=3,min_lawfulness=0,land=true,water=false,air=false,weapon=true,medical=true}}
     local categories={introduce='Общение',documents='Документы',wanted='Проверки',frisk='Досмотр',cuff='Задержание',release='Задержание'}
     lib.field=fieldSettings.defaults()
     lib.settings.help=require('pa26_help').defaults()
     lib.settings.manual_actions=manualActions.defaults();lib.settings.wheel_child_limit=0;lib.settings.wheel_system_groups={};lib.settings.wheel_order={};lib.settings.wheel_edit_enabled=true;lib.settings.shutdown_message='Police Assistant полностью отключён до перезахода в игру.'
-    local female={introduce='остановившись рядом, достала служебное удостоверение и раскрыла его перед собеседником.',
+    local female={introduce='остановившись рядом, указала на полицейский бейдж (жетон), закреплённый на груди.',
         documents='оглянувшись по сторонам, обратилась к собеседнику с просьбой предъявить паспорт.',
         wanted='сверив известные сведения, внесла данные в служебный терминал и открыла форму поиска.',
         frisk='надев перчатки, аккуратно проверила одежду и карманы саспекта.',
@@ -395,6 +395,53 @@ function M.validateBinding(raw)
     end
     return b
 end
+local dutyFields={'department','rank','callsign','local_tag','global_tag','prison_tag','badge_number'}
+M.MAX_DUTY_PRESETS=8
+function M.dutyPresetMatches(profile,preset)
+    for _,key in ipairs(dutyFields)do if profile[key]~=preset[key]then return false end end
+    return true
+end
+function M.findDutyPreset(lib,id)
+    for index,preset in ipairs(lib.profile_presets or {})do if preset.id==id then return preset,index end end
+end
+function M.applyDutyPreset(lib,id)
+    local preset=M.findDutyPreset(lib,id)
+    if not preset then return nil,'Профиль службы уже удалён.'end
+    for _,key in ipairs(dutyFields)do lib.profile[key]=preset[key]end
+    return true
+end
+function M.addDutyPreset(lib,name)
+    local list=lib.profile_presets
+    if #list>=M.MAX_DUTY_PRESETS then return nil,'Можно сохранить до восьми профилей службы.'end
+    name=M.clean(name,96)
+    if not name or name==''then return nil,'Введите название профиля службы, до 96 байт UTF-8.'end
+    local id=1
+    for _,old in ipairs(list)do
+        if M.casefold(old.name)==M.casefold(name)then return nil,'Профиль с таким названием уже есть.'end
+    end
+    while M.findDutyPreset(lib,id)do id=id+1 end
+    local row={id=id,name=name}
+    for _,key in ipairs(dutyFields)do row[key]=lib.profile[key]end
+    list[#list+1]=row
+    return true
+end
+local function validateDutyPresets(raw)
+    if raw==nil then return {} end
+    if not M.array(raw,M.MAX_DUTY_PRESETS) then return nil end
+    local clean,ids,names={},{},{}
+    for _,r in ipairs(raw)do
+        if type(r)~='table' or not core.finite(r.id) or r.id%1~=0 or r.id<1 or r.id>999999998 or ids[r.id]then return nil end
+        local name=M.clean(r.name,96)
+        if not name or name==''or names[M.casefold(name)]then return nil end
+        local row={id=r.id,name=name}
+        for _,k in ipairs(dutyFields)do
+            row[k]=M.clean(r[k],240)
+            if row[k]==nil then return nil end
+        end
+        ids[r.id]=true;names[M.casefold(name)]=true;clean[#clean+1]=row
+    end
+    return clean
+end
 function M.validate(raw, cfg)
     if type(raw)~='table' or raw.schema~=M.SCHEMA then return nil,'Неизвестная версия библиотеки.' end
     local out=M.defaults(cfg);local fieldError;out.field,fieldError=fieldSettings.validate(raw.field);if not out.field then return nil,fieldError end;out.bindings={};out.notes={};out.partners={}
@@ -454,6 +501,10 @@ function M.validate(raw, cfg)
     for key,default in pairs(out.profile) do local value=M.clean(raw.profile[key]or(key=='badge_number'and default),240); if not value then return nil,'Неверное поле профиля: '..key end; out.profile[key]=value end
     if out.profile.gender~='male' and out.profile.gender~='female' then return nil,'Выберите грамматический род.' end
     if out.profile.timezone~='local' and out.profile.timezone~='utc' and out.profile.timezone~='moscow' then return nil,'Неверный часовой пояс.' end
+    out.profile_presets=validateDutyPresets(raw.profile_presets)
+    if not out.profile_presets then return nil,'Проверьте список быстрых профилей службы.'end
+    local theme=require 'pa26_theme'
+    if theme.valid(raw.settings.theme)then out.settings.theme=raw.settings.theme end
     local global={}; for _,key in ipairs({'quick_key','tips_key','cancel_key'}) do
         local v=raw.settings[key]; if not M.validKey(v) then return nil,'Неверная клавиша окна.' end
         if v~=0 and (global[v] or v==(cfg and cfg.main.menu_key) or v==(cfg and cfg.main.radial_key)) then return nil,'Конфликт клавиш окон.' end

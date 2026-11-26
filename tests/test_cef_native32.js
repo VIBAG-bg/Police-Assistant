@@ -18,6 +18,25 @@ assert([
  november26Hud,
 ].includes(reviewedSha),'Use a reviewed HUD fixture for executable tests');
 const box=path.join(release,'tests/update-sandbox/cef-runtime-probe',crypto.randomUUID());fs.mkdirSync(box,{recursive:true});
+const checksRoot=path.join(box,'cef-checks');
+const jobFiles=['verify.ps1','result.json','result.tmp'];
+const expired=new Date(Date.now()-30*60*1000);
+const expiredName='a'.repeat(48),recentName='b'.repeat(48),junctionName='c'.repeat(48),extraName='d'.repeat(48);
+const unrelatedName='g'.repeat(48);
+function jobFixture(dir,stale=true,extra=false){
+ fs.mkdirSync(dir,{recursive:true});
+ for(const name of jobFiles)fs.writeFileSync(path.join(dir,name),name);
+ if(extra)fs.writeFileSync(path.join(dir,'keep.txt'),'keep');
+ if(stale)fs.utimesSync(dir,expired,expired);
+}
+jobFixture(path.join(checksRoot,expiredName));
+jobFixture(path.join(checksRoot,recentName),false);
+jobFixture(path.join(checksRoot,extraName),true,true);
+jobFixture(path.join(checksRoot,unrelatedName));
+const outside=path.join(box,'outside-cef-checks');
+jobFixture(outside);fs.symlinkSync(outside,path.join(checksRoot,junctionName),'junction');
+const redirectedCache=path.join(box,'redirected-cache');fs.mkdirSync(redirectedCache);
+fs.symlinkSync(outside,path.join(redirectedCache,'cef-checks'),'junction');
 const slash=p=>p.replaceAll('\\','/');const q=s=>JSON.stringify(slash(s));
 const adapter=path.join(release,'cef/assets/hud/pa26-chat.js');
 const tag='<!-- PA26 CEF chat adapter --><script src="pa26-chat.js"></script>';
@@ -48,6 +67,8 @@ package.path=${q(path.join(release,'moonloader/lib/?.lua'))}..';'..game..'MoonLo
 package.cpath=game..'MoonLoader/lib/?.dll;'..package.cpath
 local socket=require'socket';local json=require'cjson';local m=require'pa26_chat_bridge';local fs=require'pa26_config'.fs;local assets=require'pa26_cef_assets'
 local base=${q(box+'/')};local state={};local function readControl()local raw=fs.read(base..'control.json');if raw then local ok,t=pcall(json.decode,raw);if ok then state=t end end end
+-- Both the screenshot scanner and verifier use FindFirstFileW in the same Lua state.
+local screens=require('pa26_screens').new({})
 local env={path=base,fs=fs,assetFs=assets.fs,json=json,token=function()return m.entropy(require'ffi')end,session=function()return'probe-session'end,
  adapter=require('pa26_cef_contract').adapter,
  settings=function()readControl();state.filters=state.filterPrefixes or{};return state end,layout=function()return state.keyboardLayout end,
@@ -64,6 +85,17 @@ repeat
 until verifier.done or socket.gettime()-checking>25
 assert(verifier.done and review.allowed,json.encode(review))
 assert(fs.write(base..'verified.json',json.encode({report=review,initialization_ms=(socket.gettime()-checking)*1000})))
+assert(screens.scanScreens(base:sub(1,-2)))
+local cefJob=require 'pa26_cef_job'
+local function newWorker(cacheRoot)
+ return cefJob.new(base..'MoonLoader',json,{cacheRoot=cacheRoot,hudRoot=${q(hudRoot)}})
+end
+local jobWorker=newWorker(base:sub(1,-2))
+local cancelled=assert(jobWorker.start())
+assert(fs.exists(cancelled.root..'/verify.ps1'))
+jobWorker.close(cancelled,true);assert(cancelled.handle==nil)
+assert(not fs.exists(cancelled.root..'/verify.ps1'))
+assert(not pcall(newWorker(${q(redirectedCache)}).start))
 env.compatibility=function(now)return verifier:check(now)end
 local originalSettings=env.settings
 env.settings=function()local result=originalSettings();if state.manualEnabled then result.manual_chat={enabled=true,max_parts=3,interval_ms=1200};result.rp_text=require('pa26_rp_settings').defaults();result.nickname='Officer_Name'end;return result end
@@ -127,6 +159,13 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
 (async()=>{
  await until(()=>output.includes('NATIVE32_READY'),'Native bridge did not start',900);
  const verification=JSON.parse(fs.readFileSync(path.join(box,'verified.json'),'utf8'));
+ eq(fs.readdirSync(checksRoot).sort(),[recentName,junctionName,extraName,unrelatedName].sort(),
+  'Completed and terminated jobs and stale owned directories are removed');
+ for(const dir of [path.join(checksRoot,recentName),path.join(checksRoot,unrelatedName),outside])
+  for(const name of jobFiles)eq(fs.readFileSync(path.join(dir,name),'utf8'),name,'Recent, unrelated and redirected files remain intact');
+ eq(fs.readdirSync(path.join(checksRoot,extraName)),['keep.txt'],'Clean only verifier-owned filenames');
+ ok(fs.lstatSync(path.join(checksRoot,junctionName)).isSymbolicLink(),'Never traverse job junctions');
+ ok(fs.lstatSync(path.join(redirectedCache,'cef-checks')).isSymbolicLink(),'Never traverse a redirected cache root');
  const functionalFingerprint=verification.report.fingerprint;
  eq(verification.report.state,'CONTRACT_COMPATIBLE');
  eq(verification.report.sha256,hudSha);
@@ -291,7 +330,7 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  ok(output.includes('port_type=string'));ok(output.includes('browser_exchange'));ok(output.includes('browser_ready'));ok(!output.includes(control.accent),'native diagnostics must not contain the prefix');
  eq(registrations,['chat:messages','chat:addAdvertisement'],'Reconnection never registers duplicates');
  const result={status:'passed',checks,real_x86_luajit:true,real_installed_luasocket:true,real_loopback_http:true,
-  runtime_verifier:verification,runtime_handshake:verifiedState,real_hud_send_function_in_isolated_v8:true,real_hud_incoming_registration:true,real_hud_focus_functions:true,
+  runtime_verifier:verification,runtime_handshake:verifiedState,verifier_directory_cleanup:true,real_hud_send_function_in_isolated_v8:true,real_hud_incoming_registration:true,real_hud_focus_functions:true,
   chat_field_is_test_double:true,layout_packet_values_are_test_doubles:true,gta_launched:false,actual_game_server_contacted:false,manual_multiline_native_ipc:true,
   manual_sha256:sha(path.join(release,'moonloader/lib/pa26_manual_chat.lua')),rp_sha256:sha(path.join(release,'moonloader/lib/pa26_rp_text.lua')),adapter_sha256:sha(adapter),bridge_sha256:sha(path.join(release,'moonloader/lib/pa26_chat_bridge.lua')),chat_text_sha256:sha(path.join(release,'moonloader/lib/pa26_chat_text.lua')),test_sha256:sha(__filename),
   assets_sha256:sha(path.join(release,'moonloader/lib/pa26_cef_assets.lua')),real_large_hud_bytes:Buffer.byteLength(originalHtml),real_atomic_replace:true,

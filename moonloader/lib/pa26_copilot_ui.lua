@@ -81,6 +81,19 @@ function M.dispatch(s,ui,callbacks)
   if r[1]=='dispatch_search'or r[1]=='dispatch_colleague'then ui.text(require('pa26_field_radio').source)end
  end
 end
+local phases={
+ ['10-55']={'10-55 · Трафик-стоп','warn'},
+ ['Преследование']={'10-57 VICTOR · КОД 3','alert'},
+ ['10-57 VICTOR']={'10-57 VICTOR · КОД 3','alert'},
+ ['10-57 FOXTROT']={'10-57 FOXTROT · КОД 3','alert'},
+ ['10-66']={'10-66 · КОД 3','alert'},
+}
+local ready={'КОД 4 · Ожидание','safe'}
+local emergency={'CODE 0','alert'}
+function M.phaseBadge(view)
+ local p=(view.combat or view.statusCode==0)and emergency or phases[view.phase] or ready
+ return p[1],p[2]
+end
 function M.draw(s,ui,data,callbacks)
  local im=s.imgui;local v=data.copilot or{};local c=v.car;local values=v.values or{}
  s.currentNoticeScope='vehicle';s:settingsHeading(ui,'Трафик и погоня')
@@ -91,6 +104,13 @@ function M.draw(s,ui,data,callbacks)
   if not s.autosaves.vehicle then M.offer(s,callbacks,action)else s:notify('Исправьте и сохраните настройки транспорта.','vehicle',false)end
  end
  if s.copilotPage=='work'then
+  local menu=require 'pa26_menu';local label,tone=M.phaseBadge(v)
+  local inline=im.GetContentRegionAvail().x>=300
+  menu.statusPill(im,ui,label,tone)
+  if c and c.armed or cfg.pursuit_armed then
+   if inline then im.SameLine(0,8)end
+   menu.statusPill(im,ui,'Вооружён','alert')
+  end
   if s.copilotDuty then
    s:settingsHeading(ui,'Доступность экипажа · выберите доклад')
    groups.buttons(s,ui,{{'busy_report','Временно занят · 10-8##wheel-duty-busy'},{'break_report','Перерыв · Код 7##wheel-duty-break'},{'patrol_continue','Снова доступен · Код 4##wheel-duty-available'}},offer)
@@ -102,15 +122,15 @@ function M.draw(s,ui,data,callbacks)
    if s:button('Открыть настройки службы##copilot-duty-settings',ui)then s.copilotPage='settings';return end
   end
   if c then
-   s:settingsHeading(ui,(values.vehicle_description or values.model or'Машина')..' ['..c.id..'] · '..(v.phase or'Выбрана'))
+   s:settingsHeading(ui,(values.vehicle_description or values.model or'Машина')..' ['..c.id..']')
    ui.text('Гос. номер: '..(values.vehicle_plate or'не установлен'))
    ui.text((values.occupants_text or'Салон не определён')..' · Водитель: '..(v.driver and('ID '..v.driver.id)or'не установлен')..' · '..(c.stale and'последнее наблюдение'or math.floor(c.distance or 0)..' м'))
    if c.armed or v.phase=='10-66'or v.phase=='Преследование'then ui.text('Повышенный риск · рассмотрите 10-66. Наличие оружия не подтверждает стрельбу.')end
   else ui.text('Выберите видимую машину. Если автовыбор водителя включён, его ID станет целью биндов и обычного взаимодействия.')end
   if v.phase=='10-55'then ui.text(v.stopWarningStatus or'')end
   local startLabel=v.phase=='10-55'and'Повторить требование'or'Начать 10-55'
-  local primary={{'stop_order',startLabel..'##copilot-stop_order'},{'pursuit','10-57 · Начать погоню##copilot-pursuit'},
-   {'explain_stop','Причина остановки##copilot-explain_stop','Выберите и озвучьте причину 10-55. Copilot продолжит с текущего шага. Отправка после подтверждения.'},{'finish','10-99 · Завершить##copilot-finish'}}
+  local primary={{'stop_order',startLabel..'##copilot-stop_order',nil,'primary'},{'pursuit','10-57 · Начать погоню##copilot-pursuit',nil,'primary'},
+   {'explain_stop','Причина остановки##copilot-explain_stop','Выберите и озвучьте причину 10-55. Copilot продолжит с текущего шага. Отправка после подтверждения.','primary'},{'finish','10-99 · Завершить##copilot-finish'}}
   if v.phase=='10-55'and v.stopWarnings>=v.stopWarningLimit then table.remove(primary,1)end
   groups.buttons(s,ui,primary,function(action)
    if action=='stop_order'or action=='pursuit'then
@@ -155,7 +175,7 @@ function M.draw(s,ui,data,callbacks)
    if s:button('Убрать ориентировку и выделение##stolen-clear',ui)then callbacks.stolenClear();s.stolenDraft=nil end
   end
   if v.windowActive then
-   s:settingsHeading(ui,'Разговор с водителем')
+   s:sectionCard(ui,'Разговор с водителем',function()
    if v.windowAwait then
     ui.text(v.windowReady and'Отметьте ответ водителя об окне.'or'Вопрос об окне передан. Ожидаем ответ водителя.')
     if v.windowReady then
@@ -176,7 +196,7 @@ function M.draw(s,ui,data,callbacks)
    if v.contactAvailable then
     local actions={}
     if not v.contactIntroduced and not v.documentsRequested and not v.reasonExplained then
-     actions[#actions+1]={'greet_stop','Представиться и показать жетон (/ud)##copilot-greet-stop'}
+     actions[#actions+1]={'greet_stop','Представиться и показать жетон (/ud)##copilot-greet-stop',nil,'primary'}
      if not v.windowAwait and v.windowVehicle then actions[#actions+1]={'window_question','Спросить об окне##copilot-window-question'}end
     end
     if not v.documentsRequested then actions[#actions+1]={'documents','Запросить паспорт и лицензии##copilot-request-documents'}end
@@ -201,6 +221,7 @@ function M.draw(s,ui,data,callbacks)
      end
     end
    end
+   end)
   end
   if s:button((s.fastPtChooseId and'Скрыть выбор человека'or'Выбрать человека по ID для /pt')..'##copilot-pt-manual',ui)then s.fastPtChooseId=not s.fastPtChooseId end
   if s.fastPtChooseId then
@@ -211,11 +232,10 @@ function M.draw(s,ui,data,callbacks)
     if not ok then s:notify(why,'vehicle',false)end
    end
   end
-  s:settingsHeading(ui,'Связь и итог ситуации')
+  s:sectionCard(ui,'Связь и итог ситуации',function()
   local colleagues=v.colleagues or{};local roles={driver='Водитель ADAM',navigator='Штурман-координатор ADAM',solo='Одиночный LINCOLN'}
   ui.text('Маркировка: '..(values.unit or colleagues.autoCallsign or'—')..' · '..(roles[colleagues.ownCruiserRole]or'Пешком'))
   ui.text('Сотрудников ПД рядом: '..#(colleagues.nearbyOfficers or{})..' · экипажей: '..(colleagues.nearbyCruisers or 0))
-  ui.text('Радар — ориентир по форме, рации и вашим контактам; он не подтверждает IC-личность или полномочия человека.')
   cfg.pursuit_armed=s:check('Подозреваемые вооружены · моя отметка##copilot-armed',cfg.pursuit_armed)
   d.channel=s:choice('Канал докладов##copilot-radio-channel',d.channel,require('pa26_server_commands').radioChoices,ui)
   cfg.tac_channel=s:choice('Тактический канал##copilot-tac',cfg.tac_channel,{{'TAC 1','TAC 1'},{'TAC 2','TAC 2'},{'TAC 3','TAC 3'}},ui)
@@ -223,7 +243,7 @@ function M.draw(s,ui,data,callbacks)
   local outcomes={{'проведена беседа','Беседа'},{'выписан штраф','Штраф'},{'подозреваемый задержан','Задержан'},{'Код 4 АДАМ, подозреваемый потерян','CODE 4 ADAM · потерян'}}
   local known=false;for _,row in ipairs(outcomes)do if row[1]==cfg.stop_outcome then known=true end end;if not known then outcomes[#outcomes+1]={cfg.stop_outcome,'Свой итог: '..cfg.stop_outcome}end
   cfg.stop_outcome=s:choice('Итог##copilot-outcome',cfg.stop_outcome,outcomes,ui)
-  ui.text('Розыск по машине использует вашу RP-конвенцию номера из ID. /su и /pt подтверждаются отдельно; обычный /su ID открывает полный помощник.')
+  end,'Радар — ориентир по форме, рации и вашим контактам. Он не подтверждает IC-личность или полномочия человека.\n\nРозыск по машине использует вашу RP-конвенцию номера из ID. /su и /pt подтверждаются отдельно. Обычный /su ID открывает полный помощник.','copilot-radio-help')
  elseif s.copilotPage=='grounds'then
   local op=require 'pa26_operational_ui'
   op.ground(s,ui,cfg,'stop',callbacks);op.ground(s,ui,cfg,'detention',callbacks)
@@ -348,17 +368,18 @@ function M.place(controller,im,hud,fonts)
  if lane and lane.equipment then local e=lane.equipment;controller.bounds={x=e.x,y=e.y+m.offset,w=m.w,h=m.h}end
 end
 function M.over(controller,im)local p=im.GetIO().MousePos;return inside(controller.bounds,p.x,p.y)or false end
-function M.drawHud(controller,im)
+function M.drawHud(controller,im,theme)
  local m,r=controller.hudMetrics,controller.bounds;if not m or not r then return end
  local s=m.scale;local list=im.GetForegroundDrawList();local vec=im.ImVec2;local io=im.GetIO()
- local function color(a,b,c,d)return im.ColorConvertFloat4ToU32(im.ImVec4(a,b,c,d or 1))end
- local white=color(.96,.98,1);local x,y=r.x+12*s,r.y+10*s
- local accent=m.view.statusCode==0 and color(.95,.23,.25)or m.view.statusCode==3 and color(1,.67,.20)or color(.18,.72,.80)
- list:AddRectFilled(vec(r.x,r.y),vec(r.x+r.w,r.y+r.h),color(.025,.10,.18,.94),10*s)
+ local themes=require 'pa26_theme';local p=themes.get(theme)
+ local function color(c)return themes.u32(im,c)end
+ local white=color(p.text);local x,y=r.x+12*s,r.y+10*s
+ local accent=color(m.view.statusCode==0 and p.statusAlert or m.view.statusCode==3 and p.statusWarn or p.wheelAccent)
+ list:AddRectFilled(vec(r.x,r.y),vec(r.x+r.w,r.y+r.h),color(p.hudBg),10*s)
  list:AddRectFilled(vec(r.x,r.y),vec(r.x+4*s,r.y+r.h),accent,2*s)
  local function text(t,font,size,xx,yy)list:AddTextFontPtr(font,size*s,vec(xx,yy),white,t,nil,m.wrap)end
  local close={x=r.x+r.w-32*s,y=r.y+8*s,w=24*s,h=24*s}
- list:AddRectFilled(vec(close.x,close.y),vec(close.x+close.w,close.y+close.h),color(.18,.30,.40),4*s)
+ list:AddRectFilled(vec(close.x,close.y),vec(close.x+close.w,close.y+close.h),color(p.frameHovered),4*s)
  list:AddTextFontPtr(m.heading,14*s,vec(close.x+7*s,close.y+3*s),white,'X')
  if controller.state and controller.state.mouseAllowed and not controller.state.modal and inside(close,io.MousePos.x,io.MousePos.y)and im.IsMouseClicked(0)then
   controller.widgetMail={action='hide',life=controller.life,at=controller.now}
@@ -367,7 +388,7 @@ function M.drawHud(controller,im)
  local width=(m.wrap-4*s)/2
  for i,b in ipairs(m.buttons)do
   local box={x=x+(i-1)%2*(width+4*s),y=y+math.floor((i-1)/2)*38*s,w=width,h=34*s}
-  list:AddRectFilled(vec(box.x,box.y),vec(box.x+box.w,box.y+box.h),color(.12,.34,.50),5*s)
+  list:AddRectFilled(vec(box.x,box.y),vec(box.x+box.w,box.y+box.h),color(p.btnPrimary),5*s)
   local wrap=math.max(1,width-8*s)
   local ext=m.body:CalcTextSizeA(11*s,100000,wrap,b[2])
   list:AddTextFontPtr(m.body,11*s,vec(box.x+(width-ext.x)/2,box.y+(box.h-ext.y)/2),white,b[2],nil,wrap)
@@ -378,7 +399,7 @@ function M.drawHud(controller,im)
  if not m.traffic then return end
  y=y+math.ceil(#m.buttons/2)*38*s
  local pause={x=x,y=y,w=m.wrap,h=22*s}
- list:AddRectFilled(vec(x,y),vec(x+m.wrap,y+22*s),color(.10,.25,.34),4*s)
+ list:AddRectFilled(vec(x,y),vec(x+m.wrap,y+22*s),color(p.btnSecondary),4*s)
  text(m.view.repeatPaused and'Возобновить подсказки /m'or'Пауза подсказок /m',m.body,11,x+6*s,y+3*s)
  if controller.state and controller.state.mouseAllowed and not controller.state.modal and inside(pause,io.MousePos.x,io.MousePos.y)and im.IsMouseClicked(0)then
   controller.widgetMail={action='repeat_pause',life=controller.life,at=controller.now}

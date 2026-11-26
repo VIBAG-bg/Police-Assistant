@@ -335,8 +335,9 @@ function Controller:draw(im,hud,fonts)
     if box.h>io.DisplaySize.y-24 or box.w>io.DisplaySize.x-24 then return end
     self.bounds=box
     local list,vec=im.GetForegroundDrawList(),im.ImVec2
+    local themes=require 'pa26_theme';local palette=themes.get(hud.theme)
     local function tint(r,g,b,a)return im.ColorConvertFloat4ToU32(im.ImVec4(r,g,b,a or 1))end
-    local white,muted=tint(.98,.99,1),tint(.74,.84,.93)
+    local white,muted=themes.u32(im,palette.text),themes.u32(im,palette.textMuted)
     local mouse=safe(self.state,true) and self.state.mouseAllowed
     local function text(value,font,size,x,y,width,color)
         list:AddTextFontPtr(font,size*s,vec(x,y),color or white,value,nil,width)
@@ -351,7 +352,7 @@ function Controller:draw(im,hud,fonts)
         return mouse and hover and im.IsMouseClicked(0)
     end
     local x,y,w=box.x,box.y,box.w
-    list:AddRectFilled(vec(x,y),vec(x+w,y+m.bar),tint(.035,.12,.20,.85),10*s)
+    list:AddRectFilled(vec(x,y),vec(x+w,y+m.bar),themes.u32(im,palette.hudBg),10*s)
     local cfg=self.env.settings()
     for i,kind in ipairs(m.quick) do
         local row=math.floor((i-1)/m.columns);local column=(i-1)%m.columns
@@ -360,7 +361,7 @@ function Controller:draw(im,hud,fonts)
         local bx=x+8*s+column*(bw+8*s);local by=y+row*m.rowH
         local allowed=kind~='code0' or (core.finite(self.state.health) and self.state.health>0 and self.state.health<=cfg.code0_health)
         local clicked=button(kind,M.kinds[kind].short,bx,by+6*s,bw,26*s,
-            kind=='code0' and tint(.55,.20,.23,allowed and .94 or .4) or tint(.10,.30,.45,.94))
+            kind=='code0' and themes.u32(im,palette.btnDanger,allowed and .96 or .4) or themes.u32(im,palette.hudBadge))
         if allowed and clicked then self:request(kind) end
         local value=m.shortcuts[kind];local extent=m.body:CalcTextSizeA(11*s,100000,bw-8*s,value)
         text(value,m.body,11,bx+(bw-extent.x)/2,by+36*s,bw-8*s,muted)
@@ -377,11 +378,11 @@ function Controller:draw(im,hud,fonts)
         return
     end
     y=y+m.bar+8*s
-    list:AddRectFilled(vec(x,y),vec(x+w,box.y+box.h),tint(.025,.085,.15,.90),11*s)
+    list:AddRectFilled(vec(x,y),vec(x+w,box.y+box.h),themes.u32(im,palette.toastBg),11*s)
     local top=y+pad
     text(m.title,m.heading,16,x+pad,top,m.wrap);top=top+m.titleH+8*s
     for _,row in ipairs(m.lines) do
-        list:AddRectFilled(vec(x+pad,top),vec(x+w-pad,top+row.h+10*s),tint(.10,.22,.32,.85),7*s)
+        list:AddRectFilled(vec(x+pad,top),vec(x+w-pad,top+row.h+10*s),themes.u32(im,palette.toastBodyBg),7*s)
         text(row.text,m.body,14,x+pad+8*s,top+5*s,m.wrap-16*s);top=top+row.h+16*s
     end
     if m.busy then text(m.busy,m.body,13,x+pad,top,m.wrap,tint(1,.81,.47));top=top+m.busyH+6*s end
@@ -396,7 +397,7 @@ function Controller:draw(im,hud,fonts)
         (mouse and 'Выбор мышью · '..remaining..' с' or 'Закройте ввод для подтверждения · '..remaining..' с')
     text(hint,m.body,12,x+pad,top,m.wrap,muted)
     local progress=math.max(0,1-(core.elapsed(self.now,p.offeredAt) or 0)/self.env.settings().timeout_ms)
-    list:AddRectFilled(vec(x+pad,box.y+box.h-5*s),vec(x+pad+m.wrap*progress,box.y+box.h-3*s),tint(.24,.60,.82),2*s)
+    list:AddRectFilled(vec(x+pad,box.y+box.h-5*s),vec(x+pad+m.wrap*progress,box.y+box.h-3*s),themes.u32(im,palette.wheelAccent),2*s)
 end
 M.Controller=Controller
 return M

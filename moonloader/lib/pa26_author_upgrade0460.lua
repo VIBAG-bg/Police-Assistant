@@ -35,7 +35,10 @@ local function keepKeys(lib, cfg, current, currentCfg)
 end
 
 function M.prepare(lib, cfg, json, payload)
-    payload = payload or require 'pa26_author_defaults0460'
+    if payload == nil then
+        payload = require 'pa26_author_defaults0460'
+        package.loaded.pa26_author_defaults0460 = nil
+    end
     local binds, why = author.decode('binds', payload.binds, json)
     if not binds then return nil, why end
     local settings

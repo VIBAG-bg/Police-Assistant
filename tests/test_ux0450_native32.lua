@@ -73,6 +73,7 @@ for _,display in ipairs({{640,480},{800,600},{800,1100},{1024,768},{1366,768},{1
     studio.fieldPage=screen=='field-briefings'and'leadership'or screen:sub(7)
     studio.leaderPage=screen=='field-briefings'and'briefing'or'news';studio.briefingIndex=1
     require('pa26_field_ui').settings(studio,ui,data,callbacks)
+    if screen=='field-cruiser'then check(studio.fieldPage=='coordinates','The retired cruiser tab resolves to OOC coordinates')end
    elseif screen=='pinned-overlay'then
     local cfg=require('pa26_field_settings').defaults().pinned;cfg.enabled=true;cfg.note_id=1
     local pin=require('pa26_pinned_note').new();pin:update({{id=1,name='Памятка',body=string.rep('Строка памятки. ',600)}},cfg,1)

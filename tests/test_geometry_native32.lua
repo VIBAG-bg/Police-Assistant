@@ -1,6 +1,6 @@
 -- Actual x86 ImGui window constraints and default navigation, without GTA/D3D.
 local src=debug.getinfo(1,'S').source:sub(2):gsub('\\','/');local root=assert(src:match('^(.*)/tests/'))
-local game=os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game/'
+local game=(os.getenv('PA_NATIVE_GAME')or os.getenv('LOCALAPPDATA')..'/Exsellent Launcher/game')..'/'
 package.path=root..'/moonloader/lib/?.lua;'..game..'MoonLoader/lib/?.lua;'..package.path;package.cpath=game..'MoonLoader/lib/?.dll;'..package.cpath
 getWorkingDirectory=function()return game..'MoonLoader'end
 local ffi=require 'ffi';local im=require 'mimgui.imgui';local json=require 'cjson'

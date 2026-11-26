@@ -39,11 +39,14 @@ function P:frame()
  self.reportAt=self.reportAt or now
  if now-self.reportAt>=30000 then self:flush();self.reportAt=now end
 end
-function P:wrap(name,fn)
+-- The renderer uses the Lua clock so profiling never adds a WinAPI call there.
+function M.uiClock()return os.clock()*1000 end
+function P:wrap(name,fn,clock)
  assert(allowed[name])
+ clock=clock or self.clock
  return function(...)
   if not self.enabled then return fn(...)end
-  local start=self.clock();local a,b,c=fn(...);self:record(name,self.clock()-start);return a,b,c
+  local start=clock();local a,b,c=fn(...);self:record(name,clock()-start);return a,b,c
  end
 end
 return M

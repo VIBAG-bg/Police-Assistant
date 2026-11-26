@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.46.4')
+script_version('0.47.0')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -50,6 +50,7 @@ sceneServices.chatModule=dependency('pa26_chat_bridge')
 sceneServices.perfModule=dependency('pa26_chat_perf')
 sceneServices.elapsedModule=dependency('pa26_elapsed_clock')
 sceneServices.icons=dependency('pa26_icons')
+sceneServices.theme=dependency('pa26_theme')
 sceneServices.manualActionModule=dependency('pa26_manual_actions')
 sceneServices.layoutModule=dependency('pa26_keyboard_layout')
 sceneServices.targetModule=dependency('pa26_target')
@@ -66,7 +67,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.46.4' then
+if #missing > 0 or not core or core.VERSION ~= '0.47.0' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -1061,7 +1062,10 @@ do
 end
 studio.warningLog=pushLog
 sceneServices.userWarning=function(message)
-    if not uiFailed and focused and not context().blocked then studio:notify(message,'system',false)end
+    if uiFailed or not focused then return end
+    local state=sceneServices.uiState
+    if not sceneServices.rendering then state=context()end
+    if state and not state.blocked then studio:notify(message,'system',false)end
 end
 knowledgeUi.warningSink=function(message,key,manual)
     if manual then studio:notify(message,'knowledge',false)else studio:passiveWarning('knowledge:'..key,message,'knowledge')end
@@ -1105,7 +1109,7 @@ local function studioData()
         cefCompatibility=sceneServices.chatBridge and sceneServices.chatBridge.compatibilityReport,
         cefChatStatus=sceneServices.chatBridge and sceneServices.chatBridge.status or 'not_installed',
         cefChatReason=sceneServices.cefContractAllowed==false and sceneServices.cefContractReason or sceneServices.chatBridge and sceneServices.chatBridge.reason,
-        nearby=sceneServices.nearby:view(),field=sceneServices.field and sceneServices.field.snapshot,mapState=sceneServices.mapState,mapAdapterStatus=sceneServices.mapAdapter:message(),
+        nearby=sceneServices.nearby:view(),field=sceneServices.field and sceneServices.field:view(),mapState=sceneServices.mapState,mapAdapterStatus=sceneServices.mapAdapter:message(),
         textFiltersAvailable=workspace.chatFiltersAvailable or(sceneServices.chatBridge and workspace.library.settings.cef_chat_support and sceneServices.chatBridge.status=='connected'),
         target=workspace.selectedTarget,targetState=workspace.targets:view(),queued=workspace.executor.queue,
         localNickname=hud.data.nickname,rpSettings=workspace.library.rp_text,evidence=sceneServices.evidence:view(),vehicle=sceneServices.vehicle:view(),copilot=sceneServices.copilot:view(),detentionTimers=sceneServices.detentionTimers:view(),operations=workspace.operations:view(),radioState=alerts.state,patrol=patrol:view(),patrolSession=patrolSession:view(patrol:view()),patrolEvents=patrolEvents:view(),identity=identity:view(),caseForms=caseForms:view(),taser=taser:view(),codec=codec,autoReport=radioGuard:view()}
@@ -1122,6 +1126,12 @@ local function cancelManualActions(reason)
     if patrolEvents.intent or patrolEvents.queued then patrolEvents:cancelReport(reason)end
 end
 local studioCallbacks
+sceneServices.afterUi=function(action)
+    if not sceneServices.rendering then return action()end
+    if sceneServices.uiAction then return nil,'Предыдущее действие ещё готовится.'end
+    sceneServices.uiAction={run=action,session=sceneServices.citySession,epoch=sceneServices.chatEpoch,at=studioClock}
+    return true
+end
 -- Keep the captured target when following up. A new selection is explicit or needed for an idle incident.
 function sceneServices.requestVehicleAction(action,preferNearest)
     local cfg=workspace.library.vehicle
@@ -1142,6 +1152,7 @@ function sceneServices.requestVehicleAction(action,preferNearest)
     return true
 end
 studioCallbacks={
+    afterUi=sceneServices.afterUi,
     openInstructions=function()
         if hasUiModal() then return false end
         sceneServices.help.editing=nil
@@ -1155,13 +1166,21 @@ studioCallbacks={
     nearestTrafficStop=function()return sceneServices.requestVehicleAction('stop_order',true)end,
     requestVehicleAction=sceneServices.requestVehicleAction,
     pursuitWanted=function()
-        local t,why=sceneServices.copilot:pursuitWantedTarget()
-        if not t then return nil,why end
         if not caseFormsModule.enabled(workspace.library.procedures,'wanted')then return nil,'Включите помощник розыска в настройках.'end
         if sceneServices.wantedInput then return nil,'Дождитесь открытия текущей формы розыска.'end
-        sceneServices.wantedInput={head='su',at=optionalRead('getGameTimer'),epoch=sceneServices.chatEpoch,
-            session=connectionKey(),demo=runtime.demo,id=t.id,name=t.name,generation=t.generation,pursuitLife=sceneServices.copilot.life}
-        return true
+        local copilot=sceneServices.copilot
+        local life,driver=copilot.life,copilot.driver
+        return sceneServices.afterUi(function()
+            local t,why=copilot:pursuitWantedTarget()
+            if not t or life~=copilot.life or not driver or t.id~=driver.id or t.name~=driver.name or t.generation~=driver.generation then
+                studio:notify(why or 'Цель погони изменилась. Откройте форму заново.','vehicle',false);return true
+            end
+            if not sceneServices.wantedInput then
+                sceneServices.wantedInput={head='su',at=studioClock,epoch=sceneServices.chatEpoch,
+                    session=copilot.state.session,demo=runtime.demo,id=t.id,name=t.name,generation=t.generation,pursuitLife=life}
+            end
+            return true
+        end)
     end,
     requestShutdown=function()sceneServices.shutdownRequested=true;return true end,
     manualFriskMode=function(token,mode)return sceneServices.manualActions:friskMode(token,mode)end,
@@ -1212,7 +1231,11 @@ studioCallbacks={
         return sceneServices.copilot:proposeGround(f.request,f.cfg,ground,handoff)
     end,
     sanctions=function()return sceneServices.getSanctions()end,
-    procedureInput=function(head,args)sceneServices.queueProcedureInput(head,args);return true end,
+    procedureInput=function(head,args)
+        local ok,err=sceneServices.afterUi(function()sceneServices.queueProcedureInput(head,args);return true end)
+        if not ok then studio:notify(err,'procedures',false)end
+        return ok
+    end,
     trackingRules=function()
         return require('pa26_procedure_input').trackingRules(knowledge.data)
     end,
@@ -1724,10 +1747,9 @@ local function text(value)
     endScope()
 end
 local function recordUiFailure(kind,err)
-    local stamp=optionalRead('getGameTimer')or studioClock
     local keepMain,keepQuick,keepTips=showWindow[0],showQuick[0],showTips[0]
     local keepAssist=sceneServices.showAssist[0];local keepWanted=sceneServices.showWanted[0];local keepFine,keepMark,keepGround=sceneServices.showFine[0],sceneServices.showMark[0],sceneServices.showGround[0]
-    recovery:trip(stamp,kind,err)
+    recovery:trip(studioClock,kind,err)
     sceneServices.patrolUiRecovery=sceneServices.patrolUiRecovery or{active=patrolSession.data.active and patrolSession.data.active.status=='active'}
     closeForInput('Ошибка интерфейса. Текущие отправки отменены.')
     if kind~='main'then
@@ -1763,12 +1785,14 @@ end
 local function safeDraw(callback)
     scopes = {}
     -- Drawing runs in the renderer-selected context. Balance UI scopes on error.
+    sceneServices.rendering=true
     local ok, err = pcall(callback)
     if not ok then
         while #scopes > 0 do pcall(endScope) end
         uiFailed=true
         recordUiFailure('main',debug.traceback(tostring(err),2))
     end
+    sceneServices.rendering=false
 end
 
 local fontSubscription = imgui.OnInitialize(function()
@@ -1823,7 +1847,7 @@ local fontSubscription = imgui.OnInitialize(function()
 end)
 subscriptions[#subscriptions + 1] = fontSubscription
 
-local function mainButton(label, size)
+local function mainButton(label, size, tone)
     local font = menuButtonFont
     local available = imgui.GetContentRegionAvail().x
     local visibleLabel = label:match('^(.-)##') or label
@@ -1837,7 +1861,7 @@ local function mainButton(label, size)
         imgui.PushFont(font); pushScope(function() imgui.PopFont() end)
     end
     size = size or imgui.ImVec2(math.max(1, math.min(available, imgui.CalcTextSize(visibleLabel).x + 28)), 44)
-    local clicked = menuModule.fittedButton(imgui,{push=pushScope,finish=endScope},label,size)
+    local clicked = menuModule.fittedButton(imgui,{push=pushScope,finish=endScope,theme=sceneServices.theme.get(menu.theme)},label,size,nil,tone)
     if font ~= nil then endScope() end
     return clicked
 end
@@ -1919,7 +1943,7 @@ local function settingsHeading(value)
     imgui.Dummy(imgui.ImVec2(0,4))
 end
 local function drawSettingsTabs()
-    sceneServices.settingsUi.drawTabs(studio,{push=pushScope,finish=endScope,text=text},settingsTab,function(tab)settingsTab=tab end,menuSmallFont or menuButtonFont or imgui.GetFont())
+    sceneServices.settingsUi.drawTabs(studio,{push=pushScope,finish=endScope,text=text,theme=sceneServices.theme.get(menu.theme)},settingsTab,function(tab)settingsTab=tab end,menuSmallFont or menuButtonFont or imgui.GetFont())
 end
 local function drawGeneralSettings(part)
     local changed=false
@@ -1953,7 +1977,9 @@ local function drawGeneralSettings(part)
     text('Если перестало открываться окно, PA остановит отправки и восстановит интерфейс, сохранив черновики. Если остановился весь скрипт, отдельный модуль попробует загрузить его заново. При полном перезапуске несохранённые черновики теряются. Если закрылась сама GTA, потребуется запустить игру снова.')
     text('/pa26repair восстанавливает окна; /pa26restart запускает остановившийся скрипт. Окна можно двигать за заголовок либо зажатой ПКМ по окну; размер меняется за края. Начальный размер стал шире и подстраивается под экран.')
     if changed then recoveryDraft=d end
-    if mainButton('Восстановить окна PA##recovery-now')then recoverUi(true)end
+    if mainButton('Восстановить окна PA##recovery-now')then
+        sceneServices.afterUi(function()return recoverUi(true)end)
+    end
     end
     if changed then saveSettings(true)end
     if generalSaveFailed and mainButton('Повторить запись##general-retry')then saveSettings(true)end
@@ -1961,11 +1987,11 @@ end
 local function drawSettingsPage()
     local tab,sub=sceneServices.settingsUi.route(settingsTab)
     settingsTab=tab;if sub then studio.screenSettingsPage=sub end
-    sceneServices.settingsUi.draw(studio,{push=pushScope,finish=endScope,text=text},studioData(),studioCallbacks,settingsTab,{menu=menu,general=drawGeneralSettings})
+    sceneServices.settingsUi.draw(studio,{push=pushScope,finish=endScope,text=text,theme=sceneServices.theme.get(menu.theme)},studioData(),studioCallbacks,settingsTab,{menu=menu,general=drawGeneralSettings})
 end
 
 local function drawLogPage()
-    if mainButton('Очистить журнал') then log = {} end
+    if mainButton('Очистить журнал',nil,'danger') then log = {} end
     for _, line in ipairs(log) do text(line) end
 end
 
@@ -2006,27 +2032,38 @@ local function drawMain()
     if menuBodyFont ~= nil then imgui.PushFont(menuBodyFont); pushScope(function() imgui.PopFont() end) end
     sceneServices.icons.setEnabled(workspace.library.settings.ui_icons)
     menu.opacity=studio.optionOpacity or workspace.library.settings.opacity
+    menu.theme=workspace.library.settings.theme
     menu.compact=studio.optionCompact; if menu.compact==nil then menu.compact=workspace.library.settings.compact end
     menu:pushTheme(imgui, ui)
     local expanded = imgui.Begin('Police Assistant 2026##pa26-main', showWindow, flags)
     pushScope(function() imgui.End() end)
     if expanded then
         menu:resizeWindow(imgui,ui,'main')
+        local shift=sceneServices.shiftSummary or {}
         local model = {
             connected = hud.connected, nickname = hud.data.nickname or '—', id = hud.data.id or '—',
             ping = hud.data.ping, district = hud.data.district, mapSquare=sceneServices.mapValues and sceneServices.mapValues.map_square, clock = hud.data.clock,
             demo = runtime.demo, sent = metrics.sent, previews = metrics.previews, connections = metrics.connections,
             menuKey = core.keyName(cfg.main.menu_key), wheelKey = core.keyName(cfg.main.radial_key),
             actions = core.actions,
+            todayRuns=shift.runs or 0,todaySent=shift.sent or 0,todayCuffs=shift.cuffs or 0,
+            todayFrisks=shift.frisks or 0,todayDocuments=shift.documents or 0,
+            profilePresets=workspace.library.profile_presets,
             evidence=sceneServices.evidence:view(),variables=bindingModel.variables,variableInfo=bindingModel.variableInfo,caseNumber=workspace.library.profile.case_number,
             quickKey=bindingModel.keyName(workspace.library.settings.quick_key),tipsKey=bindingModel.keyName(workspace.library.settings.tips_key),assistKey=bindingModel.shortcutName(workspace.library.assist.open_shortcut),
         }
+        if menu.section=='home'then
+            for _,p in ipairs(model.profilePresets)do
+                if bindingModel.dutyPresetMatches(workspace.library.profile,p)then model.activeProfilePreset=p.id;break end
+            end
+        end
         menu:draw(imgui, ui, model, {
             actions = function() studio:draw('binds',ui,studioData(),studioCallbacks) end,
             updates=function()require('pa26_update_ui').draw(studio,ui,sceneServices.updater,studioCallbacks,sceneServices.authorPresets)end,
             updateLabel=sceneServices.updater:label(),
             openInstructions=studioCallbacks.openInstructions,
             openSettings=studioCallbacks.openSettings,
+            applyProfilePreset=function(id)studio:requestDutyPreset('apply',id)end,
             settings = drawSettingsPage, settingsTabs=drawSettingsTabs,
             settingsTabHeight=function(width)return sceneServices.settingsUi.tabLayout(width,menuSmallFont or menuButtonFont or imgui.GetFont()).total end,
             widget = drawWidgetSettings, log = drawLogPage,
@@ -2102,8 +2139,7 @@ local function beforeUiFrame()
 end
 
 local windowFrame = imgui.OnFrame(function()
-    if isGamePaused() then closeForInput('Пауза игры. Действие отменено.'); return false end
-    return not shutdown and not uiFailed and focused and showWindow[0] and not isGamePaused()
+    return not shutdown and not uiFailed and focused and showWindow[0] and not sceneServices.uiPaused
 end, function() safeDraw(beforeUiFrame) end, function() safeDraw(drawMain) end)
 windowFrame.LockPlayer, windowFrame.HideCursor = false, false
 subscriptions[#subscriptions + 1] = windowFrame
@@ -2168,7 +2204,8 @@ local function drawCategoryWheel(io,wheel)
     local list=imgui.GetWindowDrawList(); local flags=list.Flags
     if core.finite(flags) then list.Flags=bit.band(flags,bit.bnot(2)); pushScope(function() list.Flags=flags end) end
     wheelModel.draw(imgui,layout,wheel.catalog,wheel.nav,{demo=wheel.demo,target=wheel.target,nickname=nickname,
-        key=bindingModel.keyName(cfg.main.radial_key),editEnabled=workspace.library.settings.wheel_edit_enabled~=false},
+        key=bindingModel.keyName(cfg.main.radial_key),editEnabled=workspace.library.settings.wheel_edit_enabled~=false,
+        theme=workspace.library.settings.theme,icons=workspace.library.settings.ui_icons},
         {heading=menuHeadingFont,button=wheelLabelFont,body=menuBodyFont,small=menuSmallFont,id=wheelIdFont})
     if core.finite(flags) then endScope() end
     if route and imgui.IsMouseClicked(0) and not overWidget then pendingWheelClick=bindingModel.copy(route) end
@@ -2203,10 +2240,13 @@ local function drawWheel()
     local hit=editIndex and{ring='classic',category='classic',index=editIndex,key=tostring(editIndex),name=editBinding and editBinding.name or'Пустой сектор'}
     if sceneServices.wheelEditInput(io,wheel,hit,overWidget)then choice=nil end
     runtime:setChoice(choice)
-    local function color(r, g, b, a) return imgui.ColorConvertFloat4ToU32(imgui.ImVec4(r, g, b, a or 1)) end
-    local white, muted = color(1, 1, 1, 1), color(.67, .77, .85, 1)
-    draw:AddRectFilled(vec(left, top), vec(left + width, top + height), color(.07, .075, .085, .91), 18 * scale)
-    draw:AddRect(vec(left, top), vec(left + width, top + height), color(.31, .37, .43, .50), 18 * scale)
+    local themes = sceneServices.theme
+    local palette = themes.get(workspace.library.settings.theme)
+    local function paint(role) return themes.u32(imgui, palette[role]) end
+    local white, muted = paint('text'), paint('textMuted')
+    local border, accent = paint('border'), paint('wheelAccent')
+    draw:AddRectFilled(vec(left, top), vec(left + width, top + height), paint('windowBg'), 18 * scale)
+    draw:AddRect(vec(left, top), vec(left + width, top + height), border, 18 * scale)
     local function fitted(value, font, size, limit)
         while font:CalcTextSizeA(size, 100000, 0, value).x > limit and #value > 0 do
             local i = #value
@@ -2229,8 +2269,8 @@ local function drawWheel()
         local beginAngle = -math.pi / 2 + (slot - 1) * math.pi / 3
         local endAngle = beginAngle + math.pi / 3
         local enabled = ready and action.enabled
-        local fill = not enabled and color(.13, .15, .18, .82) or
-            (choice == index and color(.15, .38, .64, .98) or color(.15, .20, .26, .96))
+        local fill = not enabled and paint('wheelChildDisabled') or
+            (choice == index and paint('wheelRootActive') or paint('wheelRoot'))
         -- Each filled sector is convex; the center disc masks its inner portion.
         draw:PathClear(); draw:PathLineTo(vec(cx, cy))
         draw:PathArcTo(vec(cx, cy), outer, beginAngle, endAngle, 20)
@@ -2238,22 +2278,25 @@ local function drawWheel()
     end
     -- Draw dividers after all fills so neighboring sectors cannot cover half
     -- of a divider's stroke or antialiasing.
+    draw:AddCircle(vec(cx, cy), outer, border, 96, 3 * scale)
     for slot, index in ipairs(core.wheelSlots) do
         local action = bindingModel.find(workspace.library,require('pa26_wheel_scope').slots(workspace.library,wheel.scope)[index]) or {name='Пусто',enabled=false}
         local beginAngle = -math.pi / 2 + (slot - 1) * math.pi / 3
         local endAngle = beginAngle + math.pi / 3
         local enabled = ready and action.enabled
         draw:AddLine(vec(cx + math.cos(beginAngle) * inner, cy + math.sin(beginAngle) * inner),
-            vec(cx + math.cos(beginAngle) * outer, cy + math.sin(beginAngle) * outer), color(.39, .47, .54, 1), 2.5 * scale)
+            vec(cx + math.cos(beginAngle) * outer, cy + math.sin(beginAngle) * outer), border, 2.5 * scale)
+        if choice == index then
+            wheelModel.edgeArc(draw, vec, cx, cy, outer - 1.6 * scale, beginAngle + .023, endAngle - .023, accent, 2.5 * scale)
+        end
         local middle, radius = (beginAngle + endAngle) / 2, 156 * scale
         local label = action.name
         centered(label, labelFont, 20, cx + math.cos(middle) * radius,
             cy + math.sin(middle) * radius, enabled and white or muted, 148)
     end
-    draw:AddCircle(vec(cx, cy), outer, color(.39, .47, .54, 1), 96, 3 * scale)
-    draw:AddCircleFilled(vec(cx, cy), inner, color(.07, .12, .18, .99), 80)
-    draw:AddCircle(vec(cx, cy), inner, color(.39, .47, .54, 1), 80, 3 * scale)
-    draw:AddCircle(vec(cx, cy), inner - 5 * scale, color(.39, .47, .54, .80), 80, scale)
+    draw:AddCircleFilled(vec(cx, cy), inner, paint('wheelCenter'), 80)
+    draw:AddCircle(vec(cx, cy), inner, accent, 80, 3 * scale)
+    draw:AddCircle(vec(cx, cy), inner - 5 * scale, border, 80, scale)
     local idText = wheel.demo and 'ID 42' or (wheel.target and 'ID ' .. tostring(wheel.target.id) or 'Нет цели')
     local nickname = wheel.demo and 'Демо-игрок' or (wheel.target and wheel.target.name or 'Центр экрана')
     if not core.validUtf8(nickname) then
@@ -2266,7 +2309,7 @@ local function drawWheel()
     if choice then local b=bindingModel.find(workspace.library,require('pa26_wheel_scope').slots(workspace.library,wheel.scope)[choice]); if b then centered(b.name,menuSmallFont,14,cx,cy+49*scale,muted,146) end end
     for n,e in ipairs({wheel.nav.editSource or false,wheel.nav.editTarget or false})do if e then
         for slot,index in ipairs(core.wheelSlots)do if index==e.index then local a=-math.pi/2+(slot-1)*math.pi/3
-            wheelModel.outline(draw,vec,cx,cy,inner,outer,a,a+math.pi/3,n==1 and color(.25,1,.65,1)or color(1,.8,.25,1),3*scale)
+            wheelModel.outline(draw,vec,cx,cy,inner,outer,a,a+math.pi/3,n==1 and paint('statusSafe')or paint('statusWarn'),3*scale)
         end end
     end end
     centered(wheel.drag and('Перемещение: «'..wheelModel.shortLabel(wheel.drag.name:gsub('\n',' '))..'»')or'Выбор действия мышью',menuButtonFont,18,cx,top+574*scale,white,550)
@@ -2279,8 +2322,7 @@ local function drawWheel()
 end
 
 local wheelFrame = imgui.OnFrame(function()
-    if isGamePaused() then closeForInput('Пауза игры. Действие отменено.'); return false end
-    return not shutdown and not uiFailed and focused and runtime.wheel ~= nil and not isGamePaused()
+    return not shutdown and not uiFailed and focused and runtime.wheel ~= nil and not sceneServices.uiPaused
 end, function() safeDraw(beforeUiFrame) end, function() safeDraw(drawWheel) end)
 wheelFrame.LockPlayer, wheelFrame.HideCursor = false, false
 subscriptions[#subscriptions + 1] = wheelFrame
@@ -2290,7 +2332,8 @@ local function drawWorkspaceWindows()
     local wasQuick,wasTips=showQuick[0],showTips[0]
     local wasAssist=sceneServices.showAssist[0];local wasWanted=sceneServices.showWanted[0];local wasProcedure=sceneServices.procedureWindows()
     local depth=#scopes
-    menu.opacity=studio.optionOpacity or workspace.library.settings.opacity; menu:pushTheme(imgui,ui)
+    menu.opacity=studio.optionOpacity or workspace.library.settings.opacity
+    menu.theme=workspace.library.settings.theme;menu:pushTheme(imgui,ui)
     imgui.PushStyleVarVec2(imgui.StyleVar.WindowPadding,imgui.ImVec2(18,18)); pushScope(function() imgui.PopStyleVar(1) end)
     local function window(title,flag,key,body)
         if not menu:prepareWindow(imgui,key) then return end
@@ -2348,6 +2391,7 @@ local function drawWorkspaceWindows()
     if not ownUi() and not runtime.wheel then imgui.DisableInput=true end
 end
 local function safeHudDraw(callback)
+    sceneServices.rendering=true
     local ok, err = pcall(callback)
     if not ok and not hud.failed then
         hud.failed = true
@@ -2358,6 +2402,7 @@ local function safeHudDraw(callback)
         pushLog('Компактный виджет отключён из-за ошибки: ' .. tostring(err))
         recordUiFailure('hud',err)
     end
+    sceneServices.rendering=false
 end
 
 widgetFrame = imgui.OnFrame(function()
@@ -2371,7 +2416,7 @@ end, function() safeHudDraw(beforeUiFrame) end, function()
         hud:drawNotices(imgui,hudFont,hudHeadingFont)
         alerts:draw(imgui,hud,fonts)
         taser:draw(imgui,hud,fonts)
-        sceneServices.copilotUi.drawHud(sceneServices.copilot,imgui)
+        sceneServices.copilotUi.drawHud(sceneServices.copilot,imgui,hud.theme)
         notifications:draw(imgui,fonts,noticeAvoid())
     end)
 end)
@@ -2379,13 +2424,13 @@ widgetFrame.LockPlayer, widgetFrame.HideCursor = false, true
 subscriptions[#subscriptions + 1] = widgetFrame
 
 local workspaceFrame=imgui.OnFrame(function()
-    return not shutdown and not uiFailed and focused and not isGamePaused() and (showQuick[0] or showTips[0] or sceneServices.showAssist[0] or sceneServices.showWanted[0] or sceneServices.procedureWindows() or studio:hasModal()or studio.modalVisible or studio.statusInfo~=nil or workspace.executor.queue~=nil or sceneServices.evidence.active~=nil)
+    return not shutdown and not uiFailed and focused and not sceneServices.uiPaused and (showQuick[0] or showTips[0] or sceneServices.showAssist[0] or sceneServices.showWanted[0] or sceneServices.procedureWindows() or studio:hasModal()or studio.modalVisible or studio.statusInfo~=nil or workspace.executor.queue~=nil or sceneServices.evidence.active~=nil)
 end,function() safeDraw(beforeUiFrame) end,function() safeDraw(drawWorkspaceWindows) end)
 workspaceFrame.LockPlayer=false; workspaceFrame.HideCursor=true
 subscriptions[#subscriptions + 1]=workspaceFrame
 
-sceneServices.field.drawMarker=sceneServices.chatPerf:wrap('fieldProjection',require('pa26_coord_share').drawMarker)
-sceneServices.field.drawSettings=sceneServices.chatPerf:wrap('fieldUI',require('pa26_field_ui').settings)
+sceneServices.field.drawMarker=sceneServices.chatPerf:wrap('fieldProjection',require('pa26_coord_share').drawMarker,sceneServices.perfModule.uiClock)
+sceneServices.field.drawSettings=sceneServices.chatPerf:wrap('fieldUI',require('pa26_field_ui').settings,sceneServices.perfModule.uiClock)
 sceneServices.field.markVisible=function()local f=workspace.library.field;return f.enabled and f.coordinates.enabled and sceneServices.field.coordinates.mark~=nil end
 sceneServices.mapFrame=imgui.OnFrame(function()
     return not shutdown and focused and hud.connected and(workspace.library.map_grid.enabled or sceneServices.field.markVisible())and not sceneServices.mapAdapter.failed
@@ -2426,7 +2471,7 @@ subscriptions[#subscriptions+1]=sceneServices.mapFrame
 
 
 sceneServices.pinnedFrame=imgui.OnFrame(function()
-    return not shutdown and focused and hud.connected and not isGamePaused()and workspace.library.field.enabled and workspace.library.field.pinned.enabled and sceneServices.field.pinned.note~=nil
+    return not shutdown and focused and hud.connected and not sceneServices.uiPaused and workspace.library.field.enabled and workspace.library.field.pinned.enabled and sceneServices.field.pinned.note~=nil
 end,function()
     local io=imgui.GetIO();local ok=pcall(sceneServices.field.pinned.draw,sceneServices.field.pinned,imgui,workspace.library.field.pinned,io.DisplaySize.x,io.DisplaySize.y,false)
     if not ok then sceneServices.field.pinned.note=nil;pushLog('Закреплённая памятка отключена после ошибки отрисовки.')end
@@ -2857,7 +2902,7 @@ sceneServices.processWantedInput=function(state,now)
         local ok,wire=pcall(codec.encode,p.raw)
         if not ok or not env.send(wire)then report('Команда не отправлена. Повторите её вручную в доступной игровой сцене.')end;return
     end
-    studio:requestNavigation(function()
+    studio:requestNavigation(function()return sceneServices.afterUi(function()
         local age=core.elapsed(optionalRead('getGameTimer'),p.at)
         if not age or age>5000 or connectionKey()~=p.session or sceneServices.chatEpoch~=p.epoch or runtime.demo~=p.demo then
             studio:notify('Команда устарела. Повторите её вручную.','procedures',false);return
@@ -2890,7 +2935,8 @@ sceneServices.processWantedInput=function(state,now)
         if studio.statusInfo and studio.statusInfo.key=='procedures'then studio.statusInfo=nil end
         studio.wantedIdentityPage=nil;studio.wantedBasisDetails=nil;studio.wantedPassportEditor=nil;studio.wantedSearch='';studio.cache['wanted:search']=nil
         studioCallbacks.openProcedures(kind)
-    end,'открыть помощник розыска')
+        return true
+    end)end,'открыть помощник розыска')
 end
 sceneServices.procedureFlow=require('pa26_procedure_flow').new({
  settings=function()return workspace.library.procedures end,codec=codec,now=function()return studioClock end,
@@ -3302,6 +3348,11 @@ local function updateGame()
     end
     if sceneServices.chatBridge then sceneServices.chatBridge:tick(now)end
     local ctx = context()
+    sceneServices.uiPaused=ctx.paused
+    sceneServices.uiState=ctx
+    if not sceneServices.shiftAt or (core.elapsed(now,sceneServices.shiftAt)or 1000)>=1000 then
+        sceneServices.shiftAt=now;sceneServices.shiftSummary=workspace.journal:today()
+    end
     do
         local ped=localPedAvailable()and PLAYER_PED or nil
         local x,y,z;if ped then x,y,z=optionalRead('getCharCoordinates',ped)end
@@ -3343,7 +3394,10 @@ local function updateGame()
         imgui.DisableInput=not interactive
         return
     end
+    studio:processDutyPreset(studioCallbacks)
     studio:flushAutosave(studioCallbacks)
+    hud.theme=workspace.library.settings.theme
+    notifications.theme=hud.theme
     sceneServices.updater:tick()
     if sceneServices.pendingAuthorUpgrade and focused and not ctx.paused and not ctx.blocked and not ownUi()and not hasUiModal()
         and not ctx.recording and not hud.dirty and not hud.editing and not hud.drag and not runtime.wheel
@@ -3391,7 +3445,8 @@ local function updateGame()
         if ctx.session then metrics.connections = metrics.connections + 1 end
     end
     -- Server login dialogs and its cursor keep priority during connection.
-    if ctx.paused or(ctx.inputBlocked and(not workspace.pending or ctx.chatActive or ctx.dialogActive))then closeForInput('Открыт серверный ввод. Действие отменено.', true) end
+    if ctx.paused then closeForInput('Пауза игры. Действие отменено.')
+    elseif ctx.inputBlocked and(not workspace.pending or ctx.chatActive or ctx.dialogActive)then closeForInput('Открыт серверный ввод. Действие отменено.', true)end
     if autoOpenForSession == ctx.session and ctx.session and focused and not ctx.paused and
         not sceneServices.pendingAuthorUpgrade and not(sceneServices.updater.job and sceneServices.updater.job.mode=='Status')and
         not ctx.blocked and ctx.alive and not runtime.wheel and not runtime.queue and not workspace.executor.queue and not workspace.pending then
@@ -3630,6 +3685,18 @@ local function updateGame()
     if caseForms.reviewReminders then
         caseForms.reviewReminders=nil;studioCallbacks.openProcedures('mark');studio.markReview=true
     end
+    do
+        local request=sceneServices.uiAction
+        sceneServices.uiAction=nil
+        if request and not uiFailed and ctx.focused and not ctx.paused and not ctx.blocked and
+            request.session==ctx.session and request.epoch==sceneServices.chatEpoch and (core.elapsed(now,request.at)or math.huge)<=5000 then
+            local ok,err=pcall(request.run)
+            if not ok then
+                pushLog('Ошибка действия PA: '..tostring(err))
+                studio:notify('Не удалось подготовить действие. Повторите выбор.','system',false)
+            end
+        end
+    end
     sceneServices.processWantedInput(alertState,now)
     sceneServices.processProcedureInput(alertState,now)
     alertState.busy=alertState.busy or (workspace.executor.queue and tostring(workspace.executor.queue))
@@ -3662,6 +3729,7 @@ local function updateGame()
         alertState.x=map.x;alertState.y=map.y;alertState.z=map.z;alertState.interior=map.interior
     end
     sceneServices.field:tick(alertState,now)
+    sceneServices.field:refreshPreview()
     sceneServices.custody:tick(alertState,now)
     local candidates=radioGuard:candidates()
     for _,c in ipairs(weaponWarning:candidates())do candidates[#candidates+1]=c end

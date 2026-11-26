@@ -95,7 +95,11 @@ s.down[0x58] = true; s.step(16, {[0x58] = true})
 onWindowMessage(0x0008, 0); onWindowMessage(0x0007, 0)
 s.down[0x58] = false; s.step(150); eq(#s.sent, 0)
 s = fixture({demo = false}); s.liveAction()
-s.paused = true; s.render() -- mimgui's condition updater also runs while the game is paused
+s.paused = true
+check(s.workInPause) -- MoonLoader keeps the game loop running while paused.
+s.step(16)
+s.render()
+check(not s.frames[1].condition() and not s.frames[2].condition())
 s.paused = false; s.step(5000); eq(#s.sent, 1)
 
 -- Draft keys do not take effect on failed save; successful save switches them.

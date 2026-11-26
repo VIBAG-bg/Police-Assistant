@@ -80,7 +80,7 @@ function M.megaphone(s,ui,data,callbacks)
         ui.text('Мегафон включается отдельно от транспорта. Для использования вне патруля снимите «Только во время активного патруля». Условие конкретной реплики задаётся ниже. Доступ к /m и результат команды определяет сервер.')
         key(s,ui,callbacks,'vehicle','megaphone_shortcut','Открыть выбор реплик')
         key(s,ui,callbacks,'assist','megaphone_shortcut','Дополнительное сочетание для этого окна')
-        ui.text('В радиальном меню с категориями: «Служба → Мегафон». Этот пункт открывает окно и ничего не отправляет. Через F4: «Помощники → Мегафон».')
+        ui.text('В радиальном меню с категориями: «Контакт и 10-55 → Мегафон». Этот пункт открывает окно и ничего не отправляет. Через F4: «Помощники → Мегафон».')
         im.Separator();s:settingsHeading(ui,'Настройка реплик')
         local choices={};for i,p in ipairs(d.phrases)do choices[#choices+1]={i,'Реплика '..i..' · '..p.name}end
         s.phraseSlot=s:choice('Изменить требование##assist-phrase-slot',s.phraseSlot or 1,choices,ui)

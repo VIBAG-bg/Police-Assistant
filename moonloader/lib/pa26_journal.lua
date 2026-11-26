@@ -30,8 +30,28 @@ end
 function M.new(data,clock)
     return setmetatable({data=data or M.defaults(),clock=clock or os.date,dirty=false,session={runs=0,demo=0,sent=0,cancelled=0},results={}},Journal)
 end
+-- Seed today's activity from the retained log, then keep all current-session
+-- runs even if the bounded log rotates or is cleared.
+function Journal:shiftActivity(day)
+    if not self.shift or self.shift.day~=day then
+        local shift={day=day,runs=0,sent=0}
+        for _,entry in ipairs(self.data.events)do
+            if entry.day==day then shift.runs=shift.runs+1;shift.sent=shift.sent+entry.sent end
+        end
+        self.shift=shift
+    end
+    return self.shift
+end
+function Journal:today()
+    local day=self.clock('%Y-%m-%d')
+    local shift=self:shiftActivity(day)
+    local confirmed=self.data.days[day] or {}
+    return {runs=shift.runs,sent=shift.sent,cuffs=confirmed.cuff or 0,frisks=confirmed.frisk or 0,documents=confirmed.documents or 0}
+end
 function Journal:record(q,status,reason)
     local data=self.data; local day=self.clock('%Y-%m-%d')
+    local shift=self:shiftActivity(day)
+    shift.runs=shift.runs+1;shift.sent=shift.sent+q.sent
     local target=q.plan.target; local e={id=data.next_id,name=q.plan.binding.name,date=self.clock('%d.%m.%Y %H:%M:%S'),day=day,
         target=target and (target.name..' ['..target.id..']') or 'Без цели',demo=q.demo,confirmed=false,sent=q.sent,status=status,
         reason=reason or '',stat=q.plan.binding.stat}

@@ -13,6 +13,7 @@ local function run(merged)
  local ctx=im.CreateContext(nil);local io=im.GetIO();io.IniFilename=nil;io.LogFilename=nil;io.DeltaTime=1/60
  local base=assert(io.Fonts:AddFontFromFileTTF('C:/Windows/Fonts/segoeui.ttf',18,nil,io.Fonts:GetGlyphRangesCyrillic()))
  check(icons.initialize(im,ffi,merged and base or nil))
+ check(package.loaded.pa26_icon_font==nil,'Lua font carrier stays unloaded after each atlas build')
  local pixels,w,h=ffi.new('unsigned char*[1]'),ffi.new('int[1]'),ffi.new('int[1]')
  io.Fonts:GetTexDataAsRGBA32(pixels,w,h,nil)
  check(w[0]>0 and h[0]>0 and w[0]<=4096 and h[0]<=4096,'Oversized atlas')
@@ -61,6 +62,9 @@ local function run(merged)
  end
  icons.clear();im.DestroyContext(ctx)
 end
+package.loaded.pa26_icon_font={data='invalid'}
+check(not icons.initialize(im,ffi),'Invalid font is rejected')
+check(package.loaded.pa26_icon_font==nil,'Failure releases the invalid carrier too')
 run(true);run(false)
 icons.setEnabled(true);check(not icons.get('house'),'Missing font must use text fallback')
 local f=assert(io.open(root..'/tests/ICONS_NATIVE32_0440.json','wb'))
