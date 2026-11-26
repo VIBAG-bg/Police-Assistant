@@ -1,5 +1,5 @@
 -- Initialization-only child process. Hidden, bounded lifetime/output, no
--- network, no launcher execution and no installation writes to the HUD.
+-- launcher execution or HUD writes. Optional lookup uses the official HTTPS registry.
 local M={}
 function M.new(ml,json,options)
  local ffi=require 'ffi';local platform=assert(require('pa26_update_platform').new(ml))
@@ -30,7 +30,7 @@ function M.new(ml,json,options)
   local root=base..'\\'..nonce;assert(platform:mkdir(root))
   local hud=options.hudRoot or platform.ml..'\\..\\cef\\assets\\hud'
   local script='$ErrorActionPreference="Stop"\n$env:PSModulePath=Join-Path $PSHOME Modules\n'..code.verifier..'\n$registry=('..quoted(code.registry)..' | ConvertFrom-Json)\n'..
-   '$r=Get-PaCefContract ('..quoted(hud)..') $registry\n$r.nonce="'..nonce..'"\n'..
+   '$r=Get-PaCefContract ('..quoted(hud)..') $registry'..(options.onlineProfiles and' -OnlineProfiles'or'')..'\n$r.nonce="'..nonce..'"\n'..
    '$json=$r|ConvertTo-Json -Depth 8 -Compress\n[IO.File]::WriteAllText(('..quoted(root..'\\result.tmp')..'),$json,(New-Object Text.UTF8Encoding($false)))\n'..
    '[IO.File]::Move(('..quoted(root..'\\result.tmp')..'),('..quoted(root..'\\result.json')..'))\n'
   assert(platform:write(root..'\\verify.ps1',script))

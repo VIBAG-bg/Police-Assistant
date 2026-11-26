@@ -7,20 +7,40 @@ const release=path.resolve(__dirname,'..'),workspace=path.resolve(__dirname,'../
 const game=process.env.PA_QA_GAME || 'C:/Users/35987/AppData/Local/Exsellent Launcher/game';
 const registry=JSON.parse(fs.readFileSync(path.join(release,'CEF_CONTRACT.json'),'utf8'));
 const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-const hudMain=path.join(game,'cef/assets/hud/main.js'),hudSha=sha(hudMain);
+const originalHud=path.join(game,'cef/assets/hud');
+const originalMain=path.join(originalHud,'main.js'),reviewedSha=sha(originalMain);
+const november26Hud='5500b67e6fe00e76f3df942de5f8758fc8cc12e0bd9e78eb8cfa96b13496a3cb';
 assert([
  'c458636ad5201c00aaf1e21e80bbf7fa74670734fcd0f66c812d495c893bd410',
  'd7526b3e76b4d9492407e77728be4ac8383b535600e62a3885fd1c785a4d29d2',
  'f6122cb757c72c38419708c490803912d039e945958225fdaa1be056e2a708a0',
  'b0c3e72a6f424340fc625cfb225398e84285f5296ce7cc5fdbdcbabdcf85ab4f',
-].includes(hudSha),'Use a reviewed HUD fixture for executable tests');
+ november26Hud,
+].includes(reviewedSha),'Use a reviewed HUD fixture for executable tests');
 const box=path.join(release,'tests/update-sandbox/cef-runtime-probe',crypto.randomUUID());fs.mkdirSync(box,{recursive:true});
 const slash=p=>p.replaceAll('\\','/');const q=s=>JSON.stringify(slash(s));
 const adapter=path.join(release,'cef/assets/hud/pa26-chat.js');
 const tag='<!-- PA26 CEF chat adapter --><script src="pa26-chat.js"></script>';
-const originalHtml=fs.readFileSync(path.join(game,'cef/assets/hud/index.html'),'utf8').replace(tag,'');
+const originalHtml=fs.readFileSync(path.join(originalHud,'index.html'),'utf8').replace(tag,'');
 assert(Buffer.byteLength(originalHtml)>32768,'Probe must use the real large HUD');
 fs.writeFileSync(path.join(box,'index.html'),originalHtml);
+const repack=process.argv.includes('--repack');
+let hudRoot=originalHud;
+if(repack){
+  const reviewed=registry.contract_profiles.find(profile=>profile.reviewed_sha256===reviewedSha);
+  assert(reviewed?.repacked_sha256,'Use a fixture with a reviewed normalized string table');
+  const original=fs.readFileSync(originalMain,'utf8');
+  const table=/function _0x[0-9a-f]+\(\)\{const _0x[0-9a-f]+=\['([A-Za-z0-9+/=]{2,})'/.exec(original);
+  assert(table,'Find the reviewed literal table');
+  const pos=table.index+table[0].length-table[1].length-2;
+  const first=table[1];
+  const packed='"\\x'+first.charCodeAt(0).toString(16).padStart(2,'0')+'" + '+JSON.stringify(first.slice(1));
+  hudRoot=path.join(box,'hud-repacked');
+  fs.mkdirSync(hudRoot);
+  fs.writeFileSync(path.join(hudRoot,'index.html'),originalHtml);
+  fs.writeFileSync(path.join(hudRoot,'main.js'),original.slice(0,pos)+packed+original.slice(pos+first.length+2));
+}
+const hudMain=path.join(hudRoot,'main.js'),hudSha=sha(hudMain);
 const control={enabled:true,accentEnabled:true,diagnostics:true,layoutIndicator:true,keyboardLayout:'RU',accent:'[Русский акцент]:',generation:1};
 const setControl=values=>{Object.assign(control,values);fs.writeFileSync(path.join(box,'control.json'),JSON.stringify(control));};setControl({});
 const lua=`local game=${q(game+'/')}
@@ -35,7 +55,7 @@ local env={path=base,fs=fs,assetFs=assets.fs,json=json,token=function()return m.
 local manualLib=require 'pa26_manual_chat';local converter=require('encoding').CP1251;local manualSent={};local b;local probeNow=0
 env.manual=function(text,key)return manualQueue:offer(text,key)end
 env.manualResult=function(key)return key and manualQueue.seen[key]or manualQueue.result end
-local verifier=require('pa26_cef_compat').runtime(base..'MoonLoader',json,{cacheRoot=base:sub(1,-2),hudRoot=game..'cef/assets/hud'})
+local verifier=require('pa26_cef_compat').runtime(base..'MoonLoader',json,{cacheRoot=base:sub(1,-2),hudRoot=${q(hudRoot)}})
 local checking=socket.gettime()
 local review
 repeat
@@ -110,6 +130,10 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  const functionalFingerprint=verification.report.fingerprint;
  eq(verification.report.state,'CONTRACT_COMPATIBLE');
  eq(verification.report.sha256,hudSha);
+ if(repack){
+   ok(hudSha!==reviewedSha);
+   eq(verification.report.reason,'normalized_repacked_and_dom');
+ }
  const verifiedState=verification.report.known?'KNOWN_VERIFIED':'RUNTIME_VERIFIED';
  ok([...registry.contract_profiles,...registry.known_versions].some(profile=>profile.fingerprint===functionalFingerprint));
  eq(fs.readFileSync(path.join(box,'index.html'),'utf8').replace(tag,''),originalHtml,'only the PA tag may change');
@@ -171,7 +195,7 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
  context.showChatInput();dialog.classList.add('active');
  eq(context.isDialogActive(),true);context.hideChatInput();eq(focusCalls.at(-1),true,'Game dialog retains CEF focus');
  dialog.classList.remove('active');context.hideCursor();eq(focusCalls.at(-1),false);
- if(hudSha.startsWith('f6122')||hudSha.startsWith('b0c3e72a')){
+ if(reviewedSha.startsWith('f6122')||reviewedSha.startsWith('b0c3e72a')||reviewedSha===november26Hud){
    context.showChatInput();casesOpen=true;context.hideChatInput();
    eq(focusCalls.at(-1),true,'The new cases window keeps its original CEF focus');
    casesOpen=false;context.hideCursor();eq(focusCalls.at(-1),false);
@@ -271,10 +295,10 @@ async function submit(text){type(text);const e=fire('keydown',{key:'Enter'});if(
   chat_field_is_test_double:true,layout_packet_values_are_test_doubles:true,gta_launched:false,actual_game_server_contacted:false,manual_multiline_native_ipc:true,
   manual_sha256:sha(path.join(release,'moonloader/lib/pa26_manual_chat.lua')),rp_sha256:sha(path.join(release,'moonloader/lib/pa26_rp_text.lua')),adapter_sha256:sha(adapter),bridge_sha256:sha(path.join(release,'moonloader/lib/pa26_chat_bridge.lua')),chat_text_sha256:sha(path.join(release,'moonloader/lib/pa26_chat_text.lua')),test_sha256:sha(__filename),
   assets_sha256:sha(path.join(release,'moonloader/lib/pa26_cef_assets.lua')),real_large_hud_bytes:Buffer.byteLength(originalHtml),real_atomic_replace:true,
-  hud_main_sha256:hudSha,cef_client_sha256:sha(path.join(game,'cef/cef-client.dll')),
+  hud_main_sha256:hudSha,reviewed_hud_sha256:reviewedSha,repacked_fixture:repack,cef_client_sha256:sha(path.join(game,'cef/cef-client.dll')),
   host_sha256:sha(path.join(__dirname,'support/run_game_lua32.ps1')),
   lua51_sha256:sha(path.join(game,'lua51.dll')),socket_core_sha256:sha(path.join(game,'MoonLoader/lib/socket/core.dll'))};
- fs.writeFileSync(path.join(__dirname,'CEF_NATIVE32_RESULTS.json'),JSON.stringify(result,null,2)+'\n');
+ fs.writeFileSync(path.join(__dirname,repack?'CEF_NATIVE32_REPACKED_RESULTS.json':'CEF_NATIVE32_RESULTS.json'),JSON.stringify(result,null,2)+'\n');
  console.log('Native x86 IPC + real HUD function: '+checks+' checks passed; GTA not launched.');
 })().catch(e=>{console.error(e.message);console.error('Native diagnostics:',output.trim(),error.trim(),consoleCodes.join('; '));process.exitCode=1;}).finally(async()=>{
  if(context?.PA26Chat)context.PA26Chat.stop();for(const h of intervals)clearInterval(h);for(const h of timers)clearTimeout(h);

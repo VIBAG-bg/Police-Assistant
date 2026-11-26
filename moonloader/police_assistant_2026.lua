@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.46.2')
+script_version('0.46.3')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -66,7 +66,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.46.2' then
+if #missing > 0 or not core or core.VERSION ~= '0.46.3' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -1038,7 +1038,7 @@ do
         settings=function()return workspace.library.settings.updates end,now=function()return studioClock end,
         encode=workspace.json.encode,decode=workspace.json.decode,
         onInstalled=function(version)
-            if version=='0.46.2'and core.VERSION==version and not workspace.library.settings.applied_author_defaults_0460 then
+            if core.VERSION==version and require('pa26_author_upgrade0460').supports(version) and not workspace.library.settings.applied_author_defaults_0460 then
                 sceneServices.pendingAuthorUpgrade=true
                 return true
             end
@@ -3753,7 +3753,8 @@ end
 updateGame=sceneServices.chatPerf:wrap('updateGame',updateGame)
 -- placement after the SA:MP gate was too late after a launcher integrity pass.
 sceneServices.readLayout=sceneServices.layoutModule.reader(ffi)
-sceneServices.cefVerifier=require('pa26_cef_compat').runtime(getWorkingDirectory(),workspace.json)
+sceneServices.cefVerifier=require('pa26_cef_compat').runtime(getWorkingDirectory(),workspace.json,{
+    onlineProfiles=workspace.library.settings.cef_chat_support and workspace.library.settings.cef_profile_updates})
 sceneServices.cefContractAllowed=false;sceneServices.cefContractReason='analysis_pending'
 sceneServices.chatBridge=sceneServices.chatModule.new({compatibility=function(now)
         local r=sceneServices.cefVerifier:check(now or 0);sceneServices.cefContractAllowed=r.allowed==true;sceneServices.cefContractReason=r.reason;return r

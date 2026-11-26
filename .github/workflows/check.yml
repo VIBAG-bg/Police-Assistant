@@ -20,6 +20,8 @@ jobs:
       - run: node tests/test_cef_adaptive0450.js
       - run: node tests/test_cef_recovery0450.js
       - shell: powershell
+        run: ./tests/test_cef_self_repair0463.ps1
+      - shell: powershell
         run: ./tests/test_updater.ps1
       - shell: powershell
         run: ./tests/test_update_legacy_paths.ps1

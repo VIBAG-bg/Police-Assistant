@@ -38,6 +38,7 @@ lib.settings.updates.repository='Another/Source'
 lib.patrol_session.start_template='Мой личный доклад {unit}.'
 lib.settings.manual_actions.rules.cuff.rp='/me применил личный сценарий.'
 lib.settings.cef_chat_support=false
+lib.settings.cef_profile_updates=false
 lib.alerts.on_duty=false
 cfg.main.demo_mode=true
 cfg.widget.x=444
@@ -54,6 +55,7 @@ eq(p.library.settings.updates.repository,'Another/Source')
 eq(p.library.settings.manual_actions.rules.cuff.rp,'/me применил личный сценарий.')
 eq(p.library.patrol_session.start_template,'Мой личный доклад {unit}.')
 eq(p.library.settings.cef_chat_support,false)
+eq(p.library.settings.cef_profile_updates,false)
 eq(p.library.alerts.on_duty,false)
 eq(p.config.widget.x,444);check(p.config.main.demo_mode)
 check(author.equal(model.find(lib,14),model.find(p.library,14)))
@@ -63,6 +65,7 @@ for _,b in ipairs(p.library.bindings)do if b.author_ref=='A14' then duplicate=b 
 check(duplicate and duplicate.id~=14);check(not duplicate.skip_confirmation)
 local explicit=assert(author.prepare('settings',json.decode(bundle.settings),p.library,p.config))
 check(explicit.library.settings.applied_author_defaults_0460,'Voluntary settings import preserves completion marker')
+eq(explicit.library.settings.cef_profile_updates,false,'Voluntary settings import preserves CEF lookup preference')
 check(not upgrade.prepare(lib,cfg,json,{binds='broken',settings=bundle.settings,baseline=bundle.baseline}))
 
 local base='TEST/config/police_assistant_2026'
@@ -106,7 +109,7 @@ eq(state.n,writes,'Second startup must not write anything')
 fs,values,state=memory();w=workspaceFor(fs)
 values[base..'_settings.json']='EXTERNAL EDIT'
 check(not upgrade.apply(w,cfg,{fs=fs},hash,lock,newId));eq(values[base..'_settings.json'],'EXTERNAL EDIT');eq(state.n,0)
-local prevVersion=core.VERSION;core.VERSION='0.46.3'
+local prevVersion=core.VERSION;core.VERSION='0.46.4'
 check(upgrade.apply(w,cfg,{fs=fs},hash,lock,newId));eq(state.n,0)
 core.VERSION=prevVersion
 

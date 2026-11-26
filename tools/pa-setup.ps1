@@ -30,7 +30,7 @@ function Get-PaByteHash([byte[]]$Bytes) {
     try { return [BitConverter]::ToString($algorithm.ComputeHash($Bytes)).Replace('-','').ToLowerInvariant() }
     finally { $algorithm.Dispose() }
 }
-function Get-PaSetupCefContract([string]$Source,[string]$MoonLoader,$Manifest) {
+function Get-PaSetupCefContract([string]$Source,[string]$MoonLoader,$Manifest,[switch]$NoProfileLookup) {
     $report=@{schema=2;state='UNAVAILABLE';allowed=$false;known=$false;reason='files_unavailable';
         sha256=$null;html_sha256=$null;fingerprint=$null;mode='native-only';runtime='NOT_RUN';capabilities=@{};protocol=2}
     $hud=Join-Path ([IO.Path]::GetDirectoryName($MoonLoader)) 'cef/assets/hud'
@@ -54,7 +54,7 @@ function Get-PaSetupCefContract([string]$Source,[string]$MoonLoader,$Manifest) {
     if(($registry|ConvertTo-Json -Depth 30 -Compress) -cne ($package|ConvertTo-Json -Depth 30 -Compress)){throw 'PA CEF registry mismatch.'}
     try{
         . ([scriptblock]::Create($engine.Groups[1].Value))
-        return Get-PaCefContract $hud $registry
+        return Get-PaCefContract $hud $registry -OnlineProfiles:(-not $NoProfileLookup)
     }catch{$report.reason='verifier_unavailable';return $report}
 }
 function Get-PaSetupCefStatus($Report) {

@@ -14,6 +14,7 @@ param(
     [switch]$PreviewCefContract,
     [string]$LegacyPreview = '',
     [switch]$TestInterrupt,
+    [switch]$NoCefProfileLookup,
     [switch]$RequireCef
 )
 Set-StrictMode -Version Latest
@@ -74,7 +75,7 @@ $paInput=[IO.Path]::GetFullPath($DestinationRoot).TrimEnd('\')
 $paTest=$paInput.StartsWith($paTestRoot+'\',[StringComparison]::OrdinalIgnoreCase)
 $paDestination=Resolve-PaSetupRoot $DestinationRoot $paTest
 if($PreviewCefContract){
-    Get-PaSetupCefContract $PSScriptRoot $paDestination $paManifest|ConvertTo-Json -Depth 8 -Compress
+    Get-PaSetupCefContract $PSScriptRoot $paDestination $paManifest -NoProfileLookup:$NoCefProfileLookup|ConvertTo-Json -Depth 8 -Compress
     return
 }
 if(($TestFailAfter -ne 0 -or $TestInterrupt) -and -not $paTest){throw 'Failure injection is allowed only in the test sandbox.'}
@@ -334,7 +335,7 @@ foreach ($paRelative in $paOwned) {
 # Optional launcher HUD integration. The setup preview uses the same verifier.
 $paGameRoot=[IO.Path]::GetDirectoryName($paDestination)
 $paKnownLauncher=$paDestination -ieq [IO.Path]::GetFullPath($paDefault)
-$paCefCheck=Get-PaSetupCefContract $PSScriptRoot $paDestination $paManifest
+$paCefCheck=Get-PaSetupCefContract $PSScriptRoot $paDestination $paManifest -NoProfileLookup:$NoCefProfileLookup
 $paCefStatus=Get-PaSetupCefStatus $paCefCheck
 $paCefReason=switch($paCefStatus){
     'compatible'   {'contract_compatible_pending_runtime'}

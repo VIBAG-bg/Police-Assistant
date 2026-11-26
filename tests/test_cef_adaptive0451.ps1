@@ -27,12 +27,12 @@ Check (-not $current.known) 'Current SHA is supported by contract, not hardcoded
 Check ($current.runtime -eq 'NOT_RUN') 'Static verification does not claim runtime acceptance'
 $profiles=@($registry.contract_profiles|Where-Object fingerprint -CEQ $current.fingerprint)
 Check ($profiles.Count -eq 1) 'Exactly one normalized profile matches'
-if($current.sha256 -like 'f6122*'){
+if($profiles[0].PSObject.Properties['reviewed_sha256']){
  Check ($profiles[0].reviewed_sha256 -ceq $current.sha256) 'New launcher is explicitly recorded with exact provenance'
  $oldRegistry=$registry|ConvertTo-Json -Depth 30|ConvertFrom-Json
  $oldRegistry.contract_profiles=@($oldRegistry.contract_profiles|Where-Object fingerprint -CNE $current.fingerprint)
  $before=Get-PaCefContract $box $oldRegistry
- Check (-not $before.allowed -and $before.capabilities.dom -and $before.reason -eq 'functional_profile_mismatch') 'Reproduces the 0.45.2 false rejection'
+ Check (-not $before.allowed -and $before.capabilities.dom -and $before.reason -eq 'functional_profile_mismatch') 'Reproduces rejection before this launcher profile was added'
 }
 Case 'unrelated_comment' ($main+"`n// Harmless launcher maintenance release`n") $html $true|Out-Null
 Case 'unrelated_whitespace' ($main.Replace('const hudContainer=',"`nconst  hudContainer = ")) $html $true|Out-Null
@@ -48,7 +48,9 @@ $badIncoming=$main.Replace('y2HHDdPTzxnZywDLCW','y2HHDdP3CM9Uz3H4Ea')
 Check ($badIncoming -cne $main) 'Mutated the encoded incoming event'
 Case 'wrong_incoming_event' $badIncoming $html $false|Out-Null
 Case 'missing_input' $main ($html.Replace('id="chatInputField"','id="changedInputField"')) $false|Out-Null
-Case 'wrong_input_type' $main ($html.Replace('<input class="chat-input-text"','<textarea class="chat-input-text"')) $false|Out-Null
+$wrongInputTag=[regex]::Replace($html,'(<)input(\s[^>]*\bid="chatInputField"[^>]*>)','$1textarea$2')
+Check ($wrongInputTag -cne $html) 'Mutated the actual chat field regardless of attribute order'
+Case 'wrong_input_type' $main $wrongInputTag $false|Out-Null
 Case 'duplicate_input' $main ($html.Replace('</body>','<input id="chatInputField"></body>')) $false|Out-Null
 Case 'disabled_input' $main ($html.Replace('id="chatInputField"','disabled id="chatInputField"')) $false|Out-Null
 Case 'async_handler' $main ($html.Replace('<script src="main.js">','<script async src="main.js">')) $false|Out-Null

@@ -1,5 +1,5 @@
 {
-  "release": "0.46.2",
+  "release": "0.46.3",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -23,7 +23,7 @@
     },
     {
       "path": "lib\\pa26_author_upgrade0460.lua",
-      "sha256": "5b65d45e4bd68ad943fcf9b2995ceaa347266d67abc9bd1511ec6a0cd252713d"
+      "sha256": "a38843d68577f046e04c1ea6fa255a79598f7b4bf1bbb4708e3cd16eda13afd1"
     },
     {
       "path": "lib\\pa26_author_controller.lua",
@@ -39,7 +39,7 @@
     },
     {
       "path": "lib\\pa26_author_presets.lua",
-      "sha256": "ee2fbac7a74344f0114a6573644a6660bd7b94cd27daf189cb8e155b908c862d"
+      "sha256": "20d8b835bfd4493292502724470ac2d342f7e6c5b4bcd533d08d99580e8ffc48"
     },
     {
       "path": "lib\\pa26_author_rp.lua",
@@ -55,7 +55,7 @@
     },
     {
       "path": "lib\\pa26_bindings.lua",
-      "sha256": "1a8335c7e57ebc139e3e44c064f320793f3027d19c8381e7abbbca2fc2de01a1"
+      "sha256": "cb74d3a4ee4612a5828ec31260f645027be4bbb6787fa8d7e368321d04572752"
     },
     {
       "path": "lib\\pa26_case_forms.lua",
@@ -75,11 +75,11 @@
     },
     {
       "path": "lib\\pa26_cef_contract.lua",
-      "sha256": "e4e010cab6da1302da7acaf3dd7ad979f40181c8942cca07c1ed3c209c52439d"
+      "sha256": "a8577e33203a5c1022d2cfd299ceab72c7cf526eabcb6b9c929ff1d2b89b4207"
     },
     {
       "path": "lib\\pa26_cef_job.lua",
-      "sha256": "444e3e5c9cda979db2610b3cf70bcc7fd2996b43c953f6a29797a3969b562dea"
+      "sha256": "9680a7f602a262ffdd6ccd1bbfe7b7c228e221db787178b4c0d4cc6cd904854b"
     },
     {
       "path": "lib\\pa26_chat_bridge.lua",
@@ -127,7 +127,7 @@
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "3950b929d35f37750df917380e1fb3782a8b109aa7edf420953a07a59135ca58"
+      "sha256": "b7fef66a8b68fce32f7267f10c802d62d19f3baf86f3a036e742a1d3849fe40d"
     },
     {
       "path": "lib\\pa26_cruiser_assist.lua",
@@ -491,7 +491,7 @@
     },
     {
       "path": "lib\\pa26_studio.lua",
-      "sha256": "d554c055d82a5c2a001dab5b7ee50bb56380612a8fa49777d8f39797549efda2"
+      "sha256": "fbd974239fc7a1d55ba70a7157f29ead794b3b6b8fcd0b970017c864717f51ae"
     },
     {
       "path": "lib\\pa26_target.lua",
@@ -619,7 +619,7 @@
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "aa3a5f442dd9fb6ab16b5e348bc654397a19c009d2265bb55c8f65817a0fa7eb"
+      "sha256": "ab5cad321ccb536227d692bf382704d709b4cd0a0fcf5777e3dcd7b6fdf0e98f"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",
@@ -671,7 +671,7 @@
   "setup_files": [
     {
       "path": "tools/pa-setup.ps1",
-      "sha256": "eb6409d1361dc77f97a9c0bdd8c808e24d3c4f476d27d60b079097a235dd61ba"
+      "sha256": "aa20ab087c63b91a7ffc3cd1391c40038c7820c187c59f06c8b129c167ff61ce"
     },
     {
       "path": "tools/pa-setup-window.ps1",

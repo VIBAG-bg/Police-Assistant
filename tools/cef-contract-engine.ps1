@@ -31,7 +31,9 @@ namespace PaCef0452 {
    for(int i=0;i<s.Length;) {
     if(t.Count>650000 || watch.ElapsedMilliseconds>8000)throw new Exception("analysis_limit");
     char c=s[i];if(Char.IsWhiteSpace(c)){i++;continue;}int a=i;
-    if(c=='/'&&i+1<s.Length&&s[i+1]=='/'){i+=2;while(i<s.Length&&s[i]!='\r'&&s[i]!='\n')i++;continue;}
+    if(c=='/'&&i+1<s.Length&&s[i+1]=='/'){
+     i+=2;while(i<s.Length&&s[i]!='\r'&&s[i]!='\n'&&s[i]!='\u2028'&&s[i]!='\u2029')i++;continue;
+    }
     if(c=='/'&&i+1<s.Length&&s[i+1]=='*'){int end=s.IndexOf("*/",i+2,StringComparison.Ordinal);if(end<0)throw new Exception("js_comment");i=end+2;continue;}
     if(c=='\''||c=='"'||c=='`'){
      char q=c;i++;bool closed=false;
@@ -69,7 +71,63 @@ namespace PaCef0452 {
     s.Append(t[i].k).Append(':').Append(v.Length).Append(':').Append(v).Append(';');
    }return Hash(Encoding.UTF8.GetBytes(s.ToString()));
   }
-  public static Dictionary<string,string> Inventory(string s,string[] names){
+  // This fallback accepts an equivalent string-table literal. All source
+  // before and after the array, and all values in the array, are still pinned.
+  static bool AppendPackedLiteral(StringBuilder value,string literal) {
+   if(literal.Length<2||(literal[0]!='\''&&literal[0]!='"'))return false;
+   for(int i=1;i<literal.Length-1;i++){
+    char ch=literal[i];
+    if(ch=='\\'){
+     if(++i>=literal.Length-1)return false;
+     ch=literal[i];
+     if(ch=='x'||ch=='u'){
+      int width=ch=='x'?2:4,result=0;
+      if(i+width>=literal.Length-1)return false;
+      for(int j=0;j<width;j++){
+       int digit="0123456789abcdef".IndexOf(Char.ToLowerInvariant(literal[++i]));
+       if(digit<0)return false;
+       result=16*result+digit;
+      }
+      ch=(char)result;
+     }else if(ch!='/')return false;
+    }
+    if(!(ch>='A'&&ch<='Z'||ch>='a'&&ch<='z'||ch>='0'&&ch<='9'||ch=='+'||ch=='/'||ch=='='))return false;
+    value.Append(ch);
+   }
+   return true;
+  }
+  static string RepackedSignature(string source,List<Tok> tokens,Dictionary<int,int> pairs,int[] range){
+   int start=range[0]+8;
+   if(start>=range[1]||tokens[range[0]+3].v!=")"||tokens[start-4].v!="{"||
+    tokens[start-3].v!="const"||tokens[start-2].k!="id"||tokens[start-1].v!="="||tokens[start].v!="[")return null;
+   int end;
+   if(!pairs.TryGetValue(start,out end)||end>=range[1])return null;
+   // Do not discard comments or non-JS whitespace inside the relaxed range.
+   for(int next=start+1;next<=end;next++){
+    for(int i=tokens[next-1].b;i<tokens[next].a;i++){
+     char ch=source[i];
+     if(ch!=' '&&ch!='\t'&&ch!='\r'&&ch!='\n')return null;
+    }
+   }
+   var values=new StringBuilder();var item=new StringBuilder();
+   for(int cursor=start+1;cursor<end;){
+    item.Clear();
+    do{
+     if(cursor>=end||tokens[cursor].k!="str"||!AppendPackedLiteral(item,tokens[cursor++].v))return null;
+     if(cursor==end||tokens[cursor].v!="+")break;
+     cursor++;
+    }while(true);
+    // The delimiter cannot occur in an accepted value. Keep order, length
+    // and empty elements significant, including the first rotation seed.
+    values.Append(':').Append(item);
+    if(cursor<end&&tokens[cursor++].v!=",")return null;
+   }
+   var utf8=Encoding.UTF8;
+   string prefix=Hash(utf8.GetBytes(source.Substring(0,tokens[start].a)));
+   string suffix=Hash(utf8.GetBytes(source.Substring(tokens[end].b)));
+   return Hash(utf8.GetBytes("pa-cef-table-v1:"+prefix+":"+suffix+":"+Hash(utf8.GetBytes(values.ToString()))));
+  }
+  public static Dictionary<string,string> Inventory(string s,string[] names,out string repacked){
    var t=Tokens(s);var pairs=Pairs(t);var functions=new Dictionary<string,int[]>();var omit=new Dictionary<int,int>();
    for(int i=0;i+3<t.Count;i++)if(t[i].v=="function"&&t[i+1].k=="id"&&t[i+2].v=="("){
     int close=pairs[i+2];if(close+1>=t.Count||t[close+1].v!="{")throw new Exception("js_function");int end=pairs[close+1];
@@ -88,6 +146,7 @@ namespace PaCef0452 {
    int table=decoder[0]+8;string tableName=null;
    for(int i=decoder[0];i+2<=decoder[1]&&i<decoder[0]+40;i++)if(t[i].v=="="&&t[i+1].k=="id"&&t[i+2].v=="("){tableName=t[i+1].v;break;}
    int[] tableRange;if(tableName==null||!functions.TryGetValue(tableName,out tableRange))throw new Exception("decoder_table");
+   repacked=RepackedSignature(s,t,pairs,tableRange);
    result["$table"]=Canon(t,tableRange[0],tableRange[1],null);
    result["$initialization_and_events"]=Canon(t,0,t.Count-1,omit);
    // Other function bodies may evolve, but adding references to any protected
@@ -125,16 +184,73 @@ namespace PaCef0452 {
     }
    }
    foreach(string id in new[]{"chatInput","chatInputField","chatMsgList","Dialog","SendMsgButton"})if(!ids.ContainsKey(id))return "missing_dom:"+id;
-   if(ids["chatInput"]!="form"||ids["Dialog"]!="div"||!fieldInside||main!=1||adapter>1||stack.Count!=0)return "html_structure";
+   if(ids["chatInput"]!="form"||ids["Dialog"]!="div"||ids["chatMsgList"]!="div"||ids["SendMsgButton"]!="svg"||
+    !fieldInside||main!=1||adapter>1||stack.Count!=0)return "html_structure";
    return "verified";
   }
  }
 }
 '@
 }
-function Get-PaCefContract([string]$HudRoot, $Registry, [switch]$Inventory) {
+function Find-PaCefProfile($Profiles,$Map,[string]$Repacked,[string]$InterfaceVersion) {
+ $pattern='^'+[regex]::Escape($InterfaceVersion)+':[a-f0-9]{64}$'
+ foreach($profile in @($Profiles)){
+  if($null -eq $profile -or -not $profile.PSObject.Properties['components'] -or
+     -not $profile.PSObject.Properties['fingerprint'] -or $profile.fingerprint -isnot [string] -or
+     $profile.fingerprint -cnotmatch $pattern -or $profile.components -isnot [pscustomobject]){continue}
+  $items=@($profile.components.PSObject.Properties)
+  if($items.Count -ne $Map.Count){continue}
+  $wellFormed=$true;$exact=$true
+  foreach($item in $items){
+   if($item.Name -cnotmatch '^[A-Za-z_$][A-Za-z0-9_$]{0,80}$' -or
+      -not $Map.ContainsKey($item.Name) -or $item.Value -isnot [string] -or
+      $item.Value -cnotmatch '^[a-f0-9]{64}$'){$wellFormed=$false;break}
+   if($Map[$item.Name] -cne $item.Value){$exact=$false}
+  }
+  if(-not $wellFormed){continue}
+  if($exact){return @{fingerprint=$profile.fingerprint;reason='normalized_contract_and_dom'}}
+  if($Repacked -and $profile.PSObject.Properties['repacked_sha256'] -and
+     $profile.repacked_sha256 -is [string] -and $profile.repacked_sha256 -ceq $Repacked){
+   return @{fingerprint=$profile.fingerprint;reason='normalized_repacked_and_dom'}
+  }
+ }
+}
+function Get-PaPublishedCefRegistry {
+ # The official repository is fixed independently of any update/user URL.
+ # Consume bounded HTTPS JSON data only. Redirects and credentials are disabled.
+ $uri='https://raw.githubusercontent.com/VIBAG-bg/Police-Assistant/main/CEF_CONTRACT.json'
+ $prior=[Net.ServicePointManager]::SecurityProtocol
+ $response=$null;$buffer=$null;$stream=$null
+ try {
+  [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+  $request=[Net.HttpWebRequest]::Create($uri)
+  $request.AllowAutoRedirect=$false;$request.UseDefaultCredentials=$false
+  $request.Timeout=5000;$request.ReadWriteTimeout=3000
+  $request.UserAgent='Police-Assistant-CEF'
+  $response=$request.GetResponse()
+  $limit=131072
+  if([int]$response.StatusCode -ne 200 -or $response.ContentLength -gt $limit){throw 'profile_response'}
+  $stream=$response.GetResponseStream()
+  $buffer=New-Object IO.MemoryStream
+  $chunk=New-Object byte[] 8192
+  $clock=[Diagnostics.Stopwatch]::StartNew()
+  while(($read=$stream.Read($chunk,0,$chunk.Length)) -gt 0){
+   if($clock.ElapsedMilliseconds -gt 5000 -or $buffer.Length+$read -gt $limit){throw 'profile_size_or_timeout'}
+   $buffer.Write($chunk,0,$read)
+  }
+  if($clock.ElapsedMilliseconds -gt 5000 -or $buffer.Length -eq 0){throw 'profile_response'}
+  $utf8=New-Object Text.UTF8Encoding($false,$true)
+  $utf8.GetString($buffer.ToArray()) | ConvertFrom-Json -ErrorAction Stop
+ } finally {
+  if($stream){$stream.Dispose()}
+  if($response){$response.Dispose()}
+  if($buffer){$buffer.Dispose()}
+  [Net.ServicePointManager]::SecurityProtocol=$prior
+ }
+}
+function Get-PaCefContract([string]$HudRoot, $Registry, [switch]$Inventory, [switch]$OnlineProfiles) {
  $result=@{schema=2;state='UNAVAILABLE';allowed=$false;known=$false;reason='files_unavailable';sha256=$null;fingerprint=$null;
-  html_sha256=$null;mode='native-only';capabilities=@{};runtime='NOT_RUN';protocol=2}
+  html_sha256=$null;mode='native-only';capabilities=@{};runtime='NOT_RUN';protocol=2;profile_source=$null;profile_lookup='not_needed'}
  try {
   $main=Join-Path $HudRoot 'main.js';$html=Join-Path $HudRoot 'index.html'
   foreach($path in @($main,$html)){
@@ -147,26 +263,44 @@ function Get-PaCefContract([string]$HudRoot, $Registry, [switch]$Inventory) {
   $bytes=[PaCef0452.Contract]::ReadLimited($main,4194304);$result.sha256=[PaCef0452.Contract]::Hash($bytes)
   $htmlBytes=[PaCef0452.Contract]::ReadLimited($html,1048576)
   $result.html_sha256=[PaCef0452.Contract]::Hash($htmlBytes)
-  $htmlText=(New-Object Text.UTF8Encoding($false,$true)).GetString($htmlBytes)
+  $utf8=New-Object Text.UTF8Encoding($false,$true)
+  $htmlText=$utf8.GetString($htmlBytes)
   $markup=[PaCef0452.Contract]::Markup($htmlText)
   if($markup -ne 'verified'){$result.state='INCOMPATIBLE';$result.reason=$markup;return $result}
   [PaCef0452.Contract]::InstallMarkup($htmlText)|Out-Null
   $result.capabilities.dom=$true
   $known=@($Registry.known_versions|Where-Object sha256 -CEQ $result.sha256)
   if($known.Count -eq 1 -and -not $Inventory){
-   $result.known=$true;$result.fingerprint=$known[0].fingerprint;$result.reason='reviewed_identity_and_dom'
+   $result.known=$true;$result.fingerprint=$known[0].fingerprint;$result.reason='reviewed_identity_and_dom';$result.profile_source='bundled'
   }else{
-   $text=[Text.Encoding]::UTF8.GetString($bytes)
-   $map=[PaCef0452.Contract]::Inventory($text,[string[]]$Registry.required_functions)
-   if($Inventory){$result.inventory=$map}
-   foreach($profile in $Registry.contract_profiles){
-    $match=$true
-    if(@($profile.components.PSObject.Properties).Count -ne $map.Count){$match=$false}
-    foreach($item in $profile.components.PSObject.Properties){if(-not $map.ContainsKey($item.Name) -or $map[$item.Name] -cne $item.Value){$match=$false;break}}
-    if($match){$result.fingerprint=$profile.fingerprint;break}
+   try{$text=$utf8.GetString($bytes)}
+   catch{$result.state='INCOMPATIBLE';$result.reason='js_encoding';return $result}
+   $repacked=''
+   $map=[PaCef0452.Contract]::Inventory($text,[string[]]$Registry.required_functions,[ref]$repacked)
+   if($Inventory){$result.inventory=$map;$result.repacked_sha256=$repacked}
+   $match=Find-PaCefProfile $Registry.contract_profiles $map $repacked $Registry.interface_version
+   if($match){$result.profile_source='bundled'}
+   elseif($OnlineProfiles){
+    try {
+     $published=Get-PaPublishedCefRegistry
+     if($published -is [pscustomobject] -and $published.PSObject.Properties['schema'] -and
+        $published.PSObject.Properties['protocol'] -and $published.PSObject.Properties['interface_version'] -and
+        $published.PSObject.Properties['contract_profiles'] -and
+        ($published.schema -is [int] -or $published.schema -is [long]) -and $published.schema -eq 2 -and
+        ($published.protocol -is [int] -or $published.protocol -is [long]) -and $published.protocol -eq 2 -and
+        $published.interface_version -is [string] -and
+        $published.interface_version -ceq $Registry.interface_version -and $published.contract_profiles -is [array] -and
+        $published.contract_profiles.Count -le 24){
+      $match=Find-PaCefProfile $published.contract_profiles $map $repacked $Registry.interface_version
+      if($match){$result.profile_source='official';$result.profile_lookup='matched'}
+      else{$result.profile_lookup='no_match'}
+     }else{$result.profile_lookup='invalid'}
+    }catch{$result.profile_lookup='unavailable'}
+   }else{$result.profile_lookup='disabled'}
+   if(-not $match){
+    $result.state='INCOMPATIBLE';$result.reason='functional_profile_mismatch';return $result
    }
-   if(-not $result.fingerprint){$result.state='INCOMPATIBLE';$result.reason='functional_profile_mismatch';return $result}
-   $result.reason='normalized_contract_and_dom'
+   $result.fingerprint=$match.fingerprint;$result.reason=$match.reason
   }
   $result.capabilities=@{dom=$true;outgoing=$true;incoming=$true;payloads=$true;lifecycle=$true;focus=$true;ipc=$true;adapter_order=$true}
   $result.state='CONTRACT_COMPATIBLE';$result.allowed=$true;$result.mode='cef-provisional'

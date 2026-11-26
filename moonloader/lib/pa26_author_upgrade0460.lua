@@ -87,8 +87,12 @@ function M.prepare(lib, cfg, json, payload)
     return {kind='upgrade0460', library=clean, config=nextCfg}
 end
 
+function M.supports(version)
+    return version == '0.46.2' or version == '0.46.3'
+end
+
 function M.apply(workspace, cfg, io, hash, lock, newId)
-    if core.VERSION ~= '0.46.2' or workspace.library.settings.applied_author_defaults_0460 then return true end
+    if not M.supports(core.VERSION) or workspace.library.settings.applied_author_defaults_0460 then return true end
     if not io then return nil, 'Хранилище авторских наборов недоступно.' end
     local files = workspace.userFiles
     if files.blocked then return nil, files.blocked end
