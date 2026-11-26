@@ -63,6 +63,73 @@ check(cp:propose('pursuit'));check(cp:propose('stop_order'));check(not cp:propos
 s.cfg.megaphone_enabled=false;s.tick();check(not cp:propose('stop_order'))
 -- The warning after a foot pursuit is separate and disappears when armed.
 cp,v,s=setup();s.send('foot');s.send('fast_wanted');s.tick();check(s.has('taser_warning'));s.person.armed=true;s.tick();check(not s.has('taser_warning'))
+-- Armed status affects the report text, not the ability to confirm FOXTROT.
+for _,source in ipairs({'observed','configured'})do
+ for _,entry in ipairs({'toast','manual'})do
+  cp,v,s=setup()
+  s.cfg.copilot.templates.foot='{unit}, 10-57 FOXTROT.{armed_text}'
+  s.send('pursuit')
+  s.state.inVehicle=false
+  s.car.driver_id=nil;s.car.driver_ped=nil;s.car.occupants=0
+  s.person.distance=14;s.person.y=25;s.person.armed=source=='observed'
+  s.cfg.copilot.pursuit_armed=source=='configured'
+  s.tick()
+  local foot=assert(s.has('foot'),source)
+  check(table.concat(foot.prepared.lines,' '):find('10-57 FOXTROT. Подозреваемые вооружены!',1,true))
+  local before=#s.plans
+  if entry=='toast'then
+   cp:shown(foot.token);check(cp:decide(foot.token,true));eq(#s.plans,before)
+   s.tick()
+   local plan=assert(s.plans[before+1]);check(cp:validPlan(plan))
+   cp:onExecution('completed',{plan=plan,demo=false})
+  else s.send('foot')end
+  eq(cp.phase,'10-57 FOXTROT');eq(#s.plans,before+1)
+  s.send('pursuit_mark');s.tick()
+  check(not s.has('taser_warning'));check(not cp:propose('taser_warning'))
+ end
+end
+cp,v,s=setup();s.send('foot')
+local warning=assert(cp:propose('taser_warning'))
+cp.lastDamage=s.now
+check(not cp:accept(warning),'Combat after the preview blocks consent')
+check(not cp:propose('taser_warning'))
+s.tick(s.cfg.copilot.combat_ms+1);check(cp:propose('taser_warning'))
+s.state.taserCombatText='Перестрелка';s.tick();check(not cp:propose('taser_warning'))
+
+-- A rolling empty car may never create or revive an automatic VICTOR
+-- warning while the same incident is in FOXTROT.
+cp,v,s=setup();s.cfg.copilot.repeat_megaphone=true
+s.send('pursuit');s.send('tire');s.tick()
+s.car.x=2;s.tick(s.cfg.copilot.warning_cooldown_ms)
+local repeatOffer=assert(s.has('tire'));check(repeatOffer.repeatOffer)
+local warnings,plans=cp.tireWarnings,#s.plans
+s.car.driver_id=nil;s.car.driver_ped=nil;s.car.occupants=0;s.tick()
+s.send('foot')
+check(not cp:accept(repeatOffer),'A VICTOR repeat cannot be accepted during FOXTROT')
+s.car.x=4;s.tick(s.cfg.copilot.warning_cooldown_ms)
+eq(cp.phase,'10-57 FOXTROT');check(not s.has('tire'));check(not s.has('stop_order'))
+eq(cp.tireWarnings,warnings);eq(#s.plans,plans+1)
+
+cp,v,s=setup();s.send('pursuit')
+local wanted=assert(cp:propose('fast_wanted'))
+eq(wanted.label,'Ориентировка и розыск 8.1 · отдельно от /pt?')
+cp:damage(37,24,s.now);s.tick()
+local combat=assert(cp:propose('combat_wanted'))
+eq(combat.label,'Подтверждённое нападение · Розыск 2.2 · отдельно от /pt?')
+check(table.concat(combat.prepared.lines,' '):find('/su 37 2 2',1,true))
+check(not table.concat(combat.prepared.lines,' '):find('/pt 37',1,true))
+eq(assert(cp:propose('pursuit_mark')).label,'Повторить только /pt · без розыска?')
+cp,v,s=setup();s.send('stop_order');s.state.inVehicle=false;s.car.distance=5;s.tick()
+local greet=assert(cp:propose('greet_stop'))
+eq(greet.label,'Представиться и показать жетон (/ud)?')
+check(table.concat(greet.prepared.lines,' '):find('/ud 37',1,true))
+local options=require 'pa26_copilot_settings'
+local labels={}
+for _,row in ipairs(options.booleans)do labels[row[1]]=row[2]end
+for _,row in ipairs(options.templates)do labels[row[1]]=row[2]end
+eq(labels.ground_ud,'При представлении показывать жетон через /ud')
+eq(labels.badge,'RP · показать полицейский бейдж (жетон)')
+eq(labels.stop_greeting_ud,'В шаге представления 10-55 показывать жетон через /ud')
 -- Saved /todo RP uses the same action-preserving splitter as manual chat.
 cp,v,s=setup();s.send('pursuit');s.cfg.copilot.templates.wanted_rp='/todo Приметы машины переданы диспетчеру.*обращаясь по рации к диспетчеру';s.tick()
 p=assert(cp:propose('fast_wanted'));check(p.prepared.lines[1]:match('^/todo '));check(p.prepared.lines[1]:find('*обращаясь по рации к диспетчеру',1,true))

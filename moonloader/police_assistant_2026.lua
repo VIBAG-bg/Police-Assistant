@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.46.3')
+script_version('0.46.4')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -66,7 +66,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.46.3' then
+if #missing > 0 or not core or core.VERSION ~= '0.46.4' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -956,7 +956,13 @@ sceneServices.evidence=sceneServices.evidenceModule.new({settings=function()retu
         return workspace:save(copy)
     end})
 local function effectivePatrol()
-    local independent=not patrolSession.data.active and workspace.library.patrol_session.reporter_self~=false
+    local cfg=workspace.library.patrol_session;local active=patrolSession.data.active
+    local pending=patrolSession.awaitingReport and patrolSession.queued
+    -- The shared executor still serializes radio lines. A queued start/end
+    -- report suppresses ordinary periodic patrol reports, not a pursuit clock.
+    local switching=pending and(pending.action=='start'or pending.action=='finish')
+    local independent=cfg.reporter_self~=false and(not active or
+        switching and cfg.enabled and cfg.periodic and active.status=='active')
     return sceneServices.vehicle:periodic(patrolSession:effectivePatrol(workspace.library.alerts.patrol),independent)
 end
 radioGuard=radioGuardModule.new({settings=function()return workspace.library.radio_guard end,
@@ -3552,7 +3558,10 @@ local function updateGame()
     alertState.verifiedCrew=patrolSession.data.active and patrolSession.data.active.crew or nil
     local hour=optionalRead('getTimeOfDay');alertState.gameHour=core.finite(hour)and hour or nil;alertState.moscowTime=core.moscowTime()
     alertState.patrolActive=patrolSession.data.active~=nil
-    if sceneServices.patrolWasActive and not alertState.patrolActive then patrol:reset()end
+    if sceneServices.patrolWasActive and not alertState.patrolActive then
+        local report=effectivePatrol()
+        if not report.enabled or not report.pursuitKey then patrol:reset()end
+    end
     sceneServices.patrolWasActive=alertState.patrolActive
     alertState.patrolStatus=patrolSession.data.active and patrolSession.data.active.status or nil
     sceneServices.vehicle:tick(alertState,now)

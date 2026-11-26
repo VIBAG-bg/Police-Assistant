@@ -25,6 +25,19 @@ for _,display in ipairs({{640,480},{800,600},{1024,768},{1152,864},{1366,768},{1
   im.Begin('copilot-native',nil,im.WindowFlags.NoSavedSettings);im.BeginChild('content',im.ImVec2(0,0),false)
   uiModule.draw(s,ui,data,cb);check(#stack==0,'Balanced content scopes');im.EndChild();im.End();im.Render();check(im.GetDrawData().Valid);frames=frames+1
  end end
+ local contact=model.copy(data);local traffic=contact.copilot
+ traffic.phase='10-55';traffic.windowActive=true;traffic.contactAvailable=true
+ s.copilotPage='work';s.copilotContactMarks=true
+ local labels,fitted={},menu.fittedButton
+ menu.fittedButton=function(imgui,drawUi,label,...)
+  labels[label]=true;return fitted(imgui,drawUi,label,...)
+ end
+ im.NewFrame();im.SetNextWindowPos(im.ImVec2(16,16),im.Cond.Always);im.SetNextWindowSize(im.ImVec2(display[1]-32,display[2]-32),im.Cond.Always)
+ im.Begin('contact-native',nil,im.WindowFlags.NoSavedSettings);im.BeginChild('content',im.ImVec2(0,0),false)
+ uiModule.draw(s,ui,contact,cb);menu.fittedButton=fitted;s.copilotContactMarks=nil
+ check(labels['Представиться и показать жетон (/ud)##copilot-greet-stop'],'Badge introduction label and ID')
+ check(labels['Уже представился и показал жетон (/ud)##copilot-mark-intro'],'Completed badge introduction label and ID')
+ check(#stack==0,'Balanced contact scopes');im.EndChild();im.End();im.Render();check(im.GetDrawData().Valid);frames=frames+1
  -- Every new RP/radio editor is rendered with actual Cyrillic font metrics.
  for _,entry in ipairs(require('pa26_dispatch').templates)do
   s.copilotPage='settings';s.copilotTemplate=entry[1]

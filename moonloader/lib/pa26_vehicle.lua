@@ -176,7 +176,7 @@ function Vehicle:values(state,c)
     if c then local values,err=M.describe(c,cfg,out.gender);if not values then return nil,err end;for k,v in pairs(values)do out[k]=v end end
     return out
 end
-function Vehicle:periodic(base,withoutPatrol)
+function Vehicle:periodic(base,independent)
     local cfg=self.env.settings();if not cfg.enabled or not self.phase then return base end
     local out=model.copy(base)
     local target=self.selected
@@ -184,9 +184,15 @@ function Vehicle:periodic(base,withoutPatrol)
     out.session_key=(base.session_key or '')..':vehicle:'..self.phase..':'..targetKey
     if self.phase=='10-55'then if cfg.pause_patrol_reports then out.enabled=false end;return out end
     if self.phase=='Преследование'then
-        out.enabled=(base.enabled or withoutPatrol==true)and cfg.pursuit_periodic and self.selected~=nil
+        out.enabled=(base.enabled or independent==true)and cfg.pursuit_periodic and self.selected~=nil
         out.label='Погоня 10-57'
-        out.pursuitKey=target and out.session_key
+        if out.enabled then
+            -- A pursuit owns one countdown and one radio occurrence even if
+            -- the patrol session changes between police, prison and idle.
+            out.mode='police'
+            out.session_key='vehicle:'..self.phase..':'..targetKey
+            out.pursuitKey=out.session_key
+        end
         out.confirmation=cfg.pursuit_confirmation
         for _,kind in ipairs({'police','prison'})do
             out[kind..'_template']=cfg.pursuit_periodic_template;out[kind..'_channel']=cfg.channel;out[kind..'_interval_ms']=cfg.pursuit_interval_ms

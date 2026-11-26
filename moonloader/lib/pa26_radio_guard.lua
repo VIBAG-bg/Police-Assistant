@@ -18,17 +18,21 @@ function M.canTick(s,countDuringInput)
 end
 local dynamic={unit=true,unit_crew_count=true,crew=true,crew_count=true,crew_roles=true,crew_callsigns=true,
     patrol_start=true,patrol_resume=true,patrol_finish=true,patrol_moving=true,patrol_available=true}
+local patrolContext={callsign=true,officer=true,station=true,vehicle=true,sector=true,post=true,patrol_id=true}
 local vehicleFields={model=true,model_id=true,vehicle_id=true,vehicle_color=true,color_one=true,color_two=true,vehicle_description=true}
 local function patrolConsent(t)return t and t.spec.source=='patrol'and t.spec.confirmation==true end
-local function identity(s,template,skipDynamic)
+local function identity(s,template,skipDynamic,pursuit)
     local out={};for key in pairs(prefs.radioVariables)do if key~='area'and key~='city'and key~='duration'and key~='direction'and key~='map_square'and key~='location'and key~='square'and
-        (not vehicleFields[key]or template:find('{'..key..'}',1,true))and not(skipDynamic and dynamic[key])then out[#out+1]=key..'='..tostring(s[key] or '')end end
+        (not(pursuit or vehicleFields[key])or template:find('{'..key..'}',1,true))and
+        not(skipDynamic and(dynamic[key]or pursuit and patrolContext[key]))then out[#out+1]=key..'='..tostring(s[key] or '')end end
     table.sort(out);return table.concat(out,'\0')
 end
 local function signature(spec,s,skipDynamic)
     if type(spec)~='table'or type(spec.name)~='string'or type(spec.channel)~='string'or type(s)~='table'then return nil,'Проверьте данные автодоклада.'end
     local policy,err=mapGrid.reportPolicy(s,spec.template);if policy==nil then return nil,err end
-    return table.concat({spec.name,spec.template,spec.channel,tostring(spec.confirmation),tostring(spec.interval_ms),spec.pursuitKey or'',identity(s,spec.template,skipDynamic),policy},'\0')
+    -- For pursuit reports, only fields present in the text may invalidate
+    -- consent. A changed patrol callsign or post can refresh that same report.
+    return table.concat({spec.name,spec.template,spec.channel,tostring(spec.confirmation),tostring(spec.interval_ms),spec.pursuitKey or'',identity(s,spec.template,skipDynamic,spec.pursuitKey~=nil),policy},'\0')
 end
 function M.prepare(spec,s,codec,now,life)
     if type(spec)~='table'or type(spec.name)~='string'or type(s)~='table'then return nil,'Проверьте данные автодоклада.'end
@@ -96,8 +100,9 @@ function Guard:cancel(token)
     return self:finish(t,'cancelled','Ближайший доклад пропущен.')
 end
 function Guard:refreshTicket(t,spec)
-    -- Only patrol crew/unit context is refreshable. Personal/profile/settings
-    -- changes still retire consent. A partially delivered report never restarts.
+    -- Crew/unit values can refresh a patrol report. An independent pursuit
+    -- can also refresh fields that came from the patrol session. Each refresh
+    -- discards consent, and a partially delivered report never restarts.
     if spec.source~='patrol'or t.spec.source~='patrol'or t.started or
         t.stableSignature~=signature(spec,self.state,true)or
         (t.phase~='pending'and t.phase~='confirm'and t.phase~='queued')then return false end

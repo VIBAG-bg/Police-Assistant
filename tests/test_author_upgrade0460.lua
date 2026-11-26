@@ -95,6 +95,8 @@ local function workspaceFor(storage)
  return {library=loaded,userFiles=userFiles,base=base,json=json}
 end
 local w=workspaceFor(fs)
+local releaseVersion=core.VERSION
+core.VERSION='0.46.3' -- Exercise the legacy migration inside its release gate.
 local ok,backup,applied=upgrade.apply(w,cfg,{fs=fs},hash,lock,newId)
 check(ok,backup);check(applied.library.settings.applied_author_defaults_0460)
 eq(values[base..'_notes.json'],initial[base..'_notes.json'])
@@ -109,9 +111,9 @@ eq(state.n,writes,'Second startup must not write anything')
 fs,values,state=memory();w=workspaceFor(fs)
 values[base..'_settings.json']='EXTERNAL EDIT'
 check(not upgrade.apply(w,cfg,{fs=fs},hash,lock,newId));eq(values[base..'_settings.json'],'EXTERNAL EDIT');eq(state.n,0)
-local prevVersion=core.VERSION;core.VERSION='0.46.4'
+core.VERSION=releaseVersion
+check(not upgrade.supports(releaseVersion))
 check(upgrade.apply(w,cfg,{fs=fs},hash,lock,newId));eq(state.n,0)
-core.VERSION=prevVersion
 
 for n=1,60 do
  fs,values,state=memory();state.fail=n
@@ -126,8 +128,8 @@ for n=1,60 do
  eq(values[base..'_notes.json'],initial[base..'_notes.json'])
 end
 
--- The normal main loop consumes a successful Status receipt. Typing defers
--- the one-time transaction and automatic script reload until the chat closes.
+-- A successful receipt for this release must preserve the library even when
+-- it has no legacy author migration mark.
 local fixture=require 'support.fixture'
 local platform={ml='moonloader'}
 function platform:gate()return false end
@@ -148,11 +150,12 @@ local reloads=0;live.script.reload=function()reloads=reloads+1 end
 live.chat=true
 live.step();live.step(400)
 eq(reloads,0);check(not live.savedLibrary().settings.applied_author_defaults_0460)
-local exactNotes=live.files[gameBase..'_notes.json']
+local exact={};for _,name in ipairs({'_notes.json','_settings.json','_binds.json','.ini'})do exact[name]=live.files[gameBase..name]end
 live.chat=false;live.step(400)
-eq(reloads,1);check(live.savedLibrary().settings.applied_author_defaults_0460)
-eq(live.files[gameBase..'_notes.json'],exactNotes);eq(#live.sent,0)
+eq(reloads,0);check(not live.savedLibrary().settings.applied_author_defaults_0460)
+for name,text in pairs(exact)do eq(live.files[gameBase..name],text)end
+eq(#live.sent,0)
 for _=1,3 do live.step(300)end
-eq(reloads,1)
+eq(reloads,0)
 onScriptTerminate(live.script)
 package.loaded.pa26_update_platform,package.loaded.pa26_author_io=realPlatform,realIO

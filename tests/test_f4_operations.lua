@@ -84,6 +84,98 @@ do
  onScriptTerminate(s.script)
 end
 
+-- Exercise real start/end reports through the shared executor while the
+-- independent VICTOR occurrence is counting down or waiting for Y/N.
+do
+ local function untilReady(s,predicate,name)
+  for _=1,36 do
+   local result=predicate()
+   if result then return result end
+   s.step(500)
+  end
+  return assert(predicate(),name)
+ end
+ local function patrolAction(s,action)
+  local p,why=s.patrolSession:propose(action);check(p,why)
+  check(#p.prepared.lines>1,'Use a multi-line patrol report to exercise the shared busy queue')
+  check(s.patrolSession:accept(p));s.step()
+  check(s.patrolSession.awaitingReport,'Session radio report is still in flight')
+ end
+ local function patrolSettled(s,active)
+  untilReady(s,function()return not s.patrolSession.awaitingReport and
+    (s.patrolSession.data.active~=nil)==active and not s.workspace.executor.queue end,'Patrol transition completed')
+  s.step()
+ end
+ local function confirmPursuit(s)
+  return untilReady(s,function()
+   local ticket=s.radioGuard.tickets[s.patrol.currentKey]
+   return ticket and ticket.phase=='confirm'and ticket
+  end,'Pursuit confirmation')
+ end
+ local function reports(s)
+  local count=0
+  for _,row in ipairs(s.sent)do if row.line:find('продолжаю преследование',1,true)then count=count+1 end end
+  return count
+ end
+ for _,changed in ipairs({false,true})do
+  local s=game()
+  local patrolConfig=s.workspace.library.patrol_session
+  patrolConfig.enabled=true;patrolConfig.mode='police';patrolConfig.post='Сектор патруля'
+  patrolConfig.unit=changed and'2-L-10'or'1-L-9'
+  patrolConfig.start_template=string.rep('Начинаю движение по району. ',6)
+  patrolConfig.finish_template=string.rep('Патруль завершён, возвращаюсь. ',6)
+  s.workspace.library.alerts.patrol.post='Резервный сектор'
+  local vehicleConfig=s.workspace.library.vehicle
+  vehicleConfig.pursuit_interval_ms=14000;vehicleConfig.pursuit_confirmation=true
+  vehicleConfig.pursuit_periodic_template='{unit}, продолжаю преследование 10-57 VICTOR.'..(changed and' {post}.'or'')
+  s.workspace.library.radio_guard.lead_ms=1000
+  s.step();patrolAction(s,'start');patrolSettled(s,true)
+  check(s.vehicleController:selectNearest());s.step()
+  local p,err=s.copilot:propose('pursuit');check(p,err);check(s.copilot:accept(p))
+  untilReady(s,function()return s.copilot.phase=='Преследование'and s.patrol.active and not s.workspace.executor.queue end,'VICTOR started')
+  s.step()
+  local cycle=s.patrol.cycle
+  local key=s.patrol.env.settings().pursuitKey;check(key)
+  if not changed then
+   s.step(1000)
+   local before=s.patrol.remaining
+   patrolAction(s,'finish');patrolSettled(s,false)
+   eq(s.patrol.cycle,cycle,'Finishing patrol keeps the pursuit occurrence');eq(s.patrol.env.settings().pursuitKey,key)
+   check(s.patrol.remaining>0 and s.patrol.remaining<before,'Countdown continues after the end report')
+   before=s.patrol.remaining
+   patrolConfig.mode='prison';patrolConfig.post='Другой пост'
+   patrolAction(s,'start');patrolSettled(s,true)
+   eq(s.patrol.cycle,cycle);eq(s.patrol.env.settings().pursuitKey,key)
+   check(s.patrol.remaining>0 and s.patrol.remaining<before,'Starting a prison patrol keeps the same VICTOR clock')
+  end
+  local ticket=confirmPursuit(s)
+  local token,preview=ticket.token,table.concat(ticket.plan.lines,'\n')
+  eq(s.patrol.remaining,0);eq(reports(s),0)
+  -- The active call sign is on the patrol record. This changes the fallback
+  -- for a later independent report without editing that record.
+  if changed then patrolConfig.unit='1-L-9'end
+  patrolAction(s,'finish');patrolSettled(s,false)
+  ticket=confirmPursuit(s)
+  eq(s.patrol.cycle,cycle);eq(s.patrol.env.settings().pursuitKey,key)
+  eq(ticket.token,token);eq(s.patrol.remaining,0);eq(reports(s),0)
+  if changed then
+   check(preview:find('2-L-10',1,true) and preview:find('Сектор патруля',1,true))
+   local currentUnit=s.radioGuard.state.unit
+   local updated=table.concat(ticket.plan.lines,'\n')
+   check(currentUnit and currentUnit~='2-L-10')
+   check(updated:find(currentUnit,1,true) and updated:find('Резервный сектор',1,true),updated)
+   check(ticket.acceptedPlan==nil,'Changed report text needs new consent')
+  else eq(table.concat(ticket.plan.lines,'\n'),preview)end
+  s.radioGuard:shown(token);check(s.radioGuard:decide(token,true))
+  untilReady(s,function()return reports(s)==1 end,'Confirmed pursuit report sent')
+  for _=1,4 do s.step(500)end
+  eq(reports(s),1,'No duplicate report across patrol changes')
+  s.vehicleController:clearTarget('Тест потери машины');s.step()
+  check(not s.patrol.active)
+  onScriptTerminate(s.script)
+ end
+end
+
 -- HUD actions use the same action router and locked target as the F4 controls.
 local s=game();local studio=s.workspace.studio
 hold(s,0x37,0x12)

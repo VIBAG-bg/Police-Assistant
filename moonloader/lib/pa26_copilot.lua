@@ -26,11 +26,11 @@ local contactActions={window_question=true,window_knock=true,greet_stop=true,doc
  pursuit='Машина уезжает · Начать 10-57 VICTOR?',foot='Водитель убегает · 10-57 FOXTROT?',
  approach='Вы подошли к машине · Осмотреть салон?',high_risk='Машина остановилась после погони · 10-66?',
  armed='Возможно вооружены · Запросить поддержку?',combat='Попадание по офицеру · Передать CODE 0?',
- taser_warning='Пешая погоня · Предупредить о тайзере?',pursuit_mark='Повторить только /pt · без розыска?',fast_wanted='Ориентировка и розыск 8.1 + /pt?',combat_wanted='Подтверждённое нападение · Розыск 2.2 + /pt?'}
+ taser_warning='Пешая погоня · Предупредить о тайзере?',pursuit_mark='Повторить только /pt · без розыска?',fast_wanted='Ориентировка и розыск 8.1 · отдельно от /pt?',combat_wanted='Подтверждённое нападение · Розыск 2.2 · отдельно от /pt?'}
  for _,row in ipairs(M.quick)do labels[row[1]]=row[2]end
  for _,row in ipairs(dispatch.actions)do labels[row[1]]=row[2]end
  for _,row in ipairs(settings.swatReports)do labels[row[1]]=row[2]end
- labels.greet_stop='Представиться и показать удостоверение?'
+ labels.greet_stop='Представиться и показать жетон (/ud)?'
  labels.explain_stop='Назвать причину остановки?';labels.documents='Попросить паспорт и лицензии?';labels.explain_detention='Назвать основание задержания и разъяснить права?'
  local fast={fast_wanted=true,combat_wanted=true,pursuit_mark=true}
 local orders={stop_order=true,megaphone_order=true}
@@ -508,11 +508,11 @@ function C:valid(p,started)
  local patrol=self.env.vehicle.env.patrol and self.env.vehicle.env.patrol()
  if p.needsPatrol and(not patrol or patrol.status~='active'or p.patrol_id~=patrol.id)then return false end
  if p.action=='taser_warning'and(self.driverLive and self.driverLive.armed or self.env.settings().pursuit_armed or self.state.taserCombatText)then return false end
- if p.action=='foot'and(self.env.settings().pursuit_armed or self.driverLive and self.driverLive.armed) then return false end
  if p.action=='armed'and not started and not self:armedReportReady()then return false end
  if p.driver and not idSame(p.driver,self.driverLive)then return false end
  if not started and p.autoFlight and not self:canEscalateStop()then return false end
- if not started and p.repeatOffer and(self.targetStopped or self.repeatPaused or not self.env.settings().repeat_megaphone or self.car and self.car.stale)then return false end
+ if not started and p.repeatOffer and(self.targetStopped or self.repeatPaused or not self.env.settings().repeat_megaphone or
+  self.car and self.car.stale or p.action=='tire'and(not self.pursuitStarted or self.phase~='Преследование'))then return false end
  if p.assault and not self.attackConfirmed then return false end
  if not started then local ready=self:prepare(p.action,p.groundCfg);if not ready or radio.key(ready)~=radio.key(p.prepared)then return false end end
  return true
@@ -715,16 +715,16 @@ function C:tick(s,now)
  local exited=self.hadDriver and c.driver_known==true and c.driver_id==nil and self.driverLive~=nil
  if exited and cfg.exit_offer and(self.phase=='10-55'or self.phase=='Преследование')then
   if self.phase=='10-55'then self:offer('return_car')end
-  if not self.driverLive.armed and not cfg.pursuit_armed and(self.phase=='Преследование'or(self.driverLive.distance or 0)>cfg.foot_distance and(distance(self.driverLive,self.lastDriverPoint)or 0)>=cfg.stationary_delta)then self:offer('foot')end
+  if self.phase=='Преследование'or(self.driverLive.distance or 0)>cfg.foot_distance and(distance(self.driverLive,self.lastDriverPoint)or 0)>=cfg.stationary_delta then self:offer('foot')end
  end
  if cfg.high_risk_offer and self.phase=='Преследование'and c.driver_known==true and c.distance<=cfg.risk_distance and still>=cfg.risk_stop_ms and not exited then self:offer('high_risk')end
  if self.pendingTaser then self:offer('taser_warning')end
- local repeatingPursuit=self:pursuing()
+ local repeatingPursuit=self.pursuitStarted and self.phase=='Преследование'
  local repeatDelay=repeatingPursuit and cfg.warning_cooldown_ms or cfg.stop_warning_cooldown_ms
  local canRepeat=repeatingPursuit or(not self.phase or self.phase=='10-55')and(self.stopWarnings or 0)<cfg.stop_warning_count and self:seatedDriver()~=nil
  if cfg.repeat_megaphone and canRepeat and not self.repeatPaused and not stopped and moved and moved>=cfg.stationary_delta and
   self.repeatAt and(core.elapsed(now,self.repeatAt)or 0)>=repeatDelay and not self.intent and not self.queued then
-  local action=self:pursuing()and'tire'or'stop_order'
+  local action=repeatingPursuit and'tire'or'stop_order'
   self.done[action]=nil;self.dismissed[action]=nil;self.repeatAt=now;self:offer(action,true)
  end
  if cfg.fast_wanted and self.pinned and not self.done[self.pinned]and self.driverLive and

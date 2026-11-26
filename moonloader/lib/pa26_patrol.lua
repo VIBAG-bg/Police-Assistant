@@ -27,7 +27,8 @@ function Patrol:tick(state,now,wall)
     if not cfg.enabled then self:reset();return end
     if core.elapsed(now,now)==nil then self.lastNow=nil;self.phase='paused';return end
     if not valid(state)or state.patrolSuspended then self.state=state;self.lastNow=now;self.lastWall=wall;self.phase='paused';return end
-    local signature=table.concat({kind,tostring(interval),tostring(cfg.confirmation),cfg[kind..'_channel'],cfg[kind..'_template'],cfg.post,cfg.session_key or ''},'\0')
+    local post=cfg.pursuitKey and '' or cfg.post
+    local signature=table.concat({kind,tostring(interval),tostring(cfg.confirmation),cfg[kind..'_channel'],cfg[kind..'_template'],post,cfg.session_key or ''},'\0')
     local dt=self.lastNow and core.elapsed(now,self.lastNow)
     local anchor=self.anchor
     local changed=not anchor or anchor.session~=state.session or anchor.demo~=state.demo or self.signature~=signature or

@@ -1,5 +1,5 @@
 {
-  "release": "0.46.3",
+  "release": "0.46.4",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -111,7 +111,7 @@
     },
     {
       "path": "lib\\pa26_copilot.lua",
-      "sha256": "0f0729388e744d98bc289967feb134d63abd4f7035c8d40b6cb37ebec431ef68"
+      "sha256": "eedb93683a4c899ac35480e8d64afb030bf7b4cc0204f0472ec9f3db941a22f7"
     },
     {
       "path": "lib\\pa26_copilot_incident.lua",
@@ -119,15 +119,15 @@
     },
     {
       "path": "lib\\pa26_copilot_settings.lua",
-      "sha256": "03f3952e8627a8370e631f94c570bcf7e398567b5180461ffd24359166f19d9a"
+      "sha256": "9efa766710fc02e3c7b62ef189249fc9ad5cefd32c6630b1392865b336b1f907"
     },
     {
       "path": "lib\\pa26_copilot_ui.lua",
-      "sha256": "da4501e61f4a6ecec8eddab081d12a9b35f5d7dcd52b85663668f0c8e5fc64dc"
+      "sha256": "3a9ee76eef2017bf5d51a0394d2a9531eb16f6e98d2acdd80d2a214866a4ba75"
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "b7fef66a8b68fce32f7267f10c802d62d19f3baf86f3a036e742a1d3849fe40d"
+      "sha256": "42f7f72add4f13681c8e50b99606e2f8ef6155c38e7b4182664c5e8b34476566"
     },
     {
       "path": "lib\\pa26_cruiser_assist.lua",
@@ -363,7 +363,7 @@
     },
     {
       "path": "lib\\pa26_patrol.lua",
-      "sha256": "0fb9006b4394b4a7add9a96cc727ed5f5c9e4113f313913716a343a14ffc665e"
+      "sha256": "7630f3eb10e5871891975e2d0f478792bcedfbca77376bae049836791a5dd9c4"
     },
     {
       "path": "lib\\pa26_patrol_event_settings.lua",
@@ -415,7 +415,7 @@
     },
     {
       "path": "lib\\pa26_radio_guard.lua",
-      "sha256": "cfb5a3fedae1fa30de7800e20d848cb305728c960597564b1d446241e513e18e"
+      "sha256": "f8c5d03c737c41f855c6baf7057c37916365d125c3e8bc02cafccf85c617a794"
     },
     {
       "path": "lib\\pa26_radio_text.lua",
@@ -535,7 +535,7 @@
     },
     {
       "path": "lib\\pa26_vehicle.lua",
-      "sha256": "e42ff3c58a28b22ebcbee368e8d24506635529d965e41da8817bfc29c25411aa"
+      "sha256": "26a4f8b8c39df990b557ef0c431bac4df4d850a753472c7c9b5ddcde514e2559"
     },
     {
       "path": "lib\\pa26_vehicle_names.lua",
@@ -619,7 +619,7 @@
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "ab5cad321ccb536227d692bf382704d709b4cd0a0fcf5777e3dcd7b6fdf0e98f"
+      "sha256": "7d1581edc471429b9e0d30b010e7ea5dba40c51104980731ec73589689462b25"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",

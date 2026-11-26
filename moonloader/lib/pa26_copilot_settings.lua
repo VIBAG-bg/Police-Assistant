@@ -76,9 +76,9 @@ M.variables.city=true;M.variables.department=true;M.variables.dispatch_officers=
 for _,r in ipairs({{'risk_confirm_ms','10-66: ожидание решения, мс',1000,90000},{'risk_car_stage_ms','10-66: пауза этапов авто, мс',1000,60000},{'risk_bike_stage_ms','10-66: пауза этапов мото, мс',1000,60000}})do M.numbers[#M.numbers+1]=r end
 M.templates[#M.templates+1]={'busy_report','Рация · временно занят 10-8'}
 M.variables.rank=true
-for _,r in ipairs({{'ground_offer','Предлагать следующие шаги общения 10-55'},{'ground_intro','В форме причины сначала представляться'},{'ground_ud','При представлении показывать удостоверение через /ud'},{'ground_miranda','В форме задержания читать полную Миранду'}})do M.booleans[#M.booleans+1]=r end
+for _,r in ipairs({{'ground_offer','Предлагать следующие шаги общения 10-55'},{'ground_intro','В форме причины сначала представляться'},{'ground_ud','При представлении показывать жетон через /ud'},{'ground_miranda','В форме задержания читать полную Миранду'}})do M.booleans[#M.booleans+1]=r end
 M.templates[#M.templates+1]={'intro','Представление перед причиной остановки'}
-M.templates[#M.templates+1]={'badge','RP · показать жетон / удостоверение'}
+M.templates[#M.templates+1]={'badge','RP · показать полицейский бейдж (жетон)'}
 M.variables.stop_ground=true;M.variables.detention_ground=true;M.variables.ground_article=true
 M.booleans[#M.booleans+1]={'immediate_flight_offer','Предлагать 10-57 сразу после лимита и подтверждения отъезда'}
 for _,r in ipairs({{'stop_warning_count','10-55: число требований остановиться',1,10},
@@ -252,7 +252,7 @@ for _,key in ipairs(M.prompts)do M.promptKeys[key]=true end
 for _,r in ipairs({{'finish_offer','Предлагать завершение 10-55 после причины или проверки документов'},
  {'window_offer','Предлагать вопрос об окне при подходе к водителю'},
  {'armed_offer','После осмотра предлагать доклад о возможном оружии'},
- {'stop_greeting_ud','В шаге представления 10-55 показывать удостоверение через /ud'},
+ {'stop_greeting_ud','В шаге представления 10-55 показывать жетон через /ud'},
  {'swat_reports','Показывать отдельные доклады SWAT'}})do M.booleans[#M.booleans+1]=r end
 for _,r in ipairs({{'departure_distance','Перемещение машины для подтверждения отъезда, м',1,100},
  {'window_interaction_distance','Разговор у водителя: расстояние, м',1,10},

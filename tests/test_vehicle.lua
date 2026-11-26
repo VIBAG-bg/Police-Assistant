@@ -71,6 +71,11 @@ v.phase='Преследование';local pursuit=v:periodic(base);check(pursui
 base.enabled=false;check(not v:periodic(base).enabled,'Delegating the radio disables pursuit reports too')
 local independent=v:periodic(base,true)
 check(independent.enabled);eq(independent.label,'Погоня 10-57');check(independent.pursuitKey)
+base.enabled=true;base.mode='prison';base.session_key='2';base.post='КПП'
+local duringPrison=v:periodic(base)
+eq(duringPrison.mode,independent.mode)
+eq(duringPrison.session_key,independent.session_key);eq(duringPrison.pursuitKey,independent.pursuitKey)
+base.enabled=false;base.mode='police';base.session_key='1';base.post=nil
 s.cfg.pursuit_periodic=false;check(not v:periodic(base,true).enabled)
 s.cfg.pursuit_periodic=true;v:clearTarget('Отмена');check(not v:periodic(base,true).enabled)
 base.enabled=true;v.phase=nil;eq(v:periodic(base).session_key,'1')

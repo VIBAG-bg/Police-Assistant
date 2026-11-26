@@ -176,14 +176,14 @@ function M.draw(s,ui,data,callbacks)
    if v.contactAvailable then
     local actions={}
     if not v.contactIntroduced and not v.documentsRequested and not v.reasonExplained then
-     actions[#actions+1]={'greet_stop','Представиться и показать удостоверение##copilot-greet-stop'}
+     actions[#actions+1]={'greet_stop','Представиться и показать жетон (/ud)##copilot-greet-stop'}
      if not v.windowAwait and v.windowVehicle then actions[#actions+1]={'window_question','Спросить об окне##copilot-window-question'}end
     end
     if not v.documentsRequested then actions[#actions+1]={'documents','Запросить паспорт и лицензии##copilot-request-documents'}end
     groups.buttons(s,ui,actions,offer,true)
     local marks={}
     if not v.contactIntroduced and not v.documentsRequested and not v.reasonExplained then
-     marks[#marks+1]={'introduced','Уже представился и показал удостоверение##copilot-mark-intro'}
+     marks[#marks+1]={'introduced','Уже представился и показал жетон (/ud)##copilot-mark-intro'}
     end
     if not v.documentsRequested then marks[#marks+1]={'documentsRequested','Уже запросил документы##copilot-mark-request'}end
     if not v.documentsChecked then marks[#marks+1]={'documentsChecked','Документы проверены##copilot-mark-documents'}end
