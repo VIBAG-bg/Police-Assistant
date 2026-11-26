@@ -11,6 +11,7 @@ local ctx=im.CreateContext(nil);local io=im.GetIO();io.IniFilename=nil;io.LogFil
 io.Fonts:AddFontFromFileTTF('C:/Windows/Fonts/segoeui.ttf',16,nil,io.Fonts:GetGlyphRangesCyrillic())
 local pixels,w,h=ffi.new('unsigned char*[1]'),ffi.new('int[1]'),ffi.new('int[1]');io.Fonts:GetTexDataAsRGBA32(pixels,w,h,nil)
 local model=require 'pa26_bindings';local core=require 'pa26_core';local Studio=require 'pa26_studio';local uiModule=require 'pa26_copilot_ui';local menu=require 'pa26_menu'
+local themes=require 'pa26_theme'
 local s=Studio.new(im,ffi,model.defaults(core.defaults()),function()return 1000 end)
 local stack={};local ui={push=function(f)stack[#stack+1]=f end,finish=function()assert(table.remove(stack))()end,text=function(t)im.PushTextWrapPos(0);im.TextUnformatted(t);im.PopTextWrapPos()end}
 local data={copilot={phase='Преследование',stopWarnings=1,stopWarningLimit=5,stopWarningStatus='Требования остановиться: 1/5',car={id=142,occupants=2,distance=15,armed=true},driver={id=37},values={model='Sultan',vehicle_color='Чёрный',vehicle_plate='не установлен',occupants_text='внутри двое',unit='2-A-1'},colleagues={nearbyOfficers={},nearbyCruisers=2,ownCruiserRole='navigator'},pinned='fast_wanted',tireStatus='Предупреждений: 1/5. Проверьте условия применения силы.'}}
@@ -54,18 +55,58 @@ for _,display in ipairs({{640,480},{800,600},{1024,768},{1152,864},{1366,768},{1
  check(controller.bounds,'Tactical card fits the HUD lane')
  local box=controller.bounds;check(box.x>=0 and box.y>=0 and box.x+box.w<=display[1]and box.y+box.h<=display[2],'HUD card within viewport')
  uiModule.drawHud(controller,im);im.Render();frames=frames+1
- for _,phase in ipairs({'patrol','10-55','10-66','Преследование','10-57 FOXTROT'})do
+ for _,phase in ipairs({'idle','patrol','10-55','10-66','Преследование','10-57 FOXTROT'})do
   im.NewFrame();hud:setEquipmentHeight(0);hud:setConfirmationHeight(68)
-  vv.phase=phase~='patrol'and phase or nil;vv.car=phase~='patrol'and model.copy(data.copilot.car)or nil
-  vv.statusTitle=phase=='patrol'and'ПАТРУЛЬ · КОД 4'or phase..' · КОД 3';vv.statusCode=phase=='patrol'and 4 or 3
+  local active=phase~='idle'and phase~='patrol'
+  vv.phase=active and phase or nil;vv.car=active and model.copy(data.copilot.car)or nil
+  vv.pinned=phase~='idle'and data.copilot.pinned or nil
+  vv.statusTitle=active and phase..' · КОД 3'or(phase=='idle'and'ОПЕРАТИВНЫЕ ДЕЙСТВИЯ'or'ПАТРУЛЬ · КОД 4')
+  vv.statusCode=active and 3 or 4
   vv.values={unit='1-A-3',city='Лос-Сантос',direction='Северо-восток',area='Район с длинным названием',map_square='H-17',crew='Иван Петров, Мария Иванова',model='Sultan',occupants_text='внутри двое'}
   uiModule.reserve(controller,im,hud,fonts,62);uiModule.place(controller,im,hud,fonts)
   local b=controller.bounds;check(b~=nil,'Patrol/traffic card plus Taser and SOS must fit '..display[1]..' '..phase)
   check(b.x>=0 and b.y>=0 and b.x+b.w<=display[1]and b.y+b.h<=display[2],'Entire card within screen')
   local lane=hud:attachmentLayout(im,fonts);check(lane and lane.confirmation and lane.equipment,'All attachments reserved')
   check(b.y>=lane.confirmation.y+lane.confirmation.h or b.x+b.w<=lane.confirmation.x or b.x>=lane.confirmation.x+lane.confirmation.w,'No SOS overlap')
-  check(b.y>=lane.equipment.y+62,'No Taser overlap');check(controller.hudMetrics.traffic==(phase~='patrol'),'Traffic buttons only during traffic')
-  uiModule.drawHud(controller,im);im.Render();check(im.GetDrawData().Valid);frames=frames+1
+  check(b.y>=lane.equipment.y+62,'No Taser overlap');check(controller.hudMetrics.traffic==active,'Traffic buttons only during traffic')
+  local m=controller.hudMetrics
+  if phase=='idle'then
+   local expected={{'stop_order','Начать 10-55'},{'pursuit','10-57'},{'high_risk','10-66'},{'megaphone_order','Мегафон: приказ'}}
+   check(#m.buttons==#expected,'Exactly two rows of two idle actions')
+   for i,button in ipairs(m.buttons)do
+    check(button[1]==expected[i][1]and button[2]==expected[i][2],'Idle action order and label')
+    local width=(m.wrap-4*m.scale)/2
+    local ext=m.body:CalcTextSizeA(11*m.scale,100000,width-8*m.scale,button[2])
+    check(ext.x<=width-8*m.scale and ext.y<=34*m.scale,'Idle action label fits its button')
+   end
+  end
+  if active then
+   for _,button in ipairs(m.buttons)do check(button[1]~='stop_order','Active incidents do not show Начать 10-55')end
+  end
+  if phase=='patrol'then
+   check(m.buttons[#m.buttons][1]==vv.pinned,'Pinned actions stay accessible in the shared HUD')
+  end
+  local list=im.GetForegroundDrawList()
+  local start=list.VtxBuffer.Size
+  uiModule.drawHud(controller,im)
+  local palette=themes.get()
+  local primary,secondary=themes.u32(im,palette.btnPrimary),themes.u32(im,palette.btnSecondary)
+  local foundPrimary,foundSecondary=false,false
+  for i=start,list.VtxBuffer.Size-1 do
+   local fill=list.VtxBuffer.Data[i].col
+   foundPrimary=foundPrimary or fill==primary
+   foundSecondary=foundSecondary or fill==secondary
+  end
+  check(foundPrimary==(not active) and foundSecondary,'The start action uses the primary color, other actions use secondary')
+  im.Render();check(im.GetDrawData().Valid);frames=frames+1
+  if phase=='idle'then
+   io.MousePos=im.ImVec2(b.x+12*m.scale+(m.wrap-4*m.scale)/4,b.y+m.titleH+m.bodyH+38*m.scale)
+   io.MouseDown[0]=true;controller.state.mouseAllowed=true
+   im.NewFrame();uiModule.drawHud(controller,im);im.Render();frames=frames+1
+   local mail=controller.widgetMail
+   check(mail and mail.action=='stop_order'and mail.life==controller.life and mail.at==controller.now,'Idle CTA posts the existing HUD action')
+   controller.widgetMail=nil;io.MouseDown[0]=false;controller.state.mouseAllowed=false
+  end
  end
  hud:setConfirmationHeight(0)
  -- Full confirmation text is paginated, never internally scrolled.

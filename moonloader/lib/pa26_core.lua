@@ -1,5 +1,5 @@
 -- Original Police Assistant 2026 rules. Lua 5.1 / LuaJIT, no game APIs.
-local M = {VERSION = '0.47.0', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
+local M = {VERSION = '0.47.1', SCHEMA = 2, WIRE_LIMIT = 127, TEMPLATE_LIMIT = 768}
 M.actions = {
     {key = 'introduce', label = 'Представиться', me = 'остановившись рядом, указал на полицейский бейдж (жетон), закреплённый на груди.', do_text = 'Полицейский бейдж (жетон) закреплён на груди поверх формы.', command = ''},
     {key = 'documents', label = 'Документы', me = 'оглянувшись по сторонам, обратился к собеседнику с просьбой предъявить паспорт.', do_text = 'Готов ли собеседник предъявить документ?', command = ''},

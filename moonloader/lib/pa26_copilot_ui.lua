@@ -343,7 +343,8 @@ function M.reserve(controller,im,hud,fonts,taserHeight)
  if traffic then rows[#rows+1]=v.phase=='10-55'and(v.stopWarningStatus or'')or(v.tireStatus or'')end
  local text=table.concat(rows,'\n')
  local th=heading:CalcTextSizeA(14*scale,100000,math.max(1,wrap-30*scale),title).y;local bh=font:CalcTextSizeA(12*scale,100000,wrap,text).y
- local buttons={{'high_risk','10-66'},{'pursuit','10-57'}}
+ local buttons=v.phase and {{'high_risk','10-66'},{'pursuit','10-57'}}
+  or {{'stop_order','Начать 10-55'},{'pursuit','10-57'},{'high_risk','10-66'}}
  if v.phase~='10-55'or v.stopWarnings<v.stopWarningLimit then
   buttons[#buttons+1]={'megaphone_order','Мегафон: приказ'}
  end
@@ -388,7 +389,8 @@ function M.drawHud(controller,im,theme)
  local width=(m.wrap-4*s)/2
  for i,b in ipairs(m.buttons)do
   local box={x=x+(i-1)%2*(width+4*s),y=y+math.floor((i-1)/2)*38*s,w=width,h=34*s}
-  list:AddRectFilled(vec(box.x,box.y),vec(box.x+box.w,box.y+box.h),color(p.btnPrimary),5*s)
+  local fill=b[1]=='stop_order'and p.btnPrimary or p.btnSecondary
+  list:AddRectFilled(vec(box.x,box.y),vec(box.x+box.w,box.y+box.h),color(fill),5*s)
   local wrap=math.max(1,width-8*s)
   local ext=m.body:CalcTextSizeA(11*s,100000,wrap,b[2])
   list:AddTextFontPtr(m.body,11*s,vec(box.x+(width-ext.x)/2,box.y+(box.h-ext.y)/2),white,b[2],nil,wrap)

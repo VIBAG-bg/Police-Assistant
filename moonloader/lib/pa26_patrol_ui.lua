@@ -18,42 +18,46 @@ local function save(studio,ui,draft)
 end
 function M.drawSessionSettings(studio,ui,data,callbacks)
  local im=studio.imgui;local draft=begin(studio);local v,edit
- studio:settingsHeading(ui,'Патруль · настройки и тексты')
+ studio:settingsHeading(ui,'Патруль · настройки и тексты',
+        [[Ни здоровье, ни дверь больницы, ни запрос спавна сами по себе не означают смерть. Нужны новая наблюдаемая позиция и связанные события спавна/телепорта от сервера. Неизвестный сценарий сохраняет патруль; его можно завершить вручную.
+
+Включённый сеанс заменяет старый таймер полиции/тюрьмы. До начала сеанса периодических докладов нет. Все автодоклады проходят предупреждение и отмену.
+
+Если рацию ведёт напарник, снимите флажок «Рацию в экипаже веду я»: начало, продолжение, смена состава и завершение сохраняются локально; периодические доклады PA не отправляются. Ручные SOS и мегафон остаются отдельными действиями.]],'session-respawn-help')
  if studio:button('Открыть патруль и смену##session-workspace',ui)then callbacks.openPatrol()end
     for _,row in ipairs({{'hud','Показывать патруль в HUD'},
         {'restore_offer','Предлагать восстановление после перезапуска PA'},{'auto_resume_reload','Продолжать патруль после быстрой перезагрузки PA в той же игре'},{'pause_on_crew_change','Пауза при выходе или замене ID напарника'},
         {'count_map_time','Считать активный патруль на карте Esc'},{'confirmation','Подтверждать каждый периодический доклад'}})do
         local v,edit=studio:check(row[2]..'##session-'..row[1],draft[row[1]]);if edit then draft[row[1]]=v end
     end
+    studio:settingsHeading(ui,'Восстановление патруля',
+        'Короткая потеря данных и 0 HP не завершают патруль. Ранение с возможностью реанимации сохраняет сцену; RP и команды ждут восстановления. Автовосстановление требует тот же процесс GTA, сервер и персонажа; ручная пауза сохраняется. Старые доклады не повторяются. Отсчёт при F6 настраивается в «Предупреждения и свои автодоклады».','session-reload-help')
     for _,r in ipairs({{'interrupt_grace_ms','Подтверждать смену сервера или персонажа, с##session-grace'},{'reload_grace_ms','Перерыв для автовосстановления PA, с##session-reload-grace'}})do
         local n=im.new.int(draft[r[1]]/1000);if im.InputInt(r[2],n)then draft[r[1]]=n[0]*1000 end
     end
-    studio:infoHint(ui,'session-reload-help','Короткая потеря данных и 0 HP не завершают патруль. Ранение с возможностью реанимации сохраняет сцену; RP и команды ждут восстановления. Автовосстановление требует тот же процесс GTA, сервер и персонажа; ручная пауза сохраняется. Старые доклады не повторяются. Отсчёт при F6 настраивается в «Предупреждения и свои автодоклады».')
     for _,r in ipairs({{'downed_hp','Порог ранения: блокировать действия при HP не выше##session-downed-hp',1},{'respawn_distance','Перемещение для проверки респавна, м##session-respawn-distance',1},{'respawn_position_tolerance','Допуск совпадения с точкой спавна, м##session-respawn-tolerance',1},{'respawn_evidence_ms','Срок связи событий респавна, с##session-respawn-evidence',1000}})do
         local n=im.new.int(draft[r[1]]/r[3]);if im.InputInt(r[2],n)then draft[r[1]]=n[0]*r[3]end
     end
-    studio:infoHint(ui,'session-respawn-help','Ни здоровье, ни дверь больницы, ни запрос спавна сами по себе не означают смерть. Нужны новая наблюдаемая позиция и связанные события спавна/телепорта от сервера. Неизвестный сценарий сохраняет патруль; его можно завершить вручную.')
-    studio:infoHint(ui,'session-confirmation-help','Включённый сеанс заменяет старый таймер полиции/тюрьмы. До начала сеанса периодических докладов нет. Все автодоклады проходят предупреждение и отмену.')
-    studio:infoHint(ui,'session-radio-help','Если рацию ведёт напарник, снимите флажок «Рацию в экипаже веду я»: начало, продолжение, смена состава и завершение сохраняются локально; периодические доклады PA не отправляются. Ручные SOS и мегафон остаются отдельными действиями.')
+    studio:settingsHeading(ui,'Интервалы и карта Esc',
+        'На карте Esc время активного патруля идёт, но PA ничего не отправляет. После возврата — не больше одного текущего доклада с обычным подтверждением. Ручная пауза патруля и потеря фокуса время не учитывают. Слишком большой разрыв часов пропускается.','session-map-help')
     local seconds=im.new.int(draft.interval_ms/1000)
     if im.InputInt('Интервал докладов, с##session-interval',seconds)then draft.interval_ms=seconds[0]*1000 end
     local gap=im.new.int((draft.map_max_gap_ms or 3600000)/1000)
     if im.InputInt('Наибольший достоверный перерыв карты, с##session-map-gap',gap)then draft.map_max_gap_ms=gap[0]*1000 end
-    studio:infoHint(ui,'session-map-help','На карте Esc время активного патруля идёт, но PA ничего не отправляет. После возврата — не больше одного текущего доклада с обычным подтверждением. Ручная пауза патруля и потеря фокуса время не учитывают. Слишком большой разрыв часов пропускается.')
     local distance=im.new.int(draft.bind_distance)
     if im.InputInt('Проверка напарника рядом, м##session-distance',distance)then draft.bind_distance=distance[0]end
-    studio:settingsHeading(ui,'Реплики и предпросмотр')
-    studio:infoHint(ui,'session-variables-help','Грамматический род: {gender:передал|передала}. Без /r, /f или /d: канал добавляется отдельно. Переменные: {officer}, {callsign}, {crew}, {crew_count}, {crew_roles}, {crew_callsigns}, {unit}, {station}, {vehicle}, {sector}, {post}, {area}, {location}, {map_square}, {direction}, {duration}, {patrol_id}; также теги и поля профиля. Длинный итог может не поместиться в лимит чата — предпросмотр это проверяет.')
+    studio:settingsHeading(ui,'Реплики и предпросмотр',
+        'Грамматический род: {gender:передал|передала}. Без /r, /f или /d: канал добавляется отдельно. Переменные: {officer}, {callsign}, {crew}, {crew_count}, {crew_roles}, {crew_callsigns}, {unit}, {station}, {vehicle}, {sector}, {post}, {area}, {location}, {map_square}, {direction}, {duration}, {patrol_id}; также теги и поля профиля. Длинный итог может не поместиться в лимит чата — предпросмотр это проверяет.','session-variables-help')
     if studio:button('Вставить пример докладов SFPS##patrol-sfps-preset',ui)then
         local stock=settings.defaults();for _,key in ipairs({'start','resume','periodic','finish'})do draft[key..'_template']=stock[key..'_template']end
         for k in pairs(studio.cache)do if k:match('^session:template:')then studio.cache[k]=nil end end
     end
-    studio:settingsHeading(ui,'Формы фраз: один / экипаж')
+    studio:settingsHeading(ui,'Формы фраз: один / экипаж',
+        'В стандартных докладах {patrol_start}, {patrol_resume}, {patrol_finish}, {patrol_moving}, {patrol_available} выбирают единственное или множественное число. В машине учитываются распознанные напарники в салоне; пешком — подтверждённый состав сеанса. {unit_crew_count} — это количество участников юнита.','session-grammar-help')
     draft.grammar=draft.grammar or settings.grammarDefaults()
     studio.patrolGrammar=studio:choice('Форма фразы##patrol-grammar',studio.patrolGrammar or'start_solo',settings.grammarRows,ui)
     local grammarKey=studio.patrolGrammar
     draft.grammar[grammarKey]=studio:field('Текст формы##patrol-grammar-text','session:grammar:'..grammarKey,draft.grammar[grammarKey],1024,true,64)
-    studio:infoHint(ui,'session-grammar-help','В стандартных докладах {patrol_start}, {patrol_resume}, {patrol_finish}, {patrol_moving}, {patrol_available} выбирают единственное или множественное число. В машине учитываются распознанные напарники в салоне; пешком — подтверждённый состав сеанса. {unit_crew_count} — это количество участников юнита.')
     ui.text('Предпросмотр формы: '..require('pa26_core').expandGender(draft.grammar[grammarKey],studio.lib.profile.gender))
     local names={start='Начало патруля',resume='Продолжение патруля',finish='Завершение патруля',crew='Смена экипажа',periodic='Периодический доклад'}
     for _,key in ipairs({'start','resume','finish','crew','periodic'})do

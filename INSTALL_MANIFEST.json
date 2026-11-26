@@ -1,5 +1,5 @@
 {
-  "release": "0.47.0",
+  "release": "0.47.1",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -123,11 +123,11 @@
     },
     {
       "path": "lib\\pa26_copilot_ui.lua",
-      "sha256": "d2a242b136ec4b0a1b0ae802d229a0d46ab6822f51efee7f0653085356cbd2a3"
+      "sha256": "de903b0b675684c5e4a4ba7f30033ea91e5556f6c065e5f9ebf439d5f30f658c"
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "1d247ec713a3c7b5876c60c3e02f53a49406baf670f1376912a187dec9a4bf72"
+      "sha256": "dc8df5c45f5b843bdf7c57f3354059631acbd657b879f84032002760cc522092"
     },
     {
       "path": "lib\\pa26_cruiser_assist.lua",
@@ -323,7 +323,7 @@
     },
     {
       "path": "lib\\pa26_map_ui.lua",
-      "sha256": "865f6c9097a409b7289e2bbf0db2211752af7106b095cb09e2682e8ed606eab8"
+      "sha256": "c31af11a99bee24310e88c36803e5fef3ac9a4f055110ee4683d3bece5c33f16"
     },
     {
       "path": "lib\\pa26_mark_window.lua",
@@ -387,7 +387,7 @@
     },
     {
       "path": "lib\\pa26_patrol_ui.lua",
-      "sha256": "b279a74aef086e673a6358d949bf4ba2df65b3e621316d03910002eaa9a3b542"
+      "sha256": "b4f5a07a81d0276b42fe887814283bb0ce3a731fbd26ea102487987290a1e54a"
     },
     {
       "path": "lib\\pa26_pinned_note.lua",
@@ -491,7 +491,7 @@
     },
     {
       "path": "lib\\pa26_studio.lua",
-      "sha256": "fe20ee0e0d74f940ba51c62ee8f2fd3c3709304d22609d680cbef277cdbed877"
+      "sha256": "6eb6c7a2b2e3e92cf75dec5964ae4bff131db8c7452b9ea1e38156b6eb3aa2e0"
     },
     {
       "path": "lib\\pa26_target.lua",
@@ -623,7 +623,7 @@
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "d19927626f75596dbac67a9d5b146aef34a0c99970fce56ee4d35b05c0bd1d1e"
+      "sha256": "18b9d11ea0e2406d478f59b4aa357b313bf2722f0cf8f50969395d9550c8960c"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",

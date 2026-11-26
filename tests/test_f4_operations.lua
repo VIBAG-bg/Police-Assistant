@@ -42,13 +42,35 @@ local function run(s)
  for _=1,9 do s.step(1600)end
  check(not s.patrolSession.data.active)
 end
-for _,entry in ipairs({'f4','wheel','hotkey'})do
+for _,entry in ipairs({'f4','wheel','hotkey','hud'})do
  local s=game();local studio=s.workspace.studio
  if entry=='f4' then
   hold(s,0x73);click(s,'Начать 10-55##copilot-stop_order');s.step()
  elseif entry=='wheel'then
   check(s.runtime.env.wheelNavigate({kind='assist',id='assist-traffic-nearest',category='service'}));s.step()
- else hold(s,0x37,0x12)end
+ elseif entry=='hotkey' then
+  hold(s,0x37,0x12)
+ else
+  s.workspace.library.vehicle.copilot.always_show_on_duty=true
+  s.physicalDown={[0x12]=true};s.step()
+  local c=s.copilot
+  check(c.state.inVehicle and c.state.mouseAllowed)
+  check(not s.vehicleController.selected,'Start from the idle HUD without a selected vehicle')
+  local bounds,metrics=assert(c.bounds),assert(c.hudMetrics)
+  eq(metrics.buttons[1][1],'stop_order')
+  local scale=metrics.scale
+  s.mx=bounds.x+12*scale+(metrics.wrap-4*scale)/4
+  s.my=bounds.y+metrics.titleH+metrics.bodyH+38*scale
+  s.mouseClicks={[0]=true};s.step();s.mouseClicks=nil
+  eq(assert(c.widgetMail).action,'stop_order')
+  eq(#s.sent,0,'Rendering a HUD click only posts to the main loop')
+  s.physicalDown={}
+  for _=1,5 do
+   s.step(50)
+   if studio.vehicleConfirm or c.offers[1] then break end
+  end
+  eq(c.widgetMail,nil,'The main loop consumes the HUD action')
+ end
  local p=assert(studio.vehicleConfirm or s.copilot.offers[1],entry)
  eq(p.action,'stop_order');eq(p.driver.id,37);eq(p.description,'Premier');eq(#s.sent,0)
  local preview=table.concat(p.prepared.lines,'\n')
@@ -58,6 +80,9 @@ for _,entry in ipairs({'f4','wheel','hotkey'})do
  run(s)
  eq(s.copilot.phase,'10-55');eq(s.vehicleController.phase,s.copilot.phase);eq(s.copilot.stopWarnings,1)
  eq(#s.sent,#p.prepared.lines)
+ if entry=='hud'then
+  for _,button in ipairs(assert(s.copilot.hudMetrics).buttons)do check(button[1]~='stop_order')end
+ end
  for _,row in ipairs(s.sent)do check(row.line:match('^/m '))end
  onScriptTerminate(s.script)
 end

@@ -166,6 +166,56 @@ for _,row in ipairs(theme.choices)do
 end
 im.BeginCombo=combo;im.Columns=columns
 
+-- Inspect the real ImGui item rectangles with room for an F9 sidebar.
+local baseHeading,baseHint=studio.settingsHeading,studio.infoHint
+local heading,seen
+studio.settingsHeading=function(self,ui,title,help,id)
+ heading=title
+ baseHeading(self,ui,title,help,id)
+ heading=nil
+end
+studio.infoHint=function(self,ui,id,help)
+ local previousMin,previousMax=im.GetItemRectMin(),im.GetItemRectMax()
+ local right=im.GetCursorScreenPos().x+im.GetContentRegionAvail().x
+ baseHint(self,ui,id,help)
+ local first,last=im.GetItemRectMin(),im.GetItemRectMax()
+ check(last.x<=right+1,id..' fits within the settings panel')
+ if not heading then
+  check(first.x>=previousMax.x+7 and first.y<previousMax.y and last.y>previousMin.y,id..' shares its control row')
+ end
+ check(not seen[id],id..' duplicate settings tooltip')
+ seen[id]={heading=heading,help=help}
+end
+local helpCases={
+ {'radio-help-commands','Связь · отдельные доклады',function(ui)studio:drawAlerts(ui,data,actions)end,{'CODE 0','CODE 1','10-70'}},
+ {'weapon-store-help','Автоматические отыгровки оружия',function(ui)studio:drawWeapons(ui,data,actions)end,{'убирании','очередь','Deagle'}},
+ {'taser-confirmation-help','Тайзер · серверный режим и учёт выстрелов',function(ui)studio:drawTaser(ui,data,actions)end,{'ответы сервера'}},
+ {'manual-radio-prefix',nil,function(ui)studio:drawProfile(ui,data,actions,'chat_accent')end,{'127 байт','/rn'}},
+ {'cef-catalog-help','Чат лаунчера (CEF)',function(ui)studio:drawProfile(ui,data,actions,'chat_cef')end,{'каталогом','хеш','сочетания'}},
+ {'cef-measure-help','Диагностика CEF',function(ui)studio:drawProfile(ui,data,actions,'chat_cef')end,{'30 секунд','этап подключения'}},
+ {'session-respawn-help','Патруль · настройки и тексты',function(ui)require('pa26_patrol_ui').drawSessionSettings(studio,ui,data,actions)end,
+  {'спавна/телепорта','старый таймер','ведёт напарник'}},
+ {'map-grid-description','Квадраты карты',function(ui)require('pa26_map_ui').draw(studio,ui,data,actions)end,{'24 × 24','Doherty'}},
+ {'aim-interior',nil,function(ui)studio:drawOptions(ui,data,actions,'controls')end,{'смена личности'}},
+}
+local settingsShell=menu.new()
+studio.radioPage='emergency';studio.weaponPage='draw';studio.showCefDiagnostics=true
+for _,width in ipairs({480,740})do
+ for _,row in ipairs(helpCases)do
+  seen={}
+  drawFrame(settingsShell,{1366,768},'Настройки##hints-'..row[1]..'-'..width,function(ui)
+   im.BeginChild('help-placement',im.ImVec2(width,0),false)
+   row[3](ui)
+   im.EndChild()
+  end)
+  local hint=assert(seen[row[1]],row[1])
+  check(hint.heading==row[2],row[1]..' is attached to its heading or control')
+  for _,text in ipairs(row[4])do check(hint.help:find(text,1,true),row[1]..' retains '..text)end
+ end
+end
+studio.settingsHeading=baseHeading;studio.infoHint=baseHint
+studio.showCefDiagnostics=nil
+
 local tooltip,tooltipCount=im.BeginTooltip,0
 im.BeginTooltip=function(...)tooltipCount=tooltipCount+1;return tooltip(...)end
 for _,row in ipairs(theme.choices)do

@@ -1109,7 +1109,7 @@ function Studio:sectionCard(ui,title,body,help,id)
         body()
     end)
 end
-function Studio:profileGroup(ui,copy,title,fields)
+function Studio:profileGroup(ui,copy,title,fields,help,id)
     local im=self.imgui
     self:sectionCard(ui,title,function()
     local width=im.GetContentRegionAvail().x; local columns=width>=620 and 2 or 1
@@ -1122,7 +1122,7 @@ function Studio:profileGroup(ui,copy,title,fields)
         if columns==2 then im.NextColumn() end
     end
     if columns==2 then ui.finish() end
-    end)
+    end,help,id)
 end
 function Studio:drawAlerts(ui,data,callbacks)
     ui.text('В репликах доступно {gender:передал|передала}; род выбирается в Профиле.')
@@ -1136,7 +1136,12 @@ function Studio:drawAlerts(ui,data,callbacks)
     if self.radioPage=='session'then patrolUi.drawSessionSettings(self,ui,data,callbacks);return end
     if self.radioPage=='patrol' then self.currentNoticeScope='patrol';self:drawPatrol(ui,data,callbacks);return end
     self.currentNoticeScope='alerts'
-    self:settingsHeading(ui,'Связь · отдельные доклады')
+    self:settingsHeading(ui,'Связь · отдельные доклады',
+        [[Shots fired — сообщение о попадании по вашему персонажу. SOS — отдельный запрос поддержки (10-70). ДА отправляет выбранный доклад; НЕТ или истечение времени отменяет его.
+
+CODE 0 — сообщение о тяжёлом ранении. PA предложит его после попадания из огнестрельного оружия, если здоровье действительно уменьшилось. Урон по броне, падение и тайзер не вызывают это предложение.
+
+CODE 1 отменяет ранее переданный CODE 0, а CODE 4 сообщает, что помощь больше не нужна. Вы отправляете их вручную и каждый раз подтверждаете текст. Эти доклады не завершают патруль и не снимают розыск.]],'radio-help-commands')
     self:settingsHeading(ui,'Быстрый вызов с клавиатуры')
     for _,kind in ipairs(model.alertKinds)do
         local label=alertModule.kinds[kind].short
@@ -1187,9 +1192,6 @@ function Studio:drawAlerts(ui,data,callbacks)
         'В шаблонах доступны {area}, {location}, {local_tag}, {prison_tag}, {global_tag}, {callsign}, {city}, {square}, {map_square}, {my_name}, {department}, {rank} и {post}. Квадрат рядом с районом и формат места настраиваются в «Экран, HUD и карта → Карта». В докладах {area} дополняется квадратом, если в шаблоне ещё нет явного {square}, {map_square} или {location}. В биндах {area} остаётся районом.','radio-variables')
     self:settingsHeading(ui,'Поля начатого патруля',
         'Данные патруля: {officer} — ваше игровое имя; {unit} — обозначение экипажа; {station} — станция; {vehicle} — машина; {sector} — сектор; {crew} — имена напарников; {crew_count} — число участников; {crew_roles} — состав с ролями; {crew_callsigns} — позывные; {duration} — время патруля; {patrol_id} — номер патруля в PA. {patrol_start}, {patrol_resume}, {patrol_finish}, {patrol_moving}, {patrol_available} — настраиваемые фразы для одного или экипажа; {unit_crew_count} — число сотрудников текущего юнита. Эти значения доступны после начала патруля. Если состав изменится, старый доклад потребуется проверить заново.','radio-patrol-variables')
-    self:infoHint(ui,'radio-help-commands','Shots fired — сообщение о попадании по вашему персонажу. SOS — отдельный запрос поддержки (10-70). ДА отправляет выбранный доклад; НЕТ или истечение времени отменяет его.')
-    self:infoHint(ui,'radio-code0-help','CODE 0 — сообщение о тяжёлом ранении. PA предложит его после попадания из огнестрельного оружия, если здоровье действительно уменьшилось. Урон по броне, падение и тайзер не вызывают это предложение.')
-    self:infoHint(ui,'radio-code14-help','CODE 1 отменяет ранее переданный CODE 0, а CODE 4 сообщает, что помощь больше не нужна. Вы отправляете их вручную и каждый раз подтверждаете текст. Эти доклады не завершают патруль и не снимают розыск.')
     if not data.chatFiltersAvailable then ui.text('События урона недоступны: работают ручные кнопки связи.') end
     local cooldown=im.new.int(draft.cooldown_ms/1000)
     if im.SliderInt('Повторный доклад, с##alerts-cooldown',cooldown,1,120) then draft.cooldown_ms=cooldown[0]*1000;changed=true end
@@ -1375,7 +1377,12 @@ function Studio:drawWeapons(ui,data,callbacks)
     if self.weaponPage=='taser' then self.currentNoticeScope='taser';self:drawTaser(ui,data,callbacks);return end
     self.currentNoticeScope='weapons'
     local im=self.imgui;local draft=self.weaponDraft or model.copy(self.lib.weapons);local changed=false
-    self:settingsHeading(ui,'Автоматические отыгровки оружия')
+    self:settingsHeading(ui,'Автоматические отыгровки оружия',
+        [[Реплика об убирании появляется, только если PA уже отыграл доставание этого оружия. Если сразу взять его снова, реплика отменится. Для гранат убирание по умолчанию выключено.
+
+После смены оружия PA ждёт заданное время. Если вы снова смените оружие или очередь занята, устаревшая реплика отменится. Оружие, которое уже было в руках при запуске PA, не отыгрывается.
+
+В справке сервера указан /taser, который применяется с Deagle в руках. Прежнее имя /tazer сохранено в старых профилях. Оружие с ID 23 — обычный SD Pistol, а ID 17 — газовая граната. Меняйте эти назначения только после проверки предметов на сервере.]],'weapon-store-help')
     local value,edit=self:check('Включить отыгровку доставания##weapons-enabled',draft.enabled)
     if edit then draft.enabled=value;changed=true end
     for _,spec in ipairs({{'delay_ms','Оружие в руках, с',1,30},{'cooldown_ms','Между отыгровками, с',1,120},{'repeat_ms','Повтор одного оружия, с',1,300}}) do
@@ -1385,8 +1392,6 @@ function Studio:drawWeapons(ui,data,callbacks)
     local holster,holsterChanged=self:check('Отыгрывать убирание оружия##weapons-holster',draft.holster_enabled)
     if holsterChanged then draft.holster_enabled=holster;changed=true end
     local holsterDelay=im.new.int(draft.holster_delay_ms);if im.InputInt('Убирание после смены, мс##weapons-holster-delay',holsterDelay)then draft.holster_delay_ms=holsterDelay[0];changed=true end
-    self:infoHint(ui,'weapon-store-help','Реплика об убирании появляется, только если PA уже отыграл доставание этого оружия. Если сразу взять его снова, реплика отменится. Для гранат убирание по умолчанию выключено.')
-    self:infoHint(ui,'weapon-delay-help','После смены оружия PA ждёт заданное время. Если вы снова смените оружие или очередь занята, устаревшая реплика отменится. Оружие, которое уже было в руках при запуске PA, не отыгрывается.')
     ui.text('Для автоматических /me включите отметку «На службе» в настройках связи.')
     local choices={};local checked=0
     for _,row in ipairs(preferences.weaponCatalog) do local key=tostring(row[1]);local item=draft.items[key]
@@ -1415,7 +1420,6 @@ function Studio:drawWeapons(ui,data,callbacks)
     local expanded=item.template:gsub('{weapon}',function()return item.name end)
     require('pa26_rp_ui').preview(self,ui,data,'/me '..expanded)
     if self:button('Настроить перенос /me и /do##weapon-rp-settings',ui)then if callbacks.openSettings then callbacks.openSettings('chat','split')else callbacks.openAssist('roleplay')end end
-    self:infoHint(ui,'weapon-server-help','В справке сервера указан /taser, который применяется с Deagle в руках. Прежнее имя /tazer сохранено в старых профилях. Оружие с ID 23 — обычный SD Pistol, а ID 17 — газовая граната. Меняйте эти назначения только после проверки предметов на сервере.')
     child(self,ui,'weapon-checklist##preferences',0,220,function()
         for _,row in ipairs(preferences.weaponCatalog) do local key=tostring(row[1]);local item=draft.items[key]
             local value,edit=self:check('ID '..key..'##weapon-check-'..key,item.enabled)
@@ -1430,7 +1434,8 @@ function Studio:drawWeapons(ui,data,callbacks)
 end
 function Studio:drawTaser(ui,data,callbacks)
     local im=self.imgui;local draft=self.taserDraft or model.copy(self.lib.taser);local changed=false
-    self:settingsHeading(ui,'Тайзер · серверный режим и учёт выстрелов')
+    self:settingsHeading(ui,'Тайзер · серверный режим и учёт выстрелов',
+        'Команда сама по себе ещё не подтверждает включение тайзера. Пока ответы сервера неизвестны, оставьте поля ниже пустыми и отмечайте режим вручную. Обычные выстрелы Deagle не учитываются как выстрелы тайзера. Переключение режима не восстанавливает заряды.','taser-confirmation-help')
     changed=require('pa26_manual_actions').taserToggles(self,ui,draft)or changed
     local activation,activationChanged=self:choice('Определение тайзера##taser-activation',draft.activation,{{'command','Команда сервера · Deagle'},{'weapon','Отдельный GTA ID · другой профиль'}},ui)
     if activationChanged then draft.activation=activation;changed=true end
@@ -1441,7 +1446,6 @@ function Studio:drawTaser(ui,data,callbacks)
         if value~=draft[row[1]]then draft[row[1]]=value;changed=true end
     end
     local reply=im.new.int(draft.reply_timeout_ms);if im.InputInt('Ожидание ответа сервера, мс##taser-reply-timeout',reply)then draft.reply_timeout_ms=reply[0];changed=true end
-    self:infoHint(ui,'taser-confirmation-help','Команда сама по себе ещё не подтверждает включение тайзера. Пока ответы сервера неизвестны, оставьте поля ниже пустыми и отмечайте режим вручную. Обычные выстрелы Deagle не учитываются как выстрелы тайзера. Переключение режима не восстанавливает заряды.')
     require('pa26_rp_ui').preview(self,ui,data,'/me '..draft.draw_template:gsub('{weapon}',function()return draft.name end),'Доставание')
     require('pa26_rp_ui').preview(self,ui,data,'/me '..draft.holster_template:gsub('{weapon}',function()return draft.name end),'Убирание')
     ui.text('В игровой справке указан /taser. Если у вас сохранено другое имя, замените его вручную после проверки.')
@@ -1461,11 +1465,12 @@ function Studio:drawTaser(ui,data,callbacks)
     local capacity=im.new.int(draft.capacity)
     if im.InputInt('RP-выстрелов до перезарядки##taser-capacity',capacity)then draft.capacity=capacity[0];changed=true end
     self:settingsHeading(ui,'Лимит RP-выстрелов',
-        'Для профиля EPD по прочитанным правилам оставьте 2 заряда. Значения 1–10 предназначены для других профилей и не меняют патроны GTA. Если вы уже стреляли, новая ёмкость начнёт действовать после отыгровки перезарядки.','taser-capacity-info')
+        [[Для профиля EPD по прочитанным правилам оставьте 2 заряда. Значения 1–10 предназначены для других профилей и не меняют патроны GTA. Если вы уже стреляли, новая ёмкость начнёт действовать после отыгровки перезарядки.
+
+Счётчик учитывает ваши выстрелы, включая промахи. Он отражает заряды по выбранному RP-профилю, а не патроны GTA. Смена оружия его не обнуляет.]],'taser-capacity-info')
     local value=self:field('Одна /me для перезарядки · без /me##taser-reload','taser:reload',draft.reload_template,2048,true,96)
     if value~=draft.reload_template then draft.reload_template=value;changed=true end
     require('pa26_rp_ui').preview(self,ui,data,'/me '..draft.reload_template)
-    self:infoHint(ui,'taser-shot-help','Счётчик учитывает ваши выстрелы, включая промахи. Он отражает заряды по выбранному RP-профилю, а не патроны GTA. Смена оружия его не обнуляет.')
     self:settingsHeading(ui,'Как учитывается перезарядка',
         'Когда заряды закончатся, PA дождётся свободной очереди для отыгровки перезарядки. Готовность вернётся после передачи всех её частей и заданной паузы. При сбое повтор запускается вручную. Если отыгровка выключена, PA восстанавливает только свой счётчик после паузы. При выключенной автоматике используйте кнопку учёта перезарядки. Проверьте результат на сервере. PA не блокирует выстрелы и не меняет патроны GTA. Перед применением тайзера сверяйтесь с правилами предупреждения, допустимой дистанцией и ограничениями сервера.','taser-reload-help')
     ui.text('Для автоматической перезарядки включите «На службе». Повторить её вручную можно командой /pa26reload или кнопкой на виджете.')
@@ -1535,13 +1540,12 @@ function Studio:drawProfile(ui,data,callbacks,part)
     ui.text(data.demo and'ДЕМО включён: сценарии показывают предпросмотр и не отправляют команды в игру.'or'Реальный режим: после ваших действий и подтверждений PA отправляет реплики и команды в игру.')
     im.Separator()
     ui.text('Данные персонажа и службы. Изменения сохраняются автоматически.')
-    self:profileGroup(ui,copy,'Персонаж и служба',{{'name','RP-имя'},{'department','Ведомство'},{'rank','Должность'},{'case_number','Личное дело'},{'badge_number','Номер служебного значка (не SA:MP ID)'}})
+    self:profileGroup(ui,copy,'Персонаж и служба',{{'name','RP-имя'},{'department','Ведомство'},{'rank','Должность'},{'case_number','Личное дело'},{'badge_number','Номер служебного значка (не SA:MP ID)'}},require('pa26_gender_audit').fallback,'profile-gender')
     self:profileGroup(ui,copy,'Экипаж и рация',{{'callsign','Позывной экипажа'},{'local_tag','Префикс локальной волны'},
         {'global_tag','Префикс общей волны'},{'prison_tag','Префикс тюремной волны'}})
     self:profileGroup(ui,copy,'Место и транспорт · ручные значения',{{'city','Город (вручную)'},{'square','Сектор патруля (вручную)'},
         {'my_plate','Свой номер авто (вручную)'},{'select_plate','Номер выбранной машины (вручную)'},{'closest_plate','Номер ближайшей машины (вручную)'}})
     copy.profile.gender=self:choice('Грамматический род',copy.profile.gender,{{'male','Мужской'},{'female','Женский'}},ui)
-    self:infoHint(ui,'profile-gender',require('pa26_gender_audit').fallback)
     copy.profile.timezone=self:choice('Часы в биндах',copy.profile.timezone,{{'local','Компьютер'},{'utc','UTC'},{'moscow','Москва (UTC+3)'}},ui)
     local grid=model.copy((self.autosaves and self.autosaves.map_grid and self.autosaves.map_grid.value)or self.lib.map_grid)
     local auto,changed=self:check('Автозаполнение {square} квадратом карты##profile-auto-square',grid.auto_square)
@@ -1552,54 +1556,66 @@ function Studio:drawProfile(ui,data,callbacks,part)
     end
     if part=='chat_accent'or part=='all'then
     local radio,radioChanged=self:check('Добавлять префикс локальной волны в мой /r##manual-radio-prefix',copy.settings.manual_radio_prefix)
+    self.imgui.SameLine(0,8)
+    self:infoHint(ui,'manual-radio-prefix',[[При отправке вашего /r PA добавляет префикс из «Профиль → Префикс локальной волны». После перевода .к действует то же правило. Пустое поле или выключатель оставляют доклад без изменений. /rn, /f, /d и другие команды не затрагиваются. Акцент в рацию не добавляется.
+
+Готовый префикс не дублируется. Длинный доклад продолжится по словам, если автоперенос включён. Перед отправкой проверяются все части и предел 127 байт вместе с /r и префиксом. Бинды и готовые доклады PA используют свои шаблоны: для них по-прежнему есть {local_tag}.]])
     if radioChanged then self:autoSettings('manual_radio',{'settings','manual_radio_prefix'},radio)end
-    self:infoHint(ui,'manual-radio-prefix','При отправке вашего /r PA добавляет префикс из «Профиль → Префикс локальной волны». После перевода .к действует то же правило. Пустое поле или выключатель оставляют доклад без изменений. /rn, /f, /d и другие команды не затрагиваются. Акцент в рацию не добавляется.')
     local radioExample=require('pa26_chat_text').radioCommand('/r Запрашиваю помощь.',{manual_radio_prefix=radio,local_tag=copy.profile.local_tag})
     ui.text('Предпросмотр: '..radioExample)
     if data.codec then local wire,err=require('pa26_core').encodeWire(radioExample,data.codec);if not wire then ui.text('Пример не помещается в чат: '..tostring(err))end end
-    self:infoHint(ui,'manual-radio-limit','Готовый префикс не дублируется. Длинный доклад продолжится по словам, если автоперенос включён. Перед отправкой проверяются все части и предел 127 байт вместе с /r и префиксом. Бинды и готовые доклады PA используют свои шаблоны: для них по-прежнему есть {local_tag}.')
     self:autosaveHint(ui,'manual_radio')
     self:settingsHeading(ui,'Акцент и команды с точкой','Акцент добавляется только к обычному сообщению, которое вы сами вводите в игровой чат. Команды с / или !, /me, /do, рация и автоматические реплики PA не меняются. В собственном бинде можно явно поставить {accent}.','accent-chat')
     copy.profile.accent=self:field('Акцент##profile','profile:accent',copy.profile.accent,512)
     ui.text('Префикс обычной речи, например: [Русский акцент]:. Пустое поле отключает акцент.')
     local live,changed=self:check('Добавлять акцент при отправке обычной речи##accent-live',copy.settings.accent_live_input)
+    self.imgui.SameLine(0,8)
+    self:infoHint(ui,'accent-toggle-help','Выключатель отключает акцент и при вводе, и при отправке. Текст префикса сохраняется. При включённом автопереносе длинная речь продолжается с многоточиями, а акцент остаётся только в первой части. Если подготовить все части нельзя, ввод сохраняется.')
     if changed then
         if live and model.accentPrefix(copy.profile.accent)==''then copy.profile.accent='[Русский акцент]:';self:setBuffer('profile:accent',copy.profile.accent,512)end
         self:autoSettings('accent_chat',{'settings','accent_live_input'},live)
     end
     local preview=live and model.applyAccent('Привет.',copy.profile.accent)or'Привет.'
     ui.text('Предпросмотр: '..tostring(preview or'Проверьте текст акцента.'))
-    self:infoHint(ui,'accent-toggle-help','Выключатель отключает акцент и при вводе, и при отправке. Текст префикса сохраняется. При включённом автопереносе длинная речь продолжается с многоточиями, а акцент остаётся только в первой части. Если подготовить все части нельзя, ввод сохраняется.')
     local brackets,bracketsChanged=self:check('Без акцента после ( и ) в начале сообщения##accent-brackets',copy.settings.accent_skip_brackets)
-    if bracketsChanged then self:autoSettings('accent_chat',{'settings','accent_skip_brackets'},brackets)end
+    self.imgui.SameLine(0,8)
     self:infoHint(ui,'accent-brackets-help','Если сообщение начинается с ( или ), PA оставит его без акцента. Пробелы перед скобкой тоже учитываются. Скобки внутри обычной фразы ничего не меняют.')
+    if bracketsChanged then self:autoSettings('accent_chat',{'settings','accent_skip_brackets'},brackets)end
     ui.text('Предпросмотр: '..tostring(brackets and') Привет.'or(live and model.applyAccent(') Привет.',copy.profile.accent)or') Привет.')))
     local dot,dotChanged=self:check('Команды с точкой на русской раскладке##chat-dot-commands',copy.settings.chat_dot_commands)
-    self:infoHint(ui,'dot-command-send','Поставьте точку в начале поля чата. После Enter PA заменит её на / и переведёт только имя команды по клавишам русской раскладки. Аргументы сохраняются. Обычные /b, /n и слова вроде .информация сохраняют написание. Для CEF требуется поддержка чата лаунчера. Перевод работает и с выключенным акцентом. При вводе и выделении текста преобразования не выполняются.')
+    self.imgui.SameLine(0,8)
+    self:infoHint(ui,'dot-command-send',[[Поставьте точку в начале поля чата. После Enter PA заменит её на / и переведёт только имя команды по клавишам русской раскладки. Аргументы сохраняются. Обычные /b, /n и слова вроде .информация сохраняют написание. Для CEF требуется поддержка чата лаунчера. Перевод работает и с выключенным акцентом. При вводе и выделении текста преобразования не выполняются.
+
+Пробел перед точкой, .5, .., многоточия и точки внутри текста не создают команду. Начальная точка отключает акцент, пока эта настройка включена. Неизвестную команду проверяет сервер. Чтобы написать .слово как обычный текст, поставьте перед точкой пробел или выключите перевод.]])
     if dotChanged then self:autoSettings('accent_chat',{'settings','chat_dot_commands'},dot)end
     ui.text(dot and'Предпросмотр · .к → /r · .ыефеы → /stats · /b .и Привет! → /n Привет!'or'Предпросмотр · перевод команд выключен.')
-    self:infoHint(ui,'dot-command-plain-help','Пробел перед точкой, .5, .., многоточия и точки внутри текста не создают команду. Начальная точка отключает акцент, пока эта настройка включена. Неизвестную команду проверяет сервер. Чтобы написать .слово как обычный текст, поставьте перед точкой пробел или выключите перевод.')
     end
     if part=='chat_cef'or part=='all'then
+    self:settingsHeading(ui,'Чат лаунчера (CEF)',
+        [[При запуске PA проверяет файлы чата. Если подходящего профиля нет в комплекте, PA сверяет их с каталогом официального репозитория. Переключатель применяется при следующем запуске PA.
+
+При запуске проверяет контракт чата отдельным фоновым заданием. Известные версии проверяются быстрее; новый хеш допустим, если структура и поведение нужных интерфейсов совпадают с проверенным профилем. Затем адаптер подтверждает локальную связь. При отказе остаётся исходный чат и нативные функции PA. Main.js и DLL не меняются. Повторная проверка — после перезапуска PA.
+
+Связывает CEF-чат с командами PA, фильтрами и распознаванием служебных сообщений. Во время ввода игровые сочетания и отправка сценариев блокируются так же, как в стандартном чате.]],'cef-catalog-help')
     local cef,cefChanged=self:check('Поддержка чата лаунчера##cef-chat',copy.settings.cef_chat_support)
     if cefChanged then self:autoSettings('cef_chat',{'settings','cef_chat_support'},cef)end
     local profiles,profilesChanged=self:check('Проверять новые профили чата на GitHub##cef-profiles',copy.settings.cef_profile_updates)
     if profilesChanged then self:autoSettings('cef_chat',{'settings','cef_profile_updates'},profiles)end
-    self:infoHint(ui,'cef-catalog-help','При запуске PA проверяет файлы чата. Если подходящего профиля нет в комплекте, PA сверяет их с каталогом официального репозитория. Переключатель применяется при следующем запуске PA.')
-    self:infoHint(ui,'cef-check-help','При запуске проверяет контракт чата отдельным фоновым заданием. Известные версии проверяются быстрее; новый хеш допустим, если структура и поведение нужных интерфейсов совпадают с проверенным профилем. Затем адаптер подтверждает локальную связь. При отказе остаётся исходный чат и нативные функции PA. Main.js и DLL не меняются. Повторная проверка — после перезапуска PA.')
-    self:infoHint(ui,'cef-controls-help','Связывает CEF-чат с командами PA, фильтрами и распознаванием служебных сообщений. Во время ввода игровые сочетания и отправка сценариев блокируются так же, как в стандартном чате.')
     for _,r in ipairs({{'cef_chat_weapon_guard','Защита клавиш оружия'},
         {'cef_chat_weapon_lock','Оружие при вводе чата'}})do
         local value,changed=self:check(r[2]..'##'..r[1],copy.settings[r[1]])
         if changed then self:autoSettings('cef_chat',{'settings',r[1]},value)end
     end
     local grace=self.imgui.new.int(copy.settings.cef_chat_grace_ms)
-    ui.text('Защита открытия CEF-чата, мс');self.imgui.PushItemWidth(-1)
-    if self.imgui.SliderInt('##cef-grace',grace,50,1000)then self:autoSettings('cef_chat',{'settings','cef_chat_grace_ms'},grace[0])end;self.imgui.PopItemWidth()
+    ui.text('Защита открытия CEF-чата, мс')
+    self.imgui.SameLine(0,8)
     self:infoHint(ui,'cef-weapon-help','Во время ввода цифры и буквы продолжают печататься, но не переключают оружие. Защита открытия закрывает промежуток до ответа CEF; по умолчанию 350 мс. Пример: «/su 123» остаётся текстом чата, оружие не меняется.')
+    self.imgui.PushItemWidth(-1)
+    if self.imgui.SliderInt('##cef-grace',grace,50,1000)then self:autoSettings('cef_chat',{'settings','cef_chat_grace_ms'},grace[0])end;self.imgui.PopItemWidth()
     local layout,layoutChanged=self:check('Язык ввода рядом с полем чата##cef-layout',copy.settings.cef_layout_indicator)
-    if layoutChanged then self:autoSettings('cef_chat',{'settings','cef_layout_indicator'},layout)end
+    self.imgui.SameLine(0,8)
     self:infoHint(ui,'cef-layout-help','Показывает текущую раскладку клавиатуры справа от поля CEF-чата: RU, EN, BG, UK и другие. Обновляется при смене языка. При закрытом чате или потере связи значок скрывается. Это отдельный индикатор, он не меняет текст и RP-акцент.')
+    if layoutChanged then self:autoSettings('cef_chat',{'settings','cef_layout_indicator'},layout)end
     ui.text(({
         disabled='CEF-функции PA отключены. Причина — в диагностике чата.',connected='Чат лаунчера: связь установлена.',waiting='Чат лаунчера: ожидается связь с игровым окном.',
         unavailable='Чат лаунчера: адаптер установлен, но локальная связь недоступна.',
@@ -1639,12 +1655,14 @@ function Studio:drawProfile(ui,data,callbacks,part)
         endpoint_published='Адрес готов. Ожидается первое обращение чата.',browser_no_exchange='Чат пока не обратился к PA. Если он загрузился до восстановления подключения, перезапустите игру. Подробности: moonloader.log.',
         heartbeat_lost='Обмен с чатом прервался. Ожидается восстановление связи.'})[data.cefChatReason]
     if cefReason then ui.text(cefReason)end
+    self:settingsHeading(ui,'Диагностика CEF',
+        [[По умолчанию выключен. Раз в 30 секунд пишет только времена и счётчики в журнал PA / moonloader.log: кадры, цикл PA, контекст, клавиши и мост. Переписка не записывается. Для сравнения повторите ту же сцену с PA и без него; браузерные замеры отдельно не доказывают плавность в GTA.
+
+Записывает этап подключения и причины сбоев в moonloader.log. Текст переписки, сам акцент и секретный адрес не записываются. Счётчики означают подготовку и передачу сообщения чату, а не принятие сервером.]],'cef-measure-help')
     local cefLog,cefLogChanged=self:check('Диагностика чата##cef-chat-diagnostics',copy.settings.cef_chat_diagnostics)
     if cefLogChanged then self:autoSettings('cef_chat',{'settings','cef_chat_diagnostics'},cefLog)end
     local perf,perfChanged=self:check('Замер задержек CEF и кадров (временно)##cef-chat-profile',copy.settings.cef_chat_profile)
     if perfChanged then self:autoSettings('cef_chat',{'settings','cef_chat_profile'},perf)end
-    self:infoHint(ui,'cef-measure-help','По умолчанию выключен. Раз в 30 секунд пишет только времена и счётчики в журнал PA / moonloader.log: кадры, цикл PA, контекст, клавиши и мост. Переписка не записывается. Для сравнения повторите ту же сцену с PA и без него; браузерные замеры отдельно не доказывают плавность в GTA.')
-    self:infoHint(ui,'cef-log-help','Записывает этап подключения и причины сбоев в moonloader.log. Текст переписки, сам акцент и секретный адрес не записываются. Счётчики означают подготовку и передачу сообщения чату, а не принятие сервером.')
     self:autosaveHint(ui,'cef_chat')
     self:autosaveHint(ui,'accent_chat')
     if not data.chatFiltersAvailable and not data.accentInputAvailable then ui.text('Перехват обычного чата недоступен в этом клиенте.') end
@@ -1683,6 +1701,7 @@ function Studio:drawOptions(ui,data,callbacks,part)
     d.aim_select_control=self:choice('Кнопка выбора##aim-select-control',d.aim_select_control,{{'mouse','Всегда правая кнопка мыши','ПКМ'},{'game','Кнопка прицеливания из управления GTA','Прицеливание GTA'}},ui)
     local aimDelay=im.new.int(d.aim_select_delay_ms);if im.SliderInt('Удержание перед выбором, мс',aimDelay,0,2000)then d.aim_select_delay_ms=aimDelay[0]end
     d.keep_target_on_interior_change=self:check('Сохранять выбранного человека при смене интерьера##keep-target-interior',d.keep_target_on_interior_change)
+    im.SameLine(0,8)
     self:infoHint(ui,'aim-interior','При входе и выходе человек остаётся выбранным. Пока он не загрузился рядом, действия недоступны. Незавершённый сценарий отменяется; новый запускайте после перехода. Выход с сервера, смерть и смена личности по-прежнему снимают выбор.')
     local distance=im.new.int(d.retain_distance);if im.SliderInt('Дальность выбора и сохранения, м',distance,20,200)then d.retain_distance=distance[0]end
     local grace=im.new.int(d.retain_grace_ms);if im.SliderInt('Перерыв стрима, мс',grace,500,5000)then d.retain_grace_ms=grace[0]end
@@ -1697,14 +1716,17 @@ function Studio:drawOptions(ui,data,callbacks,part)
     local scope=self.wheelEditScope;local wd=require('pa26_wheel_scope').settings(d,scope)
     wd.wheel_mode=self:choice('Способ выбора##wheel-mode',wd.wheel_mode,{{'categories','Категории и внешняя дуга','По категориям'},{'classic','Шесть прямых действий','Прямые действия'}},ui)
     d.wheel_edit_enabled=self:check('Ctrl + ЛКМ · переставлять секторы в колесе##wheel-edit-enabled',d.wheel_edit_enabled~=false)
+    im.SameLine(0,8)
     self:infoHint(ui,'wheel-drag','Удерживайте Ctrl, зажмите ЛКМ на секторе и отпустите на другом секторе того же кольца. Это меняет порядок без запуска действий. Порядок сохраняется отдельно от биндов.')
     if self:button('Вернуть стандартный порядок категорий и действий##wheel-order-reset',ui)then wd.wheel_order={}end
     d.shutdown_message=self:field('Локальное сообщение после отключения PA##shutdown-message','settings:shutdown-message',d.shutdown_message or'',2049,true,70)
     ui.text('Предпросмотр: '..(d.shutdown_message or'')..' · Это локальное сообщение, серверу не отправляется. Пустое поле отключает сообщение.')
     if wd.wheel_mode=='categories'then
         wd.wheel_profile=self:choice('Количество категорий##wheel-profile',wd.wheel_profile,{{'compact','4 крупные категории','4'},{'extended','6 категорий','6'},{'full','8 категорий','8'}},ui)
-        self:settingsHeading(ui,'Названия категорий колеса','Ниже показаны категории для выбранного числа секций. При переключении между 4, 6 и 8 секциями скрытые названия сохраняются. Бинды остаются в своих категориях.','wheel-names')
-        self:infoHint(ui,'wheel-names-default','Можно менять только названия. Привязка биндов к категориям останется прежней. Пустое поле вернёт стандартное название.')
+        self:settingsHeading(ui,'Названия категорий колеса',
+            [[Ниже показаны категории для выбранного числа секций. При переключении между 4, 6 и 8 секциями скрытые названия сохраняются. Бинды остаются в своих категориях.
+
+Можно менять только названия. Привязка биндов к категориям останется прежней. Пустое поле вернёт стандартное название.]],'wheel-names')
         wd.wheel_names=wd.wheel_names or{}
         local ids=wheelModel.profiles[wd.wheel_profile]or wheelModel.profiles.compact
         for n,id in ipairs(ids)do
