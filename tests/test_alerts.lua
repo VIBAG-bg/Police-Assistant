@@ -53,8 +53,9 @@ eq(c.pending.hits,45);eq(c.pending.offeredAt,original);eq(c.pending.token,token)
 -- No paint, stale paint, held Y, simultaneous keys and modifiers never accept.
 c,s=fixture();c:request('sos');s.step(16,{y=true},false);s.step(150,{y=true},false);eq(#s.confirmed,0)
 s.step(16,{y=true});s.step(150,{y=true});eq(#s.confirmed,0)
-s.step(16,{});s.step(16,{y=true});eq(#s.confirmed,1);eq(#s.confirmed[1].plan.lines,1)
-eq(s.confirmed[1].plan.lines[1],'/r 10-70. Требуется поддержка. 10-20: Ganton.')
+s.step(16,{});s.step(16,{y=true});eq(#s.confirmed,1);eq(#s.confirmed[1].plan.lines,2)
+eq(s.confirmed[1].plan.lines[1],'/f 10-70. SOS! Требуется срочная поддержка всех свободных юнитов! 10-20: Ganton.')
+eq(s.confirmed[1].plan.lines[2],cfg.help_command)
 check(not s.confirmed[1].plan.requirements.target);eq(s.confirmed[1].plan.target,nil)
 s.step(16,{y=true});s.step(16,{});s.step(16,{y=true});eq(#s.confirmed,1)
 c,s=fixture();s.offer();s.step(16,{y=true,n=true});eq(#s.confirmed,0);s.step(16,{y=true});eq(#s.confirmed,0)
@@ -83,9 +84,9 @@ c,s=fixture();s.offer();s.now=0;s.step(16,{y=true});eq(c.pending,nil);eq(#s.conf
 c,s=fixture();c:request('sos');s.step();s.now=4294967280;c:invalidateLife();c:tick(s.state,s.now,{})
 c:request('shots');s.step(8);check(c.pending);s.now=0;c:paint(c.pending.token,0,{});c:tick(s.state,0,{});check(c.pending,'normal timer wrap should survive')
 -- Payload and queue changes invalidate paint and require a new released key.
-for _,kind in ipairs({'area','local_tag','channel','busy'}) do
+for _,kind in ipairs({'area','global_tag','channel','busy'}) do
     c,s=fixture();s.offer('sos');local oldToken=c.pending.token
-    if kind=='channel' then s.cfg.channel='/d'
+    if kind=='channel' then s.cfg.sos_channel='/d'
     elseif kind=='busy' then s.state.busy='new-queue'
     else s.state[kind]=kind=='area' and 'East Beach' or 'LSPD |' end
     s.step(16,{y=true});eq(#s.confirmed,0);check(c.pending.token~=oldToken)
@@ -104,7 +105,6 @@ c:paint(c.pending.token,s.now,{y=true});c:tick(s.state,s.now,{});eq(#s.confirmed
 -- Frozen execution guard prevents sending old coordinates after confirmation.
 c,s=fixture();s.offer('sos');s.step(16,{y=true});local plan=s.confirmed[1].plan;check(c:validPlan(plan))
 s.state.area='Rodeo';s.step();check(not c:validPlan(plan))
-eq(cfg.help_command,'');check(not cfg.help_enabled)
 c,s=fixture();local p=module.prepare('shots',s.state,cfg,codec,s.now,c.life)
-check(p);eq(#p.steps,1);eq(p.wire[1],codec.encode(p.lines[1]));check(not p.lines[1]:find('10-70',1,true));check(not p.lines[1]:find('CODE 0',1,true))
-s.state.local_tag=string.rep('А',200);check(not module.prepare('shots',s.state,cfg,codec,s.now,c.life),'oversized radio line must fail before any send')
+check(p);eq(p.steps[p.alert.helpStartIndex].text,cfg.help_command);eq(p.wire[1],codec.encode(p.lines[1]));check(not p.lines[1]:find('10-70',1,true));check(not p.lines[1]:find('CODE 0',1,true))
+s.state.global_tag=string.rep('А',200);check(not module.prepare('shots',s.state,cfg,codec,s.now,c.life),'oversized radio word must fail before any send')

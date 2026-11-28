@@ -1,6 +1,6 @@
 script_name('Police Assistant 2026')
 script_author('VIBAG ( Victor Auditore )')
-script_version('0.47.1')
+script_version('0.47.2')
 script_description('Editable bind library, quick palette, notes and confirmed local journal')
 if type(script_properties) == 'function' then script_properties('work-in-pause') end
 
@@ -67,7 +67,7 @@ local bit = dependency('bit')
 local ffi = dependency('ffi')
 local encoding = dependency('encoding')
 local imgui = dependency('mimgui')
-if #missing > 0 or not core or core.VERSION ~= '0.47.1' then
+if #missing > 0 or not core or core.VERSION ~= '0.47.2' then
     function main()
         local reason=#missing>0 and ('Ошибка запуска: отсутствуют библиотеки ('..table.concat(missing, ', ')..'). Проверьте mimgui и encoding в moonloader/lib.')or 'Ошибка запуска: файлы PA относятся к разным версиям. Повторите установку полного пакета.'
         require('pa26_startup').block(getWorkingDirectory(),reason)
@@ -1541,7 +1541,7 @@ env.wheelNavigate=function(route,profile,target)
             studio:notify('Выбор человека изменился. Откройте действие заново.','quick',false);return false
         end
         studioCallbacks.openProcedures(kind)
-        if not studio.caseForm and kind~='mark'then
+        if kind~='mark' and (not studio.caseForm or not caseForms:validForm(studio.caseForm))then
             local f,err=caseForms:begin(kind)
             if f then studio.caseForm=f;studio.caseStoredForms=studio.caseStoredForms or {};studio.caseStoredForms[kind]=f
             else studio:notify(err,'procedures',false)end

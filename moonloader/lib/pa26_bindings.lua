@@ -224,12 +224,33 @@ function M.submitSpeech(raw,accent,codec,input,settings,ownedPrefix)
     end
     return M.manualSpeech(body,accent,codec,input,settings)
 end
+local supportDefaults={
+    sos_channel='/f',sos_template='{global_tag}10-70. SOS! Требуется срочная поддержка всех свободных юнитов! 10-20: {area}.',
+    shots_channel='/f',shots_template='{global_tag}Shots fired! По офицеру открыт огонь, требуется срочная поддержка всех свободных юнитов! 10-20: {area}.',
+    help_enabled=true,shots_help_enabled=true,help_verified=true,
+    help_command='/mark Требуется срочная поддержка всех свободных юнитов!',
+    help_source='Проверено на Exsellent RP',help_delay_ms=1500,
+}
 function M.alertDefaults()
     local out={enabled=true,on_duty=true,auto_shots=true,include_sd=false,channel='/r',
-        shots_template='{local_tag}Shots fired. По мне открыли огонь. Мой 10-20: {area}.',
-        sos_template='{local_tag}10-70. Требуется поддержка. 10-20: {area}.',
+        shots_template=supportDefaults.shots_template,sos_template=supportDefaults.sos_template,
         cooldown_ms=30000,timeout_ms=15000}
-    return preferences.extendAlerts(out,{})
+    return preferences.extendAlerts(out,supportDefaults)
+end
+function M.upgradeSupportDefaults0472(cfg)
+    local sos=cfg.channel=='/r' and cfg.sos_channel=='' and
+        cfg.sos_template=='{local_tag}10-70. Требуется поддержка. 10-20: {area}.'
+    local shots=(cfg.shots_channel=='/r' or cfg.shots_channel=='' and cfg.channel=='/r') and
+        cfg.shots_template=='{local_tag}Shots fired. По мне открыли огонь. Мой 10-20: {area}.'
+    if sos then cfg.sos_channel,cfg.sos_template=supportDefaults.sos_channel,supportDefaults.sos_template end
+    if shots then cfg.shots_channel,cfg.shots_template=supportDefaults.shots_channel,supportDefaults.shots_template end
+    -- The shared switch would affect both alerts. Leave it as-is if either
+    -- report or any part of the old help-command configuration was customized.
+    if sos and shots and not cfg.help_enabled and not cfg.help_verified and cfg.shots_help_enabled and
+        cfg.help_command=='' and cfg.help_source=='' and cfg.help_delay_ms==1500 then
+        cfg.help_enabled=true;cfg.help_verified=true
+        cfg.help_command=supportDefaults.help_command;cfg.help_source=supportDefaults.help_source
+    end
 end
 M.alertKinds={'sos','shots','code0','code1','code4'}
 function M.alertShortcutDefaults()
@@ -282,6 +303,7 @@ function M.defaults(cfg)
     local categories={introduce='Общение',documents='Документы',wanted='Проверки',frisk='Досмотр',cuff='Задержание',release='Задержание'}
     lib.field=fieldSettings.defaults()
     lib.settings.help=require('pa26_help').defaults()
+    lib.settings.alert_wheel_defaults0472=true
     lib.settings.manual_actions=manualActions.defaults();lib.settings.wheel_child_limit=0;lib.settings.wheel_system_groups={};lib.settings.wheel_order={};lib.settings.wheel_edit_enabled=true;lib.settings.shutdown_message='Police Assistant полностью отключён до перезахода в игру.'
     local female={introduce='остановившись рядом, указала на полицейский бейдж (жетон), закреплённый на груди.',
         documents='оглянувшись по сторонам, обратилась к собеседнику с просьбой предъявить паспорт.',
@@ -564,6 +586,7 @@ function M.validate(raw, cfg)
     out.settings.window_layout,alertError=windowLayout.validate(raw.settings.window_layout);if not out.settings.window_layout then return nil,alertError end
     out.settings.help,alertError=require('pa26_help').validate(raw.settings.help);if not out.settings.help then return nil,alertError end
     if raw.settings.applied_author_defaults_0460==true then out.settings.applied_author_defaults_0460=true end
+    out.settings.alert_wheel_defaults0472=raw.settings.alert_wheel_defaults0472==true and true or nil
     out.settings.manual_chat,alertError=manualChat.validate(raw.settings.manual_chat);if not out.settings.manual_chat then return nil,alertError end
     out.settings.wheel_names={}
     local names=raw.settings.wheel_names

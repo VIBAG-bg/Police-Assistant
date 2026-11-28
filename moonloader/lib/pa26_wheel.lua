@@ -75,8 +75,14 @@ function M.systemCategoryChoices(names)
 end
 function M.systemGroup(lib,id,fallback)
     local groups=lib.settings.wheel_system_groups or{}
-    if groups[id]=='disabled'then return'disabled'end
-    return M.groupFor({wheel_group=groups[id]or fallback,category=''},lib.settings.wheel_profile or'compact')
+    local group=groups[id] or fallback
+    if group=='disabled'then return group end
+    return M.groupFor({wheel_group=group,category=''},lib.settings.wheel_profile or'compact')
+end
+function M.hasAuthorWantedList(lib)
+    local bind=model.find(lib,3)
+    return bind and bind.author_ref=='A03' and bind.enabled and bind.wheel_visible and
+        ('\n'..bind.script..'\n'):find('\n/wanted\n',1,true)~=nil
 end
 function M.procedureItems(lib)
     local cfg=lib.procedures;local out={}
@@ -86,7 +92,8 @@ function M.procedureItems(lib)
             wheel_visible=cfg[kind..'_wheel'],quick=cfg[kind..'_quick'],needsTarget=false}
     end end
     if cfg.wanted_assistant_enabled and cfg.wanted_enabled then
-        out[#out+1]={kind='procedure',id='procedure-wanted_list',procedure='wanted_list',category=M.systemGroup(lib,'procedure-wanted_list','wanted'),name='Список преступников',wheel_visible=cfg.wanted_wheel,quick=cfg.wanted_quick,needsTarget=false}
+        local fallback=M.hasAuthorWantedList(lib) and 'disabled' or 'wanted'
+        out[#out+1]={kind='procedure',id='procedure-wanted_list',procedure='wanted_list',category=M.systemGroup(lib,'procedure-wanted_list',fallback),name='Список преступников',wheel_visible=cfg.wanted_wheel,quick=cfg.wanted_quick,needsTarget=false}
     end
     return out
 end

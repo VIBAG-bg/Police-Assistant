@@ -1,7 +1,7 @@
 -- Installed 32-bit ImGui, CPU-only. This does not start GTA or write game files.
 local src=debug.getinfo(1,'S').source:sub(2):gsub('\\','/')
 local tests=assert(src:match('^(.*[/])'));local release=tests..'../'
-local game=assert(os.getenv('LOCALAPPDATA'), 'LOCALAPPDATA required')..'/Exsellent Launcher/game/'
+local game=(os.getenv('PA_NATIVE_GAME') or assert(os.getenv('LOCALAPPDATA'),'LOCALAPPDATA required')..'/Exsellent Launcher/game')..'/'
 getWorkingDirectory=function()return game..'MoonLoader'end
 package.path=release..'moonloader/lib/?.lua;'..game..'MoonLoader/lib/?.lua;'..package.path
 package.cpath=game..'MoonLoader/lib/?.dll;'..package.cpath
@@ -47,7 +47,7 @@ for _,name in ipairs({'InputInt','InputText','InputTextMultiline','Button'})do
     local original=im[name]
     im[name]=function(label,...)
         local result=original(label,...)
-        if label:find('wanted',1,true)or label:find('##case-new',1,true)or label:find('##confirm%-yes$')or label:find('##confirm%-no$')or label:find('##confirm%-cancel$')then
+        if label:find('wanted',1,true)or label:find('##case-new',1,true)or label:find('##case-stale-new',1,true)or label:find('##confirm%-yes$')or label:find('##confirm%-no$')or label:find('##confirm%-cancel$')then
             local lo,hi=im.GetItemRectMin(),im.GetItemRectMax();local pos,size=im.GetWindowPos(),im.GetWindowSize()
             if name=='InputTextMultiline'then check(pos.x>=0 and pos.x+size.x<=guiIo.DisplaySize.x,'Multiline viewport overflow')else check(lo.x>=pos.x-1 and hi.x<=pos.x+size.x+1,'Overflow: '..pageNow..' '..label)end
             if detachedNow and frameNow>=3 and im.IsItemVisible()and im.GetScrollMaxY()<1 then check(lo.y>=pos.y and hi.y<=pos.y+size.y-8,'Detached control clipped vertically: '..pageNow..' '..label)end
@@ -144,10 +144,15 @@ local detached=require 'pa26_wanted_window';local geometry=require 'pa26_menu'
 detachedNow=true
 for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
     guiIo.DisplaySize=im.ImVec2(display[1],display[2]);local rect=geometry.windowRect(display[1],display[2],'wanted')
-    for _,page in ipairs({'identity','passport','mask','mask_passport','mask_details','mask_passport_details','ooc','ooc_details','phone','basis','preview','details','passport_edit'})do
+    for _,page in ipairs({'identity','passport','mask','mask_passport','mask_details','mask_passport_details','ooc','ooc_details','phone','basis','preview','details','passport_edit','stale_wanted','stale_list'})do
         pageNow='detached-'..page;widthNow=rect.width;state.inVehicle=false;c:tick(state,1000)
-        local formPage=({details='basis',passport_edit='passport',mask_details='mask',mask_passport_details='mask_passport',ooc_details='ooc'})[page]or page
-        editor.caseForm=form(formPage);editor.caseKind='wanted'
+        local formPage=({details='basis',passport_edit='passport',mask_details='mask',mask_passport_details='mask_passport',ooc_details='ooc',stale_list='list'})[page]or page
+        editor.caseForm=form(formPage);editor.caseKind=editor.caseForm.kind
+        local stale=page:match('^stale_')
+        if stale then
+            state.inVehicle=true;c:tick(state,1000)
+            seen[widthNow..':Создать новую форму##case-stale-new']=nil
+        end
         editor.caseConfirm=nil;editor.wantedAppearance=nil;editor.wantedIdentityPage=nil;editor.wantedPreviewPage=1
         if page=='phone'then editor.wantedIdentityPage='phone'end
         if page=='mask_details'or page=='mask_passport_details'or page=='ooc_details'then editor.wantedIdentityPage='details'end
@@ -163,6 +168,7 @@ for _,display in ipairs({{640,480},{1366,768},{1920,1080},{2560,1440}})do
             if frame>=3 then check(im.GetScrollMaxY()<1,'Outer wanted window must remain fixed: '..page..' at '..display[1]..'x'..display[2]..' max='..im.GetScrollMaxY())end
             im.End();im.PopStyleVar(1);im.Render();frames=frames+1
         end
+        if stale then check(seen[widthNow..':Создать новую форму##case-stale-new'],page..' recovery control is reachable')end
     end
 end
 detachedNow=false

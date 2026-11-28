@@ -18,7 +18,7 @@ for _,kind in ipairs({'code1','code4'})do
     bad=model.copy(cfg);bad[kind..'_template']='{select_name}';check(not model.validateAlerts(bad))
 end
 local confirmed={};local now=10000
-local helper=model.copy(cfg);helper.help_enabled=true
+local helper=model.copy(cfg);helper.help_enabled=true;helper.help_verified=false
 for _,key in ipairs({'code1_template','code4_template','help_command','help_source'})do
     local t=model.copy(cfg);t[key]=false;check(not model.validateAlerts(t),'Invalid text type '..key)
 end
@@ -53,6 +53,8 @@ local function key(s,k,mods)
 end
 local function setup(demo)
     local seed=model.defaults(core.defaults());seed.alerts.code1_enabled=true;seed.alerts.code4_enabled=true
+    seed.alerts.help_enabled=false;seed.alerts.help_verified=false
+    seed.alerts.sos_template='10-70. Требуется поддержка. 10-20: {area}.'
     seed.alert_shortcuts.code1={key=0x34,alt=true,ctrl=false,shift=false}
     seed.alert_shortcuts.code4={key=0x35,alt=true,ctrl=false,shift=false}
     local s=fixture({library=seed,demo=demo==true,alerts=true,notifications=true,categoryWheel=true});s.step()
@@ -114,9 +116,11 @@ s.edits={['##Команда помощи из /help##alerts-help_command']='/tes
     ['##Где и когда проверено##alerts-help_source']='Тестовая модель, не контракт Exsellent'};s.render();s.edits={}
 s.intEdits={['Пауза до команды помощи, мс##alerts-help-delay']=2500};s.render();s.intEdits={}
 s.toggle='Я проверил название и параметры на сервере##alerts-help_verified';s.render()
-s.toggle='Добавлять команду помощи к SOS##alerts-help_enabled';s.render();s.step(700)
+s.toggle='Добавлять команду помощи##alerts-help_enabled';s.render()
+s.toggle='Добавлять команду помощи к Shots fired##alerts-shots-help';s.render();s.step(700)
 saved=s.savedLibrary()
 check(saved.alerts.help_enabled);check(saved.alerts.help_verified);eq(saved.alerts.help_delay_ms,2500)
+check(not saved.alerts.shots_help_enabled)
 eq(saved.alerts.help_command,'/testhelp {area}');eq(saved.alerts.help_source,'Тестовая модель, не контракт Exsellent')
 healthy(s);onScriptTerminate(s.script)
 s=fixture({library=saved,demo=false,alerts=true});s.step();if s.frames[1].condition()then s.commands.pa26();s.step()end

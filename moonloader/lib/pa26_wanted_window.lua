@@ -19,7 +19,16 @@ function M.draw(s,ui,data,cb)
         return
     end
     if cb.caseValid and not cb.caseValid(f)then
-        s.wantedAppearance=nil;ui.text('Форма устарела: игрок отключился или игровая сцена изменилась. Повторите /su ID.');return
+        s.wantedAppearance=nil;s.wantedIdentityPage=nil;s.wantedPassportEditor=nil;s.wantedBasisDetails=nil;s.wantedPreviewPage=nil
+        ui.text(f.kind=='wanted_list' and 'Форма списка устарела: игровая сцена изменилась.' or
+            'Форма устарела: игрок отключился или игровая сцена изменилась. Повторите /su ID или создайте новую форму.')
+        if s:button('Создать новую форму##case-stale-new',ui)then
+            local value,why=cb.caseBegin(f.kind)
+            if value then
+                s.caseForm=value;s.caseStoredForms=s.caseStoredForms or {};s.caseStoredForms[f.kind]=value
+            else notify(s,why)end
+        end
+        return
     end
     ui.text(f.target and('Подозреваемый: '..f.target.name..' [ID: '..f.target.id..']')or'Общий список преступников')
     local narrow=im.GetWindowSize().y<650

@@ -1174,10 +1174,12 @@ CODE 1 отменяет ранее переданный CODE 0, а CODE 4 соо
         if value~=draft[key] then draft[key]=value;changed=true end
         self:radioPreview(ui,data,draft,spec[1])
         if spec[1]=='sos'then
-            self:settingsHeading(ui,'Дополнительная серверная команда помощи',
-                'Команду помощи нужно сначала проверить в игровом /help. Затем впишите её ниже и укажите, где проверили. При запросе SOS PA покажет её вместе с докладом и отправит после рации с заданной паузой от 1000 до 10000 мс. Доступны те же переменные, что и в докладе. Отметьте проверку после подтверждения работы команды на сервере. Отправка начинается после вашего ДА.','sos-help-command')
-            for _,row in ipairs({{'help_enabled','Добавлять команду помощи к SOS'},{'help_verified','Я проверил название и параметры на сервере'}})do
-                local value,edit=self:check(row[2]..'##alerts-'..row[1],draft[row[1]])
+            self:settingsHeading(ui,'Команда помощи для SOS и Shots fired',
+                'Проверьте команду в игровом /help. Впишите её ниже, укажите источник и отметьте проверку. PA отправит её после доклада с заданной паузой и только после вашего ДА. Доступны те же переменные, что и в докладе. После отправки /mark следующие SOS и Shots fired в течение 10 минут передадут только рацию. В игре предпросмотр показывает строки, которые будут отправлены.','sos-help-command')
+            for _,row in ipairs({{'help_enabled','Добавлять команду помощи','alerts-help_enabled'},
+                {'shots_help_enabled','Добавлять команду помощи к Shots fired','alerts-shots-help'},
+                {'help_verified','Я проверил название и параметры на сервере','alerts-help_verified'}})do
+                local value,edit=self:check(row[2]..'##'..row[3],draft[row[1]])
                 if edit then draft[row[1]]=value;changed=true end
             end
             for _,row in ipairs({{'help_command','Команда помощи из /help'},{'help_source','Где и когда проверено'}})do
@@ -1222,8 +1224,9 @@ function Studio:radioPreview(ui,data,draft,kind)
     local plan,err=alertModule.prepare(kind,state,draft,data.codec,self.now(),0)
     if plan then
         for i,line in ipairs(plan.lines)do ui.text('Предпросмотр '..i..' · '..#plan.wire[i]..' / '..core.WIRE_LIMIT..' байт');ui.text(line)end
-        if #plan.lines>1 then ui.text('Длинный текст будет передан частями; общий интервал отправки PA сохраняется.')end
-        if kind=='sos'and draft.help_enabled then ui.text('До дополнительной команды помощи: '..draft.help_delay_ms..' мс; общий интервал отправки PA также действует.')end
+        local reportLines=plan.alert.helpStartIndex and plan.alert.helpStartIndex-2 or #plan.lines
+        if reportLines>1 then ui.text('Длинный текст будет передан частями. Между строками действует общий интервал отправки PA.')end
+        if plan.alert.includeHelp then ui.text('До дополнительной команды помощи: '..draft.help_delay_ms..' мс. Также действует общий интервал отправки PA.')end
     else ui.text('Проверьте доклад: '..tostring(err))end
 end
 function Studio:drawRadioGuard(ui,data,callbacks)

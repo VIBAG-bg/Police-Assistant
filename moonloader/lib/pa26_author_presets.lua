@@ -35,6 +35,7 @@ function M.prepare(kind,payload,lib,cfg)
   nextLib.settings.cef_profile_updates=lib.settings.cef_profile_updates
   nextLib.settings.theme=lib.settings.theme
   nextLib.settings.applied_author_defaults_0460=lib.settings.applied_author_defaults_0460
+  nextLib.settings.alert_wheel_defaults0472=lib.settings.alert_wheel_defaults0472
   nextCfg=model.copy(p.config);nextCfg.main.demo_mode=cfg.main.demo_mode
  else return nil,'Неверный вид набора.'end
  local clean,why=model.validate(nextLib,nextCfg);if not clean then return nil,why end

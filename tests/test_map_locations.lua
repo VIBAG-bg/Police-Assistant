@@ -51,6 +51,7 @@ end
 local samples={}
 for _,channel in ipairs({'/r','/f','/d'})do
     local cfg=model.alertDefaults();cfg.code1_enabled=true;cfg.code4_enabled=true;cfg.channel=channel
+    cfg.sos_channel='';cfg.shots_channel='';cfg.help_enabled=false
     cfg.patrol.enabled=true
     for _,kind in ipairs({'shots','sos','code0','code1','code4','police'})do
         if kind=='police'then cfg.patrol.police_channel=channel end
@@ -62,7 +63,7 @@ for _,channel in ipairs({'/r','/f','/d'})do
         if channel=='/r'then samples[kind]=p.lines end
     end
 end
-local cfg=model.alertDefaults();cfg.sos_template='Мой текст: {area}.'
+local cfg=model.alertDefaults();cfg.sos_template='Мой текст: {area}.';cfg.sos_channel=''
 eq(assert(alerts.prepare('sos',base,cfg,codec,1000,1)).binding.script,'/r Мой текст: '..location..'.')
 cfg.sos_template='{area}, квадрат {map_square}.'
 eq(assert(alerts.prepare('sos',base,cfg,codec,1000,1)).binding.script,'/r '..location..'.')
@@ -122,7 +123,8 @@ local acfg=model.alertDefaults();local ac=alerts.new({settings=function()return 
 ac.state=model.copy(base);ac.now=1000
 local ap=assert(alerts.prepare('sos',ac.state,acfg,codec,1000,ac.life));check(ac:validPlan(ap))
 ac.state.map_square='H-19';check(not ac:validPlan(ap))
-ac.state.map_square='H-18';ac:onExecution('sent_line',{plan=ap});ac.state.map_square='H-19';check(ac:validPlan(ap))
+ac.state.map_square='H-18';ac:onExecution('sent_line',{plan=ap,index=1,session=ac.state.session,demo=false})
+ac.state.map_square='H-19';check(ac:validPlan(ap))
 ac.state.focused=false;check(not ac:validPlan(ap),'Focus safety still applies after first part')
 -- Pending routine previews update without restarting the 30s countdown.
 local gcfg=prefs.radioGuardDefaults();local gc=guard.new({settings=function()return gcfg end,codec=codec})

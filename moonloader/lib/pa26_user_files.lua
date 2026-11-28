@@ -186,6 +186,18 @@ function UserFiles:recover()
     end end
     return self:clearTransaction()
 end
+local function upgradeDefaults0472(lib)
+    model.upgradeSupportDefaults0472(lib.alerts)
+    local wheel=require 'pa26_wheel'
+    local scope=require 'pa26_wheel_scope'
+    for _,name in ipairs({'foot','car'})do
+        local groups=lib.settings[scope.key(name,'system_groups')]
+        if groups['procedure-wanted_list']=='wanted' and wheel.hasAuthorWantedList(scope.project(lib,name))then
+            groups['procedure-wanted_list']='disabled'
+        end
+    end
+    lib.settings.alert_wheel_defaults0472=true
+end
 function UserFiles:load()
     local warnings={};local ok,err=self:recover()
     if not ok then self.blocked=err;warnings[#warnings+1]=err end
@@ -200,6 +212,12 @@ function UserFiles:load()
             local lib,note=M.combine(parts,self.cfg)
             if lib then
                 self.known=model.copy(parts);for _,kind in ipairs(kinds)do self.raw[kind]=call(self.fs,'read',self:path(kind))or false end
+                if not lib.settings.alert_wheel_defaults0472 then
+                    local upgraded=model.copy(lib)
+                    upgradeDefaults0472(upgraded)
+                    local saved,why=self:save(upgraded)
+                    if saved then lib=upgraded else warnings[#warnings+1]=why end
+                end
                 return lib,warnings,false
             end
             self.blocked=note;warnings[#warnings+1]=note
@@ -225,6 +243,7 @@ function UserFiles:load()
     end
     for _,kind in ipairs(kinds)do self.raw[kind]=false end
     self.legacy=present(self.fs,legacyPath)and true or false
+    if self.legacy and not lib.settings.alert_wheel_defaults0472 then upgradeDefaults0472(lib)end
     if not self.legacy then lib.settings.help.welcome=true end
     return lib,warnings,true
 end

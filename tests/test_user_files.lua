@@ -160,3 +160,70 @@ check(not storage:save(original));eq(TEST_JSON_DECODE(state.data[base..'_library
 state=fixture(active);storage=state.open();lib=storage:load();state.failAt=14
 local saved=storage:save(changed);if not saved then coherent(state,original);state.failAt=nil;check(storage:save(changed))end
 coherent(state,changed)
+
+-- The 0.47.2 migration writes only settings, with the same atomic writer.
+local function oldDefaults()
+    local lib=model.copy(original)
+    local preset=assert(io.open('presets/pa-binds.json','rb'));local text=preset:read('*a');preset:close()
+    for _,row in ipairs(TEST_JSON_DECODE(text).bindings)do
+        if row.id==3 then lib.bindings[3]=row;break end
+    end
+    lib.settings.alert_wheel_defaults0472=nil
+    lib.settings.wheel_system_groups['procedure-wanted_list']='wanted'
+    lib.settings.wheel_car_system_groups['procedure-wanted_list']='wanted'
+    lib.settings.wheel_car_system_groups['pa-gps-clear']='wanted'
+    lib.alerts.sos_channel='';lib.alerts.shots_channel='/r'
+    lib.alerts.sos_template='{local_tag}10-70. Требуется поддержка. 10-20: {area}.'
+    lib.alerts.shots_template='{local_tag}Shots fired. По мне открыли огонь. Мой 10-20: {area}.'
+    lib.alerts.help_enabled=false;lib.alerts.help_verified=false;lib.alerts.shots_help_enabled=nil
+    lib.alerts.help_command='';lib.alerts.help_source=''
+    return lib
+end
+local function splitFiles(lib)
+    local result={}
+    for k,v in pairs(filesModule.partition(lib))do result[base..'_'..k..'.json']=json.encode(v)end
+    return result
+end
+local old=oldDefaults()
+local originalFiles=splitFiles(old)
+state=fixture(originalFiles);storage=state.open()
+lib,warnings,fresh=storage:load()
+eq(#warnings,0);check(not fresh);check(lib.settings.alert_wheel_defaults0472)
+local stock=model.alertDefaults()
+for _,key in ipairs({'sos_channel','shots_channel','sos_template','shots_template','help_command','help_source','help_enabled','help_verified','shots_help_enabled'})do
+    eq(lib.alerts[key],stock[key],key)
+end
+for _,key in ipairs({'wheel_system_groups','wheel_car_system_groups'})do eq(lib.settings[key]['procedure-wanted_list'],'disabled')end
+eq(lib.settings.wheel_car_system_groups['pa-gps-clear'],'wanted','Existing legacy GPS assignment stays valid')
+eq(state.data[base..'_binds.json'],originalFiles[base..'_binds.json'])
+eq(state.data[base..'_notes.json'],originalFiles[base..'_notes.json'])
+check(read(state,'settings').data.settings.alert_wheel_defaults0472)
+
+-- An explicit old wording and an opt-in wheel slot are respected after migration.
+lib.alerts=model.copy(old.alerts)
+lib.settings.wheel_system_groups['procedure-wanted_list']='wanted'
+check(storage:save(lib));state.writes={}
+lib=state.open():load()
+eq(#state.writes,0);eq(lib.alerts.sos_template,old.alerts.sos_template)
+eq(lib.settings.wheel_system_groups['procedure-wanted_list'],'wanted')
+
+old=oldDefaults()
+old.alerts.sos_template='Мой запрос поддержки: {area}.';old.alerts.sos_channel='/d'
+old.alerts.help_command='/testhelp {area}';old.alerts.help_source='Свой сервер'
+old.alerts.help_enabled=true;old.alerts.help_verified=true
+old.settings.wheel_system_groups['procedure-wanted_list']='custom'
+old.bindings[3].wheel_car_visible=false
+state=fixture(splitFiles(old));lib=state.open():load()
+eq(lib.alerts.sos_template,old.alerts.sos_template);eq(lib.alerts.sos_channel,'/d')
+eq(lib.alerts.shots_template,stock.shots_template)
+eq(lib.alerts.help_command,old.alerts.help_command);check(lib.alerts.help_enabled and not lib.alerts.shots_help_enabled)
+eq(lib.settings.wheel_system_groups['procedure-wanted_list'],'custom')
+eq(lib.settings.wheel_car_system_groups['procedure-wanted_list'],'wanted')
+check(not lib.bindings[3].wheel_car_visible)
+
+state=fixture(originalFiles);state.failPath=base..'_settings.json.tmp'
+lib,warnings=state.open():load()
+check(not lib.settings.alert_wheel_defaults0472);eq(lib.alerts.sos_template,oldDefaults().alerts.sos_template)
+check(#warnings>0);eq(state.data[base..'_settings.json'],originalFiles[base..'_settings.json'])
+state.failPath=nil
+lib=state.open():load();check(lib.settings.alert_wheel_defaults0472)

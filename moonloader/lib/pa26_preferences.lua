@@ -84,7 +84,9 @@ function M.extendAlerts(out,raw)
         out[kind..'_channel']=v
     end
     out.help_enabled=false;out.help_verified=false;out.help_delay_ms=1500
-    for _,key in ipairs({'help_enabled','help_verified'})do local ok;ok,err=flag(out,raw,key);if not ok then return nil,err end end
+    -- A previously configured command was enabled for SOS alone.
+    out.shots_help_enabled=raw.help_command==nil or raw.help_command==''
+    for _,key in ipairs({'help_enabled','help_verified','shots_help_enabled'})do local ok;ok,err=flag(out,raw,key);if not ok then return nil,err end end
     ok,err=integer(out,raw,'help_delay_ms',1000,10000);if not ok then return nil,err end
     local command=raw.help_command;if command==nil then command=''end
     out.help_command,err=M.helpCommand(command);if not out.help_command then return nil,err end

@@ -46,7 +46,7 @@ s.cfg.patrol.enabled=true;s.cfg.patrol.mode='prison';s.cfg.patrol.prison_channel
 p=alerts.prepare('prison',s.state,s.cfg,codec,s.now,c.life);check(p);eq(p.lines[1],'/d DOC | Продолжаю службу в охране тюрьмы. Пост: Северный КПП.')
 s.state.post='';check(not alerts.prepare('prison',s.state,s.cfg,codec,s.now,c.life))
 s.cfg.shots_template='{select_nick}';local ok,res=pcall(alerts.prepare,'shots',s.state,s.cfg,codec,s.now,c.life);check(ok);check(not res)
-eq(model.alertDefaults().help_command,'');check(not model.alertDefaults().help_enabled)
+check(not p.alert.includeHelp,'Routine reports do not include the SOS / Shots fired helper')
 local core=require 'pa26_core';local wheel=require 'pa26_wheel';local lib=model.defaults(core.defaults())
 local route={kind='alert',category='service',id='code0'}
 check(not wheel.available(wheel.build(lib,0,true,{health=100}),route,false,nil))

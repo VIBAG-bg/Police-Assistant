@@ -23,7 +23,7 @@
       "interval_ms": 1500,
       "demo_mode": false,
       "schema": 2,
-      "max_distance": 5.0040001869202,
+      "max_distance": 5.0110001564026,
       "show_on_connect": true,
       "menu_key": 120
     },
@@ -53,11 +53,11 @@
       "enabled": true
     },
     "widget": {
-      "y": 409,
+      "y": 413,
       "time_source": "local",
       "visible": true,
       "scale": 1,
-      "x": 2278,
+      "x": 2283,
       "reference_width": 2560,
       "reference_height": 1440,
       "responsive": true
@@ -79,7 +79,10 @@
         "next_id": 1,
         "max_lines": 6,
         "custom": {},
-        "count_during_input": true
+        "count_during_input": true,
+        "radio_gap_ms": 1000,
+        "radio_resume_ms": 15000,
+        "resume_radio_batches": true
       },
       "schema": 1,
       "operations": {
@@ -158,7 +161,7 @@
             "intro": "Здравствуйте. Вас беспокоит {rank} {my_name}, {station}.",
             "dispatch_stolen_clear": "{local_tag}{unit}, сектор поиска в районе {area} ({map_square}) проверен, угнанный транспорт не обнаружен. 10-99, Код 4, продолжаю патрулирование.",
             "dispatch_911_clear": "{local_tag}{unit}, вызов 9-1-1 в районе {area} ({map_square}) проверен, нарушений не обнаружено. 10-99, продолжаю патрулирование, Код 4.",
-            "stop_order": "Водитель, прижмитесь к правой обочине, остановите транспортное средство и заглушите двигатель!\nДержите руки на руле на виду у офицеров {department} и не покидайте салон без приказа!",
+            "stop_order": "Говорит {officer_intro}. Водитель, примите вправо и остановитесь в безопасном месте!\nЗаглушите двигатель и ожидайте дальнейших указаний на месте.",
             "dispatch_bank_clear": "{local_tag}{unit}, ситуация у банка в районе {area} ({map_square}) урегулирована, 10-99. Код 4.",
             "backup_combat": "CODE 0! Нападение на офицера в районе {area} ({map_square}), нужна срочная помощь!",
             "robbery_gas": "{local_tag}{unit}, реагирую на ограбление АЗС, экипаж: {crew}, направляюсь в {city}, район {area} ({map_square}), курс {direction}, Код 3!",
@@ -168,9 +171,9 @@
             "window_question": "Окно водительской двери открыто?",
             "lost": "{local_tag}{unit}, по {vehicle_description} объявляю Код 4 АДАМ. Потерян в районе {area} ({map_square}), последний курс — {direction}.",
             "dispatch_gas_clear": "{local_tag}{unit}, ситуация на АЗС в районе {area} ({map_square}) урегулирована, 10-99. Продолжаю патрулирование, Код 4.",
-            "armed": "{local_tag}{unit}, водитель {vehicle_description} вооружён. Район {area} ({map_square}), запрашиваю поддержку, Код 3!",
+            "armed": "{local_tag}{unit}, {vehicle_description} в районе {area} ({map_square}). Подозреваемые, возможно, вооружены. Запрашиваю поддержку, Код 3.",
             "backup_risk": "10-66 / CODE 3! Остановка повышенного риска {vehicle_description}, район {area} ({map_square})!",
-            "finish": "{local_tag}{unit}, 10-99 по остановке {vehicle_description} в районе {stop_area} ({stop_map_square}), {stop_outcome}. Продолжаю патрулирование, Код 4.",
+            "finish": "{local_tag}{unit}, 10-99 по остановке {vehicle_description} в районе {stop_area} ({stop_map_square}), {stop_outcome}{patrol_return}. Код 4.",
             "dispatch_business_clear": "{local_tag}{unit}, тревога бизнеса в районе {area} ({map_square}) проверена, ситуация урегулирована. 10-99, Код 4.",
             "dispatch_business_foot_rp": "/me {gender:принял|приняла} сообщение об ограблении бизнеса по рации и {gender:открыл|открыла} карточку вызова на служебном КПК.\n/do На КПК отображена информация о тревоге коммерческого объекта.",
             "badge": "{gender:указал|указала} рукой на закреплённый на груди полицейский бейдж, демонстрируя его собеседнику.",
@@ -210,7 +213,7 @@
             "dispatch_bank_rp": "/me {gender:принял|приняла} экстренный сигнал тревоги из хранилища банка на терминал и {gender:активировал|активировала} протокол повышенной готовности.\n/do Координаты банка и сектор оцепления выведены на экран.",
             "risk_multi": "Водитель, заглушите двигатель, держите обе руки на виду и не совершайте резких движений!\nПо команде извлеките ключи и положите их на видное место. Ожидайте следующего указания!\nПо моей команде медленно откройте дверь и выходите по одному, держа руки поднятыми!",
             "dispatch_911_arrived": "{local_tag}{unit}, экипаж: {crew}, прибыл по вызову 9-1-1 в район {area} ({map_square}). Код 6, проверяю обстановку и опрашиваю граждан.",
-            "documents": "Предъявите, пожалуйста, документы для проверки. Основание: {stop_ground}.",
+            "documents": "Предъявите, пожалуйста, паспорт и лицензии для проверки.",
             "dispatch_stolen_arrived": "{local_tag}{unit}, экипаж: {crew}, прибыл в сектор поиска угнанного транспорта, 10-20: {area} ({map_square}). Код 6, осматриваю район.",
             "dispatch_stolen_backup": "{local_tag}{unit}, обнаружен транспорт {stolen_summary} в районе {area} ({map_square}); запрашиваю 10-70, свободные экипажи по Код 3.",
             "explain_stop": "{ground_speech}",
@@ -219,9 +222,35 @@
             "tire": "Водитель {vehicle_type_gen} {model}, цвет: {vehicle_color}, остановитесь! При неподчинении будет открыт огонь по колёсам!",
             "dispatch_911_foot_rp": "/me {gender:принял|приняла} вызов 9-1-1 на портативной рации и {gender:проверил|проверила} место вызова на служебном КПК.\n/do Сведения о вызове 9-1-1 отображены на экране КПК.",
             "window": "{gender:Мог|Могла} ли {my_firstname} увидеть оружие или запрещённые предметы в салоне автомобиля?",
-            "stop_order_bike": "Водитель мотоцикла, снизьте скорость и остановитесь в ближайшем безопасном разрешённом месте!\nЗаглушите двигатель, держите руки на виду и ожидайте дальнейших указаний полиции!",
+            "stop_order_bike": "Говорит {officer_intro}. Водитель, примите вправо и остановитесь в безопасном месте!\nЗаглушите двигатель и ожидайте дальнейших указаний на месте.",
             "risk_open": "Водитель мотоцикла, заглушите двигатель и оставьте руки на виду у сотрудников полиции!\nНе сходите с мотоцикла до отдельной команды. Не совершайте резких движений!\nПо моей команде медленно сойдите с мотоцикла и отойдите в указанное место, держа руки поднятыми!",
-            "risk_stage_question": "Обстановка позволяет передать следующий отдельный этап 10-66?"
+            "risk_stage_question": "Обстановка позволяет передать следующий отдельный этап 10-66?",
+            "approach_bike_day": "{gender:подошёл|подошла} к мотоциклу и {gender:осмотрел|осмотрела} его видимые детали и маркировку.",
+            "approach_bike_night": "{gender:достал|достала} тактический фонарь и {gender:осветил|осветила} видимые детали и маркировку мотоцикла.",
+            "approach_neutral": "{gender:подошёл|подошла} к транспортному средству и {gender:осмотрел|осмотрела} доступные снаружи детали.",
+            "busy_report": "{local_tag}{unit}, временно 10-8. О возвращении в патруль доложу отдельно.",
+            "colleague_arrived": "{local_tag}{unit}, нахожусь на месте запроса помощи коллеге. Моё 10-20: {area} ({map_square}).",
+            "colleague_assist": "{local_tag}{unit}, оказываю помощь коллеге на месте. Моё 10-20: {area} ({map_square}).",
+            "colleague_backup": "{local_tag}{unit}, запрашиваю дополнительные экипажи для помощи коллеге. Моё 10-20: {area} ({map_square}).",
+            "colleague_finish": "{local_tag}{unit}, помощь коллеге завершена. Моё 10-20: {area} ({map_square}).",
+            "dispatch_colleague": "{local_tag}{unit}, выезжаю на помощь коллеге. Моё 10-20: {area} ({map_square}).",
+            "dispatch_search": "{local_tag}{unit}, начинаю поиск подозреваемого. Моё 10-20: {area} ({map_square}).",
+            "gas_assess": "{local_tag}{unit}, оцениваю обстановку на АЗС. Моё 10-20: {area} ({map_square}).",
+            "gas_flee": "{local_tag}{unit}, наблюдаю уход подозреваемого от АЗС; уточняю направление. Моё 10-20: {area} ({map_square}).",
+            "gas_secure": "{local_tag}{unit}, контролирую периметр АЗС. Моё 10-20: {area} ({map_square}).",
+            "hint_bike": "Ответьте в /do: что видно при наружном осмотре мотоцикла.",
+            "inspect_bike": "Что видно при наружном осмотре мотоцикла?",
+            "inspect_neutral": "Что видно при наружном осмотре транспорта?",
+            "return_open": "Водитель {model}, оставайтесь рядом с транспортом, держите руки на виду и выполняйте указания офицера!",
+            "search_arrived": "{local_tag}{unit}, нахожусь в районе поиска подозреваемого. Моё 10-20: {area} ({map_square}).",
+            "search_backup": "{local_tag}{unit}, запрашиваю помощь экипажей для поиска подозреваемого. Моё 10-20: {area} ({map_square}).",
+            "search_continue": "{local_tag}{unit}, продолжаю поиск подозреваемого. Моё 10-20: {area} ({map_square}).",
+            "search_enroute": "{local_tag}{unit}, следую в район поиска подозреваемого. Моё 10-20: {area} ({map_square}).",
+            "search_finish": "{local_tag}{unit}, поиск в текущем районе завершён. Моё 10-20: {area} ({map_square}).",
+            "search_located": "{local_tag}{unit}, подозреваемый замечен, уточняю обстановку. Моё 10-20: {area} ({map_square}).",
+            "swat_finish": "{local_tag}{unit}, SWAT, {patrol_finish} в районе {area} ({map_square}).",
+            "swat_patrol": "{local_tag}{unit}, SWAT, {patrol_resume} в районе {area} ({map_square}). Обстановка спокойная.",
+            "swat_start": "{local_tag}{unit}, SWAT, {patrol_start} в районе {area} ({map_square})."
           },
           "scan_ms": 500,
           "tire_zero": "Предупреждения: 0/{ooc_warning_count} OOC · 0/{warning_count} Мануал. Счётчик не разрешает огонь.",
@@ -273,7 +302,7 @@
           "stop_branch": "none",
           "stop_custom": "",
           "detention_ground": "none",
-          "window_open_offer_text": "Представиться и назвать причину 10-55?",
+          "window_open_offer_text": "Назвать причину 10-55?",
           "high_risk_offer": true,
           "flee_offer": true,
           "detention_timers": true,
@@ -297,7 +326,23 @@
           },
           "stolen_enabled": true,
           "raid_end_hour": 22,
-          "uniforms_enabled": true
+          "uniforms_enabled": true,
+          "armed_offer": true,
+          "flight_min_samples": 2,
+          "flight_min_speed": 4,
+          "followup_cooldown_ms": 1000,
+          "immediate_flight_offer": true,
+          "risk_bike_stage_ms": 1400,
+          "risk_car_stage_ms": 1800,
+          "risk_confirm_ms": 90000,
+          "stop_greeting_ud": true,
+          "stop_warning_cooldown_ms": 4000,
+          "stop_warning_count": 5,
+          "stop_warning_version": 1,
+          "swat_channel": "/r",
+          "swat_reports": true,
+          "window_answer_delay_ms": 5000,
+          "window_answer_text": "Игрок сказал, что окно открыто?"
         },
         "phrase_6_shortcut": {
           "alt": false,
@@ -307,7 +352,7 @@
         },
         "phrases": [
           {
-            "template": "Водитель автомобиля {model}, говорит {station}. Остановитесь у обочины и выключите двигатель.",
+            "template": "Говорит {officer_intro}. Водитель, примите вправо и остановитесь в безопасном месте!",
             "name": "Остановиться",
             "target": "vehicle",
             "channel": "/m",
@@ -385,7 +430,7 @@
           "shift": false,
           "key": 0
         },
-        "megaphone_template": "Водитель автомобиля {model}, говорит {station}. Немедленно остановитесь у обочины и выключите двигатель.",
+        "megaphone_template": "Говорит {officer_intro}. Водитель, примите вправо и остановитесь в безопасном месте!",
         "scan_ms": 250,
         "finish_template": "{local_tag}{unit}, остановка / преследование {model} завершено. Район: {area}. Далее доступен.",
         "pursuit_template": "{local_tag}{unit}, начинаю преследование 10-57 VICTOR. {vehicle_description}. Район: {area}. Направление: {direction}. Экипаж: {crew}.",
@@ -412,7 +457,7 @@
           "shift": false,
           "key": 0
         },
-        "description_template": "{vehicle_type} {model}, цвет: {vehicle_color}",
+        "description_template": "{vehicle_color} {model}",
         "radio_templates_version": 1,
         "copilot_migrated": 2,
         "megaphone_require_patrol": false,
@@ -550,7 +595,12 @@
             "name": "рельсовый транспорт",
             "genitive": "рельсового транспорта"
           }
-        }
+        },
+        "approach_bike_template": "{gender:подошёл|подошла} к мотоциклу, остановившись на безопасном расстоянии от водителя.",
+        "approach_neutral_template": "{gender:подошёл|подошла} к транспортному средству и {gender:обратился|обратилась} к водителю.",
+        "direction_on_foot": false,
+        "inspect_bike_template": "Видимые элементы и маркировки мотоцикла доступны для внешнего осмотра?",
+        "inspect_neutral_template": "Видимые элементы транспортного средства доступны для внешнего осмотра?"
       },
       "recruitment": {
         "medical": true,
@@ -588,30 +638,31 @@
         "code1_channel": "",
         "timeout_ms": 15000,
         "include_sd": false,
-        "help_command": "",
+        "help_command": "/mark Требуется срочная поддержка всех свободных юнитов!",
         "enabled": true,
-        "help_source": "",
-        "sos_channel": "",
+        "help_source": "Проверено на Exsellent RP",
+        "sos_channel": "/f",
         "code0_enabled": true,
         "shots_enabled": true,
         "code0_template": "{local_tag}CODE 0. Офицер тяжело ранен, нужна срочная помощь. 10-20: {area}.",
         "code4_channel": "",
-        "channel": "/r",
+        "channel": "/f",
         "code1_template": "{local_tag}CODE 1. Отменяю ранее переданный CODE 0. 10-20: {area}.",
         "sos_enabled": true,
         "code4_enabled": false,
         "auto_shots": true,
-        "sos_template": "{local_tag}10-70. Требуется поддержка. 10-20: {area}.",
-        "shots_channel": "/r",
-        "shots_template": "{local_tag}Shots fired. По мне открыли огонь. Мой 10-20: {area}.",
-        "help_verified": false,
+        "sos_template": "{global_tag}10-70. SOS! Требуется срочная поддержка всех свободных юнитов! 10-20: {area}.",
+        "shots_channel": "/f",
+        "shots_template": "{global_tag}Shots fired! По офицеру открыт огонь, требуется срочная поддержка всех свободных юнитов! 10-20: {area}.",
+        "help_verified": true,
         "cooldown_ms": 30000,
         "code1_enabled": false,
         "code4_template": "{local_tag}CODE 4. Помощь больше не требуется. 10-20: {area}.",
-        "help_enabled": false,
+        "help_enabled": true,
         "code0_health": 25,
         "help_delay_ms": 1500,
-        "auto_code0": false
+        "auto_code0": false,
+        "shots_help_enabled": true
       },
       "rp_text": {
         "marker": "...",
@@ -756,7 +807,27 @@
         "toast_enabled": true,
         "followup_ttl_ms": 300000,
         "rights_reminder": "Когда обстановка позволяет, проверьте, разъяснили ли вы человеку причину задержания и его права. Одного нажатия команды для этого недостаточно.",
-        "enabled": false
+        "enabled": false,
+        "command_reports": {
+          "ttl_ms": 120000,
+          "jail": {
+            "template": "{local_tag}{unit}: один задержанный помещён в КПЗ. 10-20: {location}.",
+            "title": "КПЗ · передать доклад?",
+            "enabled": true,
+            "channel": "/f"
+          },
+          "queue_limit": 4,
+          "toast_ms": 20000,
+          "detention": {
+            "template": "{local_tag}{unit}: 10-15, задержан один подозреваемый. 10-20: {location}.",
+            "title": "Задержание · передать доклад?",
+            "enabled": true,
+            "channel": "/f"
+          },
+          "duplicate_ms": 1000,
+          "enabled": true,
+          "hint": "Y — передать доклад; N — не передавать. Команда передана клиенту; перед Y убедитесь, что действие выполнено."
+        }
       },
       "map_grid": {
         "radar": true,
@@ -930,13 +1001,14 @@
         "gender": "male",
         "prison_tag": "",
         "my_plate": "",
-        "callsign": ""
+        "callsign": "",
+        "badge_number": ""
       },
       "patrol_session": {
         "respawn_distance": 100,
         "crew": {},
         "reporter_self": true,
-        "resume_template": "{local_tag}{unit}, продолжаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}, квадрат {map_square}.. Направление: {direction}.",
+        "resume_template": "{local_tag}{unit}, {patrol_resume}. Состав: {crew}. {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}.",
         "vehicle": "",
         "sector": "",
         "unit_number": 1,
@@ -949,11 +1021,11 @@
         },
         "reload_grace_ms": 30000,
         "restore_offer": true,
-        "periodic_template": "{local_tag}{unit}, продолжаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}, квадрат {map_square}.. Направление: {direction}.",
+        "periodic_template": "{local_tag}{unit}, {patrol_resume}. Состав: {crew}. {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}.",
         "respawn_position_tolerance": 10,
         "auto_resume_reload": true,
         "bind_distance": 60,
-        "radio_templates_version": 1,
+        "radio_templates_version": 2,
         "mode": "police",
         "confirmation": true,
         "enabled": true,
@@ -989,11 +1061,13 @@
         "respawn_evidence_ms": 10000,
         "pause_on_crew_change": true,
         "downed_hp": 0,
-        "start_template": "{local_tag}{unit}, начинаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}, квадрат {map_square}. Далее доступны.",
+        "start_template": "{local_tag}{unit}, {patrol_start}. Состав: {crew}. {city}, район {area} ({map_square}), {patrol_moving} на {direction}. Код 4, {patrol_available}.",
         "hud": true,
         "periodic": true,
         "finish_template": "{local_tag}{unit}, патрулирование завершено. Экипаж: {crew}.",
-        "crew_template": "{local_tag}{unit}: состав экипажа изменён. Экипаж: {crew}."
+        "crew_template": "{local_tag}{unit}, состав изменён: {crew}. {city}, район {area} ({map_square}), последний курс {direction}. Код 4.",
+        "count_map_time": true,
+        "map_max_gap_ms": 3600000
       },
       "filters": {},
       "taser": {
@@ -1467,8 +1541,7 @@
           "copilot-lost": "detention",
           "copilot-finish": "detention",
           "copilot-fast_wanted": "wanted",
-          "procedure-wanted_list": "wanted",
-          "pa-gps-clear": "wanted",
+          "procedure-wanted_list": "disabled",
           "pa-call911": "service",
           "pa-share-coordinates": "service",
           "patrol-open": "leadership",
@@ -1490,7 +1563,7 @@
           "default_style": "author"
         },
         "tips_key": 123,
-        "wheel_child_limit": 15,
+        "wheel_child_limit": 16,
         "wheel_car_order": {
           "root": [
             "citizen",
@@ -1521,8 +1594,7 @@
             "b:3",
             "s:procedure-wanted",
             "b:44",
-            "s:procedure-wanted_list",
-            "s:pa-gps-clear"
+            "s:procedure-wanted_list"
           ],
           "service": [
             "b:54",
@@ -1554,7 +1626,7 @@
         "wheel_system_groups": {
           "procedure-fine": "wanted",
           "code0": "frisk",
-          "assist-megaphone": "citizen",
+          "assist-megaphone": "detention",
           "copilot-finish": "service",
           "procedure-mark": "detention",
           "shots": "frisk",
@@ -1564,7 +1636,8 @@
           "copilot-explain_stop": "citizen",
           "pa-bulletins": "wanted",
           "copilot-fast_wanted": "wanted",
-          "procedure-wanted": "wanted"
+          "procedure-wanted": "wanted",
+          "procedure-wanted_list": "disabled"
         },
         "manual_radio_prefix": true,
         "cef_chat_weapon_guard": true,
@@ -1700,8 +1773,8 @@
               "rp": "/me {gender:открыл|открыла} багажное отделение крузера, {gender:достал|достала} складное дорожное заграждение и {gender:установил|установила} его на проезжей части."
             },
             "find": {
-              "enabled": false,
-              "prefer_bind": false,
+              "enabled": true,
+              "prefer_bind": true,
               "rp": "/me взяв в руки служебный планшет, {gender:открыл|открыла} портал {department} и зайдя в нужную секцию портала, заполнив необходимые данные, {gender:нажал|нажала} на кнопку \"База данных сотрудников\"."
             },
             "clear": {
@@ -1868,7 +1941,10 @@
           "frisk_mode": "saved",
           "frisk_full_rp": "/me {gender:надел|надела} плотные чёрные резиновые перчатки, тщательно {gender:проверил|проверила} все карманы, пояс и обувь задержанного и {gender:выложил|выложила} найденные вещи под камеру.\n/do Предметы, подлежащие изъятию по результатам обыска, подготовлены к упаковке в зип-пакет и бокс для улик.",
           "frisk_primary_rp": "/me {gender:поставил|поставила} задержанного у опоры и быстрыми движениями без перчаток {gender:прохлопал|прохлопала} верхнюю одежду, пояс, торс и ноги саспекта сверху вниз на наличие оружия.\n/do Что офицер {gender:мог|могла} нащупать под одеждой задержанного?",
-          "enabled": true
+          "enabled": true,
+          "mask_cleanup_command": "/offobject",
+          "mask_cleanup_enabled": true,
+          "mask_delay_ms": 700
         },
         "opacity": 0.8299999833107,
         "cef_layout_indicator": true,
@@ -1894,11 +1970,135 @@
         "aim_select_enabled": true,
         "help": {
           "welcome": false,
-          "visible": true,
+          "visible": false,
           "opacity": 0.74,
-          "scale": 1
+          "scale": 1,
+          "position": {
+            "x": 0.99870466321244,
+            "y": 0.57001573564123
+          }
+        },
+        "cef_profile_updates": true,
+        "theme": "police",
+        "ui_icons": true
+      },
+      "field": {
+        "pinned": {
+          "font_scale": 1,
+          "y": 0.14,
+          "height": 0.35,
+          "note_id": 0,
+          "enabled": false,
+          "opacity": 0.88,
+          "width": 0.25,
+          "x": 0.72
+        },
+        "enabled": false,
+        "cruiser": {
+          "left_key": 0,
+          "hazard_key": 0,
+          "auto_hazard": false,
+          "cruise": false,
+          "target_speed": 60,
+          "right_key": 0,
+          "enabled": false,
+          "speed_step": 5,
+          "signals": false,
+          "shortcut": {
+            "shift": false,
+            "key": 0,
+            "alt": false,
+            "ctrl": false
+          }
+        },
+        "navigation": {
+          "max_segments": 256,
+          "overlay": false,
+          "pause_map": true,
+          "road_budget_ms": 1,
+          "arrival": 15,
+          "road_work": 256,
+          "line_width": 3,
+          "hud": true,
+          "road_snap": 300,
+          "observe_ms": 250,
+          "observe_waypoint": false,
+          "movement": 20,
+          "retry_ms": 5000,
+          "opacity": 0.9,
+          "enabled": false,
+          "radar": true,
+          "recalculate_ms": 1500,
+          "road_external": "",
+          "keep_waypoint": false,
+          "missing_grace_ms": 750,
+          "native_path": false
+        },
+        "share_shortcut": {
+          "shift": false,
+          "key": 0,
+          "alt": false,
+          "ctrl": false
+        },
+        "coordinates": {
+          "arrival_clear": false,
+          "offer_ms": 20000,
+          "rn_verified": true,
+          "channel": "/fn",
+          "sms_verified": false,
+          "enabled": false,
+          "observe": false,
+          "ttl_ms": 300000,
+          "shortcut": {
+            "shift": false,
+            "key": 0,
+            "alt": false,
+            "ctrl": false
+          },
+          "ln_verified": false,
+          "phone": "",
+          "fn_verified": true
+        },
+        "leadership": {
+          "presets": {},
+          "enabled": false,
+          "briefings": [
+            {
+              "favorite": false,
+              "department": "EPD",
+              "lines": [
+                "Доклад начинается с маркировки юнита. Затем понятно опишите ситуацию и место.",
+                "В Мануале допускается свободная форма. Десятичные коды не обязательны: главное — ясная суть."
+              ],
+              "tag": "",
+              "name": "Рация: понятный доклад"
+            },
+            {
+              "favorite": false,
+              "department": "EPD",
+              "lines": [
+                "10-20 — местоположение. Называйте район и понятный ориентир.",
+                "10-15 — задержанный под стражей. Сообщайте только установленный вами факт задержания.",
+                "10-70 — запрос поддержки. Укажите место и какую помощь требуется оказать."
+              ],
+              "tag": "",
+              "name": "Рация: 10-20, 10-15, 10-70"
+            }
+          ],
+          "command": "/gnews",
+          "source": "",
+          "channel_limit": 127,
+          "lines": [
+            "",
+            "",
+            ""
+          ],
+          "tag": "",
+          "delay_ms": 1500,
+          "verified": false
         }
-      }
+      },
+      "profile_presets": {}
     },
     "format": "police-assistant.settings",
     "schema": 1

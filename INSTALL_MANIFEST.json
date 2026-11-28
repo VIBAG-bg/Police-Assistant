@@ -1,5 +1,5 @@
 {
-  "release": "0.47.1",
+  "release": "0.47.2",
   "files": [
     {
       "path": "config\\police_assistant_2026.ini",
@@ -7,7 +7,7 @@
     },
     {
       "path": "lib\\pa26_alerts.lua",
-      "sha256": "45b4dbb3d07a01dc961db68e3490b99b1f1d536c7b4884cf9dd77f4f1af1d65a"
+      "sha256": "4623d5a27273d15a08620d0a87ae864dfa14441c6360b0cf6523aa0e35533b5b"
     },
     {
       "path": "lib\\pa26_assist_settings.lua",
@@ -19,7 +19,7 @@
     },
     {
       "path": "lib\\pa26_author_defaults0460.lua",
-      "sha256": "cfe015c067a6ef4bf06551d8d7fc83bf0bd3f514809e046a994ff5dbc21f0138"
+      "sha256": "8312ed179778d32babbeb5d3082afb771a65ca738e708abfc265f051fc197160"
     },
     {
       "path": "lib\\pa26_author_upgrade0460.lua",
@@ -39,7 +39,7 @@
     },
     {
       "path": "lib\\pa26_author_presets.lua",
-      "sha256": "9638f4edee5864d31bcd99d2ea3113aa7e7788b1c1249a3213a056639b8a8ccc"
+      "sha256": "f6f4e15c18ee4ed96aa42998a71a2d321499bee4c20428b9a4852f9463bfa19b"
     },
     {
       "path": "lib\\pa26_author_rp.lua",
@@ -55,7 +55,7 @@
     },
     {
       "path": "lib\\pa26_bindings.lua",
-      "sha256": "500e01b4a6afaeba62500cfe515e99ee1150600cd497932dac1f291239308d8b"
+      "sha256": "e807f59098f50edbac9211fb8dc5b8734b24d0d9ddd604554b414c4c1146f6bc"
     },
     {
       "path": "lib\\pa26_case_forms.lua",
@@ -127,7 +127,7 @@
     },
     {
       "path": "lib\\pa26_core.lua",
-      "sha256": "dc8df5c45f5b843bdf7c57f3354059631acbd657b879f84032002760cc522092"
+      "sha256": "5e9053a94a72c4e8777c8d42eff0eec8b05689c8aea7d705803dfa0984f57417"
     },
     {
       "path": "lib\\pa26_cruiser_assist.lua",
@@ -395,7 +395,7 @@
     },
     {
       "path": "lib\\pa26_preferences.lua",
-      "sha256": "8fd1523dc8fc58a24e7942218e7e0cd376feb4ccba46504601aa17eb581bf024"
+      "sha256": "bbdde9ee091d58be59e2192c6bfbb272b7badd8e02eaf97423b1f422039bd39a"
     },
     {
       "path": "lib\\pa26_procedure_flow.lua",
@@ -491,7 +491,7 @@
     },
     {
       "path": "lib\\pa26_studio.lua",
-      "sha256": "6eb6c7a2b2e3e92cf75dec5964ae4bff131db8c7452b9ea1e38156b6eb3aa2e0"
+      "sha256": "8c6eefe8cca36f5caccd30f41975c562264e402ab84c040b628432ec3321c8fb"
     },
     {
       "path": "lib\\pa26_target.lua",
@@ -535,7 +535,7 @@
     },
     {
       "path": "lib\\pa26_user_files.lua",
-      "sha256": "2d15e5a04610071e42a9f7be4b72e5c458970e2441ad2792ca7b4c1937feb7f6"
+      "sha256": "cfc42adfb8cda9fa91f8f784a6f68723f4885177cf7f5b9b78d546b6660ff5a6"
     },
     {
       "path": "lib\\pa26_vehicle.lua",
@@ -579,7 +579,7 @@
     },
     {
       "path": "lib\\pa26_wanted_window.lua",
-      "sha256": "a7374396d944c4624c3d0e96fd6fa4b29473569bb29d51069c8f661c94e8aa0b"
+      "sha256": "836263925d6991042cee0ca0b5f2b5c981800bed6831c4f1e95952046cde9e54"
     },
     {
       "path": "lib\\pa26_weapon_warning.lua",
@@ -591,7 +591,7 @@
     },
     {
       "path": "lib\\pa26_wheel.lua",
-      "sha256": "0801668833bee76cc448be695d478a847191205d04fb0c79e3b15ab1ff30d460"
+      "sha256": "708fc2208a892197a20e558bd49f547fada7dd14e0e8b9ad842d8802429f3f82"
     },
     {
       "path": "lib\\pa26_wheel_edit.lua",
@@ -623,7 +623,7 @@
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "18b9d11ea0e2406d478f59b4aa357b313bf2722f0cf8f50969395d9550c8960c"
+      "sha256": "2a5d3dbe878a6601b70a971961df365de06fb22d0ff1522ba2a588fc1efcf0d0"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",
@@ -713,15 +713,15 @@
   "preset_files": [
     {
       "path": "presets/manifest.json",
-      "sha256": "f1b9f951d9858747a60fb2302c3aeff334e5356bef88c49d6cb3f20a6c4b65af"
+      "sha256": "bed92fc2f8825c869bdfe7b7055187c9de460f2a02a176e026bd49cf097afe6f"
     },
     {
       "path": "presets/pa-binds.json",
-      "sha256": "00ae28a076b88af6279d43930e28bf79508f75f7c294124c8d87373f4d227fb3"
+      "sha256": "db7c1f30333bf5de55173f4aaff5ee89517cdeef964685fccb33bbecbb6cf35a"
     },
     {
       "path": "presets/pa-settings.json",
-      "sha256": "e57dea3011e03fa109d3fcaea839805aec6e181003d223b8a175805a7e86772f"
+      "sha256": "db71d4af05d09b4f62b9ada47567037a208cc80a90fb9fbbacd68de3951c9890"
     },
     {
       "path": "presets/baseline.json",

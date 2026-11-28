@@ -1,7 +1,7 @@
 {
   "format": "police-assistant.binds",
   "schema": 2,
-  "next_id": 89,
+  "next_id": 90,
   "wheel": [
     1,
     2,
@@ -37,7 +37,8 @@
       "category": "Общение",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A01"
+      "author_ref": "A01",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -68,7 +69,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A02"
+      "author_ref": "A02",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -96,7 +98,8 @@
       "category": "Проверки",
       "wheel_car_group": "wanted",
       "wheel_car_extra_groups": [],
-      "author_ref": "A03"
+      "author_ref": "A03",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -124,7 +127,8 @@
       "category": "Досмотр",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A04"
+      "author_ref": "A04",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -152,7 +156,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A05"
+      "author_ref": "A05",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -180,7 +185,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A06"
+      "author_ref": "A06",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -208,7 +214,8 @@
       "category": "Мои сценарии",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A12"
+      "author_ref": "A12",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -236,7 +243,8 @@
       "category": "Общение",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A13"
+      "author_ref": "A13",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -268,7 +276,8 @@
         "bike_script": "/me приблизившись к остановленному мотоциклу с безопасной стороны, {gender:осмотрел|осмотрела} его видимые детали и положение рук водителя.\n@wait(1200)\n/todo Добрый день, {rank} {my_lastname}, {department}.*указав на полицейский бейдж, закреплённый на груди.\n@wait(1000)\n/ud {select_id}\n@wait(1000)\nПредъявите, пожалуйста, паспорт, водительскую лицензию и документы на мотоцикл."
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A14"
+      "author_ref": "A14",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -308,7 +317,8 @@
         "contact_phase": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A15"
+      "author_ref": "A15",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -336,7 +346,8 @@
       "category": "Общение",
       "wheel_car_group": "custom",
       "wheel_car_extra_groups": [],
-      "author_ref": "A16"
+      "author_ref": "A16",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -367,7 +378,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A17"
+      "author_ref": "A17",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -395,7 +407,8 @@
       "category": "Документы",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A18"
+      "author_ref": "A18",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "bodycamera",
@@ -423,7 +436,8 @@
       "category": "Документы",
       "wheel_car_group": "service",
       "wheel_car_extra_groups": [],
-      "author_ref": "A19"
+      "author_ref": "A19",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -451,7 +465,8 @@
       "category": "Документы",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A20"
+      "author_ref": "A20",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -479,7 +494,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A21"
+      "author_ref": "A21",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -507,7 +523,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A22"
+      "author_ref": "A22",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -535,7 +552,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A23"
+      "author_ref": "A23",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -563,7 +581,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A24"
+      "author_ref": "A24",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -591,7 +610,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A25"
+      "author_ref": "A25",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -619,7 +639,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A26"
+      "author_ref": "A26",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -647,7 +668,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A27"
+      "author_ref": "A27",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -675,7 +697,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A28"
+      "author_ref": "A28",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -711,7 +734,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A29"
+      "author_ref": "A29",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -747,7 +771,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A30"
+      "author_ref": "A30",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -775,7 +800,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A31"
+      "author_ref": "A31",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -803,7 +829,8 @@
       "category": "Задержание",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A32"
+      "author_ref": "A32",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -831,7 +858,8 @@
       "category": "Досмотр",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A33"
+      "author_ref": "A33",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -859,7 +887,8 @@
       "category": "Досмотр",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A34"
+      "author_ref": "A34",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -887,7 +916,8 @@
       "category": "Досмотр",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A35"
+      "author_ref": "A35",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -924,7 +954,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A36"
+      "author_ref": "A36",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -955,7 +986,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A37"
+      "author_ref": "A37",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -986,7 +1018,8 @@
         "vehicle": "inspection"
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A38"
+      "author_ref": "A38",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1022,7 +1055,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A39"
+      "author_ref": "A39",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1050,7 +1084,8 @@
       "category": "Проверки",
       "wheel_car_group": "wanted",
       "wheel_car_extra_groups": [],
-      "author_ref": "A40"
+      "author_ref": "A40",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1081,7 +1116,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A41"
+      "author_ref": "A41",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1112,7 +1148,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A42"
+      "author_ref": "A42",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1143,7 +1180,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A43"
+      "author_ref": "A43",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1174,7 +1212,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A44"
+      "author_ref": "A44",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1205,7 +1244,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A45"
+      "author_ref": "A45",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1237,7 +1277,8 @@
         "bike_script": "/m Водитель мотоцикла, снизьте скорость и остановитесь в ближайшем безопасном разрешённом месте!\n@wait(1200)\n/m Заглушите двигатель, держите руки на виду и ожидайте дальнейших указаний полиции!"
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A46"
+      "author_ref": "A46",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1265,7 +1306,8 @@
       "category": "Трафик и погоня",
       "wheel_car_group": "detention",
       "wheel_car_extra_groups": [],
-      "author_ref": "A47"
+      "author_ref": "A47",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1311,7 +1353,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A48"
+      "author_ref": "A48",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1339,7 +1382,8 @@
       "category": "Трафик и погоня",
       "wheel_car_group": "citizen",
       "wheel_car_extra_groups": [],
-      "author_ref": "A49"
+      "author_ref": "A49",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1375,7 +1419,8 @@
           }
         ]
       },
-      "author_ref": "A50"
+      "author_ref": "A50",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1403,7 +1448,8 @@
       "category": "Трафик и погоня",
       "wheel_car_group": "custom",
       "wheel_car_extra_groups": [],
-      "author_ref": "A51"
+      "author_ref": "A51",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1439,7 +1485,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A52"
+      "author_ref": "A52",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1469,7 +1516,8 @@
       "wheel_car_extra_groups": [
         "custom"
       ],
-      "author_ref": "A53"
+      "author_ref": "A53",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1497,7 +1545,8 @@
       "category": "Трафик и погоня",
       "wheel_car_group": "service",
       "wheel_car_extra_groups": [],
-      "author_ref": "A54"
+      "author_ref": "A54",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1525,7 +1574,8 @@
       "category": "Трафик и погоня",
       "wheel_car_group": "citizen",
       "wheel_car_extra_groups": [],
-      "author_ref": "A55"
+      "author_ref": "A55",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1553,7 +1603,8 @@
       "category": "Трафик и погоня",
       "wheel_car_group": "service",
       "wheel_car_extra_groups": [],
-      "author_ref": "A56"
+      "author_ref": "A56",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1581,7 +1632,8 @@
       "category": "Трафик и погоня",
       "wheel_car_group": "service",
       "wheel_car_extra_groups": [],
-      "author_ref": "A57"
+      "author_ref": "A57",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1609,7 +1661,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A58"
+      "author_ref": "A58",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1637,7 +1690,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A59"
+      "author_ref": "A59",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1665,7 +1719,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "custom",
       "wheel_car_extra_groups": [],
-      "author_ref": "A60"
+      "author_ref": "A60",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1693,7 +1748,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A61"
+      "author_ref": "A61",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1721,7 +1777,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A62"
+      "author_ref": "A62",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1749,7 +1806,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A63"
+      "author_ref": "A63",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1777,7 +1835,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A64"
+      "author_ref": "A64",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1805,7 +1864,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A65"
+      "author_ref": "A65",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1833,7 +1893,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A66"
+      "author_ref": "A66",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1861,7 +1922,8 @@
       "category": "Спецсредства",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A67"
+      "author_ref": "A67",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1889,7 +1951,8 @@
       "category": "Следствие и криминалистика",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A68"
+      "author_ref": "A68",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1917,7 +1980,8 @@
       "category": "Следствие и криминалистика",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A69"
+      "author_ref": "A69",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1953,7 +2017,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A70"
+      "author_ref": "A70",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -1989,7 +2054,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A71"
+      "author_ref": "A71",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2025,7 +2091,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A72"
+      "author_ref": "A72",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2053,7 +2120,8 @@
       "category": "Экспертизы и следствие",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A73"
+      "author_ref": "A73",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2081,7 +2149,8 @@
       "category": "Следствие и криминалистика",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A74"
+      "author_ref": "A74",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2117,7 +2186,8 @@
         ]
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A75"
+      "author_ref": "A75",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2148,7 +2218,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A76"
+      "author_ref": "A76",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2179,7 +2250,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A77"
+      "author_ref": "A77",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2210,7 +2282,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A78"
+      "author_ref": "A78",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2241,7 +2314,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A79"
+      "author_ref": "A79",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2269,7 +2343,8 @@
       "category": "Управление составом",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A80"
+      "author_ref": "A80",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2300,7 +2375,8 @@
         "identity": true
       },
       "wheel_car_extra_groups": [],
-      "author_ref": "A81"
+      "author_ref": "A81",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2328,7 +2404,8 @@
       "category": "Лекции RTD",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A82"
+      "author_ref": "A82",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2356,7 +2433,8 @@
       "category": "Лекции RTD",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A83"
+      "author_ref": "A83",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2384,7 +2462,8 @@
       "category": "Лекции RTD",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A84"
+      "author_ref": "A84",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2412,7 +2491,8 @@
       "category": "Лекции RTD",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A85"
+      "author_ref": "A85",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2440,7 +2520,8 @@
       "category": "Лекции RTD",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A86"
+      "author_ref": "A86",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "",
@@ -2468,7 +2549,8 @@
       "category": "Лекции RTD",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A87"
+      "author_ref": "A87",
+      "wheel_extra_groups": {}
     },
     {
       "command_alias": "add",
@@ -2480,11 +2562,11 @@
         "shift": false,
         "key": 0
       },
-      "quick": false,
+      "quick": true,
       "target_required": false,
       "script": "@random(/ad В г. San-Fierro самая дешевая аптека! Большие аптечки по 1000$. Навигатор: 7-6-2.|/ad В г. San-Fierro самая дешевая аптека! Маленькие аптечки по 300$. Навигатор: 7-6-2.|/ad В аптеке г. San-Fierro самый дешевый адреналин и аптечки в Республике! Навигатор: 7-6-2.)",
       "wheel_car_visible": false,
-      "wheel_visible": false,
+      "wheel_visible": true,
       "stat": "none",
       "favorite": false,
       "command": "pa26_ad",
@@ -2496,7 +2578,8 @@
       "category": "Мои сценарии",
       "wheel_car_group": "auto",
       "wheel_car_extra_groups": [],
-      "author_ref": "A88"
+      "author_ref": "A88",
+      "wheel_extra_groups": {}
     }
   ],
   "wheel_car_classic": [

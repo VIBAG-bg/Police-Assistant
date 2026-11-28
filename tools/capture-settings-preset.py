@@ -58,6 +58,10 @@ for key in pairs(author.protected)do s.data[key]=model.copy(stock.settings.data[
 s.data.assist.history=model.copy(stock.settings.data.assist.history)
 s.data.assist.evidence.screens_dir=stock.settings.data.assist.evidence.screens_dir
 s.data.settings.updates=model.copy(stock.settings.data.settings.updates)
+s.data.settings.cef_profile_updates=stock.settings.data.settings.cef_profile_updates
+s.data.settings.window_layout.windows={}
+s.data.settings.applied_author_defaults_0460=nil
+s.data.settings.alert_wheel_defaults0472=nil
 -- Fresh installs always use real mode. Applying a preset preserves the recipient's mode.
 cfg.main.demo_mode=false
 local payload=assert(author.validate('settings',{
@@ -94,7 +98,8 @@ report = {'revision': args.revision, 'captured_at_utc': datetime.now(timezone.ut
           'game_written': False, 'binds_changed': False, 'notes_read': False,
           'private_data_excluded': ['profile', 'partners', 'wanted_reminders', 'filters',
                                    'assist.history', 'local screenshot folder', 'update preferences',
-                                   'notes', 'personal knowledge'],
+                                   'local CEF catalog preference', 'saved screen geometry',
+                                   'per-install migration flags', 'notes', 'personal knowledge'],
           'fresh_demo_mode': False}
 (root / 'tests/SETTINGS_CAPTURE_20261031.json').write_text(
     json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')

@@ -52,3 +52,34 @@ onScriptTerminate(tracking.script)
 local s,f=setup(false)
 s.events.onPlayerQuit(37,1);s.targetConnected=false;s.step();s.render();eq(#s.sent,0)
 check(not s.hasLog('Ошибка интерфейса'));onScriptTerminate(s.script)
+
+for _,kind in ipairs({'wanted','wanted_list'})do
+    local g=fixture({productionWindows=true,demo=false,library=model.defaults(core.defaults()),alerts=true,categoryWheel=true})
+    g.step()
+    if g.frames[1].condition()then g.commands.pa26();g.step()end
+    check(g.workspace:selectTarget({id=g.id,ped=g.mappedPed,name=g.name}))
+    g.step()
+    local studio=g.workspace.studio
+    local route={kind='procedure',id='procedure-'..kind,category='wanted'}
+    check(g.runtime.env.wheelNavigate(route))
+    local original=assert(studio.caseForm)
+    check(g.caseForms:validForm(original));eq(original.kind,kind)
+    g.vehicle=true;g.drawnText={};g.step()
+    check(not g.caseForms:validForm(original))
+    local message=kind=='wanted_list' and 'Форма списка устарела: игровая сцена изменилась.' or 'Повторите /su ID или создайте новую форму.'
+    check(table.concat(g.drawnText,' '):find(message,1,true),kind..' stale copy')
+    click(g,'Создать новую форму##case-stale-new')
+    local fromButton=studio.caseForm
+    check(fromButton~=original and g.caseForms:validForm(fromButton))
+    eq(studio.caseStoredForms[kind],fromButton);eq(fromButton.kind,kind)
+    g.caseForms.consumed=fromButton.id
+    check(g.runtime.env.wheelNavigate(route))
+    local fromWheel=studio.caseForm
+    check(fromWheel~=fromButton and g.caseForms:validForm(fromWheel))
+    eq(studio.caseStoredForms[kind],fromWheel)
+    g.vehicle=false;g.step()
+    check(g.runtime.env.wheelNavigate(route))
+    check(studio.caseForm~=fromWheel and g.caseForms:validForm(studio.caseForm))
+    eq(studio.caseForm.inVehicle,false);eq(#g.sent,0)
+    onScriptTerminate(g.script)
+end
