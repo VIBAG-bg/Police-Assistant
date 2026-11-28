@@ -12,7 +12,8 @@ M.reasons={unchecked='Адаптер карты ещё не проверен.',r
     process='Процесс игры не соответствует поддерживаемому размещению GTA.',image='Не подтверждена версия исполняемого файла GTA.',
     signature='Проекция радара изменена или версия GTA пока не поддерживается.',memory='Данные карты недоступны для безопасного чтения.',
     geometry='Проекция карты вернула некорректные координаты.',map_not_ready='Карта GTA ещё не подготовлена к отрисовке.',
-    hidden='Сетка скрыта в текущем экране.',disabled='Квадраты карты выключены.',failed='Отрисовка сетки остановлена после ошибки.'}
+    hidden='Сетка скрыта в текущем экране.',pause_disabled='Сетка на карте Esc выключена.',
+    disabled='Квадраты карты выключены.',failed='Отрисовка сетки остановлена после ошибки.'}
 -- The reader is injected for deterministic tests. Every read in the real backend checks VirtualQuery first.
 function M.verify(reader)
     local p=M.profile;local base=reader:base()
@@ -72,46 +73,55 @@ local function backend(ffi)
     return r
 end
 function M.new(ffi,reader)
-    local out=setmetatable({status='unchecked'},Adapter)
+    local out=setmetatable({status='unchecked',lastPauseDetail={}},Adapter)
     if reader then out.reader=reader;return out end
     local ok,r,reason=pcall(backend,ffi)
-    if ok and r then out.reader=r else out.status=ok and reason or 'kernel'end
+    if ok and r then out.reader=r else out.probeError=ok and reason or 'kernel';out.status=out.probeError end
     return out
 end
-function Adapter:reset()self.checked=nil;self.status=self.reader and'unchecked'or self.status;self.failed=nil end
+function Adapter:reset()self.checked=nil;self.status=self.reader and'unchecked'or self.probeError;self.failed=nil end
 function Adapter:message()return M.reasons[self.status]or M.reasons.failed end
 function Adapter:probe()
-    if self.failed or not self.reader then return false end
-    if self.checked~=nil then return self.checked==true end
+    if self.failed then return false end
+    if not self.reader or self.checked==false then self.status=self.probeError;return false end
+    if self.checked then return true end
     local ok,valid,reason=pcall(M.verify,self.reader)
     self.status=ok and reason or'memory';self.checked=ok and valid==true or false
     if self.checked then
         local bound=pcall(self.reader.bind,self.reader);if not bound then self.checked=false;self.status='memory'end
     end
+    if not self.checked then self.probeError=self.status end
     return self.checked
 end
 function Adapter:view(state,width,height,s)
     if not s.enabled then self.status='disabled';return nil end
     if not state or not state.connected or state.focused~=true or state.interior~=0 or not core.finite(width)or not core.finite(height)or
-        width<200 or height<200 or width>16384 or height>16384 then return nil end
+        width<200 or height<200 or width>16384 or height>16384 then
+        if state and state.paused then self.status='hidden' end
+        return nil
+    end
     if not self:probe()then return nil end
     local r=self.reader
     -- Reject new hooks/changed permissions before any call into GTA; unknown builds never reach bind/worldScreen.
     local p=M.profile
     if not r:executable(p.screen,#p.screenBytes)or not r:executable(p.world,#p.worldBytes)or
         r:bytes(p.screen,#p.screenBytes)~=p.screenBytes or r:bytes(p.world,#p.worldBytes)~=p.worldBytes then
-        self.checked=false;self.status='signature';return nil
+        self.checked=false;self.probeError='signature';self.status=self.probeError;return nil
     end
     if state.paused then
-        if not s.pause_map or r:byte(0xBA68A5)~=5 then self.status='hidden';return nil end
-        -- The front-end drawing flag is temporary. Read the prepared map transform instead of
-        -- forcing this flag or calling the radar-screen function after the front-end has reset it.
+        if not s.pause_map then self.status='pause_disabled';return nil end
+        local detail=self.lastPauseDetail
+        detail.page=r:byte(0xBA68A5)
+        if detail.page~=5 then self.status=detail.page==nil and 'memory' or 'hidden';return nil end
+        -- The pause map is north-up with its world origin at (0, 0). Shared radar
+        -- globals can already describe the minimap again by the time we draw.
         local zoom,ox,oy=r:float(0xBA67AC),r:float(0xBA67B0),r:float(0xBA67B4)
-        local range,wx,wy=r:float(0xBA8314),r:float(0xBAA248),r:float(0xBAA24C)
-        local sn,cs=r:float(0xBA8310),r:float(0xBA830C)
-        if not(core.finite(zoom)and core.finite(ox)and core.finite(oy)and core.finite(range)and core.finite(wx)and core.finite(wy)and core.finite(sn)and core.finite(cs))then self.status='memory';return nil end
-        if zoom<10 or zoom>10000 or math.abs(ox)>20000 or math.abs(oy)>20000 or range<1000 or range>10000 or
-            math.abs(wx)>.01 or math.abs(wy)>.01 or math.abs(sn)>.001 or math.abs(cs-1)>.001 then self.status='map_not_ready';return nil end
+        detail.zoom,detail.ox,detail.oy=zoom,ox,oy
+        if not(core.finite(zoom)and core.finite(ox)and core.finite(oy))then self.status='memory';return nil end
+        if zoom<10 or zoom>10000 or math.abs(ox)>20000 or math.abs(oy)>20000 then self.status='map_not_ready';return nil end
+        local rawRange=r:float(0xBA8314)
+        local range=(core.finite(rawRange)and rawRange>=2000 and rawRange<=3500)and rawRange or 2990
+        detail.range=range
         local sx,sy=width/640,height/448
         self.status='ready';return {kind='map',a=zoom/range*sx,b=0,c=0,d=-zoom/range*sy,ox=ox*sx,oy=oy*sy,
             left=0,top=0,right=width,bottom=height}
@@ -134,10 +144,20 @@ function Adapter:view(state,width,height,s)
     if not grid.validView(v)then self.status='geometry';return nil end
     self.status='ready';return v
 end
-function Adapter:safeView(...)
+function Adapter:fail(state)
+    self.status='failed';self.failed=true
+    if state and state.paused then self.lastPauseStatus=self.status end
+end
+function Adapter:safeView(state,...)
     if self.failed then return nil end
-    local ok,v=pcall(self.view,self,...)
-    if not ok then self.status='failed';self.failed=true;return nil end
+    local paused=state and state.paused
+    if paused then
+        local detail=self.lastPauseDetail
+        detail.page,detail.zoom,detail.ox,detail.oy,detail.range=nil,nil,nil,nil,nil
+    end
+    local ok,v=pcall(self.view,self,state,...)
+    if not ok then self:fail(state);return nil end
+    if paused then self.lastPauseStatus=self.status end
     return v
 end
 return M

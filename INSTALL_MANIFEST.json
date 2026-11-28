@@ -315,7 +315,7 @@
     },
     {
       "path": "lib\\pa26_map_adapter.lua",
-      "sha256": "ad2cb3a1da78229c3fec7ea702083e5913c9726851704494ee0853e7263d625b"
+      "sha256": "8f51ebd9a4b18e1c6aa035c795102f14edc6994b58cadbe66326dcd3713e19c7"
     },
     {
       "path": "lib\\pa26_map_grid.lua",
@@ -323,7 +323,7 @@
     },
     {
       "path": "lib\\pa26_map_ui.lua",
-      "sha256": "c31af11a99bee24310e88c36803e5fef3ac9a4f055110ee4683d3bece5c33f16"
+      "sha256": "27abc5d9cc5ab811adfab773eecd190ddb935737efa710fb081d1bab3a057568"
     },
     {
       "path": "lib\\pa26_mark_window.lua",
@@ -623,7 +623,7 @@
     },
     {
       "path": "police_assistant_2026.lua",
-      "sha256": "2a5d3dbe878a6601b70a971961df365de06fb22d0ff1522ba2a588fc1efcf0d0"
+      "sha256": "adc9c70588fd0b2f2510a68196fa32b024bc29251ba03e872c7f4dd3fcd31d31"
     },
     {
       "path": "resource\\pa26\\banner-bmw-lamborghini.png",

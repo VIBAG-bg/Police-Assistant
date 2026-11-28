@@ -1,6 +1,19 @@
 local model=require 'pa26_bindings'
 local grid=require 'pa26_map_grid'
+local core=require 'pa26_core'
+local adapter=require 'pa26_map_adapter'
 local M={}
+local pauseFields={{'page','стр. '},{'zoom','масштаб '},{'ox','X '},{'oy','Y '},{'range','охват '}}
+local function pauseSummary(status,detail)
+    local parts={'Последняя карта Esc',status=='ready'and 'проекция готова' or adapter.reasons[status]or 'ещё не проверялась'}
+    if detail then
+        for _,field in ipairs(pauseFields)do
+            local value=detail[field[1]]
+            if core.finite(value)then parts[#parts+1]=field[2]..string.format('%.5g',value)end
+        end
+    end
+    return table.concat(parts,' · ')
+end
 function M.draw(studio,ui,data,callbacks)
     local im=studio.imgui;studio.currentNoticeScope='map_grid';studio.preferenceContext=true;studio.currentUi=ui
     local d=studio.mapGridDraft or model.copy(studio.lib.map_grid)
@@ -22,6 +35,7 @@ function M.draw(studio,ui,data,callbacks)
     local live=grid.cell(preview,state.x,state.y,state.interior)
     ui.text('Текущий квадрат: '..(live and live.label or (state.interior and state.interior>0 and'в интерьере не определяется'or'нет доступных координат в границах сетки')))
     ui.text(data.mapAdapterStatus or'Проекция карты пока не проверена. Расчёт клетки работает отдельно от графического адаптера.')
+    ui.text(pauseSummary(data.mapAdapterPauseStatus,data.mapAdapterPauseDetail))
     if type(callbacks.recheckMap)=='function'and studio:button('Проверить совместимость проекции снова##map-recheck',ui)then callbacks.recheckMap()end
     ui.text('На неподдерживаемом или изменённом клиенте линии карты отключаются; расчёт квадрата, бинды и остальные функции PA продолжают работать. Карты в отдельных CEF-страницах не изменяются.')
     im.Separator();studio:settingsHeading(ui,'Квадрат в биндах и докладах',

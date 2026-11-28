@@ -1110,6 +1110,7 @@ local function studioData()
         cefChatStatus=sceneServices.chatBridge and sceneServices.chatBridge.status or 'not_installed',
         cefChatReason=sceneServices.cefContractAllowed==false and sceneServices.cefContractReason or sceneServices.chatBridge and sceneServices.chatBridge.reason,
         nearby=sceneServices.nearby:view(),field=sceneServices.field and sceneServices.field:view(),mapState=sceneServices.mapState,mapAdapterStatus=sceneServices.mapAdapter:message(),
+        mapAdapterPauseStatus=sceneServices.mapAdapter.lastPauseStatus,mapAdapterPauseDetail=sceneServices.mapAdapter.lastPauseDetail,
         textFiltersAvailable=workspace.chatFiltersAvailable or(sceneServices.chatBridge and workspace.library.settings.cef_chat_support and sceneServices.chatBridge.status=='connected'),
         target=workspace.selectedTarget,targetState=workspace.targets:view(),queued=workspace.executor.queue,
         localNickname=hud.data.nickname,rpSettings=workspace.library.rp_text,evidence=sceneServices.evidence:view(),vehicle=sceneServices.vehicle:view(),copilot=sceneServices.copilot:view(),detentionTimers=sceneServices.detentionTimers:view(),operations=workspace.operations:view(),radioState=alerts.state,patrol=patrol:view(),patrolSession=patrolSession:view(patrol:view()),patrolEvents=patrolEvents:view(),identity=identity:view(),caseForms=caseForms:view(),taser=taser:view(),codec=codec,autoReport=radioGuard:view()}
@@ -2462,7 +2463,7 @@ end,function()
         end
     end)
     if not ok then
-        sceneServices.mapAdapter.failed=true;sceneServices.mapAdapter.status='failed'
+        sceneServices.mapAdapter:fail(sceneServices.mapState)
         pushLog('Сетка карты отключена: '..tostring(err))
     end
 end)

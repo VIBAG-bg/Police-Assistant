@@ -1,7 +1,13 @@
 local fixture=require 'support.fixture';local model=require 'pa26_bindings';local core=require 'pa26_core';local binder=require 'pa26_binder'
 local path='moonloader\\config\\police_assistant_2026_library.json'
 local lib=model.defaults(core.defaults());lib.profile.square='Ручной сектор';lib.bindings[1].script='Личный бинд.'
-local s=fixture({demo=false,library=lib});s.step()
+local adapterModule=require 'pa26_map_adapter'
+local createAdapter=adapterModule.new
+local adapter
+adapterModule.new=function(...)
+    adapter=createAdapter(...);return adapter
+end
+local s=fixture({demo=false,library=lib});adapterModule.new=createAdapter;s.step()
 local function healthy()check(not s.hasLog('Ошибка интерфейса'),table.concat(s.logs,'\n'));eq(#s.scopes,0);eq(s.invalidIOReads,0)end
 local function click(label)s.click=label;s.render();eq(s.click,nil,'Missing control '..label);healthy()end
 local b=model.newBinding(10);b.script='Район {area}; квадрат {map_square}; сектор {square}.'
@@ -9,6 +15,12 @@ local snap=assert(s.workspace:snapshot(b,{}));eq(snap.values.map_square,'M-13');
 local plan=assert(binder.compile(b,snap,{},codec));check(plan.lines[1]:find('M-13',1,true));eq(#s.sent,0)
 require('support.ui_routes').screen(s,'map')
 check(table.concat(s.drawnText,'\n'):find('Квадраты карты',1,true))
+check(table.concat(s.drawnText,'\n'):find('Последняя карта Esc · ещё не проверялась',1,true))
+adapter.lastPauseStatus='map_not_ready';adapter.lastPauseDetail={page=5,zoom=9,ox=320,oy=224}
+s.drawnText={};s.render();healthy()
+local diagnostics=table.concat(s.drawnText,'\n')
+check(diagnostics:find('Последняя карта Esc · '..adapterModule.reasons.map_not_ready,1,true))
+check(diagnostics:find('стр. 5 · масштаб 9 · X 320 · Y 224',1,true))
 local before=model.copy(s.workspace.library.bindings)
 s.toggle='Автозаполнение {square}##map-auto-square';s.render();s.step(700);healthy()
 check(s.workspace.library.map_grid.auto_square);eq(s.workspace.library.profile.square,'Ручной сектор')

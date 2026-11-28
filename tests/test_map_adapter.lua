@@ -36,11 +36,37 @@ r.bytesData[0xBAA3FB]=nil;check(not a:safeView(state,300,300,settings));eq(a.sta
 r.bytesData[0xBAA3FB]=0
 local before=r.calls;state.paused=true;v=assert(a:safeView(state,1280,896,settings));eq(v.kind,'map');eq(r.calls,before,'Pause-map projection must not call a radar function with a reset drawing flag')
 local x,y=grid.project(v,0,0);eq(x,640);eq(y,448);x,y=grid.project(v,2990,2990);eq(x,1200);eq(y,-112)
+eq(a.lastPauseStatus,'ready');eq(a.lastPauseDetail.page,5);eq(a.lastPauseDetail.range,2990)
+r.floats[0xBA8314]=350
+r.floats[0xBAA248],r.floats[0xBAA24C],r.floats[0xBA8310],r.floats[0xBA830C]=-1984,442,.5,.866
+v=assert(a:safeView(state,1280,896,settings))
+check(grid.validView(v));eq(v.kind,'map');eq(v.b,0);eq(v.c,0)
+eq(a.lastPauseStatus,'ready');eq(a.lastPauseDetail.range,2990)
+x,y=grid.project(v,2990,2990);eq(x,1200);eq(y,-112)
+r.floats[0xBA8314]=nil
+check(a:safeView(state,1280,896,settings));eq(a.lastPauseDetail.range,2990)
+r.floats[0xBA8314]=3200
+v=assert(a:safeView(state,1280,896,settings));eq(a.lastPauseDetail.range,3200)
+x,y=grid.project(v,3200,3200);eq(x,1200);eq(y,-112)
+
 r.bytesData[0xBA68A5]=6;check(not a:safeView(state,1280,896,settings));eq(r.calls,before)
-r.bytesData[0xBA68A5]=5;r.floats[0xBA67AC]=nil;check(not a:safeView(state,1280,896,settings));eq(a.status,'memory');eq(r.calls,before)
-r.floats[0xBA67AC]=280;r.floats[0xBA8314]=350;check(not a:safeView(state,1280,896,settings));eq(a.status,'map_not_ready')
+eq(a.lastPauseStatus,'hidden');eq(a.lastPauseDetail.page,6);eq(a.lastPauseDetail.zoom,nil)
+r.bytesData[0xBA68A5]=nil;check(not a:safeView(state,1280,896,settings));eq(a.lastPauseStatus,'memory')
+r.bytesData[0xBA68A5]=5;r.floats[0xBA67AC]=nil;check(not a:safeView(state,1280,896,settings));eq(a.lastPauseStatus,'memory');eq(r.calls,before)
+r.floats[0xBA67AC]=9;check(not a:safeView(state,1280,896,settings));eq(a.lastPauseStatus,'map_not_ready')
+eq(a.lastPauseDetail.zoom,9);eq(a.lastPauseDetail.page,5)
+state.paused=false;eq(assert(a:safeView(state,300,300,settings)).kind,'radar')
+eq(a.status,'ready');eq(a.lastPauseStatus,'map_not_ready');eq(a.lastPauseDetail.zoom,9)
+before=r.calls;state.paused=true;r.floats[0xBA67AC]=280;r.floats[0xBA67B0]=-20001
+check(not a:safeView(state,1280,896,settings));eq(a.lastPauseStatus,'map_not_ready');eq(a.lastPauseDetail.ox,-20001)
+r.floats[0xBA67B0]=320;settings.pause_map=false
+check(not a:safeView(state,1280,896,settings));eq(a.lastPauseStatus,'pause_disabled');eq(a.lastPauseDetail.page,nil)
+settings.pause_map=true
 r.floats[0xBA8314]=2990;state.paused=false;r.strings[m.profile.world]='changed after initialization'
 check(not a:safeView(state,300,300,settings));eq(a.status,'signature');eq(r.calls,before)
+eq(a.lastPauseStatus,'pause_disabled')
+state.paused=true;check(not a:safeView(state,300,300,settings));eq(a.lastPauseStatus,'signature');eq(r.calls,before)
+state.paused=false
 r.strings[m.profile.world]=m.profile.worldBytes;a:reset();check(a:safeView(state,300,300,settings));eq(r.bound,2)
 for k,value in pairs({focused=false,connected=false,interior=1})do local s={};for key,vv in pairs(state)do s[key]=vv end;s[k]=value
     before=r.calls;check(not a:safeView(s,300,300,settings));eq(r.calls,before)
@@ -50,5 +76,9 @@ settings.enabled=false;check(not a:safeView(state,300,300,settings));eq(a.status
 settings.enabled=true;r.worldScreen=function()error('Injected renderer error')end
 check(not a:safeView(state,300,300,settings));eq(a.status,'failed');check(a.failed)
 a:reset();check(not a.failed)
+state.paused=true;local pauseRead=r.float
+function r:float(address)if address==0xBA67AC then error('Injected pause read error')end;return pauseRead(self,address)end
+check(not a:safeView(state,1280,896,settings));eq(a.lastPauseStatus,'failed');eq(a.lastPauseDetail.page,5)
+state.paused=false;a:reset();check(not a.failed);eq(a.lastPauseStatus,'failed')
 -- Outside GTA the real backend is rejected before binding any game function.
 local actual=m.new(ffi);check(not actual:safeView(state,300,300,settings));check(not actual.reader or actual.reader.worldFn==nil)

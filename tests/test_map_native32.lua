@@ -27,7 +27,8 @@ check(not native.reader.worldFn,'A non-GTA host bound a game function')
 local editor=Studio.new(im,ffi,model.defaults(require('pa26_core').defaults()),function()return 1000 end)
 local stack={};local ui={push=function(fn)stack[#stack+1]=fn end,finish=function()assert(table.remove(stack))()end,
     text=function(t)im.PushTextWrapPos(0);im.TextUnformatted(t);im.PopTextWrapPos()end}
-local data={mapState={x=0,y=0,interior=0,area='Doherty'},mapAdapterStatus='Тест проекции без запуска GTA.',queued=nil}
+local data={mapState={x=0,y=0,interior=0,area='Doherty'},mapAdapterStatus='Тест проекции без запуска GTA.',queued=nil,
+    mapAdapterPauseStatus='ready',mapAdapterPauseDetail={page=5,zoom=280,ox=320,oy=224,range=2990}}
 local maxX=0;local outerWidth=0
 local function instrument(name)
     local original=im[name]
