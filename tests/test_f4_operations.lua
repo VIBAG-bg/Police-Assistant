@@ -288,10 +288,14 @@ eq(assert(vehicle.describe(car,vc)).vehicle_description,'Чёрный Premier')
 car.color2=999;eq(assert(vehicle.describe(car,vc)).vehicle_description,'Чёрный Premier')
 car.color1=999;eq(assert(vehicle.describe(car,vc)).vehicle_description,'Premier')
 eq(vehicle.colorTemplate('Транспорт {model}, цвет: {vehicle_color}, район {area}.',{vehicle_color=''}),'Транспорт {model}, район {area}.')
-local old=TEST_JSON_DECODE(assert(io.open('presets/pa-settings.json','rb')):read('*a')).settings.data.patrol_session
-check(old.start_template:find('начинаем',1,true))
+local old=prefs.defaults()
+old.start_template='{local_tag}{unit}, начинаем патрулирование по городу {city}. Экипаж: {crew}. Район: {area}, квадрат {map_square}. Далее доступны.'
 local cfg=assert(prefs.validate(old));check(cfg.start_template:find('{patrol_start}',1,true))
 old.start_template='Личный текст: {patrol_start}.';eq(assert(prefs.validate(old)).start_template,old.start_template)
+local preset=assert(io.open('presets/pa-settings.json','rb'))
+local patrol=TEST_JSON_DECODE(preset:read('*a')).settings.data.patrol_session
+preset:close()
+check(assert(prefs.validate(patrol)).start_template:find('{patrol_start}',1,true))
 local report=require 'pa26_report_context'
 for _,case in ipairs({{nil,'начинаю патруль','1-L-1'},{false,'начинаю патруль','1-L-1'},{true,'начинаем патруль','1-A-1'}})do
  local people=case[1]~=nil and{{id=37,name='Person_Name',verifiedPolice=case[1],ic_name='Имя Напарника'}}or{}

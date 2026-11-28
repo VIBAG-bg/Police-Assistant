@@ -137,4 +137,5 @@ values.crew=string.rep('x',2000);values.crew_roles=string.rep('y',3000)
 local alerts=model.alertDefaults();alerts.on_duty=true;alerts.enabled=true
 check(require('pa26_alerts').prepare('sos',values,alerts,codec,s.now,1))
 check(require('pa26_radio_guard').prepare({template='10-20: {area}.',channel='/r',name='Short'},values,codec,s.now,1))
-values.local_tag='bad\n/r';check(not require('pa26_alerts').prepare('sos',values,alerts,codec,s.now,1))
+values.local_tag='bad\n/r';check(require('pa26_alerts').prepare('sos',values,alerts,codec,s.now,1))
+values.global_tag='bad\n/f';check(not require('pa26_alerts').prepare('sos',values,alerts,codec,s.now,1))

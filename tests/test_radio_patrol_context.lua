@@ -15,7 +15,7 @@ s.commands.pa26sos();s.step();check(s.alerts.pending)
 check(s.alerts.pending.plan.lines[1]:find('A-1: Victor Auditore.',1,true),'Emergency radio receives the active patrol context')
 check(s.alerts.pending.plan.lines[1]:find('Пост А',1,true))
 s.commands.pa26();s.step();s.page('settings');click(s,'4. Рация и тревоги##settings-tab-radio')
-s.drawnText={};s.render();check(table.concat(s.drawnText,'\n'):find('/r A-1: Victor Auditore. Помощь! Пост А,',1,true),'Preview uses the active patrol post, matching dispatch')
+s.drawnText={};s.render();check(table.concat(s.drawnText,'\n'):find('/f A-1: Victor Auditore. Помощь! Пост А,',1,true),'Preview uses the active patrol post, matching dispatch')
 local plan=model.copy(s.alerts.pending.plan);check(s.alerts:validPlan(plan))
 local refreshed=model.copy(s.alerts.state);refreshed.unit='B-2'
 check(s.alerts:updateContext(refreshed));check(not s.alerts:validPlan(plan),'A changed unit invalidates the frozen preview before sending')

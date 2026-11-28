@@ -23,12 +23,12 @@ local repeated=assert(upgrade.prepare(lib,cfg,json))
 check(author.equal(repeated.library,p.library),'The embedded payload can be loaded again')
 eq(package.loaded.pa26_author_defaults0460,nil)
 eq(p.library.settings.opacity,settings.settings.opacity)
-eq(p.library.settings.wheel_child_limit,15)
-eq(p.library.settings.wheel_car_child_limit,15)
 local items={};for i=1,20 do items[i]={id=i,name='Action '..i}end
 for _,key in ipairs({'wheel_child_limit','wheel_car_child_limit'})do
- local entries=require('pa26_wheel').entries({items=items,id='custom',child_limit=p.library.settings[key]})
- eq(#entries,16);eq(entries[15].id,15);eq(entries[16].kind,'more')
+  local limit=settings.settings[key]
+  eq(p.library.settings[key],limit)
+  local entries=require('pa26_wheel').entries({items=items,id='custom',child_limit=limit})
+  eq(#entries,limit+1);eq(entries[limit].id,limit);eq(entries[limit+1].kind,'more')
 end
 eq(p.library.settings.accent_live_input,settings.settings.accent_live_input)
 eq(p.library.vehicle.channel,settings.vehicle.channel)
@@ -55,12 +55,14 @@ cfg.widget.x=444
 local custom=model.newBinding(14);custom.script='/me личная отыгровка.';custom.favorite=true;custom.wheel_visible=true
 custom.shortcut={key=0x75,ctrl=true,alt=false,shift=false};custom.command_alias='mine14'
 lib.bindings[#lib.bindings+1]=custom;lib.next_id=15
+-- This fixture isolates the 0.46.0 transaction from the separate 0.47.2 startup migration.
+lib.settings.alert_wheel_defaults0472=true
 lib=assert(model.validate(lib,cfg))
 p,why=upgrade.prepare(lib,cfg,json);check(p,why)
 eq(p.library.settings.opacity,settings.settings.opacity,'Author setting replaces stock only')
 eq(p.library.settings.wheel_names.citizen,'My Citizen Wheel')
 eq(p.library.settings.wheel_order.root[1],'custom');eq(p.library.settings.wheel_order.custom[1],'b:14')
-eq(p.library.settings.wheel_child_limit,12);eq(p.library.settings.wheel_car_child_limit,15)
+eq(p.library.settings.wheel_child_limit,12);eq(p.library.settings.wheel_car_child_limit,settings.settings.wheel_car_child_limit)
 eq(p.library.settings.updates.repository,'Another/Source')
 eq(p.library.settings.manual_actions.rules.cuff.rp,'/me применил личный сценарий.')
 eq(p.library.patrol_session.start_template,'Мой личный доклад {unit}.')
